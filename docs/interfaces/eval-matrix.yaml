@@ -1,0 +1,108 @@
+# Eval matrix stratification rules
+# Referenced by harness/config/eval_matrix.py
+# Version: C-v0.3.1+STABLE
+
+version: "C-v0.3.1+STABLE"
+
+bump_rules:
+  PATCH:
+    description: "Only the touched axis metric, P_equ only, 1 seed"
+    obligatory:
+      - axis: touched
+        profile: P_equ
+        seeds: 1
+    optional: []
+
+  MINOR:
+    description: "Full 8-metric suite on P_equ with 3 seeds"
+    obligatory:
+      - axis: all_8_metrics
+        profile: P_equ
+        seeds: 3
+    optional:
+      - axis: all_8_metrics
+        profiles: [P_min, P_max]
+        seeds: 3
+        deferred_to: next_MAJOR
+
+  MAJOR:
+    description: "Full grid: 8 metrics x 3 profiles x 3 seeds = 72 runs"
+    obligatory:
+      - axis: all_8_metrics
+        profiles: [P_min, P_equ, P_max]
+        seeds: 3
+    optional:
+      - axis: sensitivity_sweeps
+
+  EC_change:
+    description: "Only re-run published-result metrics"
+    obligatory:
+      - axis: published_metrics
+        profile: current
+        seeds: current
+    optional: []
+
+publication_ready_gate:
+  description: "Additional criteria on top of GREEN mode"
+  requires:
+    coverage: "100% stratified cells in last MAJOR bump"
+    seeds_per_cell: 3
+    retained_regression_max_pct: 1.0
+    consecutive_zero_blocking_days: 7
+    dualver_status: "+STABLE"
+    pre_submission_reviews_min: 1
+    axioms_proven:
+      - DR-0
+      - DR-1
+      - DR-2  # or DR-2' if fallback adopted
+      - DR-3
+      - DR-4
+    ablation_complete:
+      - P_min
+      - P_equ
+      - P_max
+    paper_draft: complete
+
+metrics:
+  M1.a:
+    name: forgetting_rate
+    family: continual_learning
+    determinism: seeded_rng
+    topology_sensitive: false
+  M1.b:
+    name: avg_accuracy
+    family: continual_learning
+    determinism: seeded_rng
+    topology_sensitive: false
+  M2.b:
+    name: rsa_fmri_alignment
+    family: representational
+    determinism: cpu_nilearn_seeded
+    topology_sensitive: false
+    data_source: studyforrest  # Branch A locked S2.1
+  M3.a:
+    name: flops_ratio
+    family: efficiency
+    determinism: mlx_static_profile
+    topology_sensitive: true
+  M3.b:
+    name: offline_gain
+    family: efficiency
+    determinism: flops_equiv_wallclock
+    topology_sensitive: true
+    pivot: true  # shared between E3 and E4 targets
+  M3.c:
+    name: energy_per_episode
+    family: efficiency
+    determinism: calibrated_proxy
+    topology_sensitive: true
+  M4.a:
+    name: recomb_quality
+    family: emergence
+    determinism: frozen_scorer_qwen3_5_9b_q4km
+    topology_sensitive: false
+  M4.b:
+    name: structure_discovery
+    family: emergence
+    determinism: permutation_test_seeded
+    topology_sensitive: false
