@@ -67,3 +67,6 @@ def test_replay_mlx_handles_empty_records() -> None:
     handler(make_replay_episode("de-mlx1", []))
     assert state.total_records_consumed == 0
     assert state.last_loss is None  # no batch -> no loss
+    # Empty episode still counts as handled (per implementation:
+    # state.total_episodes_handled increments before empty check)
+    assert state.total_episodes_handled == 1

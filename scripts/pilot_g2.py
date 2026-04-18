@@ -56,11 +56,12 @@ def baseline_predictor(item: dict) -> str:
 
 
 def p_min_predictor(item: dict) -> str:
-    """P_min predictor: 60% accuracy proxy (synthetic improvement).
+    """P_min predictor: 80% accuracy proxy (synthetic improvement).
 
-    On synthetic benchmark, 30 of 50 items predicted correctly.
-    Models the 'post-consolidation' state — synthetic numbers,
-    pipeline validation only.
+    On synthetic benchmark, 40 of 50 items predicted correctly
+    (rid % 5 != 0 yields 4 out of 5). Models the
+    'post-consolidation' state — synthetic numbers, pipeline
+    validation only.
     """
     rid_token = item["id"].split("-")[-1]
     rid = int(rid_token)
