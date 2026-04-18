@@ -45,3 +45,26 @@ def test_clear_resets_prior() -> None:
     assert channel.get_prior() is not None
     channel.clear()
     assert channel.get_prior() is None
+
+
+def test_get_prior_returns_readonly_view() -> None:
+    """S4 contract: get_prior() must not let callers mutate
+    internal state and bypass emit() validation.
+    """
+    channel = AttentionPriorChannel(budget_attention=1.5)
+    channel.emit(np.array([0.3, 0.4, 0.5]))
+    view = channel.get_prior()
+    assert view is not None
+    assert view.flags.writeable is False
+    # Direct in-place assignment must fail.
+    with pytest.raises(ValueError):
+        view[0] = 99.0
+    # np.copyto must also fail (would otherwise overwrite the buffer).
+    with pytest.raises(ValueError):
+        np.copyto(view, np.array([99.0, 99.0, 99.0]))
+
+
+def test_get_prior_returns_none_when_uninitialized() -> None:
+    """get_prior() returns None on a fresh channel (no view error)."""
+    channel = AttentionPriorChannel(budget_attention=1.5)
+    assert channel.get_prior() is None

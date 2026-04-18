@@ -21,3 +21,20 @@ def test_s4_rejects_out_of_unit_interval() -> None:
     bad = np.array([0.5, -0.2, 0.4])
     with pytest.raises(AttentionGuardError):
         check_attention_bounded(bad, budget=1.5)
+
+
+def test_s4_rejects_nan_components() -> None:
+    """S4 must reject NaN — comparisons against NaN return False
+    so range/budget checks would silently miss it without the
+    explicit NaN guard.
+    """
+    bad = np.array([0.3, float("nan"), 0.4])
+    with pytest.raises(AttentionGuardError, match="NaN"):
+        check_attention_bounded(bad, budget=1.5)
+
+
+def test_s4_rejects_all_nan() -> None:
+    """An all-NaN prior must also be rejected (sum is NaN, not >budget)."""
+    bad = np.array([float("nan"), float("nan")])
+    with pytest.raises(AttentionGuardError, match="NaN"):
+        check_attention_bounded(bad, budget=1.5)

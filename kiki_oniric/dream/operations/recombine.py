@@ -242,16 +242,19 @@ def recombine_handler_full_mlx(
                 "dimensionality"
             )
 
-        # Per-episode seed re-init for reproducibility. We mutate
-        # the process-wide MLX RNG here (test path expects seed
-        # diversity across factory calls) but the seed schedule
-        # is deterministic : seed + episode_index.
-        mx.random.seed(seed + state.total_episodes_handled)
+        # Per-episode local PRNG key for R1 reproducibility — does
+        # not touch the process-wide MLX RNG, so concurrent dream
+        # workers can run multiple full-VAE recombine handlers
+        # without interfering. Mirrors the light variant's pattern
+        # (`recombine_handler_mlx`) above.
+        key_seed = seed + state.total_episodes_handled
+        key = mx.random.key(key_seed)
+        _, sample_key = mx.random.split(key)
 
         x = mx.array(latents[0])
         mu, log_sigma = encoder(x)
         sigma = mx.exp(0.5 * log_sigma)
-        epsilon = mx.random.normal(shape=mu.shape)
+        epsilon = mx.random.normal(shape=mu.shape, key=sample_key)
         z = mu + sigma * epsilon
         sample_arr = decoder(z)
         # KL(q(z|x) || N(0, I)) with q(z|x) = N(mu, exp(log_sigma))

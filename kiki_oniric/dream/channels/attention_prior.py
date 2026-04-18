@@ -51,8 +51,21 @@ class AttentionPriorChannel:
         self._prior = np.asarray(prior).copy()
 
     def get_prior(self) -> NDArray | None:
-        """Return the current prior (read-only) or None if cleared."""
-        return self._prior
+        """Return the current prior or None if cleared.
+
+        The returned array is a read-only numpy view : callers cannot
+        mutate the channel's internal state by writing into it. Any
+        in-place modification (assignment, ``np.copyto``, ufunc with
+        ``out=``) raises ``ValueError`` because ``flags.writeable``
+        is forced to ``False``. This preserves the S4 validation
+        contract enforced by ``emit()`` — every prior visible to
+        downstream readers has been bounds-checked.
+        """
+        if self._prior is None:
+            return None
+        view = self._prior.view()
+        view.flags.writeable = False
+        return view
 
     def clear(self) -> None:
         """Reset to no prior (None)."""

@@ -28,6 +28,13 @@ def check_attention_bounded(
     Raises AttentionGuardError on first violation.
     """
     arr = np.asarray(prior)
+    # NaN slips silently through range / budget checks because every
+    # comparison against NaN returns False. Reject explicitly first
+    # so S4 cannot be bypassed by a single NaN component.
+    if np.isnan(arr).any():
+        raise AttentionGuardError(
+            "attention prior contains NaN values"
+        )
     if (arr < 0.0).any() or (arr > 1.0).any():
         raise AttentionGuardError(
             f"attention components must be in [0, 1], got "

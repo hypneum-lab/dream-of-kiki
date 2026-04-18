@@ -76,7 +76,7 @@ def test_p_max_alpha_stream_buffer_present() -> None:
 
 
 def test_p_max_attention_prior_channel_present() -> None:
-    """P_max declares attention_prior canal-4 channel."""
+    """P_max declares attention_prior channel-4 channel."""
     profile = PMaxProfile()
     assert hasattr(profile, "attention_prior")
     assert profile.attention_prior.budget > 0
