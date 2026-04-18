@@ -63,3 +63,43 @@ def test_dr4_p_equ_contains_restructure_and_recombine() -> None:
     ops_equ = _registered_ops(PEquProfile)
     assert Operation.RESTRUCTURE in ops_equ
     assert Operation.RECOMBINE in ops_equ
+
+
+# === DR-4 P_equ ⊆ P_max chain (S16.2 extension) ===
+
+from kiki_oniric.profiles.p_max import PMaxProfile
+
+P_EQU_OPS_DECLARED: set[Operation] = {
+    Operation.REPLAY,
+    Operation.DOWNSCALE,
+    Operation.RESTRUCTURE,
+    Operation.RECOMBINE,
+}
+
+
+def _p_max_metadata():
+    """Read PMaxProfile target metadata (handlers not yet wired)."""
+    return PMaxProfile()
+
+
+def test_dr4_ops_inclusion_p_equ_subset_p_max() -> None:
+    """ops(P_equ) ⊆ target_ops(P_max) via skeleton metadata."""
+    p_max = _p_max_metadata()
+    ops_equ = _registered_ops(PEquProfile)
+    assert ops_equ <= p_max.target_ops, (
+        f"DR-4 violated: ops(P_equ) not subset of "
+        f"target_ops(P_max)"
+    )
+
+
+def test_dr4_channels_inclusion_p_equ_subset_p_max() -> None:
+    """channels(P_equ) ⊆ target_channels_out(P_max)."""
+    p_max = _p_max_metadata()
+    assert P_EQU_CHANNELS_OUT <= p_max.target_channels_out
+    # P_max strict superset: must contain ATTENTION_PRIOR
+    assert (
+        OutputChannel.ATTENTION_PRIOR in p_max.target_channels_out
+    )
+    assert (
+        OutputChannel.ATTENTION_PRIOR not in P_EQU_CHANNELS_OUT
+    )
