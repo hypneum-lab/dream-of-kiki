@@ -1,0 +1,31 @@
+{
+  "benchmark_size": 50,
+  "benchmark_hash": "c1b93b25dd84a95d455a5758ef1c73a2a92b606394ec429d4029635ef58ab3a0",
+  "seeds": [
+    42,
+    123,
+    7
+  ],
+  "metrics": {
+    "42": {
+      "baseline_acc": 0.5,
+      "p_min_acc": 0.8,
+      "delta": 0.30000000000000004
+    },
+    "123": {
+      "baseline_acc": 0.5,
+      "p_min_acc": 0.8,
+      "delta": 0.30000000000000004
+    },
+    "7": {
+      "baseline_acc": 0.5,
+      "p_min_acc": 0.8,
+      "delta": 0.30000000000000004
+    }
+  },
+  "delta_mean": 0.30000000000000004,
+  "delta_min": 0.30000000000000004,
+  "delta_max": 0.30000000000000004,
+  "gate_criterion": "delta >= -0.02 (G2 \u00a77.2)",
+  "gate_pass": true
+}

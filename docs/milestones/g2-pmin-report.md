@@ -54,6 +54,19 @@
 - Activate Pivot A : single-paper TMLR/ICLR workshop on engineering results only
 - Framework paper deferred to cycle 2
 
+## Pilot results (S9.5)
+
+Pilot measurement run on synthetic placeholder benchmark (3 seeds,
+P_min vs mock baseline). See `g2-pilot-results.md` for full table.
+
+**Pilot gate result** : **PASS** (delta ≥ −0.02 criterion)
+
+**Decision update** : Branch GO-CONDITIONAL **maintained**
+(infrastructure validated, real benchmark pending S10+). Path to
+GO-FULL is clear : when real retained set is integrated S10+,
+re-run pilot with real predictors. If gate passes on real data
+3 consecutive runs, flip to GO-FULL.
+
 ## Action
 
 S8 day end : decide GO-CONDITIONAL (default) and document path to GO-FULL in S9-S10.
