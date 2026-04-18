@@ -21,9 +21,7 @@ from kiki_oniric.core.primitives import (
 
 
 def _is_protocol(cls: type) -> bool:
-    return getattr(cls, "_is_protocol", False) or getattr(
-        cls, "__protocol_attrs__", None
-    ) is not None
+    return Protocol in getattr(cls, "__mro__", ())
 
 
 def test_alpha_protocol_is_runtime_checkable() -> None:
