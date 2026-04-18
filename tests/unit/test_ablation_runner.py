@@ -1,6 +1,8 @@
 """Unit tests for ablation runner harness (S15.2)."""
 from __future__ import annotations
 
+from pathlib import Path
+
 import pandas as pd
 import pytest
 
@@ -37,14 +39,23 @@ def _half_predictor(item: dict) -> str:
     return item["expected"] if rid % 2 == 0 else "WRONG"
 
 
-def test_single_cell_run_produces_metric_row() -> None:
+def _isolated_runner(
+    tmp_path: Path,
+    profile_specs: list[ProfileSpec],
+    seeds: list[int],
+) -> AblationRunner:
+    return AblationRunner(
+        profile_specs=profile_specs,
+        seeds=seeds,
+        benchmark=_bench_fixture(),
+        registry_path=tmp_path / "registry.sqlite",
+    )
+
+
+def test_single_cell_run_produces_metric_row(tmp_path: Path) -> None:
     """Single (profile, seed) cell yields a one-row DataFrame."""
     spec = ProfileSpec(name="P_correct", predictor=_correct_predictor)
-    runner = AblationRunner(
-        profile_specs=[spec],
-        seeds=[42],
-        benchmark=_bench_fixture(),
-    )
+    runner = _isolated_runner(tmp_path, [spec], [42])
     df = runner.run()
     assert isinstance(df, pd.DataFrame)
     assert len(df) == 1
@@ -54,18 +65,14 @@ def test_single_cell_run_produces_metric_row() -> None:
     assert row["accuracy"] == 1.0
 
 
-def test_multi_cell_sweep_covers_full_grid() -> None:
+def test_multi_cell_sweep_covers_full_grid(tmp_path: Path) -> None:
     """3 profiles × 3 seeds = 9 rows."""
     specs = [
         ProfileSpec(name="P_correct", predictor=_correct_predictor),
         ProfileSpec(name="P_half", predictor=_half_predictor),
         ProfileSpec(name="P_wrong", predictor=_wrong_predictor),
     ]
-    runner = AblationRunner(
-        profile_specs=specs,
-        seeds=[1, 2, 3],
-        benchmark=_bench_fixture(),
-    )
+    runner = _isolated_runner(tmp_path, specs, [1, 2, 3])
     df = runner.run()
     assert len(df) == 9
     profile_seed_pairs = set(
@@ -77,16 +84,31 @@ def test_multi_cell_sweep_covers_full_grid() -> None:
     assert profile_seed_pairs == expected
 
 
-def test_results_dataframe_schema() -> None:
+def test_results_dataframe_schema(tmp_path: Path) -> None:
     """DataFrame has required columns for downstream stat tests."""
     spec = ProfileSpec(name="P_half", predictor=_half_predictor)
-    runner = AblationRunner(
-        profile_specs=[spec],
-        seeds=[42],
-        benchmark=_bench_fixture(),
-    )
+    runner = _isolated_runner(tmp_path, [spec], [42])
     df = runner.run()
-    required_cols = {"profile", "seed", "accuracy", "benchmark_hash"}
+    required_cols = {
+        "run_id", "profile", "seed", "accuracy", "benchmark_hash",
+    }
     assert required_cols <= set(df.columns)
     # Half-predictor: 3 of 6 items (even ids) correct
     assert df.iloc[0]["accuracy"] == pytest.approx(0.5)
+
+
+def test_run_id_registered_and_broadcast(tmp_path: Path) -> None:
+    """A single run_id is registered and stamped on every row."""
+    specs = [
+        ProfileSpec(name="P_correct", predictor=_correct_predictor),
+        ProfileSpec(name="P_wrong", predictor=_wrong_predictor),
+    ]
+    runner = _isolated_runner(tmp_path, specs, [1, 2])
+    df = runner.run()
+    run_ids = set(df["run_id"].tolist())
+    assert len(run_ids) == 1
+    run_id = run_ids.pop()
+    assert run_id and isinstance(run_id, str)
+    # Repeating the same batch yields the same run_id (R1 contract).
+    df_again = runner.run()
+    assert set(df_again["run_id"].tolist()) == {run_id}

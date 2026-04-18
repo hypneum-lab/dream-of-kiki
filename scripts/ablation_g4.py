@@ -9,6 +9,11 @@ Real-mode (S16+): replace mock predictors with PMinProfile /
 PEquProfile inference once MLX-native swap loop is wired with
 real model deployment.
 
+A batch ``run_id`` is registered against
+``harness.storage.run_registry.RunRegistry`` before any predictor
+runs ; the id is broadcast into the JSON dump so synthetic-pipeline
+results remain traceable per the R1 contract.
+
 Usage:
     uv run python scripts/ablation_g4.py
 
@@ -19,6 +24,8 @@ Output:
 from __future__ import annotations
 
 import json
+import os
+import subprocess
 import sys
 from pathlib import Path
 
@@ -28,6 +35,7 @@ sys.path.insert(0, str(REPO_ROOT))
 from harness.benchmarks.mega_v2.adapter import (
     load_megav2_stratified,
 )
+from harness.storage.run_registry import RunRegistry
 from kiki_oniric.dream.eval_retained import evaluate_retained
 from kiki_oniric.eval.statistics import (
     jonckheere_trend,
@@ -35,6 +43,28 @@ from kiki_oniric.eval.statistics import (
     tost_equivalence,
     welch_one_sided,
 )
+
+
+HARNESS_VERSION = "C-v0.5.0+STABLE"
+
+
+def _resolve_commit_sha() -> str:
+    env_sha = os.environ.get("DREAMOFKIKI_COMMIT_SHA")
+    if env_sha:
+        return env_sha
+    try:
+        out = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=2,
+        )
+        if out.returncode == 0:
+            return out.stdout.strip() or "unknown"
+    except (OSError, subprocess.SubprocessError):
+        pass
+    return "unknown"
 
 
 def baseline_predictor_factory(seed: int):
@@ -74,20 +104,43 @@ def main() -> None:
 
     seeds = [42, 123, 7]
 
+    # Register the ablation batch in the run registry (R1 contract)
+    # so the synthetic-pipeline numbers in the JSON dump are
+    # traceable. Profile name "G4_ablation" + the smallest seed
+    # uniquely keys this batch ; commit_sha pins the code state.
+    registry_path = Path(os.environ.get(
+        "DREAMOFKIKI_RUN_REGISTRY",
+        REPO_ROOT / ".run_registry.sqlite",
+    ))
+    registry = RunRegistry(registry_path)
+    run_id = registry.register(
+        c_version=HARNESS_VERSION,
+        profile="G4_ablation",
+        seed=min(seeds),
+        commit_sha=_resolve_commit_sha(),
+    )
+
     # Run grid (profile x seed) directly — keeps each seed
     # genuinely independent (avoids AblationRunner's single-seed-
     # per-spec workaround). Each cell calls evaluate_retained on
-    # the (synthetic) predictor for that seed.
+    # the (synthetic) predictor for that seed ; the seed is also
+    # propagated into evaluate_retained for trace integrity.
     baseline_acc = [
-        evaluate_retained(baseline_predictor_factory(s), benchmark)
+        evaluate_retained(
+            baseline_predictor_factory(s), benchmark, seed=s
+        )
         for s in seeds
     ]
     p_min_acc = [
-        evaluate_retained(p_min_predictor_factory(s), benchmark)
+        evaluate_retained(
+            p_min_predictor_factory(s), benchmark, seed=s
+        )
         for s in seeds
     ]
     p_equ_acc = [
-        evaluate_retained(p_equ_predictor_factory(s), benchmark)
+        evaluate_retained(
+            p_equ_predictor_factory(s), benchmark, seed=s
+        )
         for s in seeds
     ]
 
@@ -126,6 +179,9 @@ def main() -> None:
     )
 
     results = {
+        "run_id": run_id,
+        "harness_version": HARNESS_VERSION,
+        "is_synthetic": True,
         "benchmark_size": len(benchmark.items),
         "benchmark_hash": benchmark.source_hash,
         "seeds": seeds,

@@ -71,3 +71,18 @@ def test_evaluate_retained_half_correct_returns_half(
     acc = evaluate_retained(_half_correct_model, real_benchmark)
     # 50 items with ids 0000..0049 — even ids: 25 → 0.5 exact
     assert acc == pytest.approx(0.5)
+
+
+def test_evaluate_retained_accepts_seed_kwarg(
+    real_benchmark: RetainedBenchmark,
+) -> None:
+    """Seed parameter is accepted and result unchanged for
+    deterministic predictors (trace-only propagation contract)."""
+    acc_no_seed = evaluate_retained(_half_correct_model, real_benchmark)
+    acc_seed_42 = evaluate_retained(
+        _half_correct_model, real_benchmark, seed=42
+    )
+    acc_seed_123 = evaluate_retained(
+        _half_correct_model, real_benchmark, seed=123
+    )
+    assert acc_no_seed == acc_seed_42 == acc_seed_123

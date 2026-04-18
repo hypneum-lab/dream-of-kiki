@@ -78,12 +78,23 @@ expected) :
 
 ## Ablation results (S15.3)
 
+> **⚠️ Synthetic-data caveat applies.** Numbers below come from
+> mock predictors at scripted accuracy levels (50%/70%/85%) on
+> the synthetic mega-v2 fallback. They validate the measurement
+> + statistical pipeline, not P_equ efficacy on real linguistic
+> data.
+
 Synthetic ablation run (3 profiles × 3 seeds, mega-v2 fallback).
-See `ablation-results.md` for full table + JSON dump.
+See `ablation-results.md` for full table + JSON dump (run_id
+recorded in `RunRegistry`).
 
 **Hypothesis tests (Bonferroni α = 0.0125)** : 3/4 significant
 
-**Gate result** : **PASS** (criterion : ≥2 significant)
+**⚠️ Synthetic-data caveat applies — see top of report.**
+
+**Gate result** : **CONDITIONAL — pipeline validated; model
+pending real-data evidence** (criterion : ≥2 significant on
+synthetic predictors).
 
 **Decision update** : Branch GO-CONDITIONAL **maintained**
 (synthetic pipeline validated, real benchmark + real predictors

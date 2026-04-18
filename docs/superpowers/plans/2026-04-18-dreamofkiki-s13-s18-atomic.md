@@ -212,6 +212,16 @@ Expected: 107 tests (104+3), coverage ≥90%.
 ## Pattern
 
 - Script invokes `AblationRunner` on mega-v2 (or synthetic), 3 seeds × 3 profiles
+- **Register batch run_id** : call
+  `RunRegistry.register(c_version, profile="G4_ablation",
+  seed=min(seeds), commit_sha=...)` from
+  `harness.storage.run_registry` at the start of `main()` ; embed
+  the returned `run_id` in every output row and in the JSON dump
+  alongside `harness_version` + `is_synthetic` flag (S15.2 also
+  registers a batch id inside `AblationRunner.run()` so direct
+  callers get the same R1 contract)
+- Propagate `seed` into `evaluate_retained(..., seed=s)` so the
+  trace ledger matches the registered batch
 - Computes Welch's t-test on M1.b (P_equ vs P_min), TOST on M3.c, Jonckheere on M2.b across profiles
 - If P_equ > P_min on ≥2 metrics with p<0.05 → flip G4 to GO-FULL
 - Commit: `docs(milestone): G4 ablation results + GO` (42 chars)

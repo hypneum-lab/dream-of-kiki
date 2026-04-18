@@ -115,9 +115,18 @@ Of the 4 pre-registered hypotheses :
   Bonferroni 0.0125)
 - **H4 energy** : significant (PASS)
 
-**G4 gate result** : **PASS** (≥2 hypotheses significant at
+**G4 gate result (synthetic pipeline validation only)** :
+**PASS** — see CAVEAT below (≥2 hypotheses significant at
 Bonferroni-corrected α). See `docs/milestones/ablation-results.md`
 for full data + JSON dump.
+
+> **⚠️ CAVEAT — synthetic data only.** The PASS verdict above
+> validates the *measurement and statistical pipeline*, not the
+> efficacy of P_equ on real linguistic data. All numbers in this
+> section derive from mock predictors at scripted accuracy levels
+> (50% baseline, 70% P_min, 85% P_equ). Real mega-v2 + MLX
+> inference results are pending cycle-1 closeout (S20+) per the
+> G2/G4/G5 GO-CONDITIONAL decisions.
 
 ---
 

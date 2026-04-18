@@ -25,6 +25,7 @@ ItemPredictor = Callable[[dict], str]
 def evaluate_retained(
     model: ItemPredictor,
     benchmark: RetainedBenchmark,
+    seed: int | None = None,
 ) -> float:
     """Compute accuracy of `model` over `benchmark.items` in [0, 1].
 
@@ -32,10 +33,18 @@ def evaluate_retained(
     the retained set is being constructed). Otherwise returns
     fraction of items where `model(item) == item["expected"]`.
 
+    The optional `seed` is propagated for trace integrity (each
+    ablation cell records its seed). Deterministic predictors
+    ignore it ; stochastic predictors that opt in must pass it via
+    a closure on construction. The harness does not seed global
+    RNGs from this function — that responsibility belongs to the
+    predictor factory (see scripts/ablation_g4.py for the pattern).
+
     Designed to be passed as the `retained_eval` callable in
     `swap_atomic`. The closure over the model is the caller's
     responsibility (see S9.4 for the canonical pattern).
     """
+    _ = seed  # propagated through ablation runner for trace only
     items = benchmark.items
     if not items:
         return 1.0
