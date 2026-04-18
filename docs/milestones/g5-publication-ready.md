@@ -67,3 +67,56 @@ externe utilisateur) as parallel critical-path items.
 3. Paper 1 Results + Discussion + Future Work draft
 4. T-Col pre-submission network review ≥1 positive return
 5. arXiv preprint then Nature HB submission
+
+## Submission decision (S22.1)
+
+**Date** : TBD (S22 calendar)
+**Status** : **PENDING action externe utilisateur**
+
+### Branch selection
+
+The G5 gate at S18 was status DEFER (multiple criteria PARTIAL).
+At S22 closeout the user must choose between :
+
+- **GO-FULL** (default if all criteria met by S22) :
+  Submit Paper 1 to Nature Human Behaviour via the portal at
+  https://www.nature.com/nathumbehav/. Tag framework
+  C-v0.7.0+STABLE post-DR-2 reviewer confirmation. See
+  `ops/nature-hb-submit-tracker.md` for the manual action
+  checklist.
+
+- **Pivot B** (if criteria not met) :
+  Activate one of the three Pivot B branches per
+  `docs/proofs/pivot-b-decision.md` :
+  - **B-EXTEND** : extend cycle-1 timeline by 4-8 weeks (S22
+    → S30), maintain Nature HB target
+  - **B-DOWNGRADE** : adopt DR-2', tag C-v0.7.0-PRIME+STABLE,
+    redirect to PLoS Computational Biology / Cognitive Science
+  - **B-SCOPE-DOWN** (Pivot A) : single-paper TMLR/ICLR
+    workshop, framework deferred cycle 2
+
+### Decision criteria recap
+
+The branch selection consults the gate criteria status table
+above. As a quick reference :
+
+| Criterion | S18 status | S22 target |
+|-----------|-----------|-----------|
+| Coverage 100% MAJOR | PARTIAL | MET (real ablation S20+) |
+| Seeds ≥3 | MET | MET |
+| Retained regression ≤1% | N/A | MET (real model S20+) |
+| Zero blocking 7d | N/A | MET (CI green) |
+| DualVer +STABLE | MET | MET (or +STABLE-PRIME on Pivot) |
+| Pre-submission review ≥1 | PENDING | MET (T-Col.4 outreach) |
+| DR-0..DR-4 axioms | 4/5 | 5/5 (G3 reviewer close) |
+| Ablation P_min, P_equ, P_max | 2/3 | 2/3 (P_max cycle 2) |
+| Paper draft complete | PARTIAL | MET (S19+S20 done) |
+
+### Outcome (fill at S22)
+
+- **Branch chosen** : TBD
+- **Date** : TBD
+- **Framework version tagged** : TBD
+- **Paper 1 journal target** : TBD
+- **arXiv preprint reference** : TBD (see arxiv-submit-log.md)
+- **Justification** (3-5 sentences) : TBD
