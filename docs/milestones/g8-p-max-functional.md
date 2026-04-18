@@ -25,7 +25,7 @@ target_channels_out metadata only — no handlers registered, no
 | canal-1 weight_delta output | via swap protocol (existing) | ✅ inherited |
 | canal-2 latent_sample output | via recombine_handler_full_mlx | ✅ wired |
 | canal-3 hierarchy_chg output | via restructure_handler | ✅ wired |
-| canal-4 attention_prior output | `attention_prior` (budget 1.5, S4-guarded) | ✅ wired |
+| canal-4 attention_prior output | `attention_prior` (budget 1.5 — somme cumulative des composantes du prior d'attention, cap dur sur S4 imposé par `check_attention_bounded` dans `kiki_oniric/dream/guards/attention.py`) | ✅ wired |
 | target_ops metadata | preserved from cycle-1 S16.1 | ✅ kept |
 | target_channels_out metadata | preserved from cycle-1 S16.1 | ✅ kept |
 

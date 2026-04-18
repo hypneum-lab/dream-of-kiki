@@ -118,5 +118,6 @@ les travaux futurs du cycle 2.
   de références configuré
 - Renvoyer aux numéros de ligne §3-§9 une fois l'article complet
   mis en page dans le gabarit de la revue cible
-- Resserrer à ≤1500 mots pour la discipline Nature HB du corps
-  principal
+- Resserrer à ≤1500 mots pour la discipline Nature Human
+  Behaviour du corps principal de l'introduction (cible d'envoi
+  primaire ; voir aussi seuils par section dans `outline.md`)

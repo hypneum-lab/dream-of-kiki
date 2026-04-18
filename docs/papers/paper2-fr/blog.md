@@ -43,9 +43,11 @@ de matériel. Quand on lit qu'une méthode réduit l'oubli
 catastrophique de 15 %, on sait rarement si ce chiffre tient en
 dehors du setup exact du papier.
 
-dreamOfkiki prend le problème par l'autre bout. Le framework C
-est pensé indépendant du substrat — c'est littéralement inscrit
-dans l'axiome DR-3, *indépendance du substrat*. Mais une
+dreamOfkiki prend le problème par l'autre bout. Le **framework C**
+(le framework formel défini dans l'Article 1 ;
+`docs/specs/2026-04-17-dreamofkiki-framework-C-design.md`) est
+pensé indépendant du substrat — c'est littéralement inscrit dans
+l'axiome DR-3, *indépendance du substrat*. Mais une
 revendication d'indépendance du substrat n'a de valeur que si
 elle est vérifiée sur au moins deux substrats qualitativement
 différents. Un seul substrat, c'est une hypothèse. Deux

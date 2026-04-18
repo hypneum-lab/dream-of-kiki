@@ -28,8 +28,7 @@ correspondait aux sorties attendues, et a avorté avec
 dégradait — établissant opérationnellement le contrat de contrôle
 du basculement.
 
-**Table 7.1 — Pilote P_min (G2, substitution synthétique, pilote
-G2)**
+**Table 7.1 — Pilote P_min (G2, substitution synthétique)**
 
 run_id : `syn_g2_pmin_pipeline_v1`
 dump : `docs/milestones/g2-pmin-report.md`

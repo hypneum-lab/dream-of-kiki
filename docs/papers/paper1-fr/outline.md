@@ -90,7 +90,7 @@ Sous-sections :
 - 5.1 Graphe de compilation déterministe
 - 5.2 Ordonnanceur monothread avec registre de handlers
   (garantie de journalisation DR-0)
-- 5.3 Basculement atomique avec gardes d'invariants (S1 + S2 + S3)
+- 5.3 Basculement atomique avec gardes d'invariants (S1 + S2 + S3 + I3)
 - 5.4 Inclusion en chaîne des profils DR-4
 - 5.5 Pointeur vers le Paper 2 pour une instanciation empirique
 
@@ -158,7 +158,7 @@ Sous-sections :
 - 8.1 Contribution théorique : premier framework formel exécutable
   pour la consolidation mnésique basée sur le rêve. Chaque assertion
   cite les identifiants d'axiomes pertinents (DR-0..DR-4) et
-  d'invariants (I1, I2, S1, S2, S3, K1) depuis
+  d'invariants (I1, I2, I3, S1, S2, S3, K1) depuis
   `docs/invariants/registry.md` et les sections de spécification
   dans `docs/specs/2026-04-17-dreamofkiki-framework-C-design.md`.
 - 8.2 Contribution empirique : preuves de validation du pipeline

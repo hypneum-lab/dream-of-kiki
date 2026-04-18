@@ -91,12 +91,13 @@ utilise le jeu de données **Studyforrest** (Branche A verrouillée
 La reproductibilité est appliquée par deux contrats :
 
 - **R1 (run_id déterministe)** : chaque exécution est clé par un
-  préfixe SHA-256 de 16 caractères de `(c_version, profile, seed,
-  commit_sha)`. Réexécuter avec la même clé produit un `run_id`
-  identique (vérifié par `harness.storage.run_registry`). La
-  largeur a été portée de 16 → 32 caractères hex dans le commit
-  `df731b0` après qu'une revue de code a signalé un risque de
-  collision 64 bits à grande échelle.
+  préfixe SHA-256 de **32 caractères hex** de `(c_version,
+  profile, seed, commit_sha)` (largeur post-`df731b0`, élargie
+  depuis 16 caractères suite à un signalement de collision
+  64-bits à grande échelle). Réexécuter avec la même clé produit
+  un `run_id` identique, vérifié par
+  `harness.storage.run_registry` (cf. cross-link
+  `harness/storage/run_registry.py`).
 - **R3 (adressabilité d'artefact)** : tous les bancs de test sont
   livrés avec un fichier d'intégrité `.sha256` apparié. Le
   chargeur `RetainedBenchmark` rejette tout fichier items dont le
