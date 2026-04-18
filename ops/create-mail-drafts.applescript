@@ -1,6 +1,16 @@
 -- Create 4 Apple Mail drafts for dreamOfkiki T-Col outreach
 -- Run: osascript ops/create-mail-drafts.applescript
 -- Drafts appear in Mail.app > Drafts folder, ready for review + send
+--
+-- Required env vars (falls back to placeholders if unset):
+--   DREAMOFKIKI_HUTH_EMAIL
+--   DREAMOFKIKI_NORMAN_EMAIL
+--   DREAMOFKIKI_GALLANT_EMAIL
+-- Example usage from shell:
+--   DREAMOFKIKI_HUTH_EMAIL=alex@cs.utexas.edu \
+--   DREAMOFKIKI_NORMAN_EMAIL=knorman@princeton.edu \
+--   DREAMOFKIKI_GALLANT_EMAIL=gallant@berkeley.edu \
+--   osascript ops/create-mail-drafts.applescript
 
 on makeDraftMessage(emailSubject, emailRecipient, emailBody)
 	tell application "Mail"
@@ -16,7 +26,7 @@ end makeDraftMessage
 -- Email 1: Huth Lab (UT Austin) — fMRI collaboration
 -- ========================================================
 set subject1 to "dreamOfkiki - fMRI RSA collaboration invitation"
-set recipient1 to "alex@cs.utexas.edu"
+set recipient1 to do shell script "echo ${DREAMOFKIKI_HUTH_EMAIL:-PLACEHOLDER_HUTH@example.com}"
 set body1 to "Dear Dr. Huth,
 
 I am Clement Saillant, an independent embedded/ML researcher at L'Electron Rare (France). I am reaching out regarding potential collaboration on fMRI representational similarity analysis (RSA) work.
@@ -42,7 +52,7 @@ makeDraftMessage(subject1, recipient1, body1)
 -- Email 2: Norman Lab (Princeton) — fMRI episodic memory
 -- ========================================================
 set subject2 to "dreamOfkiki - fMRI consolidation collaboration"
-set recipient2 to "knorman@princeton.edu"
+set recipient2 to do shell script "echo ${DREAMOFKIKI_NORMAN_EMAIL:-PLACEHOLDER_NORMAN@example.com}"
 set body2 to "Dear Dr. Norman,
 
 I am Clement Saillant, an independent embedded/ML researcher at L'Electron Rare (France). I am reaching out regarding potential collaboration on episodic memory consolidation work bridging cognitive neuroscience and AI systems.
@@ -68,7 +78,7 @@ makeDraftMessage(subject2, recipient2, body2)
 -- Email 3: Gallant Lab (UC Berkeley) — natural stimuli fMRI
 -- ========================================================
 set subject3 to "dreamOfkiki - naturalistic fMRI RSA inquiry"
-set recipient3 to "gallant@berkeley.edu"
+set recipient3 to do shell script "echo ${DREAMOFKIKI_GALLANT_EMAIL:-PLACEHOLDER_GALLANT@example.com}"
 set body3 to "Dear Dr. Gallant,
 
 I am Clement Saillant, an independent embedded/ML researcher at L'Electron Rare (France). I am reaching out regarding potential collaboration on naturalistic fMRI alignment with artificial linguistic models.
@@ -124,5 +134,10 @@ makeDraftMessage(subject4, recipient4, body4)
 tell application "Mail"
 	activate
 end tell
+
+-- Warn if any placeholder remained
+if recipient1 contains "PLACEHOLDER" or recipient2 contains "PLACEHOLDER" or recipient3 contains "PLACEHOLDER" then
+	display notification "Set DREAMOFKIKI_{HUTH,NORMAN,GALLANT}_EMAIL env vars then re-run" with title "dreamOfkiki Mail drafts"
+end if
 
 return "4 drafts created in Mail.app > Drafts. Review and send manually."
