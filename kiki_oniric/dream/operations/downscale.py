@@ -74,6 +74,9 @@ def downscale_handler_mlx(
             return {k: _shrink(v, factor) for k, v in node.items()}
         if isinstance(node, (list, tuple)):
             shrunk = [_shrink(v, factor) for v in node]
+            # Handle namedtuples (have _fields attr) vs regular tuples
+            if hasattr(node, '_fields'):
+                return type(node)(*shrunk)
             return type(node)(shrunk)
         if isinstance(node, mx.array):
             return node * factor

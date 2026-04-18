@@ -76,7 +76,7 @@ class PMinProfile:
             return evaluate_retained(model_predictor, benchmark)
 
         return swap_atomic(
-            w_awake=w_awake,
+            _w_awake=w_awake,
             w_scratch=w_scratch,
             retained_eval=retained_eval,
             retained_pre_acc=retained_pre_acc,

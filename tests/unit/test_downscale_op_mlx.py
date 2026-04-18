@@ -6,6 +6,9 @@ import pytest
 mx = pytest.importorskip("mlx.core")
 nn = pytest.importorskip("mlx.nn")
 
+# Deterministic seed for MLX random init across all tests
+mx.random.seed(42)
+
 from kiki_oniric.dream.episode import (
     BudgetCap,
     DreamEpisode,
@@ -20,7 +23,7 @@ from kiki_oniric.dream.operations.downscale import (
 
 
 class TinyMLP(nn.Module):
-    """Minimal 2-layer MLP for downscale tests."""
+    """Minimal 2-layer MLP for downscale tests (seeded via mx.random.seed)."""
 
     def __init__(self) -> None:
         super().__init__()

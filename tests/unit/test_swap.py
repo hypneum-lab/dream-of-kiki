@@ -17,7 +17,7 @@ def test_swap_succeeds_with_clean_scratch() -> None:
     w_awake = np.array([0.1, 0.2, 0.3])
     w_scratch = np.array([0.11, 0.21, 0.31])
     result = swap_atomic(
-        w_awake=w_awake,
+        _w_awake=w_awake,
         w_scratch=w_scratch,
         retained_eval=lambda w: 0.95,
         retained_pre_acc=0.95,
@@ -33,7 +33,7 @@ def test_swap_aborts_on_nan() -> None:
     w_scratch = np.array([math.nan, 0.2])
     with pytest.raises(SwapAborted, match="S2"):
         swap_atomic(
-            w_awake=w_awake,
+            _w_awake=w_awake,
             w_scratch=w_scratch,
             retained_eval=lambda w: 0.95,
             retained_pre_acc=0.95,
@@ -46,7 +46,7 @@ def test_swap_aborts_on_retained_regression() -> None:
     w_scratch = np.array([0.5, 0.6])
     with pytest.raises(SwapAborted, match="S1"):
         swap_atomic(
-            w_awake=w_awake,
+            _w_awake=w_awake,
             w_scratch=w_scratch,
             retained_eval=lambda w: 0.50,  # huge regression
             retained_pre_acc=0.95,
@@ -59,7 +59,7 @@ def test_swap_passes_marginal_regression_within_threshold() -> None:
     w_awake = np.array([0.1])
     w_scratch = np.array([0.1])
     result = swap_atomic(
-        w_awake=w_awake,
+        _w_awake=w_awake,
         w_scratch=w_scratch,
         retained_eval=lambda w: 0.94,  # 1pp below pre, within 2%
         retained_pre_acc=0.95,

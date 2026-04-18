@@ -35,7 +35,7 @@ class SwapResult:
 
 
 def swap_atomic(
-    w_awake: NDArray,
+    _w_awake: NDArray,  # Reserved for S3 hierarchy guard (S9+)
     w_scratch: NDArray,
     retained_eval: Callable[[NDArray], float],
     retained_pre_acc: float,

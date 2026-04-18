@@ -74,6 +74,14 @@ def replay_handler_mlx(
         if not records:
             state.last_loss = None
             return
+
+        # Validate record schema before MLX conversion
+        for idx, r in enumerate(records):
+            if "x" not in r or "y" not in r:
+                raise ValueError(
+                    f"record {idx} missing 'x' or 'y' key: {r!r}"
+                )
+
         xs = mx.array([r["x"] for r in records])
         ys = mx.array([r["y"] for r in records])
         loss, grads = grad_fn(model, xs, ys)
