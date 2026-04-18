@@ -51,7 +51,7 @@
 \providecommand{\tightlist}{%
   \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
 \usepackage[]{natbib}
-\bibliographystyle{unsrtnat}
+\bibliographystyle{plainnat}
 \usepackage{bookmark}
 \IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
 \urlstyle{same}
@@ -158,7 +158,7 @@ consolidation framework must address :
   during sleep \citep{tononi2014sleep}.
 \item
   \textbf{C --- Hobson/Solms creative dreaming} : recombination and
-  abstraction during REM \citep{hobson2009rem, solms2021hidden}.
+  abstraction during REM \citep{hobson2009rem, solms2021revising}.
 \item
   \textbf{D --- Friston FEP} : minimization of free energy as a unifying
   account of inference and consolidation \citep{friston2010free}.
@@ -262,8 +262,8 @@ dreaming}\label{pillar-c-hobson-solms-creative-dreaming}
 
 REM dreaming is associated with creative recombination, counterfactual
 scenario generation, and integration of emotionally significant material
-\citep{hobson2009rem, solms2021hidden}. The mechanism is hypothesized to
-be a generative-model-style sampling from a latent representation of
+\citep{hobson2009rem, solms2021revising}. The mechanism is hypothesized
+to be a generative-model-style sampling from a latent representation of
 recent experiences, producing novel combinations that probe the
 boundaries of learned structure. In our framework, this maps to the
 \texttt{recombine} operation : sample latents from the δ snapshot, apply
@@ -956,8 +956,9 @@ non-idempotent property \\
 as \texttt{restructure} operation with topology guard S3 \\
 \citet{hobson2009rem} (REM) & Creative dreaming theory & Operationalized
 as \texttt{recombine} operation with VAE-light skeleton \\
-\citet{mcclelland1995why} (CLS) & Two-system hippocampus + neocortex &
-Embedded in profile inclusion DR-4 (P\_min minimal vs P\_equ richer) \\
+\citet{mcclelland1995complementary} (CLS) & Two-system hippocampus +
+neocortex & Embedded in profile inclusion DR-4 (P\_min minimal vs P\_equ
+richer) \\
 \end{longtable}
 }
 
@@ -1133,6 +1134,6 @@ overflow).
   Bibtex render with proper \texttt{\textbackslash{}cite\{\}} calls
 \end{itemize}
 
-\bibliography{../references}
+\bibliography{references.bib}
 
 \end{document}

@@ -88,7 +88,7 @@ dream-inspired AI consolidation framework must address :
 - **B — Tononi SHY** : synaptic homeostasis renormalizing weights
   during sleep [@tononi2014sleep].
 - **C — Hobson/Solms creative dreaming** : recombination and
-  abstraction during REM [@hobson2009rem; @solms2021hidden].
+  abstraction during REM [@hobson2009rem; @solms2021revising].
 - **D — Friston FEP** : minimization of free energy as a unifying
   account of inference and consolidation [@friston2010free].
 
@@ -183,7 +183,7 @@ canonical ordering choices.
 
 REM dreaming is associated with creative recombination,
 counterfactual scenario generation, and integration of
-emotionally significant material [@hobson2009rem; @solms2021hidden].
+emotionally significant material [@hobson2009rem; @solms2021revising].
 The mechanism is hypothesized to be a generative-model-style
 sampling from a latent representation of recent experiences,
 producing novel combinations that probe the boundaries of
@@ -729,7 +729,7 @@ cycle 1. Real H2 evaluation requires P_max real wiring (cycle 2).
 | @tononi2014sleep (SHY) | Theoretical claim of synaptic homeostasis | Operationalized as `downscale` operation with non-idempotent property |
 | @friston2010free (FEP) | Free energy principle | Operationalized as `restructure` operation with topology guard S3 |
 | @hobson2009rem (REM) | Creative dreaming theory | Operationalized as `recombine` operation with VAE-light skeleton |
-| @mcclelland1995why (CLS) | Two-system hippocampus + neocortex | Embedded in profile inclusion DR-4 (P_min minimal vs P_equ richer) |
+| @mcclelland1995complementary (CLS) | Two-system hippocampus + neocortex | Embedded in profile inclusion DR-4 (P_min minimal vs P_equ richer) |
 
 Our distinguishing features : **(a)** unified formal framework
 covering all four pillars, **(b)** executable Conformance
