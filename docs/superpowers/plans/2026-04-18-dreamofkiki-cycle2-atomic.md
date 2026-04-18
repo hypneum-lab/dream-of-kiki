@@ -89,6 +89,7 @@ dreamOfkiki/
 │   │       ├── methodology.md         ← C2.15
 │   │       ├── results.md             ← C2.15
 │   │       ├── discussion.md          ← C2.16
+│   │       ├── future-work.md         ← C2.16
 │   │       └── full-draft.md          ← C2.16
 │   ├── milestones/
 │   │   ├── g7-esnn-conformance.md     ← C2.4 (E-SNN passes Conformance)
@@ -97,7 +98,7 @@ dreamOfkiki/
 │   │   └── conformance-matrix.md      ← C2.10 (multi-substrate report)
 │   └── proofs/
 │       └── dr3-substrate-evidence.md  ← C2.10 (formal evidence multi-substrate)
-└── papers/paper2/build/               ← C2.16 (LaTeX render)
+└── docs/papers/paper2/build/          ← C2.16 (LaTeX render)
 ```
 
 ---
@@ -340,7 +341,7 @@ dreamOfkiki/
 **2. Placeholder scan** : aucun TBD non-intentionnel. Pattern abrégé délibéré (cycle-1 a éprouvé le format sur 6 plans).
 
 **3. Type consistency** :
-- `substrates/__init__.py` exports `MlxKikiOnericSubstrate`, `EsnnThalamocorticalSubstrate`
+- `substrates/__init__.py` exports MLX identity constants + `mlx_substrate_components()` (C2.1 reorg) alongside `EsnnSubstrate` class + `esnn_substrate_components()` (C2.2 skeleton)
 - `Conformance` test suite generic, parametrized by substrate
 - `AblationRunner` extended with `substrate` parameter (backward-compat: default = MLX)
 - P_max metadata fields (target_ops, target_channels_out from cycle-1) used as wiring contract

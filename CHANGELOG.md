@@ -70,9 +70,9 @@ End of setup phase (S1-S4). Program enters implementation phase (S5+).
 
 ## [C-v0.5.0+STABLE cycle-1 closeout] — 2026-04-18
 
-End of cycle 1 (S5-S28). Programme essentiellement complet ;
+End of cycle 1 (S5-S28). Programme essentially complete;
 arXiv submission + Nature HB submission + DR-2 reviewer feedback
-+ OSF lock = actions externes utilisateur en attente.
++ OSF lock = external user actions pending.
 
 ### Added — implementation phase (S5-S12)
 
@@ -123,12 +123,12 @@ arXiv submission + Nature HB submission + DR-2 reviewer feedback
 - Pivot B contingency decision tree (S18.3)
 - Reviewer feedback collection skeleton (S25.1)
 - Paper 2 cycle-2 outline (S27.1)
-- G6 cycle-2 amorçage decision report (S28.1)
+- G6 cycle-2 bootstrap decision report (S28.1)
 
 ### Changed — code-review iterations
 
-- 5 CodeRabbit review cycles : 6 + 10 + 7 + 2 + 78 findings
-  cumulés, ~95 fixes applied
+- 5 CodeRabbit review cycles: 6 + 10 + 7 + 2 + 78 cumulative
+  findings, ~95 fixes applied
 - run_id width bumped 16 → 32 hex chars (collision safety)
 - DR-3 Conformance Criterion strengthened with executable
   conditions
@@ -156,7 +156,7 @@ arXiv submission + Nature HB submission + DR-2 reviewer feedback
 - **G4** P_equ GO-CONDITIONAL/PASS (3/4 hypotheses significant
   on synthetic ablation)
 
-### Pending — actions externes utilisateur
+### Pending — external user actions
 
 - **G3** DR-2 external reviewer feedback (T-Col Q_CR.1 b)
 - **G5 → GO-FULL** Paper 1 arXiv preprint render + submission
@@ -165,4 +165,4 @@ arXiv submission + Nature HB submission + DR-2 reviewer feedback
 - fMRI lab partnership formalization (T-Col extension)
 - Real mega-v2 ablation run (closeout for GO-CONDITIONAL flip
   to GO-FULL)
-- Cycle 2 amorçage decision (G6, post-cycle-1 retrospective)
+- Cycle 2 bootstrap decision (G6, post-cycle-1 retrospective)
