@@ -31,6 +31,12 @@ def load_eval_matrix(path: Path) -> EvalMatrix:
     with path.open("r", encoding="utf-8") as fh:
         raw = yaml.safe_load(fh)
 
+    if not isinstance(raw, dict):
+        raise ValueError(
+            f"eval-matrix.yaml must be a YAML mapping, "
+            f"got {type(raw).__name__}"
+        )
+
     required_top_keys = {
         "version",
         "bump_rules",

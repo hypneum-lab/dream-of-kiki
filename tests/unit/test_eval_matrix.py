@@ -55,3 +55,17 @@ def test_m3_b_is_pivot_metric(matrix: EvalMatrix) -> None:
 def test_m2_b_data_source_is_studyforrest(matrix: EvalMatrix) -> None:
     # G1 Branch A locked at S2.1
     assert matrix.metrics["M2.b"]["data_source"] == "studyforrest"
+
+
+def test_loader_rejects_empty_yaml(tmp_path: Path) -> None:
+    empty_yaml = tmp_path / "empty.yaml"
+    empty_yaml.write_text("")
+    with pytest.raises(ValueError, match="must be a YAML mapping"):
+        load_eval_matrix(empty_yaml)
+
+
+def test_loader_rejects_non_mapping_yaml(tmp_path: Path) -> None:
+    list_yaml = tmp_path / "list.yaml"
+    list_yaml.write_text("- item1\n- item2\n")
+    with pytest.raises(ValueError, match="must be a YAML mapping"):
+        load_eval_matrix(list_yaml)
