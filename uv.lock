@@ -240,6 +240,7 @@ dependencies = [
     { name = "pytest" },
     { name = "pytest-cov" },
     { name = "pyyaml" },
+    { name = "scipy" },
 ]
 
 [package.optional-dependencies]
@@ -277,6 +278,7 @@ requires-dist = [
     { name = "pyyaml", specifier = ">=6.0" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.5" },
     { name = "scikit-learn", marker = "extra == 'fmri'", specifier = ">=1.5" },
+    { name = "scipy", specifier = ">=1.13" },
 ]
 provides-extras = ["dev", "fmri", "teacher"]
 
