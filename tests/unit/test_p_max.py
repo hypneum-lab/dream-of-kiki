@@ -10,10 +10,17 @@ def test_p_max_can_be_instantiated() -> None:
     assert profile is not None
 
 
-def test_p_max_status_is_skeleton() -> None:
+def test_p_max_status_is_wired() -> None:
     profile = PMaxProfile()
-    assert profile.status == "skeleton"
-    assert "recombine_full" in profile.unimplemented_ops
+    assert profile.status == "wired"
+
+
+def test_p_max_target_ops_complete() -> None:
+    profile = PMaxProfile()
+    assert Operation.REPLAY in profile.target_ops
+    assert Operation.DOWNSCALE in profile.target_ops
+    assert Operation.RESTRUCTURE in profile.target_ops
+    assert Operation.RECOMBINE in profile.target_ops
 
 
 def test_p_max_declares_target_ops_and_channels() -> None:
