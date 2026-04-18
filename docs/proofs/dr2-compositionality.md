@@ -60,6 +60,13 @@ op_2 ∘ op_1 : State × Budget → State × Output
 
 with `b_1 ≤ b` a sub-budget allocation (enforces K1 invariant).
 
+**Note on budget terminology**: `budget(op)` denotes the *static cost*
+of op (resource view, used in the additivity claim above).
+The `b` parameter in the formal composition is the *runtime budget
+allocated/consumed* (consumption view). The two are related but
+distinct: `budget(op)` is what op declares it needs;
+`b` is what the runtime hands it.
+
 **Conclusion 1** : closure holds. `op_2 ∘ op_1 ∈ Op`. ∎
 
 ---
@@ -132,13 +139,14 @@ Both reduce to `op_3(op_2(op_1(s)))`. ∎
 Given closure (1), budget additivity (2), functional composition
 (3), and associativity (4) : **the set of operations `Op` under
 composition `∘` with additive budget forms a non-commutative
-monoid**.
+semigroup**.
 
-Specifically : a free semigroup extended with an identity
-operation `id_Op` (the trivial DE with empty operation_set would
-correspond to identity, but framework §4 requires operation_set
-non-empty — so we have a semigroup, not a strict monoid with
-identity).
+Specifically: a free semigroup on 4 generators
+`{replay, downscale, restructure, recombine}`. Framework §4 requires
+operation_set non-empty, so there is no identity operation — the
+structure is a semigroup, not a monoid. (A monoid would require an
+explicit `id_Op` element with op ∘ id = id ∘ op = op, which would
+correspond to a no-op DE — explicitly forbidden by §4.)
 
 **DR-2 as stated** requires only the three conjuncts (closure +
 budget-additivity + functional-composition) and is thus proven.
@@ -186,8 +194,10 @@ signal/noise ratio.
   restructure using updated weights.
 
 Canonical order places replay before restructure (§4.3) because
-replay on yet-restructured topology risks losing episodic
-specificity.
+replay on a not-yet-restructured topology preserves episodic
+specificity (replay on a topology already mutated by restructure
+risks losing the original specificity that replay was meant to
+consolidate).
 
 ---
 
