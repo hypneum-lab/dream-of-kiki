@@ -1,0 +1,889 @@
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+\documentclass[
+]{article}
+\usepackage{xcolor}
+\usepackage{amsmath,amssymb}
+\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math} % this also loads fontspec
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+\usepackage{lmodern}
+\ifPDFTeX\else
+  % xetex/luatex font selection
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{longtable,booktabs,array}
+\newcounter{none} % for unnumbered tables
+\usepackage{calc} % for calculating minipage widths
+% Correct order of tables after \paragraph or \subparagraph
+\usepackage{etoolbox}
+\makeatletter
+\patchcmd\longtable{\par}{\if@noskipsec\mbox{}\fi\par}{}{}
+\makeatother
+% Allow footnotes in longtable head/foot
+\IfFileExists{footnotehyper.sty}{\usepackage{footnotehyper}}{\usepackage{footnote}}
+\makesavenoteenv{longtable}
+% definitions for citeproc citations
+\NewDocumentCommand\citeproctext{}{}
+\NewDocumentCommand\citeproc{mm}{%
+  \begingroup\def\citeproctext{#2}\cite{#1}\endgroup}
+\makeatletter
+ % allow citations to break across lines
+ \let\@cite@ofmt\@firstofone
+ % avoid brackets around text for \cite:
+ \def\@biblabel#1{}
+ \def\@cite#1#2{{#1\if@tempswa , #2\fi}}
+\makeatother
+\newlength{\cslhangindent}
+\setlength{\cslhangindent}{1.5em}
+\newlength{\csllabelwidth}
+\setlength{\csllabelwidth}{3em}
+\newenvironment{CSLReferences}[2] % #1 hanging-indent, #2 entry-spacing
+ {\begin{list}{}{%
+  \setlength{\itemindent}{0pt}
+  \setlength{\leftmargin}{0pt}
+  \setlength{\parsep}{0pt}
+  % turn on hanging indent if param 1 is 1
+  \ifodd #1
+   \setlength{\leftmargin}{\cslhangindent}
+   \setlength{\itemindent}{-1\cslhangindent}
+  \fi
+  % set entry spacing
+  \setlength{\itemsep}{#2\baselineskip}}}
+ {\end{list}}
+\usepackage{calc}
+\newcommand{\CSLBlock}[1]{\hfill\break\parbox[t]{\linewidth}{\strut\ignorespaces#1\strut}}
+\newcommand{\CSLLeftMargin}[1]{\parbox[t]{\csllabelwidth}{\strut#1\strut}}
+\newcommand{\CSLRightInline}[1]{\parbox[t]{\linewidth - \csllabelwidth}{\strut#1\strut}}
+\newcommand{\CSLIndent}[1]{\hspace{\cslhangindent}#1}
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\usepackage{bookmark}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\urlstyle{same}
+\hypersetup{
+  pdftitle={dreamOfkiki Paper 2: Cross-substrate conformance of a dream-based knowledge consolidation framework (synthetic-substitute replication)},
+  pdfauthor={dreamOfkiki project contributors},
+  hidelinks,
+  pdfcreator={LaTeX via pandoc}}
+
+\title{dreamOfkiki Paper 2: Cross-substrate conformance of a dream-based
+knowledge consolidation framework (synthetic-substitute replication)}
+\author{dreamOfkiki project contributors}
+\date{2026}
+
+\begin{document}
+\maketitle
+
+\section{Paper 2 --- Full Draft
+Assembly}\label{paper-2-full-draft-assembly}
+
+⚠️ \textbf{Status} : draft assembly. Section \texttt{.md} files remain
+the sources of truth ; this file inlines their content as the assembled
+source for pandoc rendering of \texttt{build/full-draft.tex}.
+
+⚠️ \textbf{Synthetic substitute --- methodology / replication paper.}
+Every empirical table, figure, and verdict reported below is produced by
+a shared Python mock predictor wired across two substrate registrations
+(MLX + E-SNN numpy LIF skeleton). No Loihi-2 hardware and no fMRI cohort
+participate in any result. Paper 2 documents the cross-substrate
+replication pipeline, not a fresh empirical claim.
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsection{1. Abstract}\label{abstract}
+
+Paper 1 introduced Framework C-v0.6.0+PARTIAL (axioms DR-0..DR-4, 8
+typed primitives, 4 canonical operations, 3 profiles) and its executable
+Conformance Criterion (DR-3). Paper 2 asks the engineering question
+Paper 1 could not : \emph{does a single compliant substrate constitute
+evidence for substrate-agnosticism ?}
+
+We answer by replicating the cycle-1 pre-registered H1-H4 pipeline
+across two registered substrates --- MLX kiki-oniric on Apple Silicon
+and a numpy LIF spike-rate E-SNN thalamocortical skeleton --- and by
+exhibiting a two-substrate DR-3 Conformance matrix (3 conditions × 2
+substrates, all PASS ; a third \texttt{hypothetical\_cycle3} row stays
+N/A). Under Bonferroni α = 0.0125, both substrates agree on 4 / 4
+hypotheses (H1 reject, H2 reject, H3 fail to reject, H4 reject) ---
+\emph{synthetic substitute ; the agreement is trivial by
+shared-predictor construction and validates the pipeline, not the
+framework's empirical efficacy on real data}. All code,
+pre-registration, and run\_ids are MIT / CC-BY-4.0.
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsection{2. Introduction}\label{introduction}
+
+\subsubsection{2.1 From a single substrate to a Conformance
+claim}\label{from-a-single-substrate-to-a-conformance-claim}
+
+Paper 1 {[}dreamOfkiki, cycle 1{]} introduced Framework C --- an
+executable formal framework for dream-based knowledge consolidation,
+with axioms DR-0..DR-4, a free semigroup of 4 canonical dream operations
+(replay, downscale, restructure, recombine), 8 typed primitives (α, β,
+γ, δ inputs + 4 output channels), and three profiles (P\_min, P\_equ,
+P\_max) chained by DR-4 inclusion. The strongest theoretical move in
+Paper 1 was \textbf{DR-3} : a Conformance Criterion that specifies the
+three conditions (signature typing, axiom property tests, BLOCKING
+invariants enforceable) any candidate substrate must satisfy to inherit
+the framework's guarantees.
+
+DR-3 is the load-bearing bridge between the theory and the engineering.
+Paper 1 proved it exists as a formal device, and exercised it on a
+single substrate : MLX \texttt{kiki\_oniric} on Apple Silicon. One
+substrate, however, is an existence proof --- not substrate-agnosticism.
+A \emph{second} substrate is where the claim transitions from
+theoretical to defensible.
+
+\subsubsection{2.2 The cycle-2 goal : cross-substrate
+replication}\label{the-cycle-2-goal-cross-substrate-replication}
+
+Cycle 2 pursues exactly this second substrate and the replication
+infrastructure around it. The engineering contribution of Paper 2 is
+fourfold :
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  \textbf{A second substrate registration.} We wire
+  \texttt{esnn\_thalamocortical}, a numpy LIF spike-rate skeleton of a
+  thalamocortical E-SNN, exposing the same 4 op factories and consuming
+  the same 8 primitives as MLX \texttt{kiki\_oniric}. The skeleton is
+  explicitly \emph{not} Loihi-2 hardware ; it is a structural second
+  implementation of the framework's Protocols, which is what DR-3
+  requires.
+\item
+  \textbf{A DR-3 Conformance matrix.} We exhibit the substrate ×
+  condition matrix (3 conditions × 2 real substrates + 1 placeholder
+  row) and back every cell with a concrete test artifact
+  (\texttt{tests/conformance/axioms/} +
+  \texttt{tests/conformance/invariants/}). The matrix lives at
+  \texttt{docs/milestones/conformance-matrix.md}.
+\item
+  \textbf{A cross-substrate H1-H4 replication.} The cycle-1 pre-
+  registered statistical chain (Welch / TOST / Jonckheere / one-sample t
+  under Bonferroni α = 0.0125) is re-run \emph{per substrate} by
+  \texttt{scripts/ablation\_cycle2.py}. Results at
+  \texttt{docs/milestones/cross-substrate-results.md}.
+\item
+  \textbf{An engineering architecture fit for replication.} Paper 2
+  documents the async dream worker (C2.17), the 3-profile pipeline, the
+  swap protocol with S1 / S2 / S3 / S4 guards, the run registry with
+  32-hex R1 determinism contract, and the DualVer tag
+  \texttt{C-v0.6.0+PARTIAL}.
+\end{enumerate}
+
+\subsubsection{2.3 Scope honesty : synthetic substitute
+throughout}\label{scope-honesty-synthetic-substitute-throughout}
+
+Paper 2 is a \textbf{methodology / replication paper}, not a fresh
+empirical claim paper. The two substrate rows in the cross- substrate
+matrix share the same Python mock predictor. A real substrate-specific
+predictor is a cycle-3 deliverable. Consequently : all H1-H4 p-values in
+§7 are flagged \emph{(synthetic substitute)} ; the cross-substrate
+agreement verdict is trivially YES by construction ; no biological,
+neuromorphic, or hardware-performance claim is made. The architectural
+half of DR-3 Conformance is what Paper 2 earns.
+
+\subsubsection{2.4 Differentiation from Paper 1 and
+roadmap}\label{differentiation-from-paper-1-and-roadmap}
+
+Paper 1 was theoretical : axioms + proofs + formal definition of
+Conformance. Paper 2 is engineering : operational substrates + reusable
+test suite + replication runner + synthetic- substitute evidence. §3
+background situates Paper 2 relative to Paper 1. §4 reports the
+Conformance Criterion evidence. §5 lays out the engineering
+architecture. §6 details the methodology. §7 reports the cross-substrate
+results. §8 discusses limitations. §9 outlines cycle-3.
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsection{3. Background}\label{background}
+
+\subsubsection{3.1 Paper 1 in one
+paragraph}\label{paper-1-in-one-paragraph}
+
+Paper 1 introduced Framework C : 8 typed primitives (α, β, γ, δ inputs +
+4 output channels), 4 canonical dream operations (replay, downscale,
+restructure, recombine) forming a free semigroup under DR-2
+compositionality, a 5-tuple Dream Episode ontology, and axioms DR-0
+(accountability), DR-1 (episodic conservation), DR-2 (compositionality),
+DR-3 (substrate- agnosticism via the Conformance Criterion), DR-4
+(profile chain inclusion).
+
+\subsubsection{3.2 Four pillars, briefly}\label{four-pillars-briefly}
+
+Paper 2 inherits Paper 1 §3's four-pillar mapping : Walker / Stickgold
+replay (Walker and Stickgold 2004; Stickgold 2005) as \texttt{replay} ;
+Tononi SHY (Tononi and Cirelli 2014) as \texttt{downscale} (commutative,
+non-idempotent) ; Hobson / Solms creative dreaming (Hobson 2009; Solms
+2021) as \texttt{recombine} ; Friston FEP (Friston 2010) as
+\texttt{restructure} under the S3 topology guard. Paper 2 does not
+re-argue these mappings.
+
+\subsubsection{3.3 DR-3 Conformance Criterion,
+briefly}\label{dr-3-conformance-criterion-briefly}
+
+DR-3 specifies three conditions (C1 signature typing via typed
+Protocols, C2 axiom property tests pass, C3 BLOCKING invariants
+enforceable) that a candidate substrate must satisfy. The criterion is
+executable : it ships as a reusable pytest battery in
+\texttt{tests/conformance/} parameterized on the substrate's state type.
+
+\subsubsection{3.4 Prior multi-substrate replication work in continual
+learning}\label{prior-multi-substrate-replication-work-in-continual-learning}
+
+Cross-substrate replication of continual-learning mechanisms is
+under-represented in prior art. (Ven et al. 2020) demonstrate
+brain-inspired replay but on a single architecture. ({Kirkpatrick et
+al.} 2017) introduce EWC but do not pursue substrate-agnosticism.
+(Rebuffi et al. 2017) and (Shin et al. 2017) are architecture-specific.
+No prior work, to our knowledge, ships a reusable conformance test suite
+binding a formal framework to operational substrates across
+qualitatively distinct hardware models (dense-tensor MLX vs spiking
+LIF). This is Paper 2's distinguishing engineering contribution.
+
+\subsubsection{3.5 Synthetic-substitute framing,
+briefly}\label{synthetic-substitute-framing-briefly}
+
+Paper 2 is a \textbf{methodology / replication paper}, not a fresh
+empirical claim paper. Readers who elide the synthetic- substitute tag
+misread the paper's scope.
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsection{4. Conformance Criterion in
+Practice}\label{conformance-criterion-in-practice}
+
+\subsubsection{4.1 The three DR-3 conditions,
+recapped}\label{the-three-dr-3-conditions-recapped}
+
+Framework C §6.2 defines the \textbf{Conformance Criterion} as three
+independently checkable conditions : \textbf{C1} signature typing (typed
+Protocols), \textbf{C2} axiom property tests pass, \textbf{C3} BLOCKING
+invariants enforceable (S1..S4 guards). DR-3 is existential : it does
+not claim every substrate is conformant ; it claims every
+\emph{conformant} substrate inherits the framework's guarantees. Paper 1
+exhibited one ; Paper 2 exhibits two + one placeholder.
+
+\subsubsection{\texorpdfstring{4.2 Substrate 1 ---
+\texttt{mlx\_kiki\_oniric} (cycle 1
+reference)}{4.2 Substrate 1 --- mlx\_kiki\_oniric (cycle 1 reference)}}\label{substrate-1-mlx_kiki_oniric-cycle-1-reference}
+
+{\def\LTcaptype{none} % do not increment counter
+\begin{longtable}[]{@{}lll@{}}
+\toprule\noalign{}
+Condition & Verdict & Evidence \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+C1 & PASS & \texttt{tests/conformance/axioms/test\_dr3\_substrate.py} \\
+C2 & PASS & \texttt{tests/conformance/axioms/} \\
+C3 & PASS & \texttt{tests/conformance/invariants/} \\
+\end{longtable}
+}
+
+The MLX row carries no synthetic-substitute flag at the
+\emph{conformance} level : the three conditions concern the framework
+surface, not the data fed through it.
+
+\subsubsection{\texorpdfstring{4.3 Substrate 2 ---
+\texttt{esnn\_thalamocortical} (cycle 2, synthetic
+substitute)}{4.3 Substrate 2 --- esnn\_thalamocortical (cycle 2, synthetic substitute)}}\label{substrate-2-esnn_thalamocortical-cycle-2-synthetic-substitute}
+
+\textbf{(synthetic substitute --- no Loihi-2 HW.)}
+
+{\def\LTcaptype{none} % do not increment counter
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3667}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3000}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Condition
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Verdict
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Evidence
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+C1 & PASS & 4 op factories callable + core registry shared with MLX
+\emph{(synthetic substitute)} \\
+C2 & PASS \emph{(synthetic substitute --- no Loihi-2 HW)} & DR-3 E-SNN
+suite passes on numpy LIF skeleton \\
+C3 & PASS \emph{(synthetic substitute --- spike-rate numpy LIF)} & S2 +
+S3 guards enforceable on LIFState \\
+\end{longtable}
+}
+
+Evidence file :
+\texttt{tests/conformance/axioms/test\_dr3\_esnn\_substrate.py}. The
+E-SNN row is the key new artifact of cycle 2. Passing C1..C3 on a
+structurally independent implementation (spike-rate dynamics rather than
+gradient updates) is the architectural evidence that typing + axiom +
+guard surfaces do not secretly depend on MLX internals.
+
+\subsubsection{\texorpdfstring{4.4 A third row :
+\texttt{hypothetical\_cycle3}
+(placeholder)}{4.4 A third row : hypothetical\_cycle3 (placeholder)}}\label{a-third-row-hypothetical_cycle3-placeholder}
+
+{\def\LTcaptype{none} % do not increment counter
+\begin{longtable}[]{@{}lll@{}}
+\toprule\noalign{}
+Condition & Verdict & Evidence \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+C1 & N/A & not yet implemented \\
+C2 & N/A & not yet implemented \\
+C3 & N/A & not yet implemented \\
+\end{longtable}
+}
+
+The row is explicitly marked \texttt{N/A} and must not be read as
+passing or failing. Candidate cycle-3 substrates : transformer-based,
+SpiNNaker (Furber et al. 2014) / Norse, or real Loihi-2 ({Davies et al.}
+2018).
+
+\subsubsection{4.5 The matrix as a reusable
+artifact}\label{the-matrix-as-a-reusable-artifact}
+
+Running \texttt{uv\ run\ python\ scripts/conformance\_matrix.py}
+re-derives the matrix from the test suite and writes Markdown + JSON
+dumps. The test suite is substrate-parameterized --- the operational
+promise of DR-3.
+
+\subsubsection{4.6 What Conformance does and does not
+certify}\label{what-conformance-does-and-does-not-certify}
+
+\textbf{Certifies} : substrate's typed surface is framework- compatible
+; state satisfies axiom property tests ; state can be refused by
+BLOCKING guards. \textbf{Does NOT certify} : empirical performance on
+real data ; hardware energy or latency ; biological fidelity of E-SNN
+LIF parameters.
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsection{5. Engineering Architecture}\label{engineering-architecture}
+
+\subsubsection{5.1 Two substrates, same
+Protocols}\label{two-substrates-same-protocols}
+
+\texttt{mlx\_kiki\_oniric} (Apple Silicon, dense tensors,
+\texttt{kiki\_oniric/substrates/mlx\_kiki\_oniric.py} (Apple Machine
+Learning Research 2023)) and \texttt{esnn\_thalamocortical} (numpy LIF
+skeleton, \texttt{kiki\_oniric/substrates/esnn\_thalamocortical.py},
+\emph{synthetic substitute}) expose the same 4 op factories and consume
+the same 8 primitives.
+
+\subsubsection{5.2 Three profiles : P\_min, P\_equ,
+P\_max}\label{three-profiles-p_min-p_equ-p_max}
+
+\begin{itemize}
+\tightlist
+\item
+  \textbf{P\_min} --- replay only, canal-1.
+  \texttt{kiki\_oniric/profiles/\ p\_min.py}. Cycle 1 wired.
+\item
+  \textbf{P\_equ} --- \texttt{\{replay,\ downscale,\ restructure\}} on
+  canals 1 + 2 + 3. Cycle 1 wired.
+\item
+  \textbf{P\_max} --- 4 ops on 4 channels, fully wired cycle 2 (G8).
+\end{itemize}
+
+DR-4 profile chain inclusion is enforced structurally and verified by
+\texttt{tests/conformance/axioms/test\_dr4\_*}.
+
+\subsubsection{5.3 Four canonical operations on a free
+semigroup}\label{four-canonical-operations-on-a-free-semigroup}
+
+\texttt{replay} (Walker / Stickgold), \texttt{downscale} (Tononi SHY,
+commutative non-idempotent), \texttt{restructure} (Friston FEP under S3
+topology guard), \texttt{recombine} (Hobson / Solms, VAE-light → full
+VAE in cycle 2). Of the 16 op-pairs, 12 are non- commutative ---
+ordering is load-bearing.
+
+\subsubsection{5.4 Eight primitives : 4 inputs + 4 output
+channels}\label{eight-primitives-4-inputs-4-output-channels}
+
+Inputs α (raw traces, P\_max only), β (episodic buffer), γ (semantic
+snapshot), δ (latent snapshot). Outputs canal-1 UPDATED\_WEIGHTS,
+canal-2 RECOMBINED\_LATENTS, canal-3 RESTRUCTURED\_TOPOLOGY, canal-4
+ATTENTION\_PRIOR (P\_max ; S4 guard ≤ 1.5). Each output gated by the
+swap protocol : S1 retained non-regression, S2 finite, S3 topology, S4
+attention\_budget.
+
+\subsubsection{5.5 The async dream worker
+(C2.17)}\label{the-async-dream-worker-c2.17}
+
+Cycle 2 C2.17 (\texttt{018fd05}) lands the real \texttt{asyncio}-based
+worker, superseding the cycle-1 Future-API skeleton. Concurrency enables
+parallel per-cell dispatch at the orchestration layer and prepares for
+cycle-3 divergent- predictor replication.
+
+\subsubsection{5.6 Run registry + R1
+determinism}\label{run-registry-r1-determinism}
+
+R1 : every run is keyed by a 32-hex SHA-256 prefix of
+\texttt{(c\_version,\ profile,\ seed,\ commit\_sha)}. Cycle-2 run\_ids :
+\texttt{cycle2\_batch\_id} = \texttt{3a94254190224ca82c70586e1f00d845},
+\texttt{ablation\_runner\_run\_id} =
+\texttt{45eccc12953e758440fca182244ddba2}, \texttt{harness\_version} =
+\texttt{C-v0.6.0+PARTIAL}.
+
+\subsubsection{\texorpdfstring{5.7 DualVer lineage :
+\texttt{C-v0.6.0+PARTIAL}}{5.7 DualVer lineage : C-v0.6.0+PARTIAL}}\label{dualver-lineage-c-v0.6.0partial}
+
+Formal MINOR bump (E-SNN Conformance extension). Empirical axis
+\texttt{+PARTIAL} --- the cross-substrate rows share a predictor,
+\texttt{+STABLE} requires cycle-3 divergent-predictor evidence.
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsection{6. Methodology}\label{methodology}
+
+\subsubsection{6.1 Pre-registered hypotheses (OSF,
+inherited)}\label{pre-registered-hypotheses-osf-inherited}
+
+H1 forgetting (Welch one-sided), H2 equivalence (TOST ε=0.05), H3
+monotonicity (Jonckheere-Terpstra), H4 energy budget (one-sample t vs
+2.0). OSF-locked in cycle 1 (DOI pending (Center for Open Science
+2013)).
+
+\subsubsection{6.2 Statistical pipeline + Bonferroni
+α}\label{statistical-pipeline-bonferroni-ux3b1}
+
+All tests at \texttt{α\_per\_hypothesis\ =\ 0.05\ /\ 4\ =\ 0.0125}.
+Implementation in \texttt{kiki\_oniric.eval.statistics} ({Virtanen et
+al.} 2020) (unchanged cycle 2). All return
+\texttt{StatTestResult(test\_name,\ p\_value,\ reject\_h0,\ statistic)}.
+
+\subsubsection{6.3 Ablation matrix : 2 × 3 × 3 = 18
+cells}\label{ablation-matrix-2-3-3-18-cells}
+
+Generated by \texttt{scripts/ablation\_cycle2.py}, dumped at
+\texttt{docs/milestones/cross-substrate-results.\{md,json\}}. Seeds
+\texttt{{[}42,\ 123,\ 7{]}}.
+
+\subsubsection{6.4 Synthetic-substitute predictor (the critical
+caveat)}\label{synthetic-substitute-predictor-the-critical-caveat}
+
+\textbf{(synthetic substitute --- not empirical claim.)} The two
+substrate rows share the same Python mock predictor. Consequences :
+p-values trivially identical in the shared- predictor limit ; agreement
+verdict trivially YES ; the \emph{architectural} claim (pipeline
+executes on two registrations without duplication) is validated ; the
+\emph{empirical} claim is not made. Divergent-predictor replication is
+cycle-3.
+
+\subsubsection{6.5 Reproducibility : R1 contract + benchmark
+integrity}\label{reproducibility-r1-contract-benchmark-integrity}
+
+R1 run\_ids listed in §5.6. R3 (benchmark integrity) via SHA-256
+reference file ; cycle-2 uses synthetic fallback
+\texttt{synthetic:c8a0712000b641...} pending real mega-v2. DualVer tag
+\texttt{C-v0.6.0+PARTIAL} attached to every artifact.
+
+\subsubsection{6.6 What changed vs Paper 1
+methodology}\label{what-changed-vs-paper-1-methodology}
+
+Same hypotheses, same stats module, same seeds, same Bonferroni, same
+predictor class. \textbf{New} : substrate dimension (2 rows),
+cross-substrate agreement verdict, conformance matrix artifact.
+One-dimension-at-a-time discipline.
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsection{7. Results}\label{results}
+
+\begin{quote}
+⚠️ \textbf{Caveat (synthetic substitute --- not empirical claim).} Every
+quantitative claim is produced by a shared Python mock predictor across
+two substrate registrations. The agreement across substrates is
+trivially YES by construction ; the values validate the cross-substrate
+replication pipeline, not empirical efficacy on real data.
+\end{quote}
+
+\subsubsection{7.1 Provenance (synthetic substitute --- not empirical
+claim)}\label{provenance-synthetic-substitute-not-empirical-claim}
+
+{\def\LTcaptype{none} % do not increment counter
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+field
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+value
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+harness\_version & \texttt{C-v0.6.0+PARTIAL} \\
+cycle2\_batch\_id & \texttt{3a94254190224ca82c70586e1f00d845} \\
+ablation\_runner\_run\_id & \texttt{45eccc12953e758440fca182244ddba2} \\
+benchmark & mega-v2 stratified, 500 synthetic items \\
+benchmark\_hash & \texttt{synthetic:c8a0712000b641...} \\
+seeds & \texttt{{[}42,\ 123,\ 7{]}} \\
+substrates & \texttt{mlx\_kiki\_oniric},
+\texttt{esnn\_thalamocortical} \\
+data\_provenance & synthetic --- mock predictors shared across substrate
+labels \\
+\end{longtable}
+}
+
+\subsubsection{7.2 Cross-substrate H1-H4 comparative table (synthetic
+substitute)}\label{cross-substrate-h1-h4-comparative-table-synthetic-substitute}
+
+\textbf{Table 7.2 --- MLX vs E-SNN hypotheses at Bonferroni α = 0.0125
+(synthetic substitute --- not empirical claim).}
+
+{\def\LTcaptype{none} % do not increment counter
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1739}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.0870}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1014}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1884}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1304}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.2174}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1014}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+hypothesis
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+test
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+MLX p
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+MLX verdict
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+E-SNN p
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+E-SNN verdict
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+agree
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+H1 forgetting & Welch one-sided & 0.0000 & reject H0 & 0.0000 & reject
+H0 & YES \\
+H2 self-equivalence & TOST (ε=0.05) & 0.0000 & reject H0 & 0.0000 &
+reject H0 & YES \\
+H3 monotonicity & Jonckheere-Terpstra & 0.0248 & fail to reject & 0.0248
+& fail to reject & YES \\
+H4 energy budget & one-sample t (upper) & 0.0101 & reject H0 & 0.0101 &
+reject H0 & YES \\
+\end{longtable}
+}
+
+MLX 3 / 4 significant, E-SNN 3 / 4 significant, full consistency
+\emph{(synthetic substitute --- trivially YES by shared- predictor
+construction)}. H3 fails at α = 0.0125 on both substrates due to the
+mock predictor's constant dispersion --- a property of the mock, not of
+the framework.
+
+\subsubsection{7.3 Agreement matrix (synthetic
+substitute)}\label{agreement-matrix-synthetic-substitute}
+
+\textbf{Table 7.3 --- Verdict agreement across substrates (synthetic
+substitute).}
+
+{\def\LTcaptype{none} % do not increment counter
+\begin{longtable}[]{@{}llll@{}}
+\toprule\noalign{}
+hypothesis & verdicts equal ? & MLX reject & E-SNN reject \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+H1 forgetting & YES & true & true \\
+H2 self-equivalence & YES & true & true \\
+H3 monotonicity & YES & false & false \\
+H4 energy budget & YES & true & true \\
+\end{longtable}
+}
+
+4 / 4 agreement. Expected outcome when the predictor is shared.
+
+\subsubsection{7.4 DR-3 Conformance matrix (cross-ref
+§4)}\label{dr-3-conformance-matrix-cross-ref-4}
+
+\textbf{Table 7.4 --- 3 conditions × 2 real substrates + 1 placeholder.}
+
+{\def\LTcaptype{none} % do not increment counter
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.4783}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.1739}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.1739}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.1739}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+substrate
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+C1
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+C2
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+C3
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+\texttt{mlx\_kiki\_oniric} & PASS & PASS & PASS \\
+\texttt{esnn\_thalamocortical} & PASS \emph{(synthetic substitute)} &
+PASS \emph{(synthetic substitute --- no Loihi-2 HW)} & PASS
+\emph{(synthetic substitute --- spike-rate numpy LIF)} \\
+\texttt{hypothetical\_cycle3} & N/A & N/A & N/A \\
+\end{longtable}
+}
+
+Source : \texttt{docs/milestones/conformance-matrix.md} (commit
+\texttt{fd54df7}).
+
+\subsubsection{7.5 What §7 establishes and does
+not}\label{what-7-establishes-and-does-not}
+
+Establishes : cross-substrate pipeline executes end-to-end ;
+per-substrate stats emit identical verdicts on identical inputs ; DR-3
+matrix PASSes on two rows ; R1 holds. Does NOT establish : biological /
+neuromorphic performance ; empirical consolidation efficacy ;
+divergent-predictor replication ; hardware energy or latency.
+
+\subsubsection{7.6 Gate summary (synthetic
+substitute)}\label{gate-summary-synthetic-substitute}
+
+H1 PASS \emph{(synthetic)}, H2 PASS \emph{(synthetic, self-equivalence
+smoke)}, H3 FAIL at 0.0125 / PASS at 0.05 \emph{(synthetic, mock-
+dispersion limited)}, H4 PASS \emph{(synthetic)}. Aggregate cycle-2 G9
+verdict : \textbf{CONDITIONAL-GO / PARTIAL} per
+\texttt{docs/milestones/g9-cycle2-publication.md}.
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsection{8. Discussion}\label{discussion}
+
+\subsubsection{8.1 What cross-substrate convergence means in Paper
+2}\label{what-cross-substrate-convergence-means-in-paper-2}
+
+Both substrates pass DR-3 (C1 + C2 + C3) and emit the same 4 / 4
+hypothesis verdicts. The right reading : the framework's Conformance
+Criterion is operational on two structurally independent implementations
+of its 8 primitives. The wrong reading : the framework is empirically
+substrate-agnostic. The synthetic-substitute predictor is the
+distinction.
+
+\subsubsection{8.2 What synthetic-substitute implies for
+claims}\label{what-synthetic-substitute-implies-for-claims}
+
+We \textbf{do not claim} equivalent behaviour on real data, nor
+neuromorphic hardware advantage. We \textbf{do claim} the architectural
+half of DR-3 : two independent substrate registrations pass the same
+test battery without code duplication.
+
+\subsubsection{8.3 Limitations (honest
+enumeration)}\label{limitations-honest-enumeration}
+
+\textbf{(i)} Shared predictor across substrates --- the dominant
+limitation. \textbf{(ii)} Only two real substrates + one placeholder ---
+DR-3 evidence is inductive. \textbf{(iii)} Synthetic mega-v2 benchmark.
+\textbf{(iv)} Paper 1 publication sequencing risk --- if Paper 1
+acceptance is delayed \textgreater{} 6 months, Pivot B applies (§9.5).
+
+\subsubsection{8.4 The T-Col pivot to real fMRI
+data}\label{the-t-col-pivot-to-real-fmri-data}
+
+T-Col outreach targets Huth Lab / Norman Lab / Gallant Lab for
+task-controlled fMRI data, strengthening H3. Cycle-3 deliverable.
+
+\subsubsection{8.5 Comparison with Paper 1 discussion
+§8.5}\label{comparison-with-paper-1-discussion-8.5}
+
+Paper 1 §8.5's retro-active cross-substrate paragraph is Paper 2's full
+narrative. No contradictions under the synthetic-substitute framing.
+
+\subsubsection{8.6 Engineering trade-offs (MLX vs
+E-SNN)}\label{engineering-trade-offs-mlx-vs-e-snn}
+
+Shared-predictor setup does not admit a head-to-head energy / latency
+benchmark. Under a divergent predictor (cycle 3), MLX optimises for
+sequential dense-tensor updates, E-SNN on Loihi-2 ({Davies et al.} 2018)
+would optimise for event-driven sparse computation. Paper 2 makes the
+comparison \emph{possible} ; Paper 3 (if it emerges) makes the
+comparison.
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsection{9. Future Work --- Cycle 3}\label{future-work-cycle-3}
+
+\subsubsection{9.1 Finish Phase 3 --- divergent-predictor
+replication}\label{finish-phase-3-divergent-predictor-replication}
+
+Replace shared mock with substrate-specific inference : MLX forward pass
++ LIFState spike-rate read-out. Unlocks informative cross-substrate
+verdicts. Enables \texttt{C-v0.7.0+STABLE}.
+
+\subsubsection{9.2 Real Loihi-2 hardware
+mapping}\label{real-loihi-2-hardware-mapping}
+
+If Intel NRC partnership materialises ({Davies et al.} 2018), port numpy
+LIF skeleton to Loihi-2. Fallbacks : SpiNNaker via Norse (Furber et al.
+2014), Lava SDK simulation, or status-quo numpy skeleton.
+
+\subsubsection{9.3 Real fMRI cohort (T-Col
+pivot)}\label{real-fmri-cohort-t-col-pivot}
+
+Lab partnership producing task-controlled fMRI data. May slip to cycle 4
+if IRB / scanning timelines extend.
+
+\subsubsection{9.4 Paper 3 emergence}\label{paper-3-emergence}
+
+Paper 3 becomes plausible only if 9.1 + (9.2 or 9.3) land with strong
+data. Until then, provisional placeholder at
+\texttt{docs/papers/paper3/outline.md}.
+
+\subsubsection{9.5 Phase 4 sequencing with Paper 1
+acceptance}\label{phase-4-sequencing-with-paper-1-acceptance}
+
+\textbf{Preprint-first} : arXiv-submit Paper 2 concurrently with Paper 1
+preprint. \textbf{Pivot B} : if Paper 1 delayed \textgreater{} 6 months,
+re-self-contain Paper 2 §3 + §4 and submit NeurIPS / TMLR standalone.
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsection{10. References}\label{references}
+
+See \texttt{references.bib}. Bibliography rendered via pandoc
+\texttt{-\/-citeproc} or \texttt{-\/-biblatex} at render time.
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsection{Notes on the assembly}\label{notes-on-the-assembly}
+
+\begin{itemize}
+\tightlist
+\item
+  All section source files remain individually editable in
+  \texttt{docs/papers/paper2/\{abstract,introduction,background,\ conformance-section,architecture,methodology,results,\ discussion,future-work\}.md}.
+  This full-draft inlines their content at C2.16 assembly ; future
+  revisions should update both the section file and this assembly.
+\item
+  Every table caption in §7 carries a \texttt{(synthetic\ substitute)}
+  flag. Do not strip on length passes.
+\item
+  FR mirror : \texttt{docs/papers/paper2-fr/full-draft.md}.
+\end{itemize}
+
+\protect\phantomsection\label{refs}
+\begin{CSLReferences}{1}{1}
+\bibitem[\citeproctext]{ref-mlx2023}
+Apple Machine Learning Research. 2023. \emph{{MLX}: An Array Framework
+for Apple Silicon}.
+\href{https://github.com/ml-explore/mlx}{Https://github.com/ml-explore/mlx}.
+
+\bibitem[\citeproctext]{ref-osf}
+Center for Open Science. 2013. \emph{Open Science Framework}.
+\href{https://osf.io}{Https://osf.io}.
+
+\bibitem[\citeproctext]{ref-davies2018loihi}
+{Davies, Mike, Narayan Srinivasa, Tsung-Han Lin, et al.} 2018.
+{``{Loihi}: A Neuromorphic Manycore Processor with on-Chip Learning.''}
+\emph{IEEE Micro} 38: 82--99.
+
+\bibitem[\citeproctext]{ref-friston2010free}
+Friston, Karl. 2010. {``The Free-Energy Principle: A Unified Brain
+Theory?''} \emph{Nature Reviews Neuroscience} 11 (2): 127--38.
+
+\bibitem[\citeproctext]{ref-furber2014spinnaker}
+Furber, Steve B., Francesco Galluppi, Steve Temple, and Luis A. Plana.
+2014. {``The {SpiNNaker} Project.''} \emph{Proceedings of the IEEE} 102
+(5): 652--65.
+
+\bibitem[\citeproctext]{ref-hobson2009rem}
+Hobson, J. Allan. 2009. {``{REM} Sleep and Dreaming: Towards a Theory of
+Protoconsciousness.''} \emph{Nature Reviews Neuroscience} 10 (11):
+803--13.
+
+\bibitem[\citeproctext]{ref-kirkpatrick2017overcoming}
+{Kirkpatrick, James, Razvan Pascanu, Neil Rabinowitz, et al.} 2017.
+{``Overcoming Catastrophic Forgetting in Neural Networks.''}
+\emph{Proceedings of the National Academy of Sciences} 114 (13):
+3521--26.
+
+\bibitem[\citeproctext]{ref-rebuffi2017icarl}
+Rebuffi, Sylvestre-Alvise, Alexander Kolesnikov, Georg Sperl, and
+Christoph H. Lampert. 2017. {``{iCaRL}: Incremental Classifier and
+Representation Learning.''} \emph{Proceedings of the IEEE Conference on
+Computer Vision and Pattern Recognition (CVPR)}, 2001--10.
+
+\bibitem[\citeproctext]{ref-shin2017continual}
+Shin, Hanul, Jung Kwon Lee, Jaehong Kim, and Jiwon Kim. 2017.
+{``Continual Learning with Deep Generative Replay.''} \emph{Advances in
+Neural Information Processing Systems ({NeurIPS})} 30.
+
+\bibitem[\citeproctext]{ref-solms2021revising}
+Solms, Mark. 2021. \emph{The Hidden Spring: A Journey to the Source of
+Consciousness}. W. W. Norton \& Company.
+
+\bibitem[\citeproctext]{ref-stickgold2005sleep}
+Stickgold, Robert. 2005. {``Sleep-Dependent Memory Consolidation.''}
+\emph{Nature} 437 (7063): 1272--78.
+
+\bibitem[\citeproctext]{ref-tononi2014sleep}
+Tononi, Giulio, and Chiara Cirelli. 2014. {``Sleep and the Price of
+Plasticity: From Synaptic and Cellular Homeostasis to Memory
+Consolidation and Integration.''} \emph{Neuron} 81 (1): 12--34.
+
+\bibitem[\citeproctext]{ref-vandeven2020brain}
+Ven, Gido M. van de, Tinne Tuytelaars, and Andreas S. Tolias. 2020.
+{``Brain-Inspired Replay for Continual Learning with Artificial Neural
+Networks.''} \emph{Nature Communications} 11 (1): 1--14.
+
+\bibitem[\citeproctext]{ref-virtanen2020scipy}
+{Virtanen, Pauli et al.} 2020. {``{SciPy} 1.0: Fundamental Algorithms
+for Scientific Computing in {Python}.''} \emph{Nature Methods} 17 (3):
+261--72.
+
+\bibitem[\citeproctext]{ref-walker2004sleep}
+Walker, Matthew P., and Robert Stickgold. 2004. {``Sleep-Dependent
+Learning and Memory Consolidation.''} \emph{Neuron} 44 (1): 121--33.
+
+\end{CSLReferences}
+
+\end{document}
