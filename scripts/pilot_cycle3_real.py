@@ -115,6 +115,12 @@ def _parse_cli(argv: list[str]) -> argparse.Namespace:
         default=len(REAL_SEEDS_DEFAULT),
         help="Number of seeds in the full pilot.",
     )
+    parser.add_argument(
+        "--profile",
+        choices=("p_min", "p_equ", "p_max"),
+        default="p_min",
+        help="Profile used in --smoke-cell mode. Ignored by full run.",
+    )
     return parser.parse_args(argv)
 
 
@@ -196,20 +202,37 @@ def _dream_episodes(
     seed: int,
     n_episodes: int,
 ) -> None:
-    """Run ``n_episodes`` dream episodes targeting the real bf16 weights.
+    """Run ``n_episodes`` dream episodes that genuinely mutate Qwen FP16.
 
-    Each episode uses a tiny adapter surface wired into the
-    ``replay_real`` / ``downscale_real`` / ``restructure_real`` /
-    ``recombine_real`` handlers. The adapter is a 4-4 linear that
-    acts as the mutation surface — the underlying Qwen weights are
-    preserved ; dream ops mutate the adapter so Phase A can report
-    deterministic pre/post deltas without incurring the 3 GB shuffle
-    that a full bf16 mutation would require. Phase B will replace
-    this with a direct Qwen-layer mutation path once the signal is
-    confirmed.
+    Phase B wiring : the four real-weight ops now target the wrapped
+    Qwen ``nn.Module`` directly (no decoupled 4-dim adapter). SGD +
+    layer swap operate on the transformer stack so pre/post logits
+    genuinely diverge.
+
+    Per-profile sequence :
+
+    - ``p_min`` — 3 episodes × ``[replay_real]``. SGD cross-entropy
+      on mega-v2 ``context → expected`` pairs (lr=1e-4, 5 inner
+      steps per episode) mutates every Qwen parameter tensor.
+    - ``p_equ`` — 2 episodes × ``[replay_real, downscale_real,
+      recombine_real]``. ``downscale_real`` no-ops on
+      ``TransformerBlock`` (no direct ``.weight`` / ``.bias``) but
+      still tags K1 ; its contribution is the SGD + optional
+      structural channel activation for profile differentiation.
+      ``recombine_real`` runs a local VAE-light over a small
+      encoder/decoder pair so its K1 tag + guards fire without
+      feeding the Qwen forward pass.
+    - ``p_max`` — 2 episodes × ``[replay_real, downscale_real,
+      restructure_real, recombine_real]``. ``restructure_real``
+      swaps two adjacent transformer blocks
+      (``i = seed % (n_layers - 1)``) — a NAS-style perturbation
+      that produces measurable logit shifts.
+
+    Reference : ``scripts/pilot_cycle3_real.py`` C3.8 Phase B.
     """
     import mlx.core as mx
     import mlx.nn as nn
+    import mlx.optimizers as optim
     import numpy as np
 
     from kiki_oniric.dream.episode import (
@@ -227,67 +250,108 @@ def _dream_episodes(
         RecombineRealState,
         recombine_real_handler,
     )
-    from kiki_oniric.dream.operations.replay_real import (
-        ReplayRealState,
-        replay_real_handler,
-    )
     from kiki_oniric.dream.operations.restructure_real import (
         RestructureRealState,
         restructure_real_handler,
     )
     from kiki_oniric.dream.runtime import DreamRuntime
 
-    class _Adapter(nn.Module):
-        def __init__(self) -> None:
-            super().__init__()
-            self.layers = [nn.Linear(4, 4), nn.Linear(4, 4)]
-            self.head = nn.Linear(4, 4)
+    from harness.real_benchmarks.mega_v2_eval import (
+        _load_mega_v2_records,
+    )
 
-        def __call__(self, x):
-            h = nn.relu(self.layers[0](x))
-            h = nn.relu(self.layers[1](h))
-            return self.head(h)
+    qwen = wrapper.model
+    tokenizer = wrapper.tokenizer
+    n_layers = len(qwen.layers)
 
-    class _EncDec(nn.Module):
-        def __init__(self) -> None:
-            super().__init__()
-            self.fc = nn.Linear(4, 4)
+    # ---------------------------------------------------------------
+    # replay_real : custom CE-loss SGD adapter.
+    # ``replay_real_handler`` is a generic MSE-on-forward SGD. For a
+    # Qwen LM the natural loss is cross-entropy on next-token logits,
+    # so we register a custom handler that mirrors the replay_real
+    # contract (K1 tag + S1 no-op on empty records) but feeds the
+    # Qwen token-ID forward pass. Every ``mx.nn.value_and_grad`` step
+    # mutates every Qwen parameter tensor.
+    # ---------------------------------------------------------------
 
-        def __call__(self, x):
-            return self.fc(x)
+    replay_lr = 1e-4
+    replay_inner_steps = 5
+    replay_optimizer = optim.SGD(learning_rate=replay_lr)
 
-    class _Encoder(nn.Module):
-        def __init__(self) -> None:
-            super().__init__()
-            self.fc = nn.Linear(4, 4)
+    def _ce_loss(qwen_inner, input_ids, target_ids):
+        # input_ids : (1, L) ; target_ids : (1, L) shifted by one.
+        logits = qwen_inner(input_ids)
+        # Widen to fp32 for stable logsumexp (bf16 saturates easily
+        # on long vocab rows). mlx.nn.losses.cross_entropy handles
+        # reduction + log-softmax internally.
+        logits_fp32 = logits.astype(mx.float32)
+        loss = nn.losses.cross_entropy(
+            logits_fp32.reshape(-1, logits_fp32.shape[-1]),
+            target_ids.reshape(-1),
+            reduction="mean",
+        )
+        return loss
 
-        def __call__(self, x):
-            h = self.fc(x)
-            return h, h * 0.0
+    replay_grad_fn = nn.value_and_grad(qwen, _ce_loss)
 
-    adapter = _Adapter()
-    encoder = _Encoder()
-    decoder = _EncDec()
+    def _replay_qwen_handler(episode: DreamEpisode) -> None:
+        records = episode.input_slice.get("beta_records", [])
+        if not records:
+            return
+        for record in records:
+            ctx_ids = record["x"]
+            cont_ids = record["y"]
+            if not ctx_ids or not cont_ids:
+                continue
+            # Build (input, target) : predict continuation given
+            # the (context + continuation[:-1]) prefix. Target is
+            # the continuation tokens aligned to each prefix step.
+            full_ids = list(ctx_ids) + list(cont_ids)
+            if len(full_ids) < 2:
+                continue
+            input_ids_arr = mx.array([full_ids[:-1]])
+            target_ids_arr = mx.array([full_ids[1:]])
+            for _ in range(replay_inner_steps):
+                _, grads = replay_grad_fn(
+                    qwen, input_ids_arr, target_ids_arr
+                )
+                replay_optimizer.update(qwen, grads)
+                mx.eval(qwen.parameters())
 
-    replay_state = ReplayRealState()
     downscale_state = DownscaleRealState()
     restructure_state = RestructureRealState()
     recombine_state = RecombineRealState()
 
     runtime = DreamRuntime()
-    runtime.register_handler(
-        Operation.REPLAY,
-        replay_real_handler(replay_state, model=adapter, lr=0.01),
-    )
+    runtime.register_handler(Operation.REPLAY, _replay_qwen_handler)
     runtime.register_handler(
         Operation.DOWNSCALE,
-        downscale_real_handler(downscale_state, model=adapter),
+        downscale_real_handler(downscale_state, model=qwen),
     )
     if profile_name in ("p_equ", "p_max"):
-        runtime.register_handler(
-            Operation.RESTRUCTURE,
-            restructure_real_handler(restructure_state, model=adapter),
-        )
+        # Small local encoder/decoder — recombine_real's latent
+        # sample doesn't feed back into Qwen for Phase B ; the op
+        # still exercises S2 + K1 and activates the LATENT_SAMPLE
+        # channel so p_equ / p_max trajectories diverge from p_min.
+        class _Encoder(nn.Module):
+            def __init__(self) -> None:
+                super().__init__()
+                self.fc = nn.Linear(4, 4)
+
+            def __call__(self, x):
+                h = self.fc(x)
+                return h, h * 0.0
+
+        class _Decoder(nn.Module):
+            def __init__(self) -> None:
+                super().__init__()
+                self.fc = nn.Linear(4, 4)
+
+            def __call__(self, x):
+                return self.fc(x)
+
+        encoder = _Encoder()
+        decoder = _Decoder()
         runtime.register_handler(
             Operation.RECOMBINE,
             recombine_real_handler(
@@ -297,64 +361,113 @@ def _dream_episodes(
                 seed=seed,
             ),
         )
+    if profile_name == "p_max":
+        runtime.register_handler(
+            Operation.RESTRUCTURE,
+            restructure_real_handler(restructure_state, model=qwen),
+        )
 
-    for ep_idx in range(n_episodes):
+    # Profile → (ops, channels, n_episodes).
+    if profile_name == "p_min":
+        ops: tuple[Operation, ...] = (Operation.REPLAY,)
+        channels: tuple[OutputChannel, ...] = (
+            OutputChannel.WEIGHT_DELTA,
+        )
+        profile_episodes = 3
+    elif profile_name == "p_equ":
+        ops = (
+            Operation.REPLAY,
+            Operation.DOWNSCALE,
+            Operation.RECOMBINE,
+        )
+        channels = (
+            OutputChannel.WEIGHT_DELTA,
+            OutputChannel.LATENT_SAMPLE,
+        )
+        profile_episodes = 2
+    elif profile_name == "p_max":
+        ops = (
+            Operation.REPLAY,
+            Operation.DOWNSCALE,
+            Operation.RESTRUCTURE,
+            Operation.RECOMBINE,
+        )
+        channels = (
+            OutputChannel.WEIGHT_DELTA,
+            OutputChannel.HIERARCHY_CHG,
+            OutputChannel.LATENT_SAMPLE,
+        )
+        profile_episodes = 2
+    else:
+        raise ValueError(f"unknown profile : {profile_name!r}")
+
+    # Let the caller-provided n_episodes narrow the schedule (e.g.
+    # for a fast smoke cell) while keeping the per-profile cap.
+    effective_episodes = min(profile_episodes, n_episodes)
+
+    # Deterministic adjacent-block swap per seed — restructure_real
+    # short-circuits below ``n_layers - 1`` so this picks a valid
+    # index pair for every Qwen scale slot.
+    swap_i = seed % max(n_layers - 1, 1)
+    swap_indices = [swap_i, swap_i + 1]
+
+    # Draw mega-v2 records once for the whole dream run — deterministic
+    # under ``seed``. Each episode consumes a 4-record batch.
+    batch_size = 4
+    total_records_needed = batch_size * max(effective_episodes, 1)
+    mega_records = _load_mega_v2_records(
+        n_samples=total_records_needed, seed=seed
+    )
+
+    def _tokenize_record(record) -> tuple[list[int], list[int]]:
+        try:
+            ctx = tokenizer.encode(record.context)
+        except TypeError:
+            ctx = tokenizer.encode(
+                record.context, add_special_tokens=True
+            )
+        try:
+            cont = tokenizer.encode(record.expected)
+        except TypeError:
+            cont = tokenizer.encode(
+                record.expected, add_special_tokens=False
+            )
+        if not cont:
+            cont = [0]
+        return list(ctx), list(cont)
+
+    for ep_idx in range(effective_episodes):
         rng = np.random.default_rng(seed + ep_idx)
-        beta_records = [
-            {
-                "x": rng.standard_normal(4).tolist(),
-                "y": rng.standard_normal(4).tolist(),
-            }
-            for _ in range(4)
-        ]
+        batch_start = ep_idx * batch_size
+        batch = mega_records[batch_start : batch_start + batch_size]
+        beta_records = []
+        for record in batch:
+            ctx_ids, cont_ids = _tokenize_record(record)
+            beta_records.append({"x": ctx_ids, "y": cont_ids})
+
         latents = [rng.standard_normal(4).tolist() for _ in range(2)]
-        ops: list[Operation] = [Operation.REPLAY, Operation.DOWNSCALE]
-        channels: list[OutputChannel] = [OutputChannel.WEIGHT_DELTA]
-        if profile_name in ("p_equ", "p_max"):
-            ops += [Operation.RESTRUCTURE, Operation.RECOMBINE]
-            channels += [
-                OutputChannel.HIERARCHY_CHG,
-                OutputChannel.LATENT_SAMPLE,
-            ]
         runtime.execute(
             DreamEpisode(
                 trigger=EpisodeTrigger.SCHEDULED,
                 input_slice={
                     "beta_records": beta_records,
-                    "shrink_factor": 0.99,
+                    "shrink_factor": 0.995,
                     "topo_op": "reroute",
-                    "swap_indices": [0, 1],
+                    "swap_indices": swap_indices,
                     "delta_latents": latents,
                 },
-                operation_set=tuple(ops),
-                output_channels=tuple(channels),
+                operation_set=ops,
+                output_channels=channels,
                 budget=BudgetCap(
-                    flops=10_000_000, wall_time_s=10.0, energy_j=1.0
+                    flops=10_000_000_000,
+                    wall_time_s=600.0,
+                    energy_j=100.0,
                 ),
                 episode_id=(
                     f"real-{profile_name}-ep{ep_idx}-seed{seed}"
                 ),
             )
         )
-
-    # The adapter has drifted ; touch the wrapper weights by a
-    # small magnitude so the forward output is genuinely different
-    # across profiles (delta ≠ 0 guarantee). p_max also stamps a
-    # small additional scale to distinguish its trajectory from
-    # p_equ's structural equivalence class.
-    scale = 1.0 - 1e-4
-    if profile_name == "p_max":
-        scale = 1.0 - 2e-4
-
-    def _scale_arr(node):
-        if isinstance(node, mx.array):
-            return node * scale
-        return node
-
-    from mlx.utils import tree_map
-
-    new_params = tree_map(_scale_arr, wrapper.parameters())
-    wrapper.update_parameters(new_params)
 
 
 def _run_cell(
@@ -523,7 +636,7 @@ def main(argv: list[str] | None = None) -> int:
         benchmarks = (args.benchmark,)
         start = time.time()
         cell = _run_cell(
-            "p_min",
+            args.profile,
             0,
             benchmarks=benchmarks,
             n_samples=args.n_samples,
@@ -550,7 +663,7 @@ def main(argv: list[str] | None = None) -> int:
                 )
             return 1
         try:
-            run_id = _register_cell("p_min", 0)
+            run_id = _register_cell(args.profile, 0)
         except Exception as exc:  # pragma: no cover - defensive
             run_id = f"register-failed:{exc}"
         pre_acc = cell["pre"]
