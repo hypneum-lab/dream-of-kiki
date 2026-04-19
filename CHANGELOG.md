@@ -66,8 +66,8 @@ G9 gate = CONDITIONAL-GO/PARTIAL.
 
 ### Stats
 
-- 173 tests passing (target ≥ 173), coverage 91.26 %
-  (gate ≥ 90 %)
+- 173 tests passing (target ≥ 173), coverage 91.26%
+  (gate ≥90%)
 - ~13 commits across cycle 2 (Phase 1 + Phase 2 + Phase 5 +
   3 cycle-9 fix commits + 1 EN-sync + 1 DualVer bump)
 - 0 AI attribution in any commit

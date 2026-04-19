@@ -13,8 +13,8 @@ Public repo : https://github.com/electron-rare/dream-of-kiki
 ## Program progress
 
 Cycle 1 calendar : 28 weeks total (S1-S28) — closed at C-v0.5.0+STABLE
-Cycle 2 calendar : Phases 1-5 (engineering deliverables) green ;
-Phases 3-4 (publication track) deferred ; G9 = CONDITIONAL-GO/PARTIAL
+Cycle 2 calendar : Phases 1, 2 and 5 complete ; Phases 3-4
+(publication track) deferred ; G9 = CONDITIONAL-GO/PARTIAL
 Active gate : **G9 cycle-2 publication-ready (CONDITIONAL-GO/PARTIAL)**
 
 ## Test suite
@@ -44,6 +44,9 @@ Next target : C-v0.7.0+STABLE post-G3 (DR-2 external reviewer feedback returned,
 | G4 — P_equ fonctionnel | S12 | ⏳ Pending |
 | G5 — PUBLICATION-READY | S18 | ⏳ Pending |
 | G6 — Cycle 2 decision | S28 | ⏳ Pending |
+| G7 — E-SNN substrate conformance | cycle-2 Phase 1 | ✅ LOCKED |
+| G8 — P_max profile wired | cycle-2 Phase 2 | ✅ LOCKED |
+| G9 — cycle-2 publication-ready | cycle-2 closeout | ⚠️ CONDITIONAL-GO/PARTIAL |
 
 ## Critical risks watched
 

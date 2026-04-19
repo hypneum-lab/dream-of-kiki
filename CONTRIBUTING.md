@@ -76,9 +76,11 @@ rules :
 - Subject ≤50 chars
 - Scope ≥3 chars (e.g., `paper1`, `fr`, `paper1-fr`, `dream`)
 - Body lines ≤72 chars
-- Body required (2-3 paragraphs for significant commits — i.e.
-  commits qui changent la fonctionnalité, ajoutent des features,
-  modifient une API publique, ou touchent plusieurs modules)
+- Body required (2-3 paragraphs for significant commits — e.g.
+  commits that change functionality, add features, modify a public
+  API, or touch multiple modules ; in French : commits qui changent
+  la fonctionnalité, ajoutent des fonctionnalités, modifient une
+  API publique, ou touchent plusieurs modules)
 - NO AI attribution
 - NO `--no-verify`
 
