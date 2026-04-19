@@ -106,12 +106,21 @@ datalad get 'sub-*/ses-*/func/*task-raiders5thed*'
 # 3. BIDS validation
 bids-validator "${STUDYFORREST_ROOT}/ds000113"
 
-# 4. SHA-256 manifest (R1 anchor)
+# 4. SHA-256 manifest (R1 anchor) — use an explicit metadata dir
+# instead of ${OLDPWD} so the path is robust to the prior ``cd``
+# (the scaffolded download-config.json also lives under this dir).
+export STUDYFORREST_META_DIR="${STUDYFORREST_ROOT}/ds000113/.studyforrest"
+mkdir -p "${STUDYFORREST_META_DIR}"
 cd "${STUDYFORREST_ROOT}/ds000113"
 find . -name '*.nii.gz' -print0 \
     | xargs -0 sha256sum \
-    > "${OLDPWD}/.studyforrest/sha256-manifest.txt"
+    > "${STUDYFORREST_META_DIR}/sha256-manifest.txt"
 ```
+
+The same `${STUDYFORREST_META_DIR}` is reused by
+`scripts/init_studyforrest_download.sh` when it writes
+`download-config.json`, so the manifest and the config live
+together and both survive later `cd` commands.
 
 ## Cycle-3 usage map
 

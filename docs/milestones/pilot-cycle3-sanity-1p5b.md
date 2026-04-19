@@ -35,7 +35,11 @@ launch's resume contract (same
 `(harness_version, profile_tag, seed, commit_sha)` tuple, same
 composite `profile_tag` scheme). Re-running `ablation_cycle3.py
 --resume` after the pilot therefore **skips** the 180 pilot cells
-automatically (R1 identity).
+automatically (R1 identity — see the R1 contract in
+`harness/storage/run_registry.py` : `run_id = SHA-256(c_version |
+profile | seed | commit_sha)[:32]`. Two runs share an R1 identity
+iff they produce the same tuple, which is exactly what the pilot
+→ full-launch resume relies on).
 
 ## GO / NO-GO Rule
 
