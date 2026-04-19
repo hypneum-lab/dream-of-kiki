@@ -3,7 +3,9 @@
 H5 is the cycle-3 multi-scale hypothesis, split into three pre-registered
 variants per the OSF pre-registration lock of 2026-04-19 :
 
-- H5-I  invariance  : Levene's variance test on effect sizes across scales.
+- H5-I  invariance  : one-way ANOVA F-test on per-scale effect-size
+                       means (rejects when at least one scale mean
+                       differs, i.e. between-scale variance > 0).
 - H5-II monotonic   : Spearman ρ on (N_params, effect) correlation,
                        two-sided (no post-hoc direction claim).
 - H5-III power-law  : bootstrap CI on α in d = c * N^α.
@@ -43,7 +45,7 @@ def _make_effects(
 
 
 def test_h5_invariance_returns_hypothesis_result() -> None:
-    """H5-I — Levene returns a typed HypothesisResult with a p-value."""
+    """H5-I — ANOVA returns a typed HypothesisResult with a p-value."""
     effects = _make_effects([0.3, 0.3, 0.3], std=0.05, seed=1)
     result = h5_invariance(effects, alpha=0.00625)
     assert isinstance(result, HypothesisResult)

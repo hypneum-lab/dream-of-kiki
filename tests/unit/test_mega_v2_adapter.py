@@ -140,7 +140,16 @@ def test_beta_stream_emits_deterministic_embeddings(
     de2 = adapter.to_episode(r)
     b1 = de1.input_slice["beta_records"]
     b2 = de2.input_slice["beta_records"]
-    assert b1 == b2
+    # Compare element-wise with numpy-aware helpers so the assertion
+    # stays correct even if the adapter starts emitting ndarray fields
+    # (plain ``==`` on dicts containing ndarrays raises ValueError).
+    assert len(b1) == len(b2)
+    for r1, r2 in zip(b1, b2, strict=True):
+        assert r1.keys() == r2.keys()
+        for key in r1:
+            np.testing.assert_array_equal(
+                np.asarray(r1[key]), np.asarray(r2[key])
+            )
     # At least one β record with x + y fields.
     assert len(b1) == 1
     assert "x" in b1[0]

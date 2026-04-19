@@ -3,8 +3,11 @@
 Per the OSF pre-registration lock of 2026-04-19 the cycle-3 H5
 hypothesis is decomposed into three pre-specified variants :
 
-- H5-I  invariance  : one-way ANOVA on across-scale effect variance.
-                       H0 : σ²(d_scales) = 0 (effect is scale-invariant).
+- H5-I  invariance  : one-way ANOVA on across-scale effect means.
+                       H0 : all per-scale effect means are equal
+                       (effect is scale-invariant — a non-zero
+                       between-scale variance component implies
+                       at least one scale mean differs).
 - H5-II monotonic   : Spearman ρ on (N_params, d) correlation.
                        Two-sided per pre-reg — no post-hoc direction claim.
 - H5-III power-law  : bootstrap 95 % CI on α in the fit d = c * N^α.
@@ -89,6 +92,15 @@ def h5_invariance(
     null and σ²(d_scales) = 0 coincide.
     """
     arrays = _ordered_effects(effects_by_scale)
+    if len(arrays) < 2:
+        raise ValueError(
+            "ANOVA requires at least 2 scale groups, "
+            f"got {len(arrays)}"
+        )
+    if any(arr.size == 0 for arr in arrays):
+        raise ValueError(
+            "All scale groups must contain at least one observation"
+        )
     statistic, p_value = stats.f_oneway(*arrays)
     return HypothesisResult(
         statistic=float(statistic),
@@ -122,6 +134,18 @@ def h5_monotonic(
     for N, arr in zip(scales_params, arrays, strict=True):
         xs.extend([float(N)] * len(arr))
         ys.extend(arr.tolist())
+    if not ys:
+        # All scale groups empty — Spearman is undefined. Return a
+        # NaN-filled HypothesisResult so callers can see the failure
+        # without the underlying SciPy warning/exception leaking out.
+        import math
+
+        return HypothesisResult(
+            statistic=math.nan,
+            p_value=math.nan,
+            reject_null=False,
+            details="Spearman ρ two-sided — empty input",
+        )
     result = stats.spearmanr(xs, ys, alternative="two-sided")
     rho = float(result.statistic)
     p_value = float(result.pvalue)
@@ -147,6 +171,12 @@ def _fit_power_law(
     converge (e.g. degenerate flat effects) — this keeps the
     bootstrap stable for near-zero signal.
     """
+    # Guard against empty / all-NaN means — curve_fit and polyfit
+    # would otherwise raise an opaque IndexError / LinAlgError.
+    if means.size == 0 or not np.any(np.isfinite(means)):
+        raise ValueError(
+            "_fit_power_law requires at least one finite effect mean"
+        )
     try:
         p0 = (float(means[0]), 0.1)
         popt, _ = curve_fit(_power_law_model, scales, means, p0=p0, maxfev=5000)

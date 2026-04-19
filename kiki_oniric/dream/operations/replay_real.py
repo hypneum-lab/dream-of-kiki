@@ -94,8 +94,17 @@ def replay_real_handler(
         optimizer.update(model, grads)
         mx.eval(model.parameters())
 
-        x_dim = len(records[0]["x"])
-        y_dim = len(records[0]["y"])
+        # ``x`` / ``y`` may be scalars (int/float) in degenerate
+        # fixtures — ``len()`` would raise TypeError. Treat scalars
+        # as 1-D (one feature) so the FLOP estimate stays valid.
+        def _dim(v) -> int:
+            try:
+                return len(v)
+            except TypeError:
+                return 1
+
+        x_dim = _dim(records[0]["x"])
+        y_dim = _dim(records[0]["y"])
         flops = _flop_estimate(len(records), x_dim, y_dim)
 
         state.total_records_consumed += len(records)

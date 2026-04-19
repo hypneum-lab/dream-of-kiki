@@ -82,7 +82,14 @@ def recombine_real_handler(
         sample_arr = decoder(z)
         mx.eval(sample_arr)
 
-        state.last_sample = [float(v) for v in sample_arr.tolist()]
+        # Flatten to a 1-D list[float] — decoder may return a
+        # multi-dimensional array (batch / feature axes) and calling
+        # float(v) on a nested list would raise TypeError.
+        import numpy as _np
+
+        state.last_sample = [
+            float(v) for v in _np.asarray(sample_arr).ravel().tolist()
+        ]
         # K1 tag : encoder + decoder fwd passes over a tiny latent.
         state.last_compute_flops = max(
             2 * (mu.size + sample_arr.size), 1

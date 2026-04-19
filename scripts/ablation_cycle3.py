@@ -283,6 +283,12 @@ def _parse_cli(argv: list[str]) -> dict:
         "scale_filter": None,
         "max_runs": None,
     }
+    def _next_value(flag: str) -> str:
+        try:
+            return next(it)
+        except StopIteration:
+            raise SystemExit(f"{flag} requires a value") from None
+
     it = iter(argv)
     for token in it:
         if token == "--resume":
@@ -291,10 +297,23 @@ def _parse_cli(argv: list[str]) -> dict:
             opts["dry_run"] = True
         elif token == "--scale":
             opts["scale_filter"] = tuple(
-                s.strip() for s in next(it).split(",") if s.strip()
+                s.strip()
+                for s in _next_value("--scale").split(",")
+                if s.strip()
             )
         elif token == "--max-runs":
-            opts["max_runs"] = int(next(it))
+            raw = _next_value("--max-runs")
+            try:
+                value = int(raw)
+            except ValueError:
+                raise SystemExit(
+                    f"--max-runs expects an integer, got {raw!r}"
+                ) from None
+            if value <= 0:
+                raise SystemExit(
+                    f"--max-runs must be > 0, got {value}"
+                )
+            opts["max_runs"] = value
     return opts
 
 

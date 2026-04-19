@@ -81,7 +81,17 @@ def downscale_real_handler(
             if b is not None:
                 layer.bias = b * factor
 
-        mx.eval(*[layer.weight for layer in model.layers])
+        # Collect every mutated tensor (weight + bias) across layers,
+        # skipping None entries so we never pass a missing attribute to
+        # ``mx.eval`` — which would raise AttributeError / TypeError.
+        tensors_to_eval = []
+        for layer in model.layers:
+            if getattr(layer, "weight", None) is not None:
+                tensors_to_eval.append(layer.weight)
+            if getattr(layer, "bias", None) is not None:
+                tensors_to_eval.append(layer.bias)
+        if tensors_to_eval:
+            mx.eval(*tensors_to_eval)
 
         # S2 finite guard — check every weight + bias after shrink.
         # Convert via np.asarray (mx.array supports buffer protocol)

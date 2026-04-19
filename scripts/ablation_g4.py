@@ -45,6 +45,18 @@ from kiki_oniric.eval.statistics import (
 )
 
 
+# HARNESS_VERSION bump C-v0.6.0+STABLE → C-v0.7.0+PARTIAL (2026-04-19) :
+# - formal axis (FC) minor bump = H6 adds a derived-constraint surface
+#   across substrates (framework-C §12.2).
+# - empirical axis (EC) STABLE → PARTIAL because the cycle-3 Phase 2
+#   cells (Norse cross-substrate + fMRI alignment) remain deferred
+#   until sem 6, and the 1080-config matrix has not yet landed in the
+#   run registry (§12.3).
+# Compatibility : v0.6.0+STABLE G4 runs already registered keep their
+# run_id; ``ablation_cycle3.py --resume`` re-enumerates under the new
+# tag so Phase 1 cells are *not* overwritten, only new-tag cells are
+# pending. Do not compare v0.6.0 vs v0.7.0 run_id across the tuple
+# boundary — they are intentionally distinct.
 HARNESS_VERSION = "C-v0.7.0+PARTIAL"
 
 

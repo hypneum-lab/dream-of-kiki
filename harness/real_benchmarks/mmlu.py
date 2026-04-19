@@ -145,6 +145,15 @@ class MMLULoader:
                 f"MMLU row has {len(choices)} choices, expected 4: "
                 f"{row!r}"
             )
+        answer = int(row["answer"])
+        # Validate that the answer index lies within the 4-choice
+        # bounds before constructing the record — out-of-range indices
+        # would silently select the wrong option or crash downstream.
+        if not 0 <= answer <= 3:
+            raise ValueError(
+                f"MMLU row has answer index {answer} outside [0,3]: "
+                f"{row!r}"
+            )
         return MMLURecord(
             question=str(row["question"]),
             choices=(
@@ -153,7 +162,7 @@ class MMLULoader:
                 str(choices[2]),
                 str(choices[3]),
             ),
-            answer=int(row["answer"]),
+            answer=answer,
             subject=str(row.get("subject", "unknown")),
         )
 

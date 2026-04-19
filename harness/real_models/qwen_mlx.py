@@ -99,10 +99,10 @@ def _weights_bytes(model: Any) -> bytes:
     """
     if hasattr(model, "weights_bytes"):
         return model.weights_bytes()
-    try:
-        params = model.parameters()
-    except Exception:  # pragma: no cover - defensive
-        return b""
+    # Never return b"" on failure — that yields the sha256 of empty
+    # bytes and would silently mask integrity violations during
+    # enforce_pin checks. Re-raise so callers fail loudly.
+    params = model.parameters()
 
     def _collect(node: Any, acc: list[bytes]) -> None:
         if isinstance(node, dict):
@@ -228,10 +228,17 @@ class QwenMLXWrapper:
         do not touch the process-wide MLX RNG. The returned trace
         carries the logits plus the K1 FLOP estimate.
         """
-        # Local PRNG key for R1 isolation — same discipline as the
-        # recombine handler in kiki_oniric.dream.operations.recombine
-        # (see recombine_handler_mlx's key_seed plumbing).
-        _ = mx.random.key(seed)
+        # Seed the MLX global PRNG so any stochastic kernel inside
+        # ``self._model`` (e.g. dropout, sampling) reads a deterministic
+        # state keyed by ``seed``. mlx-lm's ``__call__`` does not accept
+        # a per-call key argument ; setting the global seed is the only
+        # MLX-level plumbing that actually affects the forward pass
+        # today. The kiki_oniric.dream.operations.recombine handler
+        # keeps a per-episode key because its decoder call *does*
+        # accept one — this wrapper cannot, so we fall back on the
+        # global seed and document the trade-off (single-threaded
+        # cycle-3 assumption, see class docstring).
+        mx.random.seed(seed)
         logits = self._model(tokens)
         mx.eval(logits)
         n_tokens = int(np.asarray(tokens).size)
