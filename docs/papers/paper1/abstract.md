@@ -25,7 +25,7 @@ ontology. The framework admits multiple conformant substrates ;
 exemplar implementations validate the design and are reported
 separately (see Paper 2).
 
-Pre-registered hypotheses (OSF DOI : pending) are evaluated via
+Pre-registered hypotheses (OSF DOI : 10.17605/OSF.IO/Q6JYN) are evaluated via
 Welch's t-test, TOST equivalence, Jonckheere-Terpstra trend, and
 one-sample t-test against compute budget under Bonferroni
 correction.

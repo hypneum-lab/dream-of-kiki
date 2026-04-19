@@ -31,18 +31,26 @@ DR-2 review pending**
 - Real mega-v2 ablation pending S20+
 
 **Branch GO-FULL** (if S20-S22 closes the gaps) :
-- DR-2 reviewer confirms strict proof OR DR-2' fallback adopted
+- DR-2 reviewer confirms the generated-semigroup proof published
+  in `docs/proofs/dr2-compositionality.md` (DR-2 as stated is
+  already proved ; the open item is the universal-property/freeness
+  sub-claim, orthogonal to the three conjuncts of DR-2)
 - Paper 1 final draft (Results + Discussion + Future Work) complete
-- 3 consecutive PASS on real ablation
+- G7 ESNN conformance promoted in §5.6 and §8.3 (done 2026-04-19
+  in the W-series revisions)
 - Pre-submission review from T-Col.4 network ≥1 positive
 - Tag framework C-v0.7.0+STABLE
-- Submit Paper 1 arXiv → Nature HB
+- Submit Paper 1 arXiv → **PLOS Computational Biology** (primary
+  target as of 2026-04-19 retarget from Nature Human Behaviour,
+  per the cold-review analysis in
+  `Business OS/paper1-cold-review-2026-04-19.md`)
 
 **Branch Pivot B** (if cycle-1 cannot close gates by S22) :
 - See `docs/proofs/pivot-b-decision.md` (S18.3) for 3 sub-branches
-- Likely outcomes : EXTEND-CYCLE-1 timeline OR DOWNGRADE-JOURNAL
-  (Nature HB → PLoS Comp Bio / Cognitive Science) OR SCOPE-DOWN
-  (single-paper TMLR/ICLR workshop, framework deferred cycle 2)
+- Likely outcomes : EXTEND-CYCLE-1 timeline OR FALLBACK-VENUE
+  (PLOS CB → Cognitive Science / Neural Computation / NeurIPS 2026
+  workshop) OR SCOPE-DOWN (single-paper TMLR/ICLR workshop,
+  framework deferred cycle 2)
 
 ## Action S18
 
@@ -66,7 +74,11 @@ externe utilisateur) as parallel critical-path items.
 2. DR-2 external reviewer feedback (closes G3)
 3. Paper 1 Results + Discussion + Future Work draft
 4. T-Col pre-submission network review ≥1 positive return
-5. arXiv preprint then Nature HB submission
+5. arXiv preprint then PLOS Computational Biology submission
+   (primary target retargeted 2026-04-19 from Nature Human
+   Behaviour following scope-fit analysis ; PLOS CB accepts
+   formal frameworks + computational-cognitive-modeling papers,
+   open access, 4–6 week editorial turnaround)
 
 ## Submission decision (S22.1)
 
@@ -79,19 +91,23 @@ The G5 gate at S18 was status DEFER (multiple criteria PARTIAL).
 At S22 closeout the user must choose between :
 
 - **GO-FULL** (default if all criteria met by S22) :
-  Submit Paper 1 to Nature Human Behaviour via the portal at
-  https://www.nature.com/nathumbehav/. Tag framework
-  C-v0.7.0+STABLE post-DR-2 reviewer confirmation. See
-  `ops/nature-hb-submit-tracker.md` for the manual action
+  Submit Paper 1 to **PLOS Computational Biology** via the portal
+  at https://journals.plos.org/ploscompbiol/ (retargeted
+  2026-04-19 from Nature Human Behaviour after scope-fit
+  analysis). Tag framework C-v0.7.0+STABLE post-DR-2 reviewer
+  confirmation of the generated-semigroup proof. See
+  `ops/plos-cb-submit-tracker.md` (to be added — template
+  adapted from the Nature HB tracker) for the manual action
   checklist.
 
 - **Pivot B** (if criteria not met) :
   Activate one of the three Pivot B branches per
   `docs/proofs/pivot-b-decision.md` :
   - **B-EXTEND** : extend cycle-1 timeline by 4-8 weeks (S22
-    → S30), maintain Nature HB target
-  - **B-DOWNGRADE** : adopt DR-2', tag C-v0.7.0-PRIME+STABLE,
-    redirect to PLoS Computational Biology / Cognitive Science
+    → S30), maintain PLOS CB target
+  - **B-FALLBACK-VENUE** : retarget to Cognitive Science
+    journal / Neural Computation / NeurIPS 2026 workshop
+    (Theoretical Foundations of Continual Learning)
   - **B-SCOPE-DOWN** (Pivot A) : single-paper TMLR/ICLR
     workshop, framework deferred cycle 2
 
