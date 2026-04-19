@@ -193,12 +193,12 @@ _DEFAULT_MEGA_V2_FALLBACK = (
 
 
 def _mega_v2_default_fallback_records() -> list[dict]:
-    """8-row hand-authored mega-v2-schema fallback.
+    """Hand-authored mega-v2-schema fallback (≥ 16 rows).
 
-    Sized small deliberately — the full mega-v2 at 498 K rows must
-    come from the FineFab artefact path. The fallback exists so
-    the pilot pipeline runs end-to-end on a host that has no
-    internal export available yet.
+    Sized to support the Phase B 8-train / 8-eval split — the full
+    mega-v2 at 498 K rows must come from the FineFab artefact path.
+    The fallback exists so the pilot pipeline runs end-to-end on a
+    host that has no internal export available yet.
     """
     return [
         {
@@ -249,6 +249,78 @@ def _mega_v2_default_fallback_records() -> list[dict]:
             "expected": " Paris.",
             "domain": "world_facts",
         },
+        {
+            "id": "mv2-fb-0009",
+            "context": "The speed of light in vacuum is approximately",
+            "expected": " 3e8 m/s.",
+            "domain": "physics",
+        },
+        {
+            "id": "mv2-fb-0010",
+            "context": "The largest ocean on Earth is the",
+            "expected": " Pacific.",
+            "domain": "world_facts",
+        },
+        {
+            "id": "mv2-fb-0011",
+            "context": "JSON stands for JavaScript Object",
+            "expected": " Notation.",
+            "domain": "software",
+        },
+        {
+            "id": "mv2-fb-0012",
+            "context": "The author of 'Hamlet' is William",
+            "expected": " Shakespeare.",
+            "domain": "literature",
+        },
+        {
+            "id": "mv2-fb-0013",
+            "context": "The chemical symbol for water is",
+            "expected": " H2O.",
+            "domain": "chemistry",
+        },
+        {
+            "id": "mv2-fb-0014",
+            "context": "In Python, the function that prints is",
+            "expected": " print().",
+            "domain": "software",
+        },
+        {
+            "id": "mv2-fb-0015",
+            "context": "The sum of angles in a triangle is",
+            "expected": " 180 degrees.",
+            "domain": "mathematics",
+        },
+        {
+            "id": "mv2-fb-0016",
+            "context": "The currency of the United Kingdom is the",
+            "expected": " pound sterling.",
+            "domain": "world_facts",
+        },
+        {
+            "id": "mv2-fb-0017",
+            "context": "TCP stands for Transmission Control",
+            "expected": " Protocol.",
+            "domain": "networking",
+        },
+        {
+            "id": "mv2-fb-0018",
+            "context": "The first human to walk on the Moon was Neil",
+            "expected": " Armstrong.",
+            "domain": "world_history",
+        },
+        {
+            "id": "mv2-fb-0019",
+            "context": "The mitochondrion is the powerhouse of the",
+            "expected": " cell.",
+            "domain": "biology",
+        },
+        {
+            "id": "mv2-fb-0020",
+            "context": "Binary digit 1111 in decimal equals",
+            "expected": " 15.",
+            "domain": "mathematics",
+        },
     ]
 
 
@@ -257,22 +329,72 @@ def _load_mega_v2_records(
     seed: int,
     *,
     fixture_path: Path | None = None,
+    fold: str = "all",
 ) -> list[MegaV2EvalRecord]:
-    """Materialise ``n_samples`` mega-v2 records.
+    """Materialise ``n_samples`` mega-v2 records for a given fold.
 
     Priority : caller path → committed fallback fixture → in-module
     hand-authored fallback. No HF path because mega-v2 is an
     internal artefact, not a public dataset.
+
+    ``fold`` pins the train/eval partition for Phase B held-out eval :
+
+    - ``"all"`` (default, back-compat) : return ``n_samples`` records
+      drawn from the full corpus via seeded shuffle.
+    - ``"train"`` : return the train fold — first ``n_samples``
+      records of the seeded shuffle. Replay_real consumes this fold
+      during dream episodes.
+    - ``"eval"`` : return the held-out eval fold — next
+      ``n_samples`` records after the train block. Never seen by
+      replay_real during dream, so post-dream NLL on this fold is a
+      genuine generalisation signal.
+
+    For the train/eval folds, the loader requires the corpus to
+    contain ``2 * n_samples`` rows ; smaller corpora (e.g. the
+    hand-authored fallback at 20 rows) fall back to cycled sampling
+    that still keeps the two folds disjoint at the index level.
     """
     def _materialise(raws: list[dict]) -> list[MegaV2EvalRecord]:
         rng = random.Random(seed)
-        rng.shuffle(raws)
-        if len(raws) >= n_samples:
-            selected = raws[:n_samples]
+        # Copy so we don't mutate the caller's list.
+        shuffled = list(raws)
+        rng.shuffle(shuffled)
+        if fold == "all":
+            if len(shuffled) >= n_samples:
+                selected = shuffled[:n_samples]
+            else:
+                selected = [
+                    shuffled[i % len(shuffled)]
+                    for i in range(n_samples)
+                ]
+        elif fold in ("train", "eval"):
+            # Deterministic 2-block split : first n_samples → train,
+            # next n_samples → eval. Train + eval are disjoint at the
+            # index level even when the underlying corpus is cycled.
+            total_needed = 2 * n_samples
+            if len(shuffled) >= total_needed:
+                block = shuffled[:total_needed]
+            else:
+                # Cycle deterministically ; the disjoint-index
+                # property is preserved because train draws indices
+                # [0, n_samples) and eval draws [n_samples,
+                # 2*n_samples). If the underlying corpus is smaller
+                # than n_samples, some raw rows inevitably appear in
+                # both folds, but their positions in the fold block
+                # remain disjoint.
+                block = [
+                    shuffled[i % len(shuffled)]
+                    for i in range(total_needed)
+                ]
+            if fold == "train":
+                selected = block[:n_samples]
+            else:
+                selected = block[n_samples:]
         else:
-            selected = [
-                raws[i % len(raws)] for i in range(n_samples)
-            ]
+            raise ValueError(
+                f"fold must be 'all', 'train', or 'eval', got "
+                f"{fold!r}"
+            )
         return [
             MegaV2EvalRecord(
                 id=str(row["id"]),
@@ -341,6 +463,7 @@ def evaluate_mega_v2(
     n_samples: int = 100,
     seed: int = 0,
     fixture_path: Path | None = None,
+    fold: str = "eval",
 ) -> dict[str, float]:
     """Run the mega-v2 retained-accuracy eval against ``model``.
 
@@ -349,14 +472,20 @@ def evaluate_mega_v2(
     the raw ``nll`` and a coarse ``accuracy = exp(-nll)`` so the
     pilot's composite score combines MMLU + HellaSwag + mega-v2 on a
     comparable [0, 1] scale. Deterministic under
-    ``(model_weights, tokenizer, fixture, seed)``.
+    ``(model_weights, tokenizer, fixture, seed, fold)``.
+
+    ``fold`` defaults to ``"eval"`` so the Phase B pilot's post-dream
+    score is computed on records that were never consumed by
+    replay_real during dream episodes — the signal is genuine
+    generalisation, not training-set recall. Pass ``fold="all"`` for
+    back-compat behaviour (unit tests + legacy callers).
 
     Returns ``{"accuracy": float, "nll": float, "n": int}``.
     """
     import math
 
     records = _load_mega_v2_records(
-        n_samples, seed, fixture_path=fixture_path
+        n_samples, seed, fixture_path=fixture_path, fold=fold
     )
     forward = model.model if hasattr(model, "model") else model
 

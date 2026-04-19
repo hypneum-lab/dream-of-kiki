@@ -13,3 +13,92 @@
 {"question": "Which language has the most native speakers worldwide?", "choices": ["English", "Spanish", "Hindi", "Mandarin Chinese"], "answer": 3, "subject": "world_facts"}
 {"question": "What is H2O commonly known as?", "choices": ["Salt", "Water", "Hydrogen peroxide", "Ammonia"], "answer": 1, "subject": "chemistry"}
 {"question": "Who painted the Mona Lisa?", "choices": ["Vincent van Gogh", "Pablo Picasso", "Leonardo da Vinci", "Claude Monet"], "answer": 2, "subject": "world_literature"}
+{"question": "What is the chemical symbol for sodium?", "choices": ["So", "Sn", "Na", "S"], "answer": 2, "subject": "chemistry"}
+{"question": "How many continents are there on Earth?", "choices": ["5", "6", "7", "8"], "answer": 2, "subject": "world_facts"}
+{"question": "What is the freezing point of water in Celsius?", "choices": ["-10", "0", "10", "100"], "answer": 1, "subject": "high_school_physics"}
+{"question": "Which element has the atomic number 1?", "choices": ["Helium", "Oxygen", "Carbon", "Hydrogen"], "answer": 3, "subject": "chemistry"}
+{"question": "What is 15 percent of 200?", "choices": ["25", "30", "35", "40"], "answer": 1, "subject": "elementary_mathematics"}
+{"question": "Who developed the theory of general relativity?", "choices": ["Isaac Newton", "Albert Einstein", "Niels Bohr", "Galileo Galilei"], "answer": 1, "subject": "physics"}
+{"question": "Which organ pumps blood through the human body?", "choices": ["Liver", "Kidney", "Heart", "Lung"], "answer": 2, "subject": "high_school_biology"}
+{"question": "What is the largest country by land area?", "choices": ["China", "United States", "Canada", "Russia"], "answer": 3, "subject": "world_facts"}
+{"question": "Which is a prime number?", "choices": ["4", "9", "11", "15"], "answer": 2, "subject": "elementary_mathematics"}
+{"question": "Which planet is known as the Red Planet?", "choices": ["Venus", "Mars", "Jupiter", "Saturn"], "answer": 1, "subject": "astronomy"}
+{"question": "What gas makes up most of Earth's atmosphere?", "choices": ["Oxygen", "Carbon dioxide", "Nitrogen", "Hydrogen"], "answer": 2, "subject": "high_school_biology"}
+{"question": "Who wrote 'Hamlet'?", "choices": ["Chaucer", "Shakespeare", "Milton", "Dickens"], "answer": 1, "subject": "world_literature"}
+{"question": "What is the speed of light in vacuum (approx, m/s)?", "choices": ["3e5", "3e6", "3e7", "3e8"], "answer": 3, "subject": "high_school_physics"}
+{"question": "What is 9 squared?", "choices": ["72", "81", "90", "99"], "answer": 1, "subject": "elementary_mathematics"}
+{"question": "Which continent is the Sahara Desert in?", "choices": ["Asia", "Africa", "Australia", "South America"], "answer": 1, "subject": "world_facts"}
+{"question": "What is the boiling point of water in Celsius at sea level?", "choices": ["50", "90", "100", "120"], "answer": 2, "subject": "high_school_physics"}
+{"question": "What is the capital of Australia?", "choices": ["Sydney", "Melbourne", "Canberra", "Perth"], "answer": 2, "subject": "world_facts"}
+{"question": "Which planet has the most moons (as of 2023)?", "choices": ["Mars", "Jupiter", "Saturn", "Neptune"], "answer": 2, "subject": "astronomy"}
+{"question": "Who invented the telephone?", "choices": ["Thomas Edison", "Nikola Tesla", "Alexander Graham Bell", "Guglielmo Marconi"], "answer": 2, "subject": "world_history"}
+{"question": "Which bone is the longest in the human body?", "choices": ["Tibia", "Femur", "Humerus", "Fibula"], "answer": 1, "subject": "high_school_biology"}
+{"question": "What is 25 percent of 80?", "choices": ["10", "15", "20", "25"], "answer": 2, "subject": "elementary_mathematics"}
+{"question": "Which element is a noble gas?", "choices": ["Chlorine", "Oxygen", "Argon", "Sulfur"], "answer": 2, "subject": "chemistry"}
+{"question": "Who discovered penicillin?", "choices": ["Louis Pasteur", "Alexander Fleming", "Marie Curie", "Robert Koch"], "answer": 1, "subject": "high_school_biology"}
+{"question": "What is 3 factorial?", "choices": ["3", "6", "9", "12"], "answer": 1, "subject": "elementary_mathematics"}
+{"question": "Which river is the longest in the world?", "choices": ["Amazon", "Nile", "Yangtze", "Mississippi"], "answer": 1, "subject": "world_facts"}
+{"question": "What is the main ingredient in bread?", "choices": ["Rice", "Flour", "Sugar", "Butter"], "answer": 1, "subject": "world_facts"}
+{"question": "In which year did humans first land on the Moon?", "choices": ["1959", "1965", "1969", "1972"], "answer": 2, "subject": "world_history"}
+{"question": "Which U.S. president issued the Emancipation Proclamation?", "choices": ["George Washington", "Thomas Jefferson", "Abraham Lincoln", "Franklin D. Roosevelt"], "answer": 2, "subject": "us_history"}
+{"question": "What is the chemical symbol for potassium?", "choices": ["P", "Po", "Ka", "K"], "answer": 3, "subject": "chemistry"}
+{"question": "What does DNA stand for?", "choices": ["Deoxyribonucleic acid", "Dioxyribonucleic acid", "Diribonucleic acid", "Deoxyribose acid"], "answer": 0, "subject": "high_school_biology"}
+{"question": "What is the tallest mountain in the world?", "choices": ["K2", "Kangchenjunga", "Mount Everest", "Lhotse"], "answer": 2, "subject": "world_facts"}
+{"question": "How many sides does a hexagon have?", "choices": ["5", "6", "7", "8"], "answer": 1, "subject": "elementary_mathematics"}
+{"question": "Which instrument has 88 keys?", "choices": ["Guitar", "Piano", "Harp", "Flute"], "answer": 1, "subject": "world_facts"}
+{"question": "What is the currency of Japan?", "choices": ["Yuan", "Won", "Yen", "Ringgit"], "answer": 2, "subject": "world_facts"}
+{"question": "Which is not a primary color of light?", "choices": ["Red", "Green", "Blue", "Yellow"], "answer": 3, "subject": "high_school_physics"}
+{"question": "What is the smallest planet in the Solar System?", "choices": ["Mars", "Mercury", "Pluto", "Venus"], "answer": 1, "subject": "astronomy"}
+{"question": "Which element has the symbol O?", "choices": ["Osmium", "Oxygen", "Oganesson", "Olivine"], "answer": 1, "subject": "chemistry"}
+{"question": "What is the largest organ in the human body?", "choices": ["Liver", "Lung", "Skin", "Brain"], "answer": 2, "subject": "high_school_biology"}
+{"question": "Which number is an even prime?", "choices": ["1", "2", "3", "5"], "answer": 1, "subject": "elementary_mathematics"}
+{"question": "What is the capital of Canada?", "choices": ["Toronto", "Vancouver", "Montreal", "Ottawa"], "answer": 3, "subject": "world_facts"}
+{"question": "Who wrote 'Pride and Prejudice'?", "choices": ["Emily Bronte", "Jane Austen", "Charlotte Bronte", "Mary Shelley"], "answer": 1, "subject": "world_literature"}
+{"question": "What year did the Berlin Wall fall?", "choices": ["1987", "1988", "1989", "1991"], "answer": 2, "subject": "world_history"}
+{"question": "Which unit measures electric current?", "choices": ["Volt", "Watt", "Ohm", "Ampere"], "answer": 3, "subject": "high_school_physics"}
+{"question": "What is 12 times 12?", "choices": ["122", "132", "144", "156"], "answer": 2, "subject": "elementary_mathematics"}
+{"question": "Which ocean borders California?", "choices": ["Atlantic", "Indian", "Arctic", "Pacific"], "answer": 3, "subject": "world_facts"}
+{"question": "What is the chemical formula for table salt?", "choices": ["KCl", "NaCl", "CaCl2", "MgCl2"], "answer": 1, "subject": "chemistry"}
+{"question": "Which galaxy is Earth located in?", "choices": ["Andromeda", "Milky Way", "Triangulum", "Whirlpool"], "answer": 1, "subject": "astronomy"}
+{"question": "What is the longest bone in the human arm?", "choices": ["Radius", "Ulna", "Humerus", "Clavicle"], "answer": 2, "subject": "high_school_biology"}
+{"question": "Who painted the Sistine Chapel ceiling?", "choices": ["Raphael", "Michelangelo", "Donatello", "Titian"], "answer": 1, "subject": "world_literature"}
+{"question": "What is 10 raised to the power of 3?", "choices": ["100", "300", "1000", "10000"], "answer": 2, "subject": "elementary_mathematics"}
+{"question": "Which country gifted the Statue of Liberty to the United States?", "choices": ["Germany", "England", "Spain", "France"], "answer": 3, "subject": "us_history"}
+{"question": "Which vitamin is produced when skin is exposed to sunlight?", "choices": ["A", "B", "C", "D"], "answer": 3, "subject": "high_school_biology"}
+{"question": "Which element is the most abundant metal in Earth's crust?", "choices": ["Iron", "Aluminum", "Copper", "Zinc"], "answer": 1, "subject": "chemistry"}
+{"question": "How many players are on a soccer team on the field?", "choices": ["9", "10", "11", "12"], "answer": 2, "subject": "world_facts"}
+{"question": "Who wrote 'The Odyssey'?", "choices": ["Virgil", "Homer", "Plato", "Aristotle"], "answer": 1, "subject": "world_literature"}
+{"question": "What is the hottest planet in the Solar System?", "choices": ["Mercury", "Venus", "Mars", "Jupiter"], "answer": 1, "subject": "astronomy"}
+{"question": "What is the chemical symbol for silver?", "choices": ["Si", "Sv", "Ag", "Au"], "answer": 2, "subject": "chemistry"}
+{"question": "Which planet is famous for its ring system?", "choices": ["Mars", "Jupiter", "Saturn", "Neptune"], "answer": 2, "subject": "astronomy"}
+{"question": "Which language is spoken in Brazil?", "choices": ["Spanish", "Portuguese", "French", "Italian"], "answer": 1, "subject": "world_facts"}
+{"question": "What is the pH of pure water at 25 C?", "choices": ["0", "7", "10", "14"], "answer": 1, "subject": "chemistry"}
+{"question": "Who is considered the father of modern physics?", "choices": ["Galileo", "Newton", "Einstein", "Bohr"], "answer": 2, "subject": "physics"}
+{"question": "Which blood type is the universal donor?", "choices": ["A+", "B-", "AB+", "O-"], "answer": 3, "subject": "high_school_biology"}
+{"question": "What is 50 divided by 5?", "choices": ["5", "10", "15", "20"], "answer": 1, "subject": "elementary_mathematics"}
+{"question": "Which country has the longest coastline?", "choices": ["Russia", "USA", "Canada", "Australia"], "answer": 2, "subject": "world_facts"}
+{"question": "What is the atomic number of carbon?", "choices": ["4", "6", "8", "12"], "answer": 1, "subject": "chemistry"}
+{"question": "Who wrote '1984'?", "choices": ["Aldous Huxley", "George Orwell", "Ray Bradbury", "Kurt Vonnegut"], "answer": 1, "subject": "world_literature"}
+{"question": "What is 2 to the 10th power?", "choices": ["512", "1024", "2048", "4096"], "answer": 1, "subject": "elementary_mathematics"}
+{"question": "Which planet is the largest in the Solar System?", "choices": ["Saturn", "Jupiter", "Neptune", "Uranus"], "answer": 1, "subject": "astronomy"}
+{"question": "What is the softest mineral on the Mohs scale?", "choices": ["Gypsum", "Talc", "Calcite", "Diamond"], "answer": 1, "subject": "chemistry"}
+{"question": "Which scientist proposed the laws of motion?", "choices": ["Einstein", "Newton", "Galileo", "Tesla"], "answer": 1, "subject": "physics"}
+{"question": "Which country is home to the Great Pyramid of Giza?", "choices": ["Greece", "Egypt", "Iran", "Mexico"], "answer": 1, "subject": "world_history"}
+{"question": "What number comes after 99?", "choices": ["98", "100", "101", "109"], "answer": 1, "subject": "elementary_mathematics"}
+{"question": "Which instrument is used to observe distant stars?", "choices": ["Microscope", "Telescope", "Periscope", "Spectroscope"], "answer": 1, "subject": "astronomy"}
+{"question": "Who wrote 'The Divine Comedy'?", "choices": ["Dante", "Petrarch", "Boccaccio", "Machiavelli"], "answer": 0, "subject": "world_literature"}
+{"question": "What is the capital of Germany?", "choices": ["Munich", "Hamburg", "Berlin", "Frankfurt"], "answer": 2, "subject": "world_facts"}
+{"question": "Which organ produces insulin?", "choices": ["Liver", "Pancreas", "Kidney", "Stomach"], "answer": 1, "subject": "high_school_biology"}
+{"question": "What is 100 minus 37?", "choices": ["53", "63", "73", "83"], "answer": 1, "subject": "elementary_mathematics"}
+{"question": "Which country invented paper?", "choices": ["India", "China", "Egypt", "Greece"], "answer": 1, "subject": "world_history"}
+{"question": "Which element is liquid at room temperature?", "choices": ["Gold", "Mercury", "Lead", "Sodium"], "answer": 1, "subject": "chemistry"}
+{"question": "What is the largest desert in the world?", "choices": ["Sahara", "Gobi", "Kalahari", "Antarctic"], "answer": 3, "subject": "world_facts"}
+{"question": "Who discovered gravity by observing an apple?", "choices": ["Einstein", "Newton", "Tesla", "Galileo"], "answer": 1, "subject": "physics"}
+{"question": "What is the chemical symbol for lead?", "choices": ["Le", "Pb", "Ld", "Pl"], "answer": 1, "subject": "chemistry"}
+{"question": "Which ocean is between Africa and Australia?", "choices": ["Atlantic", "Pacific", "Indian", "Arctic"], "answer": 2, "subject": "world_facts"}
+{"question": "Which is a mammal?", "choices": ["Shark", "Dolphin", "Tuna", "Lobster"], "answer": 1, "subject": "high_school_biology"}
+{"question": "What is the capital of Spain?", "choices": ["Barcelona", "Valencia", "Seville", "Madrid"], "answer": 3, "subject": "world_facts"}
+{"question": "How many chambers does the human heart have?", "choices": ["2", "3", "4", "5"], "answer": 2, "subject": "high_school_biology"}
+{"question": "Who wrote 'War and Peace'?", "choices": ["Tolstoy", "Dostoevsky", "Chekhov", "Pushkin"], "answer": 0, "subject": "world_literature"}
+{"question": "What is the chemical symbol for tin?", "choices": ["Ti", "Tn", "Sn", "St"], "answer": 2, "subject": "chemistry"}
+{"question": "Which empire built the Colosseum?", "choices": ["Greek", "Roman", "Ottoman", "Persian"], "answer": 1, "subject": "world_history"}

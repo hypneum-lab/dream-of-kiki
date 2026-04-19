@@ -161,7 +161,13 @@ def _evaluate_benchmarks(
     n_samples: int,
     seed: int,
 ) -> dict[str, dict[str, float]]:
-    """Run each benchmark and return ``{benchmark -> {accuracy, n}}``."""
+    """Run each benchmark and return ``{benchmark -> {accuracy, n}}``.
+
+    ``mega_v2`` is evaluated on the HELD-OUT fold — the same fixture
+    records never consumed by ``replay_real`` during dream episodes.
+    This is the Phase B invariant that makes the mega-v2 delta a
+    generalisation signal rather than training-set recall.
+    """
     from harness.real_benchmarks.hellaswag import evaluate_hellaswag
     from harness.real_benchmarks.mega_v2_eval import evaluate_mega_v2
     from harness.real_benchmarks.mmlu import evaluate_mmlu
@@ -178,7 +184,11 @@ def _evaluate_benchmarks(
         )
     if "mega_v2" in benchmarks:
         results["mega_v2"] = evaluate_mega_v2(
-            wrapper, tokenizer, n_samples=n_samples, seed=seed
+            wrapper,
+            tokenizer,
+            n_samples=n_samples,
+            seed=seed,
+            fold="eval",
         )
     return results
 
@@ -244,7 +254,6 @@ def _dream_episodes(
     )
     from kiki_oniric.dream.operations.downscale_real import (
         DownscaleRealState,
-        downscale_real_handler,
     )
     from kiki_oniric.dream.operations.recombine_real import (
         RecombineRealState,
@@ -322,11 +331,69 @@ def _dream_episodes(
     restructure_state = RestructureRealState()
     recombine_state = RecombineRealState()
 
+    # ---------------------------------------------------------------
+    # Nested-tree downscale — the stock ``downscale_real_handler``
+    # iterates ``model.layers`` looking for direct ``.weight`` /
+    # ``.bias`` attributes. Qwen's TransformerBlock nests its weight
+    # tensors under sub-modules (``self_attn.q_proj.weight`` etc.),
+    # so the generic handler silently no-ops on Qwen. This helper
+    # walks the nested parameter dict via ``mx.utils.tree_flatten``,
+    # applies the shrink factor to every leaf ``mx.array``, and runs
+    # an S2 finite guard over the post-shrink tree.
+    # ---------------------------------------------------------------
+
+    def _qwen_downscale_recursive(
+        episode: DreamEpisode,
+    ) -> None:
+        from mlx.utils import tree_flatten, tree_unflatten
+
+        from kiki_oniric.dream.guards.finite import check_finite
+
+        factor = episode.input_slice.get("shrink_factor", 1.0)
+        if not (0.0 < factor <= 1.0):
+            raise ValueError(
+                f"shrink_factor must be in (0, 1], got {factor}"
+            )
+
+        params = qwen.parameters()
+        flat = tree_flatten(params)
+        # Shrink every leaf tensor in-place at the tree level. MLX
+        # arrays are immutable so we build a new leaf list ; the
+        # model absorbs it via ``update``.
+        shrunk: list[tuple[str, mx.array]] = []
+        for key, leaf in flat:
+            if isinstance(leaf, mx.array):
+                shrunk.append((key, leaf * factor))
+            else:
+                shrunk.append((key, leaf))
+        new_params = tree_unflatten(shrunk)
+        qwen.update(new_params)
+        # Force evaluation so the next forward pass reads mutated
+        # weights rather than a deferred graph that masks divergence.
+        mx.eval(qwen.parameters())
+
+        # S2 finite guard over the post-shrink tree.
+        weights_by_key: dict[str, np.ndarray] = {}
+        for key, leaf in tree_flatten(qwen.parameters()):
+            if isinstance(leaf, mx.array):
+                weights_by_key[key] = np.asarray(
+                    leaf.astype(mx.float32)
+                )
+        check_finite(weights_by_key)
+
+        downscale_state.compound_factor *= factor
+        # K1 tag : ~1 multiply per scalar parameter across the tree.
+        total_params = sum(
+            int(leaf.size)
+            for _, leaf in tree_flatten(qwen.parameters())
+            if isinstance(leaf, mx.array)
+        )
+        downscale_state.last_compute_flops = max(total_params, 1)
+
     runtime = DreamRuntime()
     runtime.register_handler(Operation.REPLAY, _replay_qwen_handler)
     runtime.register_handler(
-        Operation.DOWNSCALE,
-        downscale_real_handler(downscale_state, model=qwen),
+        Operation.DOWNSCALE, _qwen_downscale_recursive
     )
     if profile_name in ("p_equ", "p_max"):
         # Small local encoder/decoder — recombine_real's latent
@@ -413,10 +480,14 @@ def _dream_episodes(
 
     # Draw mega-v2 records once for the whole dream run — deterministic
     # under ``seed``. Each episode consumes a 4-record batch.
+    # ``fold="train"`` so replay_real consumes the TRAIN partition only ;
+    # the evaluator reads the disjoint ``fold="eval"`` partition, so
+    # the post-dream delta is a generalisation signal rather than
+    # training-set recall.
     batch_size = 4
     total_records_needed = batch_size * max(effective_episodes, 1)
     mega_records = _load_mega_v2_records(
-        n_samples=total_records_needed, seed=seed
+        n_samples=total_records_needed, seed=seed, fold="train"
     )
 
     def _tokenize_record(record) -> tuple[list[int], list[int]]:
@@ -470,6 +541,30 @@ def _dream_episodes(
         )
 
 
+def _snapshot_first_weight(wrapper) -> tuple[str, float] | None:
+    """Return ``(key, first_scalar)`` for the first Qwen weight leaf.
+
+    Used by the smoke-cell path to verify the recursive downscale
+    actually mutates Qwen's nested weight tensors. Returns ``None``
+    if no weight leaf is accessible — we refuse to silently pass
+    that signal on.
+    """
+    try:
+        import mlx.core as mx
+        from mlx.utils import tree_flatten
+
+        params = wrapper.model.parameters()
+        for key, leaf in tree_flatten(params):
+            if isinstance(leaf, mx.array) and leaf.size > 0:
+                scalar = float(
+                    leaf.reshape(-1)[0].astype(mx.float32).item()
+                )
+                return (key, scalar)
+    except Exception:
+        return None
+    return None
+
+
 def _run_cell(
     profile_name: str,
     seed: int,
@@ -477,6 +572,7 @@ def _run_cell(
     benchmarks: tuple[str, ...],
     n_samples: int,
     n_episodes: int,
+    verify_downscale: bool = False,
 ) -> dict:
     """Execute one cell end-to-end : load + pre-eval + dream + post-eval.
 
@@ -507,9 +603,28 @@ def _run_cell(
             seed=seed,
         )
         pre_score = _composite_score(pre)
+        pre_snap = (
+            _snapshot_first_weight(wrapper)
+            if verify_downscale
+            else None
+        )
         _dream_episodes(
             wrapper, profile_name, seed=seed, n_episodes=n_episodes
         )
+        if verify_downscale:
+            post_snap = _snapshot_first_weight(wrapper)
+            print(
+                f"[verify-downscale] pre_weight={pre_snap} "
+                f"post_weight={post_snap} "
+                f"mutated={pre_snap != post_snap}"
+            )
+            cell["weight_mutation_verified"] = bool(
+                pre_snap is not None
+                and post_snap is not None
+                and pre_snap != post_snap
+            )
+            cell["pre_weight_snapshot"] = pre_snap
+            cell["post_weight_snapshot"] = post_snap
         post = _evaluate_benchmarks(
             wrapper,
             benchmarks=benchmarks,
@@ -635,12 +750,17 @@ def main(argv: list[str] | None = None) -> int:
         _print_banner(total_cells=1, n_samples=args.n_samples)
         benchmarks = (args.benchmark,)
         start = time.time()
+        # ``verify_downscale=True`` so the smoke-cell log lands a
+        # pre/post weight snapshot — this is the gate that proves
+        # Qwen's nested weight tree actually mutates before we
+        # commit ~1 h of Phase B compute.
         cell = _run_cell(
             args.profile,
             0,
             benchmarks=benchmarks,
             n_samples=args.n_samples,
             n_episodes=N_EPISODES_PER_PROFILE,
+            verify_downscale=True,
         )
         wall = time.time() - start
         if "error" in cell:
