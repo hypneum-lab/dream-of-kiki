@@ -13,7 +13,7 @@ The 3 TDD-mandated tests land first :
 2. ``test_dream_op_on_spike_rates`` — each of the 4 ops exhibits
    the expected behaviour on spike rates.
 3. ``test_project_back_preserves_information`` — round-trip
-   ``rates → weights → rates`` is identity within tolerance.
+   ``weights → rates → weights`` is identity within tolerance.
 
 Then 4 op-specific tests cover the per-op semantics in more
 detail (7 tests total — above the ≥ 7 threshold in C3.12).

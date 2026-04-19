@@ -17,8 +17,7 @@ research program. It is intended as a reader's guide for :
 - `dream-of-kiki` is the **flagship** : it hosts the formal framework
   (axioms DR-0..DR-4, Conformance Criterion, primitives, profiles),
   the MLX `kiki-oniric` substrate (Track A), the E-SNN thalamocortical
-  substrate (cycle-2 instantiation, already G7 LOCKED), and the two
-  papers of cycle 1.
+  substrate (G7 LOCKED in cycle 1), and the two papers of cycle 1.
 - `kiki-flow-research` is the **upstream numerical engine** : it
   provides the Wasserstein-gradient-flow solver, the species ontology
   (ρ_phono, ρ_lex, ρ_syntax, ρ_sem), and divergence estimators that
@@ -30,7 +29,7 @@ research program. It is intended as a reader's guide for :
   evidence of the substrate-agnosticism principle.
 - `micro-kiki` is a **deployable MoE-LoRA instance** : 35
   domain-expert LoRA adapters on a Qwen3.5 MoE base, with inference
-  optimised for consumer GPUs. It is the "product-facing" artefact
+  optimised for consumer GPUs. It is the "product-facing" artifact
   that consumes (will consume) the consolidated profiles produced by
   `dream-of-kiki`.
 
@@ -77,7 +76,7 @@ research program. It is intended as a reader's guide for :
                    ┌──────────────────────────────┐
                    │  micro-kiki                  │   deployable
                    │  35 domain-expert MoE-LoRA   │   product
-                   │  Qwen3.5 base, Q4_K_M infer  │   artefact
+                   │  Qwen3.5 base, Q4_K_M infer  │   artifact
                    └──────────────────────────────┘
 ```
 
@@ -142,7 +141,7 @@ See `CONTRIBUTORS.md` in each repository for the detailed policy.
 | Invariant guards S1/S2/S3 enforce atomic swap | `dream-of-kiki/kiki_oniric/dream/guards/` + `tests/invariants/` |
 | R1 run-registry determinism | `dream-of-kiki/harness/storage/run_registry.py` |
 | Wasserstein-flow numerical foundations | `kiki-flow-research/` (dependency of the MLX substrate) |
-| Deployable MoE-LoRA artefact consuming the framework | `micro-kiki/` (future integration — cycle 2) |
+| Deployable MoE-LoRA artifact consuming the framework | `micro-kiki/` (future integration — cycle 2) |
 
 ## Integration status — honest assessment
 
