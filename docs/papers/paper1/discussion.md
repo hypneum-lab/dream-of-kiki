@@ -97,6 +97,33 @@ pre-registered ablation methodology with frozen benchmarks +
 deterministic run IDs, **(d)** open-science artifacts (MIT code,
 OSF pre-reg, Zenodo DOI artifacts).
 
+## 8.5 Cross-substrate preliminary replication (cycle 2)
+
+Cycle 2 operationalizes limitation (ii) above by wiring a second
+substrate — `esnn_thalamocortical`, a numpy LIF spike-rate
+skeleton — alongside the canonical `mlx_kiki_oniric` substrate.
+The DR-3 Conformance Criterion is re-evaluated on both substrates
+(see `docs/milestones/conformance-matrix.md` and
+`docs/proofs/dr3-substrate-evidence.md`), and the cycle-1 H1-H4
+statistical chain is re-run per substrate
+(`docs/milestones/cross-substrate-results.md`, runner
+`scripts/ablation_cycle2.py`).
+
+**Synthetic substitute — not empirical claim.** The two substrate
+rows share the same Python mock predictor in cycle 2 : substrate-
+specific inference is deferred to cycle 3. Consequently the
+cross-substrate verdict is trivially agreeing by construction, and
+the pipeline emits identical H1-H4 p-values on both substrates
+(3 / 4 significant at Bonferroni α = 0.0125, H3 monotonic failing
+on both due to constant mock dispersion). This **strengthens but
+does not substitute for** the cycle-1 H1-H4 results reported in
+§7 and §8.2. What it *does* demonstrate is that the framework's
+conformance artifacts (typed Protocols, axiom property tests, S2/S3
+guards) and the statistical evaluation chain execute end-to-end on
+a structurally independent second substrate registration, which is
+the architectural claim of DR-3. A divergent-predictor replication
+on real biological or neuromorphic data is the cycle-3 target.
+
 ---
 
 ## Notes for revision

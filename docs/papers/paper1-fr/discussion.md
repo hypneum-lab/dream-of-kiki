@@ -102,6 +102,37 @@ d'ablation pré-enregistrée avec bancs de test figés +
 identifiants de runs déterministes, **(d)** artefacts de science
 ouverte (code MIT, pré-enregistrement OSF, artefacts DOI Zenodo).
 
+## 8.5 Réplication cross-substrat préliminaire (cycle 2)
+
+Le cycle 2 opérationnalise la limite (ii) ci-dessus en câblant un
+second substrat — `esnn_thalamocortical`, un squelette numpy LIF
+à taux de décharge — aux côtés du substrat canonique
+`mlx_kiki_oniric`. Le Critère de Conformité DR-3 est ré-évalué
+sur les deux substrats (voir
+`docs/milestones/conformance-matrix.md` et
+`docs/proofs/dr3-substrate-evidence.md`), et la chaîne statistique
+H1-H4 du cycle 1 est ré-exécutée par substrat
+(`docs/milestones/cross-substrate-results.md`, runner
+`scripts/ablation_cycle2.py`).
+
+**Substitution synthétique — pas une revendication empirique.** Les
+deux lignes de substrats partagent le même prédicteur Python mock
+au cycle 2 : l'inférence spécifique au substrat est reportée au
+cycle 3. Par conséquent, le verdict cross-substrat est
+trivialement concordant par construction, et le pipeline émet des
+p-values H1-H4 identiques sur les deux substrats (3 / 4
+significatifs à Bonferroni α = 0,0125, H3 monotonie échouant sur
+les deux en raison de la dispersion constante du mock). Ceci
+**renforce mais ne remplace pas** les résultats H1-H4 du cycle 1
+rapportés aux §7 et §8.2. Ce que cela *démontre*, c'est que les
+artefacts de conformité du framework (Protocoles typés, tests de
+propriété axiomatiques, gardes S2/S3) et la chaîne d'évaluation
+statistique s'exécutent de bout en bout sur un second
+enregistrement de substrat structurellement indépendant, ce qui
+est la revendication architecturale de DR-3. Une réplication à
+prédicteurs divergents sur données biologiques ou neuromorphiques
+réelles constitue la cible du cycle 3.
+
 ---
 
 ## Notes pour révision

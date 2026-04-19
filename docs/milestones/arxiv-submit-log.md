@@ -92,3 +92,38 @@
   silent edit.
 - Should arXiv reject the cs.LG category placement, fall back to
   cs.AI primary with q-bio.NC cross-list.
+
+## v2 plan (cycle-2 substrate evidence) — DEFERRED
+
+**Status** : planned, **deferred until v1 acceptance / feedback
+round 1**. Do not submit v2 before v1 is announced and feedback
+collected.
+
+**Scope of v2** : incorporate the cycle-2 cross-substrate
+preliminary replication now referenced in Paper 1 §8.5
+(`docs/papers/paper1/discussion.md`, mirror FR in
+`docs/papers/paper1-fr/discussion.md`). The v2 update will add :
+
+- Updated §8.5 "Cross-substrate preliminary replication" subsection
+  already merged into the cycle-2 discussion draft.
+- Pointer citations to the cycle-2 artifacts :
+  - `docs/milestones/conformance-matrix.md` (C2.10 static matrix)
+  - `docs/proofs/dr3-substrate-evidence.md` (C2.10 formal evidence)
+  - `docs/milestones/cross-substrate-results.md` (C2.11 comparative
+    H1-H4 MLX vs E-SNN)
+- DualVer bump note : formal axis unchanged ; empirical axis bump
+  from `C-v0.5.0+STABLE` to `C-v0.6.0+PARTIAL` reflecting two-
+  substrate replication pipeline.
+- Explicit **(synthetic substitute — not empirical claim)** flag
+  carried on the §8.5 table caption so reviewers cannot mistake the
+  cycle-2 addendum for a real-data replication.
+
+**Trigger for v2 submission** : EITHER (a) first round of external
+arXiv reviewer feedback collected into `reviewer-feedback.md`, OR
+(b) cycle-3 substrate-specific predictor wiring lands and a real-
+data replication becomes available — whichever first prompts a
+substantive revision.
+
+**Not** a v2 trigger : the cycle-2 synthetic-substitute dump alone
+is not reason enough to bump arXiv ; it rides on the next
+substantive revision.
