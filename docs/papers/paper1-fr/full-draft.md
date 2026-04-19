@@ -4,23 +4,32 @@ author: "contributeurs du projet dreamOfkiki"
 contact: "Clement Saillant <clement@saillant.cc>"
 affiliation: "L'Electron Rare, France"
 date: "2026"
-draft: "v0.2 (cycle-1, S20.3 assemblage, placeholders INCLUDE intégrés)"
+draft: "v0.2 (cycle-1 closeout, miroir EN d6866f3, retarget PLOS CB)"
 ---
 
 # Paper 1 — Assemblage complet du brouillon (version française)
 
-⚠️ **Statut** : assemblage du brouillon. Les fichiers .md de section
+⚠️ **Statut** : assemblage du brouillon, miroir français de la
+v0.2 anglaise (commit `d6866f3`). Les fichiers .md de section
 étaient la source de vérité originale ; ce fichier intègre désormais
 leur contenu pour devenir la source assemblée en vue du rendu pandoc.
 
-⚠️ Les **précautions liées aux données synthétiques** s'appliquent
-au §7 Résultats (chiffres issus de la substitution synthétique
-mega-v2). L'ablation réelle intervient en clôture du cycle 1 (S20+)
-ou au cycle 2.
+⚠️ Le §7 a été réécrit en *validation pipeline-et-framework* (pas
+de p-values synthétiques rapportées). L'évaluation empirique des
+hypothèses H1–H4 sur des bancs de test d'apprentissage continu
+réels est l'objet du Paper 2.
 
 ---
 
 ## 1. Résumé
+
+**Note de portée.** Cet article rapporte un *framework formel
+exécutable* pour la consolidation onirique dans les systèmes
+cognitifs artificiels ; les contributions principales sont les
+axiomes, le Critère de Conformité et un parcours de conformité
+inter-substrats. L'évaluation empirique au niveau des hypothèses
+sur des bancs de test d'apprentissage continu et d'alignement
+IRMf est différée au papier compagnon (Paper 2).
 
 L'oubli catastrophique demeure un obstacle central pour les systèmes
 cognitifs artificiels apprenant séquentiellement une succession de
@@ -32,30 +41,47 @@ mais aucun framework formel unifié n'intègre ces quatre piliers en
 opérations composables et indépendantes du substrat.
 
 Nous introduisons **dreamOfkiki**, un framework formel à axiomes
-exécutables (DR-0 redevabilité, DR-1 conservation épisodique, DR-2
-compositionnalité sur un semi-groupe libre d'opérations oniriques,
-DR-3 indépendance du substrat via un Critère de Conformité, DR-4
-inclusion en chaîne des profils). Le framework définit 8 primitives
-typées (entrées α, β, γ, δ ; 4 canaux de sortie), 4 opérations
-canoniques (replay, downscale, restructure, recombine) et une
-ontologie de Dream Episode en quintuplet. Le framework admet
-plusieurs substrats conformes ; des implémentations exemplaires
-valident la conception et sont rapportées séparément (voir Paper 2).
+exécutables. **La compositionnalité DR-2** est ici prouvée comme
+théorème de semi-groupe engendré sur quatre opérations canoniques
+(fermeture + additivité du budget + composition fonctionnelle +
+associativité ; preuve dans
+`docs/proofs/dr2-compositionality.md`). Les axiomes restants sont
+DR-0 redevabilité, DR-1 conservation épisodique, DR-3 indépendance
+du substrat via un Critère de Conformité exécutable (typage des
+signatures ∧ tests de propriété axiomatiques ∧ applicabilité des
+invariants BLOCKING), et DR-4 inclusion en chaîne des profils
+(preuve dans `docs/proofs/dr4-profile-inclusion.md`). Le framework
+définit 8 primitives typées (entrées α, β, γ, δ ; 4 canaux de
+sortie), 4 opérations canoniques (replay, downscale, restructure,
+recombine) et une ontologie de Dream Episode en quintuplet.
 
-Des hypothèses pré-enregistrées (DOI OSF : en attente) sont évaluées
-via le test t de Welch, l'équivalence TOST, la tendance de
-Jonckheere-Terpstra et un test t à un échantillon contre un budget
-de calcul, sous correction de Bonferroni.
+**Conformité inter-substrats (§5.6).** Deux substrats indépendants
+— une implémentation *kiki-oniric* à base de gradients MLX et un
+*E-SNN thalamocortical* numpy-LIF — satisfont tous deux les trois
+conditions du Critère de Conformité, avec 9 tests de propriété
+axiomatique et d'application d'invariants passants sur chacun
+(porte G7 LOCKED, voir `docs/milestones/g7-esnn-conformance.md`).
+Cela étaye l'assertion d'indépendance du substrat à la portée du
+Paper 1, plutôt que de la différer au cycle 2.
 
-**Validation du pipeline (substitution synthétique, pilote G2).** Le
-pipeline de mesure et statistique de bout en bout est exercé avec
-des prédicteurs mock aux niveaux de précision scriptés ; les
-chiffres sont rapportés au §7 conjointement avec leur run_id
-enregistré et leur dump JSON sous `docs/milestones/`. L'inférence
-mega-v2 réelle et toute analyse de similarité représentationnelle
-IRMf sont repoussées au cycle 2 (Paper 2). L'ensemble du code, des
-spécifications et du pré-enregistrement est ouvert sous
-MIT/CC-BY-4.0.
+**Validation du pipeline (§7).** Nous validons la chaîne de mesure
+et statistique (quatre tests pré-enregistrés sous correction de
+Bonferroni), l'injection de fautes sur les gardes des invariants
+BLOCKING S1–S3, et le déterminisme de reproductibilité R1 sur des
+tuples appariés du registre. Nous rapportons en complément des
+mesures de portabilité inter-substrats issues du projet sœur
+Nerve-WML (§7.4) qui confirment indépendamment l'indépendance du
+substrat sur les tâches linéairement séparables (écart < 5 %) et
+divulguent l'écart en régime non linéaire (12,1 %) comme résultat
+négatif honnête. **Aucune décision d'hypothèse d'apprentissage
+continu sur H1–H4 n'est annoncée dans cet article** ; l'évaluation
+empirique de H1–H4 est rapportée dans le Paper 2.
+
+Le pré-enregistrement est verrouillé sur l'Open Science Framework
+(DOI 10.17605/OSF.IO/Q6JYN). L'ensemble du code, des spécifications
+et du pré-enregistrement est ouvert sous MIT / CC-BY-4.0 ; les
+implémentations de référence et les suites de tests sont disponibles
+sur `github.com/genial-lab/dream-of-kiki`.
 
 ---
 
@@ -334,21 +360,34 @@ paires, trouvant 12 paires croisées non-commutatives.
 ### 4.5 Axiomes DR-0..DR-4
 
 - **DR-0 (redevabilité)** : chaque DE exécutée produit une
-  EpisodeLogEntry, même en cas d'exception dans le handler
+  `EpisodeLogEntry`, même en cas d'exception dans le handler
   (garantie try/finally).
 - **DR-1 (conservation épisodique)** : chaque enregistrement β
-  est consommé avant purge.
-- **DR-2 (compositionnalité)** : la composition d'opérations forme
-  un semi-groupe avec fermeture de type + additivité de budget +
-  composition fonctionnelle. La propriété universelle du
-  générateur libre est ouverte (relecteur G3 pendant).
-- **DR-3 (indépendance du substrat)** : Critère de Conformité =
-  typage des signatures ∧ tests de propriété axiomatiques passants
-  ∧ invariants BLOCKING applicables. L'implémentation de référence
-  satisfait les trois (voir §5 approche de validation du Critère
-  de Conformité et Paper 2 pour l'instanciation empirique).
+  est consommé avant purge (τ_max borné).
+- **DR-2 (compositionnalité — prouvée, ce papier)** : l'ensemble
+  des opérations `Op = {replay, downscale, restructure,
+  recombine}` sous composition `∘` avec budget additif forme un
+  semi-groupe non commutatif engendré par les quatre primitives.
+  Le théorème est établi en quatre étapes (fermeture du typage,
+  additivité composante par composante du triplet de budget
+  `(FLOPs, wall_time, energy_J)`, composition fonctionnelle de
+  l'application `effect`, et associativité de la composition de
+  fonctions) ; l'analyse de cas complète et les exemples de
+  non-commutativité par paires d'opérations sont fournis dans
+  `docs/proofs/dr2-compositionality.md`. Nous ne revendiquons pas
+  la propriété universelle de liberté (absence de relations non
+  triviales au-delà de l'associativité) — cette propriété reste
+  ouverte et est orthogonale aux trois conjoints qui constituent
+  DR-2 tel que formulé.
+- **DR-3 (indépendance du substrat)** : Critère de Conformité
+  exécutable = typage des signatures ∧ tests de propriété
+  axiomatiques passants ∧ invariants BLOCKING applicables. Deux
+  substrats indépendants satisfont les trois conditions (§5.6).
 - **DR-4 (inclusion en chaîne des profils)** : P_min ⊆ P_equ ⊆ P_max
-  pour les opérations et les canaux.
+  pour les opérations et les canaux ; un lemme de monotonie
+  (DR-4.L) donne l'ordre faible des résultats métriques attendus
+  en espérance sur les classes métriques monotones en capacité.
+  Preuve dans `docs/proofs/dr4-profile-inclusion.md`.
 
 ### 4.6 Invariants — I/S/K avec matrice d'application
 
@@ -417,15 +456,74 @@ Voir Paper 2 pour une instanciation empirique (implémentation de
 référence basée MLX du cycle 1). Le Paper 1 ne prétend à aucune
 implémentation spécifique au-delà du contrat formel ci-dessus.
 
-### 5.6 Esquisses de preuves — DR-0..DR-4
+### 5.6 Parcours de conformité inter-substrats — deux substrats satisfont le critère
+
+Pour étayer l'assertion d'indépendance du substrat de DR-3 *à la
+portée du Paper 1*, nous rapportons le résultat de l'application
+du Critère de Conformité à deux substrats structurellement
+divergents. L'objectif n'est pas une comparaison de benchmark
+mais une démonstration que le critère est non vide : il accepte
+des substrats qui diffèrent dans leurs primitives mathématiques
+(descente de gradient sur tenseurs denses vs. dynamique de taux
+de spike sur événements épars), tout en rejetant les
+implémentations incorrectes via les invariants BLOCKING.
+
+**Substrat 1 — MLX kiki-oniric (Track A, à base de gradients).**
+Une implémentation de référence utilisant les opérations
+tensorielles denses Apple MLX, des mises à jour de poids adaptées
+LoRA et un tampon épisodique adossé à SQLite. Canonique pour le
+cycle 1 ; source à `kiki_oniric/substrates/mlx_kiki_oniric.py`.
+
+**Substrat 2 — E-SNN thalamocortical (numpy-LIF, à base de
+spikes).** Un réseau neuronal spiking à intégration-et-tir avec
+fuite et connectivité thalamocorticale, primitives codées en
+taux et bascule de backend NORSE / nxNET. Développé spécifiquement
+pour mettre à l'épreuve DR-3 sur un substrat *formellement
+distant* du substrat 1 (pas de gradients dans les handlers
+d'opérations ; l'état est constitué de trains de spikes, pas de
+tenseurs de poids). Source à
+`kiki_oniric/substrates/esnn_thalamocortical.py` ; rapport de
+conformité de la porte G7 à
+`docs/milestones/g7-esnn-conformance.md`.
+
+**Tableau des conditions du critère.** Chaque condition de DR-3
+est exercée par un ensemble discret de tests ; chaque substrat
+reçoit un pass/fail indépendant par condition.
+
+| Condition DR-3 | MLX kiki-oniric | E-SNN thalamocortical |
+|----------------|-----------------|-----------------------|
+| (1) Typage des signatures (4 handlers d'opérations, conformes au Protocol, constantes d'identité exportées) | ✅ 4 tests passent | ✅ 4 tests passent (`test_dr3_esnn_substrate.py`) |
+| (2) Tests de propriété axiomatique (DR-0 redevabilité sur chaque DE exécutée ; DR-2 propriété non idempotente du downscale ; déterminisme R1 du recombine) | ✅ 3 tests passent | ✅ 3 tests passent |
+| (3) Invariants BLOCKING applicables (garde S2 poids finis, garde S3 topologie, garde S1 non-régression du retenu) | ✅ 2 tests passent (S2, S3) | ✅ 2 tests passent (S2 sur LIF `state.v`, S3 sur la chaîne d'espèces) |
+| **Global** | **Conforme** | **Conforme** |
+
+DR-1 (conservation épisodique) et DR-4 (inclusion en chaîne des
+profils) sont des propriétés indépendantes du substrat vérifiées
+une fois au niveau du framework ; chaque substrat conforme en
+hérite par construction.
+
+**Interprétation.** Les deux substrats passent le Critère de
+Conformité sous 9 tests de propriété axiomatique et d'application
+d'invariants chacun (27 assertions au total). Le critère est donc
+non vide au sens minimal — il distingue les implémentations
+conformes des non-conformes (confirmé par les expériences
+d'injection de fautes rapportées au §7.2). Le critère reste un
+test *nécessaire* de conformité au framework ; une validation
+empirique *suffisante* de l'assertion d'indépendance du substrat
+sur une classe plus large de substrats (variantes SNN,
+instanciations à base de transformers, matériel neuromorphique
+analogique) est poursuivie dans le papier compagnon.
+
+### 5.7 Esquisses de preuves — DR-0..DR-4
 
 DR-0 prouvé par l'invariant try/finally du registre de handlers ;
-DR-1 prouvé par la comptabilité de drainage du tampon β ; brouillon
-de preuve DR-2 dans `docs/proofs/dr2-compositionality.md` ; DR-3
-prouvé par le Critère de Conformité (typage des signatures + tests
-de propriété axiomatiques + invariants BLOCKING applicables) ;
-DR-4 prouvé dans `docs/proofs/dr4-profile-inclusion.md` (inclusion
-en chaîne des opérations et canaux).
+DR-1 prouvé par la comptabilité de drainage du tampon β ; DR-2
+prouvé comme théorème de semi-groupe engendré (preuve complète
+dans `docs/proofs/dr2-compositionality.md`) ; DR-3 validé par le
+Critère de Conformité exécutable sur deux substrats (§5.6) ;
+DR-4 prouvé dans `docs/proofs/dr4-profile-inclusion.md` comme
+inclusion en chaîne des opérations et canaux plus le lemme de
+monotonie DR-4.L.
 
 ---
 
@@ -538,158 +636,140 @@ invalide EC et nécessite de réexécuter la matrice affectée.
 
 ---
 
-## 7. Résultats
+## 7. Validation pipeline-et-framework
 
-⚠️ **Précaution (substitution synthétique, pilote G2/G4).** Toute
-assertion quantitative de cette section provient de prédicteurs
-mock aux niveaux de précision scriptés (50 %/70 %/85 %) enregistrés
-sous le run_id `syn_s15_3_g4_synthetic_pipeline_v1` (dump
-`docs/milestones/ablation-results.json`). Les chiffres valident le
-*pipeline*, pas l'efficacité de P_equ sur des données linguistiques
-réelles ; la section est préservée ici pour permettre aux relecteurs
-d'auditer le gabarit de rapport, mais aucune assertion empirique
-principale ne doit en être tirée. Les prédicteurs mega-v2 réels +
-inférés par MLX interviennent en clôture du cycle 1 (S20+) et
-remplaceront ces substitutions.
+Cette section rapporte des résultats de validation au **niveau du
+framework** : (i) le pipeline de mesure et statistique s'exécute
+de bout en bout sur un jeu de données d'entrée scripté ; (ii) les
+invariants BLOCKING S1–S3 rejettent les tentatives de basculement
+volontairement faussées ; (iii) le contrat de reproductibilité R1
+produit des hash de `run_id` déterministes pour des tuples de
+paramètres appariés ; et (iv) les mesures de portabilité
+inter-substrats d'un projet sœur sont résumées comme test
+indépendant de l'assertion d'indépendance du substrat. **Aucune
+décision d'hypothèse sur H1–H4 n'est annoncée ici** ;
+l'évaluation empirique des hypothèses sur des bancs de test
+d'apprentissage continu (mega-v2) et l'alignement IRMf
+(Studyforrest / partenariats de laboratoire) est l'objet du
+Paper 2.
 
-### 7.1 Viabilité de P_min (G2)
+### 7.1 Exécution de bout en bout du pipeline statistique
 
-Nous avons d'abord vérifié que le profil P_min (replay + downscale
-uniquement) fonctionne dans les contraintes architecturales (DR-0
-redevabilité, gardes de basculement S1+S2). Sur un banc de test
-retenu synthétique de 50 items, le protocole de basculement a été
-commité dans 100 % des cycles tentés lorsque le prédicteur
-correspondait aux sorties attendues, et a avorté avec
-`S1 guard failed` dans 100 % des cycles lorsque la précision se
-dégradait — établissant opérationnellement le contrat de contrôle
-du basculement.
-
-**Table 7.1 — Pilote P_min (G2, substitution synthétique, pilote
-G2)**
-
-run_id : `syn_g2_pmin_pipeline_v1`
-dump : `docs/milestones/g2-pmin-report.md`
-
-| Seed | Précision baseline | Précision P_min | Δ |
-|------|--------------|-----------|---|
-| 42   | [SYNTH 0.500] | [SYNTH 0.800] | +0.300 |
-| 123  | [SYNTH 0.500] | [SYNTH 0.800] | +0.300 |
-| 7    | [SYNTH 0.500] | [SYNTH 0.800] | +0.300 |
-
-Verdict de porte (validation du pipeline synthétique uniquement ;
-critère Δ ≥ −0,02) : **PASS**. Voir
-`docs/milestones/g2-pmin-report.md` pour les résultats bruts.
-
-### 7.2 Ablation fonctionnelle de P_equ (G4)
-
-P_equ ajoute l'opération `restructure` (source Friston FEP) et
-l'opération `recombine` (source Hobson REM) aux côtés de `replay`
-+ `downscale`, avec les canaux β+δ → 1+3+4 câblés. Nous avons
-exécuté le runner d'ablation sur 3 profils (baseline, P_min, P_equ)
-× 3 graines sur un banc de test synthétique de style mega-v2 de
-500 items stratifié sur 25 domaines.
-
-**Table 7.2 — Précision d'ablation G4 (substitution synthétique,
-pilote G4)**
-
-run_id : `syn_s15_3_g4_synthetic_pipeline_v1`
-dump : `docs/milestones/ablation-results.json`
-
-| Profil   | Précision moy. | Écart-type | Plage |
-|----------|----------|-----|-------|
-| baseline | [SYNTH 0.500] | [SYNTH 0.000] | 0.500-0.500 |
-| P_min    | [SYNTH 0.700] | [SYNTH 0.000] | 0.700-0.700 |
-| P_equ    | [SYNTH 0.850] | [SYNTH 0.000] | 0.850-0.850 |
-
-(Remplacer par les valeurs d'ablation réelles post-S20+ ; un
-nouveau run_id sera enregistré lorsque les prédicteurs réels
-seront câblés.)
-
-### 7.3 H1 — Réduction de l'oubli (substitution synthétique)
-
-Test t de Welch (unilatéral) sur l'oubli (1 − précision) de P_equ
-versus baseline (run_id `syn_s15_3_g4_synthetic_pipeline_v1`,
-dump `docs/milestones/ablation-results.json`) :
-
-- **Statistique** : t = [SYNTH −47.43]
-- **p-value** : p < 0,001 (synthétique, sera resserré avec données
-  réelles)
-- **α de Bonferroni** : 0,0125
-- **Issue du pipeline synthétique** : H0 rejetée sur les
-  prédicteurs mock. **Aucune décision d'hypothèse empirique**
-  n'est annoncée ici ; le verdict H1 authentique est différé à
-  S20+ lorsque les prédicteurs mega-v2 réels seront câblés et
-  qu'un run_id frais sera enregistré.
-
-### 7.4 H3 — Alignement représentationnel monotone (substitution synthétique)
-
-Test de tendance Jonckheere-Terpstra sur la précision à travers la
-chaîne ordonnée des profils (P_min < P_equ) (run_id
-`syn_s15_3_g4_synthetic_pipeline_v1`, dump
+Les quatre tests pré-enregistrés (Welch unilatéral, équivalence
+TOST, tendance Jonckheere–Terpstra, seuil à un échantillon) sont
+encapsulés dans une interface `StatTestResult` uniforme dans
+`harness.statistics.tests`. Sur une entrée stratifiée contrôlée
+de 500 items aux niveaux de précision scriptés (50 % / 70 % /
+85 % à travers baseline / P_min / P_equ ; `run_id
+syn_s15_3_g4_synthetic_pipeline_v1`,
 `docs/milestones/ablation-results.json`) :
 
-- **Statistique J** : [SYNTH 9.0]
-- **p-value** : [SYNTH 0.0248]
-- **α de Bonferroni** : 0,0125
-- **Issue du pipeline synthétique** : échoue à rejeter H0 au seuil
-  corrigé par Bonferroni (rejetterait au α conventionnel = 0,05).
-  **Aucune décision d'hypothèse empirique** n'est annoncée ici ;
-  le cycle 2 avec P_max intégré devrait fournir le troisième
-  groupe nécessaire pour renforcer le signal de tendance sur
-  données réelles.
+- les quatre tests s'exécutent sans erreur ;
+- chacun retourne une statistique au signe attendu, cohérente
+  avec la direction scriptée du signal ;
+- le booléen `StatTestResult.reject_h0` est calculé à partir du
+  seuil α = 0,0125 corrigé par Bonferroni et est interprétable
+  en aval par la logique de décision de porte.
 
-### 7.5 H4 — Conformité au budget énergétique (substitution synthétique)
+*Interprétation.* Cela établit la chaîne statistique comme
+opérationnelle sous la politique de comparaisons multiples
+pré-enregistrée. Aucune p-value n'est rapportée ici : les
+p-values calculées à partir de précisions scriptées sont non
+informatives sur l'efficacité du framework et seraient trompeuses
+si affichées. Les p-values réelles, avec des prédicteurs non
+scriptés sur mega-v2, sont rapportées dans le Paper 2.
 
-Test t à un échantillon sur le ratio énergétique
-energy(dream) / energy(awake) contre le seuil 2,0 (critère de
-viabilité du master spec §7.2) (run_id
-`syn_s15_3_g4_synthetic_pipeline_v1`, dump
-`docs/milestones/ablation-results.json`) :
+### 7.2 Injection de fautes sur les gardes d'invariants
 
-- **Moyenne d'échantillon** : [SYNTH 1.6]
-- **Statistique t** : [SYNTH −5.66]
-- **p-value** : [SYNTH 0.0101]
-- **α de Bonferroni** : 0,0125
-- **Issue du pipeline synthétique** : H0 rejetée sur l'échantillon
-  mock de ratio énergétique ; le verdict **empirique** H4 est
-  différé à S20+ lorsque les traces énergétiques réelles sur
-  horloge murale seront enregistrées sous un run_id fraîchement
-  enregistré.
+Les trois invariants BLOCKING S1 (non-régression du retenu), S2
+(poids finis, pas de NaN/Inf dans les poids scratch) et S3
+(validité topologique) sont exercés par trois injections de
+fautes dédiées sur chacun des deux substrats conformes :
 
-### 7.6 H2 — Équivalence P_max (différé au cycle 2)
+| Invariant | Faute | Issue attendue | Observée (MLX) | Observée (E-SNN) |
+|-----------|-------|------------------|----------------|------------------|
+| S1 | Régression de poids sur le sous-ensemble retained-bench | `SwapAborted(S1)` + log dans `aborted-swaps/` | ✅ | ✅ |
+| S2 | NaN injecté dans `W_scratch` | `SwapAborted(S2)` pré-S1 | ✅ | ✅ (sur `state.v`) |
+| S3 | Boucle topologique auto-référente insérée | `SwapAborted(S3)` post-S1 | ✅ | ✅ (chaîne d'espèces) |
 
-Conformément à la décision de SCOPE-DOWN du cycle 1 (master spec
-§7.3), le profil P_max reste uniquement en squelette. Nous avons
-exécuté un test de fumée d'équivalence TOST de P_equ contre
-lui-même (avec une toute petite perturbation déterministe) pour
-valider le pipeline statistique ; le test a correctement accepté
-l'équivalence (p ≈ 5e-08). Le test réel d'équivalence H2 P_max est
-différé au cycle 2 aux côtés du câblage du flux α +
-ATTENTION_PRIOR canal-4.
+Les six injections de fautes ont avorté le basculement, journalisé
+le bon ID d'invariant et laissé l'état d'éveil non promu. Voir
+`tests/invariants/test_swap_guards.py` et le rapport de conformité
+G7 pour les variantes spécifiques au E-SNN.
 
-### 7.7 Résumé de la porte
+### 7.3 Déterminisme du registre des runs (R1)
 
-Parmi les 4 hypothèses pré-enregistrées :
-- **H1 oubli** : significatif (PASS)
-- **H2 équivalence** : test de fumée uniquement (cycle 2)
-- **H3 monotone** : limite (PASS à α=0,05, échec à Bonferroni
-  0,0125)
-- **H4 énergie** : significatif (PASS)
+Le contrat R1 attribue un préfixe SHA-256 déterministe de 32
+caractères comme `run_id` clé sur `(c_version, profile, seed,
+commit_sha, benchmark_version)`. Nous avons généré 1000 tuples
+appariés à paramètres fixés et 1000 tuples avec un composant
+unique perturbé ; les 1000 tuples appariés ont produit des hash
+de `run_id` identiques, et les 1000 tuples perturbés ont produit
+des hash distincts. Le registre applique l'intégrité d'artefact
+R3 en rejetant tout `RetainedBenchmark` dont le SHA-256 ne
+correspond pas à la référence figée ; cette garde s'est
+déclenchée comme attendu lors d'une mutation délibérée du fichier
+(`test_r3_integrity.py`). La largeur a été portée de 16 → 32
+caractères hex dans le commit `df731b0` après une revue de code
+ayant signalé un risque de collision 64 bits à l'échelle attendue
+du cycle 2.
 
-**Résultat de porte G4 (validation du pipeline synthétique
-uniquement)** : **PASS** — voir PRÉCAUTION ci-dessous (≥2
-hypothèses significatives au α corrigé par Bonferroni). Voir
-`docs/milestones/ablation-results.md` pour les données complètes +
-dump JSON.
+### 7.4 Portabilité inter-substrats — corroboration indépendante
 
-> **⚠️ PRÉCAUTION — données synthétiques uniquement.** Le verdict
-> PASS ci-dessus valide le *pipeline de mesure et statistique*,
-> non l'efficacité de P_equ sur des données linguistiques réelles.
-> Tous les chiffres de cette section dérivent de prédicteurs mock
-> aux niveaux de précision scriptés (50 % baseline, 70 % P_min,
-> 85 % P_equ). Les résultats d'inférence mega-v2 + MLX réels sont
-> en attente de la clôture du cycle 1 (S20+) selon les décisions
-> GO-CONDITIONAL G2/G4/G5.
+Un projet sœur à `github.com/genial-lab/nerve-wml` (même byline,
+même discipline de typage Protocol) mesure le polymorphisme
+inter-substrats sur une interface Nerve séparée avec deux
+substrats concrets : `MlpWML` (MLP dense) et `LifWML` (SNN à
+intégration-et-tir avec fuite, gradient de substitution). La
+mesure de la porte W de nerve-wml est un test du même *principe
+d'indépendance du substrat* articulé ici comme DR-3. Nous
+résumons les chiffres rapportés — détails complets dans le
+preprint cité.
+
+**Tâche linéairement séparable (FlowProxyTask 4 classes, pool
+N = 4, multi-graine).** Les pools `MlpWML` et `LifWML` saturent
+tous deux à une précision de 1,000 ; écart relatif 0,000. Les
+deux substrats satisfont le protocole Nerve partagé.
+
+**Tâche non linéaire (HardFlowProxyTask 12 classes, étiquette
+projetée par XOR).** `MlpWML` atteint une précision de 0,547 ;
+`LifWML` atteint une précision de 0,480. Écart absolu 0,067,
+écart relatif **12,1 %** — au-dessus de la cible de 5 %. Cela
+est divulgué dans le papier nerve-wml comme un résultat négatif
+honnête et reflète le retard du décodeur actuel par appariement
+de motifs cosinus dans la variante LIF sur les tâches non
+linéaires.
+
+**Porte M (test de fusion).** Un `MlpWML` entraîné contre un
+Nerve mock et déployé contre un Nerve réel retient **1,000** de
+sa précision baseline mock (critère ≥ 0,95), confirmant
+l'interopérabilité inter-substrats de bout en bout.
+
+*Interprétation.* Lu à la portée du Paper 1 : (a) le principe
+d'indépendance du substrat de DR-3 est empiriquement traitable
+et déjà démontré sur des tâches linéairement séparables dans un
+système sœur ; (b) l'écart non linéaire de 12,1 % borne
+l'enveloppe actuelle de portabilité inter-substrats et fixe une
+cible cycle-2 explicite ; (c) la discipline de rapport honnête —
+divulguer l'écart plutôt que le masquer — est préservée. Ces
+chiffres ne constituent pas des preuves H1–H4 ; ils constituent
+une preuve *méthodologique* que l'assertion d'indépendance du
+framework est opérationnelle plutôt qu'asserte.
+
+### 7.5 Synthèse
+
+La validation du §7 établit quatre propriétés opérationnelles du
+framework : le pipeline statistique pré-enregistré s'exécute
+correctement sous correction de Bonferroni ; les invariants
+BLOCKING S1–S3 imposent le comportement d'avortement attendu sous
+injection de fautes sur les deux substrats conformes ; le contrat
+de reproductibilité R1 produit des hash de `run_id`
+déterministes à la largeur requise ; et les mesures
+inter-substrats indépendantes dans un système sœur corroborent
+le principe d'indépendance du substrat dans les régimes où il
+est mesurable aujourd'hui. Aucune décision d'hypothèse
+d'apprentissage continu sur H1–H4 n'est annoncée dans le
+Paper 1 ; ces décisions sont l'objet du Paper 2.
 
 ---
 
@@ -749,49 +829,66 @@ profile, seed, commit_sha)) est appliqué par le run registry.
 
 ### 8.3 Limites
 
-Trois limites bornent la contribution du cycle 1 :
+Trois limites bornent la contribution du Paper 1 :
 
-**(i) Précautions liées aux données synthétiques.** Tous les
-résultats quantitatifs au §7 sont produits par des prédicteurs
-mock aux niveaux de précision scriptés (50 % baseline, 70 % P_min,
-85 % P_equ ; run_id `syn_s15_3_g4_synthetic_pipeline_v1`). Ils
-valident le *pipeline*, non l'*efficacité de la consolidation*.
-Les prédicteurs réels mega-v2 + inférés par MLX interviennent en
-clôture du cycle 1 (S20+) ou au cycle 2 ; d'ici là, tous les
-chiffres doivent être lus comme preuves de validation
-d'infrastructure uniquement.
+**(i) Aucune décision empirique au niveau des hypothèses.** Le
+Paper 1 rapporte la validation du framework (pipeline,
+invariants, reproductibilité, conformité inter-substrats) mais
+**ne revendique pas** d'efficacité H1–H4 au niveau des hypothèses
+sur des bancs de test d'apprentissage continu réels. Les chiffres
+du §7 sont au niveau du framework et n'entraînent pas de p-values
+par hypothèse sur des données d'apprentissage continu — celles-ci
+sont différées au Paper 2, où les prédicteurs mega-v2 réels sur
+le substrat de référence sont évalués sous le pré-enregistrement
+verrouillé.
 
-**(ii) Validation sur substrat unique.** Un substrat unique est
-exercé au cycle 1. Bien que le Critère de Conformité DR-3 soit
-formulé pour être indépendant du substrat, seule une instance a
-passé les trois conditions de conformité. Le cycle 2 introduit un
-substrat supplémentaire afin de tester empiriquement l'assertion
-d'indépendance du substrat selon le Critère de Conformité DR-3.
+**(ii) Indépendance du substrat testée sur deux substrats, pas
+encore sur la classe plus large.** Deux substrats indépendants
+(MLX kiki-oniric et E-SNN thalamocortical) satisfont le Critère
+de Conformité (§5.6), ce qui constitue un test *nécessaire* de
+l'indépendance. Une validation *suffisante* sur la classe plus
+large de substrats (instanciations à base de transformers,
+variantes SNN profondes sur Loihi-2, matériel neuromorphique
+analogique) relève du cycle 2.
 
 **(iii) P_max en squelette uniquement.** Le profil P_max est
 déclaré via des métadonnées (opérations cibles, canaux cibles)
-mais ses handlers ne sont pas câblés. L'hypothèse H2 (équivalence
-P_max vs P_equ dans ±5 %) n'est donc testée que comme test de
-fumée d'auto-équivalence au cycle 1. Une évaluation H2 réelle
-requiert le câblage réel de P_max (cycle 2).
+mais ses handlers ne sont pas pleinement câblés. L'hypothèse H2
+(équivalence P_max vs P_equ dans ±5 %) est donc une évaluation
+cycle-2 ; dans le Paper 1, P_max n'est utilisé que pour
+structurer l'inclusion en chaîne des profils DR-4, sans
+revendiquer de parité empirique.
 
 ### 8.4 Comparaison avec l'état de l'art
 
 | Travail antérieur | Contribution | Apport dreamOfkiki |
 |-----------|--------------|----------------------|
-| @vandeven2020brain | Replay génératif | Composabilité + axiome DR-2 + Conformité |
-| @kirkpatrick2017overcoming (EWC) | Régulariseur de consolidation synaptique | EWC subsumée sous l'opération B-Tononi SHY dans le framework |
-| @tononi2014sleep (SHY) | Thèse théorique de l'homéostasie synaptique | Opérationnalisée comme opération `downscale` à propriété non idempotente |
-| @friston2010free (FEP) | Principe d'énergie libre | Opérationnalisé comme opération `restructure` avec garde topologique S3 |
-| @hobson2009rem (REM) | Théorie du rêve créatif | Opérationnalisée comme opération `recombine` avec squelette VAE allégé |
-| @mcclelland1995complementary (CLS) | Système dual hippocampe + néocortex | Intégré dans l'inclusion de profils DR-4 (P_min minimal vs P_equ plus riche) |
+| @vandeven2020brain (replay inspiré du cerveau) | Replay génératif pour CL | Replay est l'une des quatre opérations composées, avec budget explicite + non-commutativité avec downscale, restructure, recombine |
+| @kirkpatrick2017overcoming (EWC) | Régularisation pondérée par Fisher protégeant les poids importants | Complémentaire plutôt que subsumée : EWC réalise un *schéma de pondération* au sein de la classe d'opérations `downscale`, pas la même primitive que la régulation à la baisse multiplicative SHY |
+| @tononi2014sleep (SHY) | Thèse théorique de l'homéostasie synaptique | Opérationnalisée comme opération `downscale` à propriété empiriquement vérifiée commutative-mais-non-idempotente (§3.2) |
+| @friston2010free (FEP) | Principe d'Énergie Libre | Opérationnalisé comme opération `restructure` avec garde topologique S3 ; interface étroite avec les comptes rendus d'inférence active (voir ci-dessous) |
+| @hobson2009rem / @solms2021revising | Rêve créatif REM | Opérationnalisé comme `recombine` avec noyau VAE-allégé / d'interpolation et borne de dérive I3 |
+| @mcclelland1995complementary (CLS) | Système dual hippocampe + néocortex | Intégré dans l'inclusion en chaîne des profils P_min ⊆ P_equ ⊆ P_max (DR-4) |
+| Réseaux progressifs, PathNet [Rusu 2016, Fernando 2017] | Allocation de sous-réseaux spécifiques à la tâche | Orthogonal : ce sont des dispositifs CL *architecturaux* ; notre framework compose des *opérations* et admet de telles architectures comme substrats |
+| MERLIN, MEMO, Gated Linear Networks [Wayne 2018, Banino 2020, Veness 2021] | CL multi-mécanismes avec mémoire explicite | Candidats substrats pour notre framework ; aucun ne satisfait un critère de conformité exécutable à travers les backends à base de gradients et de spikes |
+| Dark Experience Replay, iCaRL, A-GEM [Buzzega 2020, Rebuffi 2017, Chaudhry 2019] | Baselines CL modernes basées sur la répétition | Tous réalisent l'opération `replay` seule ; DR-2 fournit une sémantique de composition formelle dont ils héritent par instanciation |
+| Inférence active / agents de style PEARL [Tschantz 2020, Millidge 2021] | Modèles d'agents enracinés FEP composant perception + action | Complément : l'inférence active est compatible au niveau du framework avec notre opération `restructure` et le Critère de Conformité ; la conformité sur un tel agent est un travail futur explicite |
+| Modèles du monde (Dreamer, DreamerV2/V3) [Hafner 2020–2023] | Agents à modèle du monde latent avec replay et apprentissage structurel | Recouvrement sur replay + restructure, mais pas de `recombine` ou `downscale` explicite dans leur ontologie ; substrat conforme possible avec ces deux primitives laissées en `no-op` ou absorbées dans l'objectif d'apprentissage |
+| Famille JEPA [LeCun 2022 « A Path Towards Autonomous Machine Intelligence » ; Assran et al. 2023 I-JEPA ; Bardes et al. 2024 V-JEPA ; AMI Labs 2026] | Entraînement de modèles du monde prédictifs auto-supervisés sur des latents par embeddings joints ; « modèles du monde qui apprennent du réel, pas du langage » | Candidat substrat complémentaire : JEPA réalise la primitive `restructure` (Pilier D / FEP) à grande échelle sur des représentations latentes, sans contrepartie native explicite de `replay` ou `downscale`. Un parcours de conformité sur un substrat de classe JEPA (p. ex. encodeur vidéo V-JEPA avec ajout d'un tampon épisodique β et d'un downscale homéostatique) relève explicitement du cycle 2 ; le motif de portabilité inter-substrats démontré ici sur MLX + E-SNN est destiné à généraliser vers une telle configuration. |
 
-Nos traits distinctifs : **(a)** framework formel unifié couvrant
-les quatre piliers, **(b)** Critère de Conformité exécutable
-permettant la validation multi-substrat, **(c)** méthodologie
-d'ablation pré-enregistrée avec bancs de test figés +
-identifiants de runs déterministes, **(d)** artefacts de science
-ouverte (code MIT, pré-enregistrement OSF, artefacts DOI Zenodo).
+Nos traits distinctifs par rapport à ce qui précède : **(a)** un
+framework *formel* unifié couvrant les quatre piliers avec un
+théorème de compositionnalité **prouvé** (DR-2), **(b)** un
+Critère de Conformité *exécutable* empiriquement validé sur deux
+substrats structurellement divergents (MLX dense + LIF spiking),
+**(c)** une méthodologie d'évaluation pré-enregistrée avec bancs
+de test figés et tuples `run_id` déterministes (contrat R1),
+**(d)** des artefacts de science ouverte (code MIT, docs
+CC-BY-4.0, DOI OSF, DOI Zenodo planifié pour les artefacts).
+Nous ne revendiquons pas un nouvel *algorithme* d'apprentissage
+continu ; la revendication est un *framework* contre lequel les
+algorithmes peuvent être spécifiés, composés et comparés avec
+des garanties au niveau du contrat.
 
 ---
 
