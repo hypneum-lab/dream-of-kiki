@@ -301,7 +301,7 @@ def _build_adapter(seed: int):
     never reaches it. The full output dim (4) matches the A/B/C/D
     letter bias — deliberate.
     """
-    import mlx.core as mx  # noqa: F401 — imported for side-effect seed
+    import mlx.core as mx
     import mlx.nn as nn
 
     class _Adapter(nn.Module):
@@ -340,6 +340,19 @@ def _build_adapter(seed: int):
     adapter = _Adapter()
     encoder = _Encoder()
     decoder = _EncDec()
+    # Zero-init the adapter so its pre-dream 4-dim output is exactly
+    # the zero vector. Combined with the symmetric pre/post eval
+    # (both apply the adapter bias), this makes ``delta = post - pre``
+    # genuinely measure "dream's ability to shift the adapter into a
+    # useful state" rather than "how much a random Glorot-init bias
+    # disrupts Qwen's baseline logits". At t=0 the scaled bias is
+    # BIAS_SCALE * 0 = 0, so pre-score ≡ pure Qwen baseline on every
+    # cell regardless of seed — only the dream ops can move the
+    # adapter off zero and therefore change the score.
+    for linear in (*adapter.layers, adapter.head, encoder.fc, decoder.fc):
+        linear.weight = mx.zeros_like(linear.weight)
+        if getattr(linear, "bias", None) is not None:
+            linear.bias = mx.zeros_like(linear.bias)
     return adapter, encoder, decoder
 
 
@@ -655,13 +668,19 @@ def _run_cell(
 
     adapter, encoder, decoder = _build_adapter(seed)
 
-    # Stage 2 — pre-dream evaluation : pure Qwen baseline (bias=0).
+    # Stage 2 — pre-dream evaluation : symmetric biased eval. With
+    # the adapter zero-initialised in ``_build_adapter`` the bias at
+    # t=0 is ``BIAS_SCALE * 0 = 0`` so this still measures the pure
+    # Qwen baseline. Using ``use_bias=True`` on BOTH pre and post
+    # keeps the measurement symmetric : any non-zero delta is the
+    # signature of the dream ops actually moving the adapter, not
+    # of a Glorot-init artefact that was absent pre-dream.
     pre = _score_adapter_mmlu(
         adapter,
         wrapper,
         mmlu_prompts,
         letter_token_ids,
-        use_bias=False,
+        use_bias=True,
     )
 
     # Stage 3 — dream episodes.

@@ -212,6 +212,107 @@ to close C3.8.
   facts / elementary-math / science Q&A — network-free and R1
   byte-stable under `c_version | profile | seed | commit_sha`.
 
+## 2026-04-19 re-run post-ι fix
+
+An audit of the first full run (verdict NO-GO, unanimous
+negative delta) showed the NO-GO was a **proxy-construction
+artefact**, not a genuine signal. Two asymmetries were conflating
+"dream helps" with "random init hurts" :
+
+1. **Pre-score scored with `use_bias=False`** — pure Qwen, no
+   adapter bias at all.
+2. **Post-score scored with `use_bias=True`** where the adapter
+   was Glorot-initialised (MLX default) and scaled by
+   `BIAS_SCALE=20`. The fresh Glorot bias at post-eval was
+   therefore a ~±10-unit random nudge on the letter logits, which
+   systematically dragged `post < pre`.
+
+Pre and post were measuring **different quantities**, so the
+negative delta reflected the measurement asymmetry, not a
+genuine "dream hurts" signal.
+
+### Fix — ι (iota) quick-fix
+
+Two minimal changes to [`scripts/pilot_cycle3_sanity.py`](../../scripts/pilot_cycle3_sanity.py)
+(single commit, no spec change) :
+
+1. **Zero-init the adapter** (and encoder/decoder) in
+   `_build_adapter` via `mx.zeros_like(...)` on every
+   `linear.weight` + `linear.bias`. At `t=0` the adapter's 4-dim
+   output is exactly the zero vector, so the scaled bias is
+   `BIAS_SCALE * 0 = 0`.
+2. **Symmetric pre/post eval** — `_run_cell` now calls
+   `_score_adapter_mmlu(..., use_bias=True)` on BOTH pre and
+   post. With the zero-init adapter, pre-score ≡ pure Qwen
+   baseline on every cell ; post-score only diverges from pre
+   if the dream ops actually move the adapter off zero.
+
+`BIAS_SCALE=20` is left unchanged — it is irrelevant at `t=0`
+with a zero adapter and relevant post-dream only if the ops
+produce a non-zero drift.
+
+### Results (re-run on Studio 2026-04-19)
+
+- Wall-clock : **71.3 s** for the full 90-cell run
+  (~0.79 s/cell ; Qwen loaded once and shared)
+- Completed : **90 / 90** cells, **0 failures**
+- Pre-score : **0.9333** on every cell (14 / 15 MMLU correct, pure
+  Qwen baseline — identical across all seeds / profiles, as
+  expected under symmetric + zero-init eval)
+
+### H1 per profile
+
+| profile | t-statistic | p-value | reject H0 (α = 0.0125) | non-zero delta cells | mean Δ | std Δ |
+|---------|-------------|---------|------------------------|---------------------|--------|-------|
+| p_min   | `NaN`       | `NaN`   | **No**                 | 0 / 30              | 0.0000 | 0.0000 |
+| p_equ   | `NaN`       | `NaN`   | **No**                 | 0 / 30              | 0.0000 | 0.0000 |
+| p_max   | `-0.5708`   | `0.5725` | **No**                | 3 / 30              | -0.0022 | 0.0210 |
+
+`NaN` for p_min / p_equ comes from `scipy.stats.ttest_rel` on
+constant paired samples (zero variance) ; the value is correctly
+interpreted as "no evidence to reject H0".
+
+The three non-zero p_max cells are :
+- seed 04 : -0.0667 (14 / 15 → 13 / 15)
+- seed 12 : -0.0667 (14 / 15 → 13 / 15)
+- seed 14 : +0.0667 (14 / 15 → 15 / 15)
+
+These flip on a single letter-logit argmax thanks to the
+deterministic ATTENTION_PRIOR-derived `extra_bias` ; the net
+effect is statistically indistinguishable from zero drift.
+
+### Verdict — **NO-GO** (0 / 3 profiles)
+
+The re-run **confirms** NO-GO, but the interpretation is now
+honest : at the 1.5 B scale the dream ops (5 episodes, 4-4-4-4
+MLP adapter) produce **no measurable shift** on the 15-prompt
+MMLU proxy. This matches the pre-fix prediction (delta ≈ 0 from
+dream drift) and rules out the "fresh-init bias hurts" artefact.
+
+The p_min / p_equ profiles produce exactly zero cells with
+non-zero delta — replay, downscale, restructure, recombine on a
+zero adapter with zero-target beta-records do not escape the
+zero fixed point. Only p_max's injected ATTENTION_PRIOR
+`extra_bias` moves the letter-logit argmax at all, and it does
+so on 3 / 30 cells (10 %), with mean effect ~0 and p = 0.5725.
+
+### Implication for C3.8
+
+**Do not launch** the full 3-scale 1080-config matrix. The
+sanity pilot is doing its job — fail-fast before 18 h of
+Studio compute. Root causes to investigate on the `pivot-4`
+branch (per cycle-3 spec §5.1 R3) :
+
+- the dream ops operate on a 4-4-4-4 MLP too small to carry
+  MMLU-relevant signal ; scale adapter to match Qwen's hidden
+  dimension or attach to a real Qwen layer
+- zero-target beta-records mean replay's MSE gradient is zero
+  from a zero start — need beta-records whose `y` embeds a
+  recoverable target
+- the logit-bias proxy has only 1 / 15 granularity ; a
+  real-weight consolidation task may need n ≫ 15 and a
+  continuous-accuracy metric to resolve sub-letter drift
+
 ## References
 
 - `scripts/pilot_cycle3_sanity.py` — driver (per-cell execution +
