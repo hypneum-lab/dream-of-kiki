@@ -1,13 +1,18 @@
-"""Statistical eval module — wraps scipy.stats for H1-H4 hypotheses.
+"""Statistical eval module — wraps scipy.stats for H1-H6 hypotheses.
 
 Per OSF pre-registration (docs/osf-preregistration-draft.md):
 - H1 Welch's t-test (one-sided): treatment improvement vs control
 - H2 TOST equivalence (bidirectional): treatment within ±epsilon
 - H3 Jonckheere-Terpstra: monotonic trend across ordered groups
 - H4 one-sample t-test (upper bound): sample mean below threshold
+- H5-I/II/III scaling law trivariant (see kiki_oniric.eval.scaling_law)
+- H6 cross-substrate effect retention (cycle-3 extension)
 
-All tests return a StatTestResult with .reject_h0, .p_value, and
-.test_name for uniform downstream handling.
+All H1-H4 tests return a StatTestResult with .reject_h0, .p_value,
+and .test_name for uniform downstream handling. The BonferroniFamily
+helper at the bottom of this module exposes family-wise α correction
+for both the cycle-1 baseline (family_size=4, α=0.0125) and the
+cycle-3 combined 8-test family (family_size=8, α=0.00625).
 
 Reference: docs/specs/2026-04-17-dreamofkiki-master-design.md §5.4
 """
@@ -174,3 +179,45 @@ def one_sample_threshold(
         reject_h0=bool(p_one_sided < alpha),
         statistic=float(res.statistic),
     )
+
+
+@dataclass(frozen=True)
+class BonferroniFamily:
+    """Bonferroni family-wise α correction for a fixed hypothesis set.
+
+    `family_size` is the number of pre-registered tests in the family
+    (cycle-1 = 4 for {H1, H2, H3, H4} ; cycle-3 = 8 for the combined
+    {H1, H2, H3, H4, H5-I, H5-II, H5-III, H6} family). α_per_test is
+    the pointwise threshold any individual p-value must beat, computed
+    as α_global / family_size.
+    """
+
+    family_size: int
+    alpha_global: float = 0.05
+
+    @property
+    def alpha_per_test(self) -> float:
+        """Per-test Bonferroni-corrected threshold (α_global / family_size)."""
+        return self.alpha_global / self.family_size
+
+
+def apply_bonferroni_family(
+    p_values: list[float],
+    family: BonferroniFamily,
+) -> list[bool]:
+    """Return per-test reject-null booleans at `family.alpha_per_test`.
+
+    Convention : strictly-less-than, matching the `< alpha` comparisons
+    already used by welch_one_sided / tost_equivalence / jonckheere_trend
+    / one_sample_threshold above. The returned list preserves input order.
+    """
+    threshold = family.alpha_per_test
+    return [p < threshold for p in p_values]
+
+
+# Pre-instantiated constants for the two cycles that reference this
+# module. Importing these avoids repeating the family_size literal at
+# every reporter site and makes the cycle-1 → cycle-3 transition an
+# explicit, grep-able change.
+CYCLE1_FAMILY = BonferroniFamily(family_size=4)   # α_per_test = 0.0125
+CYCLE3_FAMILY = BonferroniFamily(family_size=8)   # α_per_test = 0.00625
