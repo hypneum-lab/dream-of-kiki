@@ -68,9 +68,12 @@ def weights_to_spike_rates(
     negative weights to low firing rates, and ``w = 0`` to
     ``max_rate / 2`` (the neutral baseline for a Poisson-rate code).
     """
-    # np.clip the exponent to avoid overflow for very negative w
-    # (exp(50) ≈ 5e21 — still inside float64 range but we clip for
-    # consistency with the inverse's eps-guard below).
+    # No explicit clip on ``-w_arr`` is needed : numpy's ``exp``
+    # handles overflow gracefully (``exp(large) → +inf`` yields
+    # ``max_rate / (1 + inf) → 0``, ``exp(-large) → 0`` yields
+    # ``max_rate / 1 → max_rate``), so the result stays inside
+    # ``[0, max_rate]`` without an extra guard. The inverse map
+    # below still needs its eps-guard because ``log(0)`` is ``-inf``.
     w_arr = np.asarray(w, dtype=float)
     return max_rate / (1.0 + np.exp(-w_arr))
 

@@ -241,7 +241,11 @@ class HmmAligner:
             prev_ll = log_ll
 
             # M-step
-            init = gamma[0] / gamma[0].sum()
+            # Guard ``gamma[0].sum()`` the same way ``denom`` and
+            # ``weights`` are guarded below — a degenerate posterior
+            # could drive the divisor to zero.
+            init_denom = float(gamma[0].sum())
+            init = gamma[0] / (init_denom if init_denom > 0 else 1.0)
             denom = xi_sum.sum(axis=1, keepdims=True)
             denom = np.where(denom > 0, denom, 1.0)
             trans = xi_sum / denom

@@ -99,15 +99,18 @@ def _weights_bytes(model: Any) -> bytes:
     # enforce_pin checks. Re-raise so callers fail loudly.
     params = model.parameters()
 
-    def _collect(node: Any, acc: list[bytes]) -> None:
+    def _collect(node: Any, acc: list[bytes], path: str = "") -> None:
         if isinstance(node, dict):
             for k in sorted(node.keys()):
                 acc.append(str(k).encode("utf-8"))
-                _collect(node[k], acc)
+                _collect(node[k], acc, f"{path}.{k}" if path else str(k))
         elif isinstance(node, (list, tuple)):
-            for v in node:
-                _collect(v, acc)
+            for i, v in enumerate(node):
+                _collect(v, acc, f"{path}[{i}]")
         else:
+            # Failing here would silently omit a tensor from the
+            # digest and break ``enforce_pin`` guarantees — re-raise
+            # with contextual information instead of swallowing.
             try:
                 # bf16 MLX arrays cannot be converted to numpy
                 # directly (numpy has no bf16 dtype) — widen first.
@@ -115,8 +118,13 @@ def _weights_bytes(model: Any) -> bytes:
                     node = node.astype(mx.float32)
                 arr = np.asarray(node)
                 acc.append(arr.tobytes())
-            except Exception:  # pragma: no cover - defensive
-                pass
+            except Exception as exc:
+                raise RuntimeError(
+                    f"_collect: failed to serialise tensor at "
+                    f"path {path!r} (type {type(node).__name__}) "
+                    f"for FP16 weight digest — refusing to omit "
+                    f"from sha256 hash. Underlying error: {exc!r}"
+                ) from exc
 
     chunks: list[bytes] = []
     _collect(params, chunks)

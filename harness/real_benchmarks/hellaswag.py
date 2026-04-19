@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import logging
 import random
 from dataclasses import dataclass
 from pathlib import Path
@@ -24,6 +25,8 @@ from typing import Iterator
 
 from harness.real_benchmarks import MissingLocalDatasetError
 from harness.real_benchmarks.dataset_registry import DatasetPin
+
+_LOG = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -323,8 +326,18 @@ def _load_hellaswag_records(
             )
         return records
 
-    # 1. Caller-supplied path
+    # 1. Caller-supplied path — if the caller explicitly passed
+    #    ``fixture_path`` but the file is missing, fail loudly
+    #    rather than silently falling back to the HF cache or the
+    #    in-module mini-fixture (which would mask a typo or a
+    #    misplaced artefact and corrupt the run-registry signature).
     target = fixture_path or _DEFAULT_HELLASWAG_FALLBACK
+    if fixture_path is not None and not target.exists():
+        raise FileNotFoundError(
+            f"caller supplied fixture_path={fixture_path!s} but no "
+            f"file exists at {target!s} — refusing to fall back to "
+            "HF cache or in-module fixture (R1 reproducibility)"
+        )
     if target.exists():
         raws = []
         with target.open("r", encoding="utf-8") as fh:
@@ -335,7 +348,10 @@ def _load_hellaswag_records(
                 raws.append(json.loads(line))
         return _materialise(raws)
 
-    # 2. Offline HF cache.
+    # 2. Offline HF cache. Catch only the specific exceptions that
+    #    can plausibly surface from an absent or unusable dataset
+    #    package so unrelated failures (KeyboardInterrupt,
+    #    MemoryError, …) propagate.
     try:  # pragma: no cover - optional cache path
         import os
 
@@ -345,7 +361,7 @@ def _load_hellaswag_records(
         ds = load_dataset("Rowan/hellaswag", split="validation")
         raws = [dict(ex) for ex in ds.select(range(min(len(ds), n_samples * 2)))]
         return _materialise(raws)
-    except Exception:
+    except (ImportError, ModuleNotFoundError, FileNotFoundError, OSError, ValueError):
         pass
 
     # 3. In-module hand-authored fallback — pipeline validation only.
@@ -420,11 +436,20 @@ def evaluate_hellaswag(
     forward = model.model if hasattr(model, "model") else model
 
     correct = 0
+    # Neutral fallback for whitespace-only endings : prefer
+    # ``eos_token_id`` then ``pad_token_id`` ; falling back to ``0``
+    # would map to a real vocab token and silently bias the score.
+    fallback_token = getattr(tokenizer, "eos_token_id", None)
+    if fallback_token is None:
+        fallback_token = getattr(tokenizer, "pad_token_id", None)
     for record in records:
         try:
             ctx_ids = tokenizer.encode(record.ctx)
         except TypeError:
-            ctx_ids = tokenizer.encode(record.ctx, add_special_tokens=True)
+            # Both branches must use ``add_special_tokens=False`` —
+            # injecting BOS/EOS in the fallback skews the
+            # continuation log-prob relative to the primary path.
+            ctx_ids = tokenizer.encode(record.ctx, add_special_tokens=False)
         scores: list[float] = []
         for ending in record.endings:
             try:
@@ -437,7 +462,20 @@ def evaluate_hellaswag(
             # a tokenizer that collapses whitespace could yield an
             # empty list, which defeats the loglikelihood signal.
             if not end_ids:
-                end_ids = [0]
+                if fallback_token is None:
+                    _LOG.warning(
+                        "hellaswag: empty ending tokens and no "
+                        "eos/pad fallback on tokenizer ; "
+                        "defaulting to token id 0 (may bias score)"
+                    )
+                    end_ids = [0]
+                else:
+                    _LOG.warning(
+                        "hellaswag: ending %r tokenised to empty "
+                        "list ; using fallback token id %d",
+                        ending, fallback_token,
+                    )
+                    end_ids = [int(fallback_token)]
             scores.append(
                 _continuation_logprob(
                     forward, tokenizer, ctx_ids, end_ids

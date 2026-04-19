@@ -19,12 +19,15 @@ from __future__ import annotations
 
 import hashlib
 import json
+import logging
 import random
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterator
 
 from harness.real_benchmarks import MissingLocalDatasetError
+
+_LOG = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -505,7 +508,16 @@ def evaluate_mega_v2(
                 record.expected, add_special_tokens=False
             )
         if not exp_ids:
-            exp_ids = [0]
+            # Falling back to ``[0]`` here would inject a real
+            # token id and produce a misleading NLL ; skip the
+            # record instead and log a warning so callers can
+            # detect the upstream tokeniser issue.
+            _LOG.warning(
+                "mega_v2_eval: expected text %r tokenised to "
+                "empty list ; skipping record from NLL average",
+                record.expected,
+            )
+            continue
         nll = _per_token_nll(forward, tokenizer, ctx_ids, exp_ids)
         total_nll += nll
         n += 1

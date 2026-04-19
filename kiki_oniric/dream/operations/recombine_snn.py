@@ -69,7 +69,19 @@ def recombine_snn_handler(
     ``seed`` is combined with ``state._episode_count`` at each
     invocation so two handlers built from the same seed and fed
     the same episodes produce identical samples.
+
+    ``max_rate`` must be safely above the ``1e-6`` clipping epsilon
+    used downstream — otherwise the ``[1e-6, max_rate - 1e-6]``
+    interval inverts and the clipping logic produces non-monotone
+    bounds. We refuse any value below ``1e-5`` rather than coerce
+    it silently.
     """
+    if max_rate <= 1e-5:
+        raise ValueError(
+            f"max_rate must be > 1e-5 to keep the rate-clipping "
+            f"interval [1e-6, max_rate - 1e-6] non-degenerate ; "
+            f"got {max_rate!r}"
+        )
 
     def handler(episode: DreamEpisode) -> None:
         latents = episode.input_slice.get("delta_latents", [])
