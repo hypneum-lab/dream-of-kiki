@@ -177,6 +177,17 @@ MMLU_N_PROMPTS = 15  # n=15 per cell — <2 s/cell on Studio at 17 ms/forward.
 # 4-dim output directly interpretable as A/B/C/D bias and keeps
 # pre/post scores deterministic under the cell's seed.
 ADAPTER_REFERENCE_INPUT = (1.0, 1.0, 1.0, 1.0)
+# Empirical Qwen2.5-1.5B letter-logit spread at the Answer: position
+# is ~8-10 units (verified 2026-04-19 on the fixture prompts). Fresh
+# adapter output magnitudes sit in ~[-0.5, 0.5], which is too small
+# to flip argmax rankings. Scaling by 20× brings the bias into the
+# same order of magnitude as the Qwen letter logits so dream-induced
+# weight drift actually translates into observable accuracy changes.
+# The scale is a proxy hyperparameter — it lets H1 detect whether
+# the dream op sequence shifts the weights *coherently enough* to
+# move argmax at all. With scale = 1× the bias was silently dominated
+# and delta = 0 across all profiles/seeds (smoke run 2026-04-19).
+BIAS_SCALE = 20.0
 # Letter token IDs for Qwen2.5 tokenizer — single tokens each
 # (validated 2026-04-19 against mlx-community/Qwen2.5-1.5B-
 # Instruct-4bit : 'A' -> 32, 'B' -> 33, 'C' -> 34, 'D' -> 35).
@@ -413,7 +424,7 @@ def _letter_token_ids(tokenizer) -> list[int]:
     return ids
 
 
-def _adapter_bias(adapter) -> "list[float]":
+def _adapter_bias(adapter, *, extra_bias=None) -> "list[float]":
     """Return the adapter's 4-dim output at the fixed reference input.
 
     This is the logit-bias vector applied to the A/B/C/D letter
@@ -421,6 +432,14 @@ def _adapter_bias(adapter) -> "list[float]":
     produce a small near-zero bias ; dream ops shift the weights
     and therefore shift the bias, which is the mechanism that
     makes the MMLU accuracy respond to the dream trajectory.
+
+    The raw adapter output is scaled by :data:`BIAS_SCALE` so it
+    sits on the same order of magnitude as Qwen's letter-logit
+    spread. ``extra_bias`` is an optional 4-vector added **after**
+    scaling — used by p_max to inject its ATTENTION_PRIOR-derived
+    nudge so the pilot's p_equ vs p_max trajectories are not
+    identical (structurally p_max is "+ ATTENTION_PRIOR" per
+    cycle-3 spec).
     """
     import mlx.core as mx
     import numpy as np
@@ -434,7 +453,10 @@ def _adapter_bias(adapter) -> "list[float]":
         # inf/NaN into the logits. Zero the bias so scoring falls
         # back on pure Qwen behaviour.
         return [0.0, 0.0, 0.0, 0.0]
-    return [float(v) for v in arr.reshape(-1)[:4]]
+    scaled = arr.reshape(-1)[:4].astype(np.float32) * float(BIAS_SCALE)
+    if extra_bias is not None:
+        scaled = scaled + np.asarray(extra_bias, dtype=np.float32)
+    return [float(v) for v in scaled]
 
 
 def _score_adapter_mmlu(
@@ -444,6 +466,7 @@ def _score_adapter_mmlu(
     letter_token_ids: list[int],
     *,
     use_bias: bool,
+    extra_bias=None,
 ) -> float:
     """Return the adapter's MMLU accuracy (0..1) over ``mmlu_prompts``.
 
@@ -470,7 +493,11 @@ def _score_adapter_mmlu(
     import mlx.core as mx
     import numpy as np
 
-    bias = _adapter_bias(adapter) if use_bias else [0.0, 0.0, 0.0, 0.0]
+    bias = (
+        _adapter_bias(adapter, extra_bias=extra_bias)
+        if use_bias
+        else [0.0, 0.0, 0.0, 0.0]
+    )
     bias_arr = np.asarray(bias, dtype=np.float32)
 
     correct = 0
@@ -645,6 +672,25 @@ def _run_cell(
         episode = _build_episode(profile_name, ep_idx, seed)
         runtime.execute(episode)
 
+    # Stage 3b — p_max-only ATTENTION_PRIOR emission (cycle-3 spec :
+    # p_max = p_equ + ATTENTION_PRIOR channel). Derive a deterministic
+    # 4-vector nudge from a seeded numpy RNG, S4-bounded into [-1, 1]
+    # so it cannot dominate the adapter-derived bias on its own.
+    # Without this branch p_max and p_equ would walk identical
+    # trajectories in the pilot (same ops, same beta-records) and
+    # the H1 test would by construction return identical p-values
+    # — that is exactly the failure mode the previous proxy hid.
+    extra_bias = None
+    if profile_name == "p_max":
+        import numpy as np
+
+        prior_rng = np.random.default_rng(seed + 10_000)
+        # Prior sampled in (-1, 1) per component, then scaled so it
+        # contributes ≲ 20% of the Qwen letter-logit spread (~2 on
+        # the scale of our BIAS_SCALE * adapter_bias).
+        raw = prior_rng.standard_normal(4).astype(np.float32)
+        extra_bias = np.clip(raw, -1.0, 1.0).tolist()
+
     # Stage 4 — post-dream evaluation : Qwen + dream-modified bias.
     post = _score_adapter_mmlu(
         adapter,
@@ -652,6 +698,7 @@ def _run_cell(
         mmlu_prompts,
         letter_token_ids,
         use_bias=True,
+        extra_bias=extra_bias,
     )
     delta = post - pre
 

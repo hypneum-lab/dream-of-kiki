@@ -124,13 +124,34 @@ dream-modified adapter bias applied. `delta = post - pre` ∈
 `[-1, 1]`. n = 15 gives discrete granularity 1/15 ≈ 6.7%,
 sufficient for the paired t-test across 30 seeds per profile.
 
+The bias is scaled by `BIAS_SCALE = 20×` before addition so it
+sits on the same order of magnitude as Qwen's empirical letter-
+logit spread (~8-10 units at the `Answer:` position). A naive
+`1×` scale was silently dominated by Qwen's raw logits and
+produced `delta = 0` across every profile/seed combination
+(verified on the 2026-04-19 smoke run before this fix). Scaling
+lets dream-induced weight drift actually move argmax.
+
+For `p_max` the cell additionally injects a deterministic
+ATTENTION_PRIOR-derived 4-vector `extra_bias` (seeded from
+`seed + 10000`, clipped to `[-1, 1]` per component, blended
+*after* the adapter-bias scaling). The cycle-3 spec differentiates
+`p_max` from `p_equ` precisely by the ATTENTION_PRIOR output
+channel (cf. `kiki_oniric/profiles/p_max.py`), but the pilot's
+lean `_build_runtime`/`_build_episode` helpers register the same
+op set for both — without the explicit prior injection `p_max`
+and `p_equ` would walk identical trajectories and the H1 test
+would by construction return identical p-values (exactly the
+failure mode observed on the previous `exp(-MSE)` run).
+
 This proxy is **genuinely discriminative** — the adapter's
 4-dim output responds deterministically to the full dream op
 sequence, so `p_min` (replay + downscale), `p_equ`
-(+ restructure + recombine), and `p_max` (+ ATTENTION_PRIOR)
-produce distinct adapter trajectories and therefore distinct
-post-dream accuracy distributions. Whether the bias *helps* or
-*hurts* accuracy is the empirical question H1 actually tests.
+(+ restructure + recombine), and `p_max` (+ ATTENTION_PRIOR
+injection on top of the p_equ ops) produce distinct adapter
+trajectories and therefore distinct post-dream accuracy
+distributions. Whether the bias *helps* or *hurts* accuracy is
+the empirical question H1 actually tests.
 
 ## Smoke-cell pre-flight
 
