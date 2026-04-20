@@ -1,0 +1,52 @@
+cff-version: 1.2.0
+message: "If you use this software or cite its framework, please cite both this repository and the parent research program's pre-registration (OSF DOI 10.17605/OSF.IO/Q6JYN)."
+title: "dreamOfkiki: A Substrate-Agnostic Formal Framework for Dream-Based Knowledge Consolidation"
+abstract: >
+  dreamOfkiki is the flagship repository of the Hypneum Lab research
+  program on dream-based knowledge consolidation in artificial cognitive
+  systems. It axiomatizes four canonical operations (replay, downscale,
+  restructure, recombine) on a free episode semi-group with five
+  executable axioms (DR-0..DR-4) and families of invariants (I / S / K).
+  The repository hosts the executable Conformance Criterion, eight typed
+  primitives, the 5-tuple Dream-Episode ontology, and two concrete
+  conformant substrates: an MLX gradient-based kiki-oniric runtime and
+  an E-SNN thalamocortical spiking network. Pre-registered on OSF.
+type: software
+authors:
+  - family-names: Saillant
+    given-names: Clément
+    email: clement@saillant.cc
+    affiliation: "L'Electron Rare, Grandris, France"
+repository-code: "https://github.com/hypneum-lab/dream-of-kiki"
+url: "https://github.com/hypneum-lab/dream-of-kiki"
+license: MIT
+license-url: "https://github.com/hypneum-lab/dream-of-kiki/blob/main/LICENSE"
+keywords:
+  - dream-based consolidation
+  - formal framework
+  - axiomatization
+  - cognitive AI
+  - substrate agnosticism
+  - replay
+  - continual learning
+  - MLX
+  - spiking neural network
+identifiers:
+  - type: doi
+    value: 10.17605/OSF.IO/Q6JYN
+    description: "Research program pre-registration (dreamOfkiki Cycle 1)"
+  - type: url
+    value: "https://osf.io/v7a2j"
+    description: "Parent research program OSF project"
+date-released: 2026-04-19
+preferred-citation:
+  type: unpublished
+  title: "dreamOfkiki: A Substrate-Agnostic Formal Framework for Dream-Based Knowledge Consolidation in Artificial Cognitive Systems"
+  authors:
+    - family-names: Saillant
+      given-names: Clément
+      email: clement@saillant.cc
+      affiliation: "L'Electron Rare, Grandris, France"
+  year: 2026
+  url: "https://github.com/hypneum-lab/dream-of-kiki"
+  notes: "Paper 1 draft v0.2. MIT code + CC-BY-4.0 docs. OSF pre-registration DOI 10.17605/OSF.IO/Q6JYN. arXiv preprint forthcoming. Primary venue: PLoS Computational Biology (fallback from Nature HB)."

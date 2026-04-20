@@ -61,7 +61,7 @@ Every experimental claim in either paper resolves to a registered `run_id` or a 
 ## Install
 
 ```bash
-git clone https://github.com/electron-rare/dream-of-kiki.git
+git clone https://github.com/hypneum-lab/dream-of-kiki.git
 cd dream-of-kiki
 uv sync --all-extras
 ```
@@ -111,8 +111,8 @@ Draft pre-print, tag [`paper-v0.4-draft`](https://github.com/hypneum-lab/dream-o
 
 | Repo | Relation |
 |---|---|
-| [**kiki-flow-research**](https://github.com/electron-rare/kiki-flow-research) | Upstream — Wasserstein flow engine, `kiki_oniric` forked from `kiki_flow_core` |
-| [**micro-kiki**](https://github.com/electron-rare/micro-kiki) | Sibling — MoE-LoRA routing system consuming consolidated profiles |
+| [**kiki-flow-research**](https://github.com/hypneum-lab/kiki-flow-research) | Upstream — Wasserstein flow engine, `kiki_oniric` forked from `kiki_flow_core` |
+| [**micro-kiki**](https://github.com/hypneum-lab/micro-kiki) | Sibling — MoE-LoRA routing system consuming consolidated profiles |
 
 ## Contributing
 
