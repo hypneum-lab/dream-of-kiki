@@ -57,22 +57,25 @@ primitive contract.
 
 ## Cells
 
-2 profiles × 30 seeds × 2 substrates = 120 cells.
+3 profiles × 30 seeds × 2 substrates = 180 cells (C3.13b
+extension 2026-04-19 added ``p_max``).
 
 - Profile ``p_min`` : 3 × replay on the adapter weights.
 - Profile ``p_equ`` : 2 × (replay → downscale → recombine).
-  (Restructure is skipped per Phase 2 prep — ``restructure_snn``
-  only supports ``"reroute"`` and needs the axis-0 shape
-  restriction which does not apply to the 4×4 fixture in the
-  symmetric way we want for cross-substrate pearson rho.)
+- Profile ``p_max`` : 2 × (replay → downscale → recombine →
+  restructure). The restructure proxy is the axis-0 row swap
+  supported by ``restructure_snn`` ; the MLX-equivalent is a
+  numpy row swap on the same 4×4 weight matrix.
 
 ## GO / NO-GO rule
 
-- **SOFT-GO** : Pearson rho ≥ 0.7 on both profiles.
-- **NO-GO**   : Pearson rho < 0.3 on either profile (substrate
+- **SOFT-GO** : Pearson rho ≥ 0.7 on p_min and p_equ **and** TOST
+  equivalence (±0.2 SMD on Cohen's d of ``delta_norm``) holds on
+  at least 2 of 3 profiles.
+- **NO-GO** : Pearson rho < 0.3 on p_min or p_equ (substrate
   divergence → investigate SNN proxy fidelity before C3.14).
-- Intermediate range : report as CONDITIONAL-GO and defer final
-  verdict to Phase B real results.
+- Intermediate : report as CONDITIONAL-GO and defer final verdict
+  to the Phase B real pilot.
 
 Wall-clock : ~60 seconds on GrosMac (no GPU, pure numpy).
 
@@ -110,6 +113,10 @@ from kiki_oniric.dream.operations.replay_snn import (  # noqa: E402
     ReplaySNNState,
     replay_snn_handler,
 )
+from kiki_oniric.dream.operations.restructure_snn import (  # noqa: E402
+    RestructureSNNState,
+    restructure_snn_handler,
+)
 from kiki_oniric.dream.episode import (  # noqa: E402
     BudgetCap,
     DreamEpisode,
@@ -120,8 +127,24 @@ from kiki_oniric.dream.episode import (  # noqa: E402
 
 
 # --- Pilot configuration -------------------------------------------------
+#
+# C3.13b extension (2026-04-19) : added p_max profile (restructure
+# included via axis-0 row swap on the 4×4 fixture). Three profiles
+# are required so the H6 Jonckheere–Terpstra trend test (Goal e) can
+# be applied per substrate. The SNN restructure proxy supports
+# ``"reroute"`` with axis-0 swap_indices (cf restructure_snn.py
+# §_SUPPORTED_TOPO_OPS) — the MLX-equivalent here is a numpy row
+# swap matching that semantics.
+#
+# The original docstring (top of file) flags the symmetric-ρ
+# limitation : restructure is a permutation, not a continuous flow,
+# so cross-substrate Pearson rho on p_max is expected to be lower
+# than on p_min / p_equ. Goal (a) therefore now reports both rho
+# AND TOST equivalence on Cohen's d effect sizes (within ±0.2 SMD)
+# per profile so the equivalence claim is robust to permutation
+# noise.
 
-PROFILES: tuple[str, ...] = ("p_min", "p_equ")
+PROFILES: tuple[str, ...] = ("p_min", "p_equ", "p_max")
 SUBSTRATES: tuple[str, ...] = ("mlx", "norse")
 SEEDS: tuple[int, ...] = tuple(range(30))
 
@@ -133,6 +156,13 @@ SHRINK_FACTOR = 0.98
 # trajectories across seeds, per profile).
 SOFT_GO_RHO = 0.7
 NO_GO_RHO = 0.3
+
+# TOST equivalence bounds on standardised Cohen's d (Goal a).
+# Two substrates are deemed equivalent on a profile if the absolute
+# Cohen's d between (MLX delta_norm, Norse delta_norm) lies within
+# ±0.2 SMD (Cohen's "small" effect convention used as the smallest
+# effect size of interest, SESOI).
+TOST_SESOI_D = 0.2
 
 MILESTONE_MD = REPO_ROOT / "docs" / "milestones" / "g10a-neuromorph.md"
 MILESTONE_JSON = REPO_ROOT / "docs" / "milestones" / "g10a-neuromorph.json"
@@ -168,6 +198,28 @@ def _apply_downscale_real_np(
             f"shrink_factor must be in (0, 1], got {factor}"
         )
     weights[...] = weights * factor
+
+
+def _apply_restructure_real_np(
+    weights: np.ndarray, swap_indices: tuple[int, int]
+) -> None:
+    """Numpy-equivalent of ``restructure_real_handler`` row swap.
+
+    The real op swaps two ``model.layers`` entries by reference.
+    On the synthetic 4×4 weight fixture (no layer abstraction) we
+    swap the corresponding rows along axis-0, which matches the
+    SNN-proxy ``restructure_snn`` rate-channel swap semantics.
+    """
+    i, j = swap_indices
+    n = weights.shape[0]
+    if not (0 <= i < n and 0 <= j < n):
+        raise ValueError(
+            f"S3: reroute swap_indices ({i}, {j}) out of bounds "
+            f"for weights axis-0 of length {n}"
+        )
+    tmp = weights[i].copy()
+    weights[i] = weights[j]
+    weights[j] = tmp
 
 
 def _apply_recombine_real_np(
@@ -241,6 +293,20 @@ def _norse_downscale(weights: np.ndarray, factor: float) -> None:
     handler(episode)
 
 
+def _norse_restructure(
+    weights: np.ndarray, swap_indices: tuple[int, int]
+) -> None:
+    """One SNN-proxy restructure step — mutates ``weights`` in place."""
+    state = RestructureSNNState()
+    handler = restructure_snn_handler(state, weights=weights)
+    episode = _make_episode(
+        {"topo_op": "reroute", "swap_indices": list(swap_indices)},
+        Operation.RESTRUCTURE,
+        OutputChannel.WEIGHT_DELTA,
+    )
+    handler(episode)
+
+
 def _norse_recombine(
     weights: np.ndarray, partner: np.ndarray, seed: int
 ) -> None:
@@ -290,6 +356,21 @@ def apply_profile_real(
             _apply_replay_real_np(w, target, LR)
             _apply_downscale_real_np(w, SHRINK_FACTOR)
             _apply_recombine_real_np(w, partner, seed, ep)
+    elif profile == "p_max":
+        # 2× (replay → downscale → recombine → restructure)
+        # restructure swap_indices are seeded over (0..n_chan-1)
+        # so different seeds exercise different row pairs while
+        # remaining in-bounds for the 4×4 fixture.
+        rng_partner = np.random.default_rng(seed ^ 0xA5A5A5)
+        partner = rng_partner.normal(size=w.shape).astype(np.float32)
+        rng_swap = np.random.default_rng(seed ^ 0x5A5A5A)
+        n = w.shape[0]
+        for ep in range(2):
+            _apply_replay_real_np(w, target, LR)
+            _apply_downscale_real_np(w, SHRINK_FACTOR)
+            _apply_recombine_real_np(w, partner, seed, ep)
+            i, j = sorted(rng_swap.choice(n, size=2, replace=False).tolist())
+            _apply_restructure_real_np(w, (int(i), int(j)))
     else:
         raise ValueError(f"unknown profile: {profile!r}")
     return w
@@ -316,6 +397,17 @@ def apply_profile_snn(
             _norse_replay(w, target64, LR)
             _norse_downscale(w, SHRINK_FACTOR)
             _norse_recombine(w, partner, seed)
+    elif profile == "p_max":
+        rng_partner = np.random.default_rng(seed ^ 0xA5A5A5)
+        partner = rng_partner.normal(size=w.shape).astype(np.float64)
+        rng_swap = np.random.default_rng(seed ^ 0x5A5A5A)
+        n = w.shape[0]
+        for _ep in range(2):
+            _norse_replay(w, target64, LR)
+            _norse_downscale(w, SHRINK_FACTOR)
+            _norse_recombine(w, partner, seed)
+            i, j = sorted(rng_swap.choice(n, size=2, replace=False).tolist())
+            _norse_restructure(w, (int(i), int(j)))
     else:
         raise ValueError(f"unknown profile: {profile!r}")
     return w.astype(np.float32)
@@ -380,6 +472,92 @@ def _pearson(a: np.ndarray, b: np.ndarray) -> tuple[float, float]:
     return float(r), float(p)
 
 
+def _cohens_d(a: np.ndarray, b: np.ndarray) -> float:
+    """Cohen's d (between-sample, pooled std, ddof=1).
+
+    Sign convention : positive d ⇒ ``a`` > ``b`` on average.
+    Returns 0.0 on degeneracy (zero pooled variance, n<2 etc).
+    """
+    if a.size < 2 or b.size < 2:
+        return 0.0
+    var_a = float(np.var(a, ddof=1))
+    var_b = float(np.var(b, ddof=1))
+    pooled = ((a.size - 1) * var_a + (b.size - 1) * var_b) / (
+        a.size + b.size - 2
+    )
+    if pooled <= 1e-24:
+        return 0.0
+    return float((np.mean(a) - np.mean(b)) / np.sqrt(pooled))
+
+
+def _tost_equivalence(
+    a: np.ndarray, b: np.ndarray, sesoi_d: float
+) -> dict:
+    """Two One-Sided Tests (TOST) equivalence on standardised scale.
+
+    Bounds are expressed in Cohen's d (SESOI = ``sesoi_d``). We
+    compute the lower-bound t-test (H0_lower : d ≤ -sesoi) and
+    upper-bound t-test (H0_upper : d ≥ +sesoi) ; equivalence is
+    declared when **both** one-sided p-values are below 0.05
+    (Schuirmann, 1987).
+
+    Returns a dict with ``cohens_d``, ``p_lower``, ``p_upper``,
+    ``p_tost`` (= max of the two), and ``equivalent`` boolean.
+    """
+    from scipy.stats import ttest_ind  # lazy import
+
+    if a.size < 2 or b.size < 2:
+        return {
+            "cohens_d": 0.0,
+            "p_lower": 1.0,
+            "p_upper": 1.0,
+            "p_tost": 1.0,
+            "equivalent": False,
+        }
+    # Convert SESOI from Cohen's d to raw mean-difference units.
+    pooled_sd = float(
+        np.sqrt(
+            ((a.size - 1) * np.var(a, ddof=1)
+             + (b.size - 1) * np.var(b, ddof=1))
+            / (a.size + b.size - 2)
+        )
+    )
+    if pooled_sd <= 1e-24:
+        # Degenerate variance — declare equivalent if means match.
+        equiv = abs(float(np.mean(a) - np.mean(b))) <= 1e-9
+        return {
+            "cohens_d": 0.0,
+            "p_lower": 0.0 if equiv else 1.0,
+            "p_upper": 0.0 if equiv else 1.0,
+            "p_tost": 0.0 if equiv else 1.0,
+            "equivalent": equiv,
+        }
+    delta = sesoi_d * pooled_sd
+    # H0_lower : mean(a) - mean(b) ≤ -delta  → one-sided test on
+    # shifted samples (a + delta) vs b ; reject if t large positive.
+    t_lower, p_two_lower = ttest_ind(
+        a + delta, b, equal_var=True
+    )
+    p_lower = (
+        p_two_lower / 2.0 if t_lower > 0 else 1.0 - p_two_lower / 2.0
+    )
+    # H0_upper : mean(a) - mean(b) ≥ +delta  → reject if t small.
+    t_upper, p_two_upper = ttest_ind(
+        a - delta, b, equal_var=True
+    )
+    p_upper = (
+        p_two_upper / 2.0 if t_upper < 0 else 1.0 - p_two_upper / 2.0
+    )
+    p_tost = max(p_lower, p_upper)
+    return {
+        "cohens_d": _cohens_d(a, b),
+        "p_lower": float(p_lower),
+        "p_upper": float(p_upper),
+        "p_tost": float(p_tost),
+        "equivalent": bool(p_tost < 0.05),
+    }
+
+
 def aggregate(cells: list[dict]) -> dict:
     """Build per-profile × substrate stats + cross-substrate rho."""
     per_cell: dict[tuple[str, str, int], dict] = {
@@ -411,6 +589,8 @@ def aggregate(cells: list[dict]) -> dict:
     for profile in PROFILES:
         mlx_vec = []
         norse_vec = []
+        mlx_delta = []
+        norse_delta = []
         for seed in SEEDS:
             mlx_cell = per_cell.get((profile, "mlx", seed))
             norse_cell = per_cell.get((profile, "norse", seed))
@@ -418,6 +598,8 @@ def aggregate(cells: list[dict]) -> dict:
                 continue
             mlx_vec.extend(mlx_cell["final_flat"])
             norse_vec.extend(norse_cell["final_flat"])
+            mlx_delta.append(mlx_cell["delta_norm"])
+            norse_delta.append(norse_cell["delta_norm"])
         rho, p_val = _pearson(np.array(mlx_vec), np.array(norse_vec))
         # Convergence ratio : Norse / MLX (>1 = Norse over-
         # converges, <1 = Norse under-converges).
@@ -430,18 +612,32 @@ def aggregate(cells: list[dict]) -> dict:
             if abs(mlx_mean_conv) > 1e-12
             else 0.0
         )
+        # TOST equivalence on delta_norm distributions.
+        tost = _tost_equivalence(
+            np.array(mlx_delta), np.array(norse_delta), TOST_SESOI_D
+        )
         cross[profile] = {
             "pearson_rho": rho,
             "p_value": p_val,
             "convergence_ratio_norse_over_mlx": float(ratio),
+            "tost": tost,
         }
 
-    # G10a verdict.
-    rhos = [cross[p]["pearson_rho"] for p in PROFILES]
-    if all(r >= SOFT_GO_RHO for r in rhos):
-        verdict = "SOFT-GO"
-    elif any(r < NO_GO_RHO for r in rhos):
+    # G10a verdict — combine Pearson rho and TOST equivalence.
+    # SOFT-GO requires :
+    #   - rho ≥ 0.7 on p_min and p_equ (continuous-flow profiles), AND
+    #   - TOST equivalence (within ±0.2 SMD) on at least 2/3 profiles.
+    # NO-GO if any continuous-flow profile rho < 0.3.
+    # p_max permutation noise expected to depress rho ; the TOST
+    # check rescues equivalence claim under permutation noise.
+    rho_min_equ = [cross["p_min"]["pearson_rho"], cross["p_equ"]["pearson_rho"]]
+    tost_pass_count = sum(
+        1 for p in PROFILES if cross[p]["tost"]["equivalent"]
+    )
+    if any(r < NO_GO_RHO for r in rho_min_equ):
         verdict = "NO-GO"
+    elif all(r >= SOFT_GO_RHO for r in rho_min_equ) and tost_pass_count >= 2:
+        verdict = "SOFT-GO"
     else:
         verdict = "CONDITIONAL-GO"
 
@@ -449,6 +645,8 @@ def aggregate(cells: list[dict]) -> dict:
         "by_profile_substrate": by_profile_substrate,
         "cross_substrate": cross,
         "verdict": verdict,
+        "tost_pass_count": tost_pass_count,
+        "tost_sesoi_d": TOST_SESOI_D,
     }
 
 
@@ -521,8 +719,8 @@ def _render_markdown(dump: dict) -> str:
     lines.append("## Summary")
     lines.append("")
     lines.append(
-        "- Profiles tested : `p_min`, `p_equ` (skip `p_max` "
-        "restructure for Phase 2 prep)"
+        "- Profiles tested : `p_min`, `p_equ`, `p_max` (C3.13b "
+        "extension — restructure axis-0 row swap added 2026-04-19)"
     )
     lines.append(
         "- Substrates : MLX (kiki-oniric real-op numpy equivalent) "
@@ -584,13 +782,39 @@ def _render_markdown(dump: dict) -> str:
             f"{c['convergence_ratio_norse_over_mlx']:.4f} |"
         )
     lines.append("")
+    lines.append(
+        "## TOST equivalence (Goal a — Cohen's d ±0.2 SMD)"
+    )
+    lines.append("")
+    lines.append(
+        "| Profile | Cohen's d | p_lower | p_upper | p_TOST | "
+        "Equivalent (α=0.05) |"
+    )
+    lines.append("|---|---|---|---|---|---|")
+    for profile in PROFILES:
+        t = cross[profile]["tost"]
+        lines.append(
+            f"| {profile} | {t['cohens_d']:+.4f} | "
+            f"{t['p_lower']:.3g} | {t['p_upper']:.3g} | "
+            f"{t['p_tost']:.3g} | "
+            f"{'YES' if t['equivalent'] else 'NO'} |"
+        )
+    lines.append("")
+    lines.append(
+        f"TOST pass count : **{agg['tost_pass_count']}/{len(PROFILES)}** "
+        f"(SESOI = ±{TOST_SESOI_D} SMD ; Schuirmann 1987 two "
+        f"one-sided t-tests on `delta_norm` distributions)."
+    )
+    lines.append("")
     lines.append("## Interpretation")
     lines.append("")
     lines.append(
-        f"- **SOFT-GO** threshold : ρ ≥ {SOFT_GO_RHO} on both profiles"
+        f"- **SOFT-GO** threshold : ρ ≥ {SOFT_GO_RHO} on p_min and "
+        f"p_equ AND ≥ 2/3 profiles TOST-equivalent at ±"
+        f"{TOST_SESOI_D} SMD"
     )
     lines.append(
-        f"- **NO-GO** threshold : ρ < {NO_GO_RHO} on either profile"
+        f"- **NO-GO** threshold : ρ < {NO_GO_RHO} on p_min or p_equ"
     )
     lines.append("")
     lines.append(
