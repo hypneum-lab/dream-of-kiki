@@ -8,7 +8,7 @@ security is handled on a best-effort basis.
 
 This policy applies to :
 
-- The code in this repository (`genial-lab/dream-of-kiki`)
+- The code in this repository (`c-geni-al/dream-of-kiki`)
 - The downstream `harness`, `scripts`, and `kiki_oniric` modules
 - The documentation in `docs/` (inaccurate or misleading information
   qualifies as a security/integrity concern)
@@ -32,7 +32,7 @@ please report it **privately** via one of these channels :
 
 1. Email : `clement@saillant.cc` — subject starting with `[SECURITY]`
 2. GitHub Private Vulnerability Reporting :
-   https://github.com/genial-lab/dream-of-kiki/security/advisories/new
+   https://github.com/c-geni-al/dream-of-kiki/security/advisories/new
 
 Please include :
 - a description of the issue,

@@ -13,7 +13,7 @@ Active gate : **Paper 1 v0.2 PLOS CB submission preparation**
 (arXiv prep + DR-2 external review + PLOS CB cover letter).
 
 Public repo : https://github.com/electron-rare/dream-of-kiki
-Public org repo : https://github.com/genial-lab/dream-of-kiki
+Public org repo : https://github.com/c-geni-al/dream-of-kiki
 
 ---
 

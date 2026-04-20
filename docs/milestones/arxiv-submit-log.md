@@ -32,7 +32,7 @@ from Nature Human Behaviour ; see §6.1 cover letter and
 - [x] OSF DOI placeholder removed — DOI
       `10.17605/OSF.IO/Q6JYN` inserted in §1 Abstract and §6.1
       Methodology
-- [x] Repository URL present : `github.com/genial-lab/dream-of-kiki`
+- [x] Repository URL present : `github.com/c-geni-al/dream-of-kiki`
 - [x] No AI attribution in author list, acknowledgments, or
       bibliography (CONTRIBUTORS.md fully populated for the
       project byline disclosure)
@@ -86,7 +86,7 @@ from Nature Human Behaviour ; see §6.1 cover letter and
 - [ ] Tag git commit `arxiv-v0.2` for freeze :
       ```bash
       git tag arxiv-v0.2 -m "Paper 1 arXiv v0.2 PLOS CB pivot"
-      git push genial-lab arxiv-v0.2
+      git push c-geni-al arxiv-v0.2
       ```
 
 ## arXiv submission identifiers (fill after submit)
@@ -111,7 +111,7 @@ from Nature Human Behaviour ; see §6.1 cover letter and
 - [ ] Authorship byline `dreamOfkiki project contributors` with
       Saillant C. as corresponding ; affiliation L'Electron Rare
 - [ ] Repo URL present in §5.5 :
-      `github.com/genial-lab/dream-of-kiki`
+      `github.com/c-geni-al/dream-of-kiki`
 - [ ] HuggingFace model URLs present (P_min + P_equ ; P_max
       cycle-2 placeholder)
 - [ ] Zenodo DOI inserted (post-mint, see Methods §6.5)

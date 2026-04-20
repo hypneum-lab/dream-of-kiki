@@ -64,7 +64,7 @@ Le pré-enregistrement est verrouillé sur l'Open Science Framework
 (DOI 10.17605/OSF.IO/Q6JYN). L'ensemble du code, des spécifications
 et du pré-enregistrement est ouvert sous MIT / CC-BY-4.0 ; les
 implémentations de référence et les suites de tests sont disponibles
-sur `github.com/genial-lab/dream-of-kiki`.
+sur `github.com/c-geni-al/dream-of-kiki`.
 
 ---
 

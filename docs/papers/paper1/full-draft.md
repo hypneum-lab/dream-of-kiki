@@ -70,7 +70,7 @@ Pre-registration is locked on the Open Science Framework (DOI
 10.17605/OSF.IO/Q6JYN). All code, specifications, and
 pre-registration are open under MIT / CC-BY-4.0 ; reference
 implementations and test suites are available at
-`github.com/genial-lab/dream-of-kiki`.
+`github.com/c-geni-al/dream-of-kiki`.
 
 ---
 
@@ -661,7 +661,7 @@ hex characters in commit `df731b0` after a code-review flag on
 
 ### 7.4 Cross-substrate portability — independent corroboration
 
-A sibling project at `github.com/genial-lab/nerve-wml` (same
+A sibling project at `github.com/c-geni-al/nerve-wml` (same
 byline, same Protocol-typing discipline) measures cross-
 substrate polymorphism on a separate Nerve interface with two
 concrete substrates : `MlpWML` (dense MLP) and `LifWML`

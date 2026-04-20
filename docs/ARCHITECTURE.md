@@ -1,9 +1,9 @@
-# Architecture — dreamOfkiki program and genial-lab repositories
+# Architecture — dreamOfkiki program and c-geni-al repositories
 
 *Last updated : 2026-04-19 (Paper 1 v0.2 release)*
 
 This document maps how the four public repositories of the
-**genial-lab** research organization compose into the **dreamOfkiki**
+**c-geni-al** research organization compose into the **dreamOfkiki**
 research program. It is intended as a reader's guide for :
 
 - reviewers trying to verify what in Paper 1 is claimed vs. what is
@@ -82,7 +82,7 @@ research program. It is intended as a reader's guide for :
 
 ## Shared contracts
 
-The genial-lab repositories align on a small number of cross-cutting
+The c-geni-al repositories align on a small number of cross-cutting
 contracts. They are re-implemented per repo (by design, to keep each
 repo self-contained) rather than imported from a shared Python
 package.
@@ -160,7 +160,7 @@ See `CONTRIBUTORS.md` in each repository for the detailed policy.
   protocol is specified in the framework spec, implementation lands
   in cycle 2.
 - **`kiki-flow-research` ↔ `nerve-wml`, `micro-kiki`** : siblings
-  under the genial-lab org, minimal direct integration.
+  under the c-geni-al org, minimal direct integration.
 
 ## Roadmap
 
@@ -173,7 +173,7 @@ See `CONTRIBUTORS.md` in each repository for the detailed policy.
 ### Cycle 2 (post-S28)
 
 - Unify the R1 run_registry across the four repos into a shared
-  `genial-lab-harness` package
+  `c-geni-al-harness` package
 - Wire `micro-kiki` to consume consolidated profiles from the
   framework (close the currently-declared-not-wired link)
 - Third conformant substrate (transformer-based or

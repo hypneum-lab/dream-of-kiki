@@ -14,10 +14,10 @@ peer-review-grade artifact pointer Paper 2 will cross-cite.
 ## Project setup checklist
 
 - [ ] Create OSF project under namespace `dreamofkiki`. Decision
-      rule: if the `genial-lab` group already exists on OSF at
+      rule: if the `c-geni-al` group already exists on OSF at
       project-creation time, attach the project to that group
       instead of creating a standalone namespace project. Default
-      to the standalone `dreamofkiki` project if no `genial-lab`
+      to the standalone `dreamofkiki` project if no `c-geni-al`
       group is present.
 - [ ] Project title : `dreamOfkiki — substrate-agnostic formal
       framework for dream-based knowledge consolidation`
@@ -31,7 +31,7 @@ peer-review-grade artifact pointer Paper 2 will cross-cite.
 - [ ] Contributors : `dreamOfkiki project contributors` (group
       byline ; corresponding author Clement Saillant). No AI
       attribution. CONTRIBUTORS.md frozen at commit `22784f8`.
-- [ ] Linked GitHub repo : `https://github.com/genial-lab/dream-of-kiki`
+- [ ] Linked GitHub repo : `https://github.com/c-geni-al/dream-of-kiki`
 - [ ] Project visibility : public
 
 ## Preregistration components to attach

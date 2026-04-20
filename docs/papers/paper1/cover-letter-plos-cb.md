@@ -68,7 +68,7 @@ remit:
 
 3. **Open science by construction.** All code (MIT), specifications
    and proofs (CC-BY-4.0) are released openly at
-   `github.com/genial-lab/dream-of-kiki`. Hypotheses are
+   `github.com/c-geni-al/dream-of-kiki`. Hypotheses are
    pre-registered on the Open Science Framework (DOI
    10.17605/OSF.IO/Q6JYN), the retained benchmarks ship with
    SHA-256 integrity files (contract R3), and every reported
@@ -122,5 +122,5 @@ Sincerely,
 L'Electron Rare, France
 clement@saillant.cc
 ORCID : [PLACEHOLDER for corresponding-author ORCID]
-Repository : `github.com/genial-lab/dream-of-kiki`
+Repository : `github.com/c-geni-al/dream-of-kiki`
 Preregistration : OSF DOI 10.17605/OSF.IO/Q6JYN
