@@ -4,8 +4,8 @@
 Framework for Dream-Based Knowledge Consolidation in Artificial
 Cognitive Systems*
 
-**Authors** : dreamOfkiki project contributors (corresponding
-author : Clement Saillant, L'Electron Rare, France ;
+**Authors**: dreamOfkiki project contributors (corresponding
+author: Clement Saillant, L'Electron Rare, France;
 clement@saillant.cc)
 
 **Date** : 2026-04-20
@@ -42,11 +42,11 @@ satisfy.
 
 Three points distinguish this manuscript from prior continual-
 learning work and align it with PLOS Computational Biology's
-remit :
+remit:
 
 1. **Cross-substrate conformance, not single-implementation
    benchmarking.** §5.6 reports a conformance walkthrough on two
-   substrates : an MLX gradient-based reference implementation
+   substrates: an MLX gradient-based reference implementation
    (`kiki-oniric`) and a numpy-LIF thalamocortical spiking
    network (E-SNN). Both pass 9 axiom-property and
    invariant-enforcement tests each (27 assertions total ; gate
@@ -61,7 +61,7 @@ remit :
    pipeline under Bonferroni correction, (ii) BLOCKING-invariant
    fault injection on S1–S3, (iii) R1 reproducibility
    determinism, and (iv) cross-substrate portability numbers
-   from a sibling project (Nerve-WML : 0 % linear gap, 12.1 %
+   from a sibling project (Nerve-WML: 0% linear gap, 12.1%
    non-linear gap, Gate M merge retains 1.000). H1–H4 evaluation
    on real continual-learning benchmarks is the scope of the
    companion Paper 2.
@@ -80,7 +80,7 @@ remit :
 We believe PLOS Computational Biology is the natural venue for
 this work. Its remit explicitly welcomes interdisciplinary
 methodology papers at the intersection of neuroscience-inspired
-modelling and computational-system design ; the journal's
+modelling and computational-system design; the journal's
 emphasis on reproducibility and open data aligns directly with
 the framework-level discipline this manuscript embodies. Our
 audience overlaps the readership that engaged with prior
