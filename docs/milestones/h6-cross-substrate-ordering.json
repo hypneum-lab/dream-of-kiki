@@ -1,0 +1,99 @@
+{
+  "alpha_two_sided": 0.05,
+  "both_reject": true,
+  "common_direction": "increasing",
+  "gate": "G10e",
+  "group_stats": {
+    "mlx": {
+      "p_equ": {
+        "mean": 4.022820631663005,
+        "median": 4.343209981918335,
+        "n": 30,
+        "std": 1.4734555809310694
+      },
+      "p_max": {
+        "mean": 4.756780612468719,
+        "median": 4.826887845993042,
+        "n": 30,
+        "std": 1.2500341938604849
+      },
+      "p_min": {
+        "mean": 0.32508898129065833,
+        "median": 0.3354959040880203,
+        "n": 30,
+        "std": 0.05534152362701198
+      }
+    },
+    "norse": {
+      "p_equ": {
+        "mean": 3.6045976956685384,
+        "median": 3.677436947822571,
+        "n": 30,
+        "std": 1.6880622737012383
+      },
+      "p_max": {
+        "mean": 4.609001942475637,
+        "median": 4.872857332229614,
+        "n": 30,
+        "std": 1.2319155798443577
+      },
+      "p_min": {
+        "mean": 0.22037704115112622,
+        "median": 0.20634526759386063,
+        "n": 30,
+        "std": 0.08309603224853215
+      }
+    }
+  },
+  "harness_version": "C-v0.7.0+PARTIAL",
+  "jonckheere": {
+    "mlx": {
+      "J": 2377.0,
+      "direction": "increasing",
+      "mean_null": 1350.0,
+      "n_per_group": [
+        30,
+        30,
+        30
+      ],
+      "p_one_sided_gt": 1.398243636479675e-14,
+      "p_one_sided_lt": 0.999999999999986,
+      "p_two_sided": 2.79648727295935e-14,
+      "reject_h0": true,
+      "total_n": 90,
+      "var_null": 18225.0,
+      "z": 7.607407407407408
+    },
+    "norse": {
+      "J": 2417.0,
+      "direction": "increasing",
+      "mean_null": 1350.0,
+      "n_per_group": [
+        30,
+        30,
+        30
+      ],
+      "p_one_sided_gt": 1.3536807012185087e-15,
+      "p_one_sided_lt": 0.9999999999999987,
+      "p_two_sided": 2.7073614024370174e-15,
+      "reject_h0": true,
+      "total_n": 90,
+      "var_null": 18225.0,
+      "z": 7.9037037037037035
+    }
+  },
+  "milestone": "H6 cross-substrate profile ordering",
+  "profiles": [
+    "p_min",
+    "p_equ",
+    "p_max"
+  ],
+  "same_direction": true,
+  "source_g10a": "docs/milestones/g10a-neuromorph.json",
+  "substrates": [
+    "mlx",
+    "norse"
+  ],
+  "verdict": "SOFT-GO",
+  "z_threshold": 1.96
+}
