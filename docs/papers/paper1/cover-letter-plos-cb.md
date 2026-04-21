@@ -96,19 +96,35 @@ substrate with mega-v2 continual-learning data and Studyforrest
 fMRI alignment) is in preparation and will reference this
 framework manuscript on submission.
 
-**Suggested reviewers** (per PLOS CB submission norms ; the
-following are placeholders for the corresponding author to fill
-based on current outreach lists) :
+**Suggested reviewers** (per PLOS CB submission norms — the
+journal guidelines require a minimum of four suggested reviewers ;
+placeholders below to fill from `ops/formal-reviewer-recruitment.md`
+shortlist after COI screening against the 5-year PLOS lookback
+rule and the PLOS competing-interests policy on institutional
+overlap) :
 
 - *Reviewer 1* : [PLACEHOLDER — sleep-consolidation modeller,
-  e.g., from the Tononi / Cirelli circle or a Walker-tradition
-  cognitive-neuroscience lab]
+  e.g., Sen Cheng (Ruhr-Universität Bochum), Gordon Feld (ZI
+  Mannheim), or a Walker-tradition cognitive-neuroscience lab]
 - *Reviewer 2* : [PLACEHOLDER — continual-learning theorist with
-  formal-method background, e.g., MERLIN / CLS authors or a
-  predictive-coding modeller]
+  formal-method background, e.g., Samuel Gershman (Harvard CLS),
+  Randy O'Reilly (UC Davis), or a predictive-coding modeller]
 - *Reviewer 3* : [PLACEHOLDER — neuromorphic / spiking-network
   engineer who can adjudicate the E-SNN substrate conformance
-  claim, e.g., a Loihi-2 / NORSE practitioner]
+  claim, e.g., Frédéric Alexandre (Inria Mnemosyne, Bordeaux)
+  or a Loihi-2 / NORSE practitioner]
+- *Reviewer 4* : [PLACEHOLDER — formal-methods / category-theory
+  applied to cognitive science, to adjudicate the DR-2 monoid
+  compositionality proof and the Conformance Criterion algebra,
+  e.g., David Spivak (Topos Institute) or a reviewer from the
+  Phillips & Wilson 2010 PLOS CB *Categorial Compositionality*
+  lineage]
+
+**Competing interests declaration** : all suggested reviewers
+above are non-collaborators with Clément Saillant (no co-authored
+publication in the past 5 years, per PLOS CB lookback rule) and
+non-institutional (corresponding author is independent,
+L'Electron Rare, France ; no formal academic affiliation).
 
 Thank you for considering our submission. We look forward to the
 review process and welcome any clarifying questions about the
@@ -121,6 +137,6 @@ Sincerely,
 *Corresponding author* : Clement Saillant
 L'Electron Rare, France
 clement@saillant.cc
-ORCID : [PLACEHOLDER for corresponding-author ORCID]
+ORCID : [0000-0002-8414-185X](https://orcid.org/0000-0002-8414-185X)
 Repository : `github.com/hypneum-lab/dream-of-kiki`
 Preregistration : OSF DOI 10.17605/OSF.IO/Q6JYN

@@ -4,24 +4,24 @@
 
 Research program producing two complementary papers:
 
-- **Paper 1** (Nature HB / PLoS Comp Bio target): formal framework **C** with axioms **DR-0..DR-4** and invariants families **I / S / K**.
+- **Paper 1** (PLOS Computational Biology target ; Nature Human Behaviour retired as primary target 2026-04-20): formal framework **C** with axioms **DR-0..DR-4** and invariants families **I / S / K**.
 - **Paper 2** (NeurIPS / ICML / TMLR target): empirical ablation on the `kiki_oniric` substrate across profiles `P_min`, `P_equ`, `P_max`.
 
-**Status** — DualVer `C-v0.7.0+PARTIAL` (2026-04-20). Tag `v0.6.0` + 67 commits. Paper 1 **v0.2** frozen (22 p), primary submission target **PLOS Computational Biology** (retargeted from Nature Human Behaviour on 2026-04-20). Gates **G1, G7, G8, G9 LOCKED** (cycle 2 closed) ; **G10 deferred to Paper 2** per PLOS CB pivot. 277 tests / 91.17 % coverage. arXiv deposit ready, only web-UI walkthrough pending ; OSF DOI mint pending arXiv-ID lock.
+**Status** — DualVer `C-v0.8.0+PARTIAL` (2026-04-21 ; SemVer alias `0.8.0` in `pyproject.toml` / `CITATION.cff`). Paper 1 **v0.2** frozen (22 p), primary submission target **PLOS Computational Biology** (retargeted from Nature Human Behaviour on 2026-04-20 — acknowledged trade-off : IF 15.9 → 4.3, decision time 3–6 months → 44 days). Gates **G1, G7, G8, G9 LOCKED** (cycle 2 closed) ; **G10 deferred to Paper 2** per PLOS CB pivot. 277 tests / 91.17 % coverage. OSF pre-registration **live** at DOI `10.17605/OSF.IO/Q6JYN` (https://osf.io/q6jyn, DataCite-minted 2026-04-19T00:28:05Z). arXiv deposit ready, only web-UI walkthrough pending. Bonferroni amendment (2026-04-19) still to be filed as a linked OSF registration before submit — see `docs/osf-amendment-submission-package.md`.
 **Author** — Clément Saillant (L'Electron Rare), *dreamOfkiki* program author. Hypneum Lab.
 **License** — MIT (code) + CC-BY-4.0 (docs).
 
 ---
 
-## Headline finding (2026-04-20)
+## Preliminary observation (Paper 2 backlog, 2026-04-20 ; framing reviewed 2026-04-21)
 
-**`p_max` collapses 15 orders of magnitude between 1.5B and 7B substrates.** Phase-B pilot over three profiles (`p_min`, `p_equ`, `p_max`) × three benchmarks (MMLU, HellaSwag, mega_v2), 30 seeds × 3 profiles = 90 cells. 7B verdict : **GO (2/3)** — H1 p_min rejects H₀ at p = 1.4 × 10⁻²⁴, H1 p_equ at p = 6.2 × 10⁻²⁷ ; only H1 p_max (p = 0.055) fails to cross threshold.
+**A directional trend consistent with substrate-size scaling is observed on the `p_max` profile between 1.5B and 7B substrates, pending a 3rd scale point.** Phase-B pilot over three profiles (`p_min`, `p_equ`, `p_max`) × three benchmarks (MMLU, HellaSwag, mega_v2), 30 seeds × 3 profiles = 90 cells. 7B result : H1 p_min rejects H₀ at p = 1.4 × 10⁻²⁴, H1 p_equ at p = 6.2 × 10⁻²⁷ ; H1 p_max (**p = 0.055**) **did not reject** at any pre-registered α (0.05, 0.0125, 0.00833, 0.00625). We report the observed effect-size shift on `p_max` as a *descriptive* trend, not a confirmatory scaling-law claim.
 
-Micro-isolation of the four canonical operators (replay, downscale, **restructure**, recombine) suggests that three remain stable under scaling while **`restructure` alone exhibits the collapse** — seeding hypothesis **H7** for Paper 2 (NeurIPS / ICML / TMLR target). This is a strictly finer-grained observation than the aggregate-loss scaling laws (Kaplan 2020, Hoffmann 2022) or the discrete emergent-ability transitions (Wei 2022) ; see `docs/milestones/scaling-law-analysis-2026-04-20.md`.
+**Why we are *not* claiming a "15-order-of-magnitude collapse".** (a) Two data points do not identify a power-law ; Clauset, Shalizi & Newman 2009 recommend ≥ 50 points with explicit goodness-of-fit ; neural-scaling-law baselines (Kaplan et al. 2020) typically span 7–9 scales. (b) p = 0.055 sits above every pre-registered α and does not support a confirmatory rejection ; describing the observation as a "collapse" would overstate what the evidence carries (cf. Stumpf & Porter 2012 on power-law overclaiming). (c) The reported magnitude may include floating-point underflow near machine precision ; a numerical-precision audit is required before any quantitative statement.
 
-**Preliminary — pending critical validation.** The claim rests on **two data points (1.5B, 7B)** and a p-value (0.055) at the conventional threshold boundary. A 3rd data point (3B or 14B substrate) is required to confirm monotonicity, and a numerical audit is needed to verify that the 15-order-of-magnitude `p_max` figure is not a floating-point underflow artefact near machine precision. Paper 2 submission is gated on these two checks.
+**Gating before any Paper 2 scaling-law claim.** (i) 3rd scale point (3B or 14B substrate) to rule out monotonicity-from-two-points artefact. (ii) Bootstrap CI on the per-seed p-value distribution. (iii) Numerical-precision audit of the p-value tail. (iv) If the audit reveals underflow, re-compute under log-probability arithmetic. The concrete Paper 2 hypothesis (H7) is therefore *conditional* on (i)–(iv) passing ; see `docs/milestones/scaling-law-analysis-2026-04-20.md`.
 
-**Lesson from sister project `bouba_sens` v0.5.0** (2026-04-21, `github.com/hypneum-lab/bouba_sens`) — three pre-registered findings in that programme were all **downgraded to null results** by critical validation (null-model partition control, bootstrap CIs, multi-estimator MI). The `p_max` 15-OOM claim must pass analogous scrutiny before Paper 2 submission: (a) bootstrap CI on the per-seed p-value distribution, (b) the 3rd scale point, (c) numerical-precision audit on the p-value tail. The `bouba_sens` paper (`papers/paper1/main.md`) articulates the three recommendations this repo now adopts as a submission pre-requisite.
+**Lesson carried over from sister project `bouba_sens` v0.5.0** (`github.com/hypneum-lab/bouba_sens`, 2026-04-21) — three pre-registered findings in that programme were all downgraded to null by critical validation (null-model partition control, bootstrap CIs, multi-estimator MI). This repo adopts the same discipline : no scaling-law claim is advanced in Paper 1 ; the preliminary observation reported here is framework-level (the pipeline produces a registerable trend) and is *not* used to argue any substrate-agnosticism claim in Paper 1's confirmatory analyses.
 
 ---
 
