@@ -89,6 +89,7 @@ cycle 1. Real H2 evaluation requires P_max real wiring (cycle 2).
 | Friston 2010 (FEP) | Free energy principle | Operationalized as `restructure` operation with topology guard S3 |
 | Hobson 2009 (REM) | Creative dreaming theory | Operationalized as `recombine` operation with VAE-light skeleton |
 | McClelland 1995 (CLS) | Two-system hippocampus + neocortex | Embedded in profile inclusion DR-4 (P_min minimal vs P_equ richer) |
+| Huh 2024 (PRH, ICML 2024) | Convergent representation across model scales / modalities | Theoretical anchor for DR-3 substrate-agnosticism ; companion empirical probe in nerve-wml v1.7.0 (Zenodo DOI 10.5281/zenodo.19656342) |
 
 Our distinguishing features : **(a)** unified formal framework
 covering all four pillars, **(b)** executable Conformance
@@ -96,6 +97,14 @@ Criterion enabling multi-substrate validation, **(c)**
 pre-registered ablation methodology with frozen benchmarks +
 deterministic run IDs, **(d)** open-science artifacts (MIT code,
 OSF pre-reg, Zenodo DOI artifacts).
+
+The Platonic Representation Hypothesis (PRH) provides a falsifiable
+theoretical floor under DR-3 : if convergent representations across
+substrates is a real phenomenon, conformance transfer across the
+MLX, E-SNN and LoRA substrates is *expected* rather than a happy
+accident. The cross-repo `nerve-wml` PRH probe (GammaThetaMultiplexer
+experiment, v1.7.0) is the empirical complement to the conformance
+matrix reported here.
 
 ## 8.5 Cross-substrate preliminary replication (cycle 2)
 

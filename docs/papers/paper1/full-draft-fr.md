@@ -353,8 +353,11 @@ Trois limitations bornent la contribution du cycle 1 :
 | @friston2010free (FEP) | Free energy principle | Operationalise comme operation `restructure` avec garde topologique S3 |
 | @hobson2009rem (REM) | Theorie du reve creatif | Operationalisee comme operation `recombine` avec squelette VAE-light |
 | @mcclelland1995complementary (CLS) | Systeme hippocampe + neocortex a deux niveaux | Integre dans l'inclusion de profils DR-4 (`P_min` minimal vs `P_equ` plus riche) |
+| @huh2024platonic (PRH, ICML 2024) | Convergence représentationnelle entre échelles de modèles et modalités | Ancrage théorique de l'agnosticisme au substrat DR-3 ; sonde empirique compagne dans @saillant2026nervewml (`nerve-wml` v1.7.0, expérience GammaThetaMultiplexer) |
 
 Nos points distinctifs : **(a)** un cadre formel unifie couvrant les quatre piliers, **(b)** un Conformance Criterion executable permettant une validation multi-substrat, **(c)** une methodologie d'ablation pre-enregistree avec benchmarks figes + `run_id` deterministes, **(d)** des artefacts open science (code MIT, pre-reg OSF, artefacts DOI Zenodo).
+
+**Sur l'hypothèse de la représentation platonique comme ancrage théorique.** La thèse PRH [@huh2024platonic] — selon laquelle les représentations dans des modèles suffisamment capables convergent vers une structure statistique partagée, indépendamment du substrat — confère à notre revendication d'agnosticisme au substrat DR-3 un ancrage théorique falsifiable : si PRH est empiriquement validée, on doit *s'attendre* à ce que les métriques de conformité se transfèrent à travers les substrats MLX, E-SNN et LoRA, plutôt que de traiter ce transfert comme un heureux accident architectural. La couche de mémoire de travail compagne `nerve-wml` v1.7.0 [@saillant2026nervewml] exécute une sonde PRH explicite via son expérience GammaThetaMultiplexer ; la matrice de conformité cross-substrat rapportée ici (cycles 2 + 3) est le pendant dreamOfkiki de la même mise empirique.
 
 ---
 

@@ -921,6 +921,7 @@ claim empirical parity.
 | @phillips2010categorial (Categorial Compositionality, PLOS Computational Biology 2010) | Category-theoretic explanation for systematicity in human cognition ; argues cognitive compositionality is a categorical functor | Prior art for the algebraic framing of cognition ; our DR-2 is a *domain-specific* instantiation on dream-episode operations (free non-commutative semigroup, not full Cartesian closed category) with an **executable** predicate and an empirical Conformance Criterion rather than an interpretive equivalence |
 | @gavranovic2024fundamental (Fundamental Components of Deep Learning, PhD thesis / arXiv:2403.13001) | Unified category-theoretic account of deep learning architectures and training (parametric optics over semicartesian categories) | Orthogonal prior art for categorical ML : we formalise *dream-phase consolidation operations* rather than gradient-based training, and use a strictly weaker algebraic structure (free semigroup) adequate for the compositional-semantics claim without committing to the full optics stack |
 | @klinzing2019mechanisms (Nature Neuroscience, systems-consolidation review) ; @rasch2025sleep (Physiological Reviews, sleep-contribution review) | Canonical three-process framing (active systems consolidation + SHY + integration) with extensive empirical grounding | Empirical anchor we commit to (cf. §3 preamble) ; our four-primitive decomposition refines *integration* into `restructure` and `recombine` — the extra generator is justified by non-commutativity with `downscale` (DR-2 proof), not by disagreement with the review literature |
+| @huh2024platonic (Platonic Representation Hypothesis, ICML 2024) | Sufficiently capable models converge to a shared statistical representation independent of architecture and modality | Theoretical underpinning for our DR-3 substrate-agnosticism claim : if PRH holds, conformance is *expected* to transfer across the MLX, E-SNN and LoRA substrates rather than being an architectural coincidence ; companion empirical PRH probe in a cognitive-architecture setting reported in @saillant2026nervewml (`nerve-wml` v1.7.0, GammaThetaMultiplexer experiment) |
 
 Our distinguishing features relative to the above : **(a)** a
 unified *formal* framework covering all four pillars with a
@@ -934,6 +935,20 @@ DOI, planned Zenodo DOI for artifacts). We do not claim a new
 *algorithm* for continual learning ; the claim is a *framework*
 against which algorithms can be specified, composed, and
 compared with contract-level guarantees.
+
+**On the Platonic Representation Hypothesis as theoretical
+ground.** The PRH thesis [@huh2024platonic] — that representations
+in sufficiently capable models converge to a shared statistical
+structure independent of substrate — gives our DR-3 substrate-
+agnosticism claim a falsifiable theoretical anchor : if PRH is
+empirically vindicated, we should *expect* conformance metrics to
+transfer across the MLX, E-SNN and LoRA substrates rather than
+treat such transfer as a happy architectural accident. The
+companion `nerve-wml` v1.7.0 working-memory layer
+[@saillant2026nervewml] runs an explicit PRH probe via its
+GammaThetaMultiplexer experiment ; the cross-substrate conformance
+matrix reported here (cycle 2 + 3) is the dreamOfkiki side of the
+same empirical bet.
 
 ---
 

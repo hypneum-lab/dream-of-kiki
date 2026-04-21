@@ -94,6 +94,7 @@ requiert le câblage réel de P_max (cycle 2).
 | Friston 2010 (FEP) | Principe d'énergie libre | Opérationnalisé comme opération `restructure` avec garde topologique S3 |
 | Hobson 2009 (REM) | Théorie du rêve créatif | Opérationnalisée comme opération `recombine` avec squelette VAE allégé |
 | McClelland 1995 (CLS) | Système dual hippocampe + néocortex | Intégré dans l'inclusion de profils DR-4 (P_min minimal vs P_equ plus riche) |
+| Huh 2024 (PRH, ICML 2024) | Convergence représentationnelle entre échelles de modèles et modalités | Ancrage théorique de l'agnosticisme au substrat DR-3 ; sonde empirique compagne dans nerve-wml v1.7.0 (DOI Zenodo 10.5281/zenodo.19656342) |
 
 Nos traits distinctifs : **(a)** framework formel unifié couvrant
 les quatre piliers, **(b)** Critère de Conformité exécutable
@@ -101,6 +102,14 @@ permettant la validation multi-substrat, **(c)** méthodologie
 d'ablation pré-enregistrée avec bancs de test figés +
 identifiants de runs déterministes, **(d)** artefacts de science
 ouverte (code MIT, pré-enregistrement OSF, artefacts DOI Zenodo).
+
+L'hypothèse de la représentation platonique (PRH) fournit un
+plancher théorique falsifiable sous DR-3 : si la convergence
+représentationnelle entre substrats est un phénomène réel, le
+transfert de conformité entre les substrats MLX, E-SNN et LoRA est
+*attendu* plutôt qu'un heureux accident. La sonde PRH cross-repo
+dans `nerve-wml` (expérience GammaThetaMultiplexer, v1.7.0) est le
+complément empirique de la matrice de conformité rapportée ici.
 
 ## 8.5 Réplication cross-substrat préliminaire (cycle 2)
 
