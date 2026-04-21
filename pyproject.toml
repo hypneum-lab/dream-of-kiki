@@ -1,12 +1,12 @@
 [project]
 name = "dreamofkiki"
-version = "0.1.0"
+version = "0.8.0"
 description = "Substrate-agnostic formal framework for dream-based knowledge consolidation"
 readme = "README.md"
 requires-python = ">=3.12"
 license = { text = "MIT" }
 authors = [
-    { name = "Clement Saillant", email = "clement@saillant.cc" }
+    { name = "Clément Saillant", email = "clement@saillant.cc" }
 ]
 dependencies = [
     "mlx>=0.18.0",

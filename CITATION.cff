@@ -19,6 +19,7 @@ authors:
     affiliation: "L'Electron Rare, Grandris, France"
 repository-code: "https://github.com/hypneum-lab/dream-of-kiki"
 url: "https://github.com/hypneum-lab/dream-of-kiki"
+version: "0.8.0"
 license: MIT
 license-url: "https://github.com/hypneum-lab/dream-of-kiki/blob/main/LICENSE"
 keywords:
