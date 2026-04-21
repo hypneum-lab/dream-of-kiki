@@ -139,4 +139,4 @@ L'Electron Rare, France
 clement@saillant.cc
 ORCID : [0000-0002-8414-185X](https://orcid.org/0000-0002-8414-185X)
 Repository : `github.com/hypneum-lab/dream-of-kiki`
-Preregistration : OSF DOI 10.17605/OSF.IO/Q6JYN
+Preregistration : OSF DOI 10.17605/OSF.IO/Q6JYN (primary) + 10.17605/OSF.IO/TPM5S (Amendment #1, Bonferroni family restructure, filed 2026-04-21)
