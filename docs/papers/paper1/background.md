@@ -99,8 +99,7 @@ pillar A → DR-1 episodic conservation, pillar B → DR-2
 compositionality (downscale order constraint), pillar D → DR-3
 substrate-agnosticism (the restructure topology guard S3 lives
 on this axis), pillar C → DR-4 profile chain inclusion that
-keeps the recombine-rich profiles on top. The free-semigroup
-compositionality axiom DR-2 (proven in
+keeps the recombine-rich profiles on top. The compositionality axiom DR-2 (proven in
 `docs/proofs/dr2-compositionality.md`) is the foundational
 property and the Conformance Criterion DR-3 the executable
 contract for substrate-agnosticism.
