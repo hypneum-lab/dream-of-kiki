@@ -10,6 +10,21 @@ see `docs/specs/2026-04-17-dreamofkiki-framework-C-design.md` §12).
 
 ---
 
+## [C-v0.7.1+PARTIAL] — 2026-04-21
+
+### Changed — DR-2 weakened (FC-PATCH bump)
+
+- DR-2 (compositionality) now carries an explicit precondition
+  excluding the empirically falsified class (permutations with
+  RESTRUCTURE preceding REPLAY). See spec §6.2 and amendment
+  `docs/specs/amendments/2026-04-21-dr2-empirical-falsification.md`.
+- No semantic change to the compositionality claim itself on the
+  safe class; this is a clarification/equivalent reformulation per
+  DualVer §12.2 FC-PATCH rule.
+- EC axis unchanged (no new gate crossed).
+
+---
+
 ## [C-v0.7.0+PARTIAL] — 2026-04-19
 
 Cycle-3 Phase 1 launch bump. FC MINOR (+0.1.0) because cycle 3

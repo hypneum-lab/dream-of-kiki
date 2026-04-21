@@ -8,7 +8,7 @@ and §6 (axioms).
 |-------|------|--------|------|
 | DR-0 | Accountability | Proven / Exec | `tests/conformance/axioms/test_dr0_accountability.py` |
 | DR-1 | Episodic conservation | Proven / Exec | `tests/conformance/axioms/test_dr1_episodic_conservation.py` |
-| DR-2 | Compositionality | **Unproven working axiom** | (none; see DR-2') |
+| DR-2 | Compositionality (weakened) | Weakened with precondition (2026-04-21) | test_dr2_compositionality_empirical.py |
 | DR-2' | Canonical-order compositionality | Fallback, Exec | `tests/conformance/axioms/test_dr2_prime_canonical_order.py` |
 | DR-3 | Substrate-agnosticism | Proven / Exec | `tests/conformance/axioms/test_dr3_substrate.py`, `test_dr3_esnn_substrate.py` |
 | DR-4 | Profile chain inclusion | Proven / Exec | `tests/conformance/axioms/test_dr4_profile_inclusion.py` |
@@ -63,24 +63,25 @@ Real β lands S7+ alongside the swap protocol (test docstring).
 
 ---
 
-## DR-2 — Compositionality (unproven working axiom)
+## DR-2 — Compositionality (weakened with precondition, 2026-04-21)
 
-**Formal statement** (verbatim, spec §6.2 DR-2):
+**Formal statement** (verbatim, spec §6.2 DR-2, updated 2026-04-21):
 
 ```
-∀ op_1, op_2 ∈ Op,
-  op_2 ∘ op_1 ∈ Op
-  ∧ budget(op_2 ∘ op_1) = budget(op_1) + budget(op_2)
-  ∧ effect(op_2 ∘ op_1, s) = effect(op_2, effect(op_1, s))
+∀ permutation π = (op_0, ..., op_{n-1}) over Op such that
+  ¬∃ i < j : (π_i = RESTRUCTURE ∧ π_j = REPLAY),
+  π is composable into Op
+  ∧ budget(π) = Σ_k budget(π_k)
+  ∧ effect(π, s) = effect(π_{n-1}, ..., effect(π_0, s))
 ```
 
-**Status**: Cycle-1 **unproven working axiom**. Closure lemma,
-budget additivity, and associativity are not formally proven in
-spec §6.2. The operational contract used by G2/G4 pilots is the
-**DR-2'** fallback (see below). A full monoidal model — including
-the parallel `recombine` branch — is deferred to
-`docs/drafts/g3-draft.md` (cycle 2). Open TODO under Track C
-`formal-proofs.md`.
+**Status**: as of 2026-04-21 DR-2 is **weakened with a precondition**
+(Option B). The precondition-bounded form is empirically validated by
+Hypothesis property testing over the 12 safe permutations. The
+operational contract used by G2/G4 pilots is the **DR-2'** fallback
+(canonical order only), which remains the stricter contract.
+
+**2026-04-21 update**: DR-2 weakened with a precondition excluding the empirically falsified class (RESTRUCTURE preceding REPLAY). See amendment `docs/specs/amendments/2026-04-21-dr2-empirical-falsification.md` and test `tests/conformance/axioms/test_dr2_compositionality_empirical.py`.
 
 **Commutativity is NOT claimed**. In particular
 `recombine ∘ downscale ≠ downscale ∘ recombine` in general. The

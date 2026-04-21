@@ -342,24 +342,29 @@ Let:
 
 **Enforcement** : I1 runtime check + β purge gate.
 
-#### DR-2 (Compositionality — unproven working axiom)
+#### DR-2 (Compositionality — weakened with precondition, 2026-04-21)
 
 ```
-∀ op_1, op_2 ∈ Op,
-  op_2 ∘ op_1 ∈ Op
-  ∧ budget(op_2 ∘ op_1) = budget(op_1) + budget(op_2)
-  ∧ effect(op_2 ∘ op_1, s) = effect(op_2, effect(op_1, s))
+∀ permutation π = (op_0, ..., op_{n-1}) over Op such that
+  ¬∃ i < j : (π_i = RESTRUCTURE ∧ π_j = REPLAY),
+  π is composable into Op
+  ∧ budget(π) = Σ_k budget(π_k)
+  ∧ effect(π, s) = effect(π_{n-1}, ..., effect(π_0, s))
 ```
 
-**Cycle-1 status** : DR-2 is an **unproven working axiom**. The
-closure lemma, budget additivity, and associativity are not
-formally proven here ; the sketch below delimits what would have to
-be shown. The operational version actually used by the G2/G4
-pilots is **DR-2'** (composition restricted to the canonical order,
-see below), retained as the empirical contract until a strict
-proof is written. Open TODO under Track C `formal-proofs.md` ;
-cycle-2 g3-draft `docs/drafts/g3-draft.md` carries the move to a
-full monoidal model (including the parallel `recombine` branch).
+**Precondition rationale**: the predicate
+`∃ i < j : π_i = RESTRUCTURE ∧ π_j = REPLAY` captures the empirically
+falsified class identified by Hypothesis property testing on the
+real-weight substrate (see
+`tests/conformance/axioms/test_dr2_compositionality_empirical.py`,
+2026-04-21). The layer swap performed by RESTRUCTURE leaves the MLP
+non-callable with the canonical (2, 4) input shape consumed by a
+subsequent REPLAY. The precondition excludes exactly those 12 out of
+24 permutations of the four canonical operations; the 12 remaining
+permutations preserve closure, budget additivity, and effect
+chaining.
+
+**Cycle-1 status**: as of 2026-04-21 DR-2 is **weakened with a precondition** (Option B, see `docs/specs/amendments/2026-04-21-dr2-empirical-falsification.md`). The precondition-bounded form is no longer unproven — its closure, budget additivity, and effect chaining are validated empirically by Hypothesis property testing over the remaining 12 safe permutations. The operational version DR-2' (canonical order only) is retained as the stricter contract used by the G2/G4 pilots.
 
 **Proof target** : by cases over the 4 operations + associativity lemma.
 

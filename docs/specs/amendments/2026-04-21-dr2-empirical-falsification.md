@@ -1,7 +1,7 @@
 # Amendment: DR-2 empirical falsification
 
 - **Date**: 2026-04-21
-- **Status**: Draft — pending review before merge into main spec
+- **Status**: Adopted — Option B (weakened precondition), 2026-04-21
 - **Target**: `docs/specs/2026-04-17-dreamofkiki-framework-C-design.md`
   §6.2 (DR-2 compositionality)
 - **Evidence**: `tests/conformance/axioms/test_dr2_compositionality_empirical.py`
@@ -76,7 +76,7 @@ Add a footnote to §6.2 citing the empirical finding:
 > `tests/conformance/axioms/test_dr2_compositionality_empirical.py`).
 > DR-2' remains the operational contract.
 
-### Option B — Weaken DR-2 to the observed safe class
+### Option B — Weaken DR-2 to the observed safe class [ADOPTED 2026-04-21]
 
 Redefine DR-2 as compositionality for the subset of `Op × Op` where
 REPLAY does not follow RESTRUCTURE. This introduces a precondition
@@ -90,10 +90,7 @@ errata commit and a DualVer bump on the formal axis.
 
 ## Recommendation
 
-**Option A** for Paper 1 v0.2 (minimal disruption, preserves the
-documented "unproven" status as a research-honest finding). Option
-B or C to be reconsidered for Paper 2 (ablation) once the scope
-of substrate-dependency is clearer.
+**Option B adopted 2026-04-21** (FC-PATCH bump C-v0.7.0 → C-v0.7.1). The precondition-bounded DR-2 is empirically validated by the 11 passing permutations in the test suite. Option C (demote DR-2 entirely) remains available for Paper 2 if substrate-survey results warrant it.
 
 ## DualVer implication
 

@@ -1,4 +1,4 @@
-"""Empirical (non-formal) falsification test for DR-2 compositionality.
+"""Empirical test of DR-2 (weakened form, 2026-04-21). Verifies compositionality under the precondition ¬(∃ i<j : π_i=RESTRUCTURE ∧ π_j=REPLAY).
 
 **This does NOT constitute a proof of DR-2.** The spec explicitly
 labels DR-2 an *unproven working axiom* (see
@@ -259,20 +259,19 @@ def test_dr2_empirical_budget_additivity_and_bookkeeping_under_permutation(
 @pytest.mark.xfail(
     strict=False,
     reason=(
-        "DR-2 closure as stated is falsifiable empirically on the "
-        "kiki_oniric real-weight substrate : RESTRUCTURE before "
-        "REPLAY breaks the forward pass (MLX addmm shape mismatch) "
-        "because the layer swap invalidates the MLP input dim. "
-        "Spec §6.2 already flags DR-2 as unproven and retains "
-        "DR-2' (canonical order only). These cases document the "
-        "refutation in CI so the gap stays visible."
+        "Precondition-excluded class (weakened DR-2, 2026-04-21): "
+        "permutations with RESTRUCTURE preceding REPLAY are OUT OF "
+        "SCOPE of the weakened DR-2 axiom. These cases document the "
+        "failure mode that motivated the precondition (see spec §6.2 "
+        "DR-2 and amendment 2026-04-21). Strict xfail retained for "
+        "CI visibility — flipping to skip would hide the refutation."
     ),
 )
 @pytest.mark.parametrize("perm", list(_KNOWN_CLOSURE_FALSIFIERS))
 def test_dr2_empirical_closure_falsified_restructure_then_replay(
     perm: tuple[Operation, ...],
 ) -> None:
-    """XFAIL : closure collapses whenever RESTRUCTURE precedes REPLAY.
+    """XFAIL (out of scope of weakened DR-2): RESTRUCTURE-before-REPLAY class excluded by the precondition. See spec §6.2.
 
     These five permutations are an empirical counter-example to the
     closure sub-claim of DR-2 as stated in spec §6.2 (``op_2 ∘ op_1

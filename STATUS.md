@@ -1,7 +1,7 @@
 # dream-of-kiki — Status
 
 **As of** : 2026-04-20 PLOS CB pivot codified (cycle-3 plan adapted)
-**Version** : C-v0.7.0+PARTIAL
+**Version** : C-v0.7.1+PARTIAL
 **Phase** : Paper 1 v0.2 PLOS CB submission preparation. Cycle-3
 Phase 1 1.5B sanity GO 3/3 (commit `22c58c9`, 46.75 min Studio) ;
 Phase 2 multi-scale (7B + 35B) + Norse cross-substrate + fMRI
@@ -50,6 +50,8 @@ contract test is no longer `xfail` — second half of R1 is now
 caller-enforceable. Multi-artifact support landed (issue #2) :
 schema keyed on `(run_id, artifact_name)`, idempotent migration
 from the v1 single-hash layout, plus `list_output_hashes(run_id)`.
+
+**2026-04-21 DualVer bump (FC-PATCH)**: DR-2 weakened with precondition excluding RESTRUCTURE-before-REPLAY permutations. See CHANGELOG `[C-v0.7.1+PARTIAL]` and amendment doc.
 
 ## DualVer status
 
