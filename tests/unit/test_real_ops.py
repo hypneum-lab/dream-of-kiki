@@ -505,4 +505,162 @@ def test_recombine_real_deterministic_under_seed() -> None:
     assert s1.last_sample == s2.last_sample
 
 
+# --------------------------------------------------------------------------
+# Test 9 — replay_real deterministic under (seed, input)
+# --------------------------------------------------------------------------
+
+
+def _mlp_weights_as_arrays(model: _TinyMLP) -> list[np.ndarray]:
+    """Snapshot every (weight, bias) tensor as a numpy array.
+
+    Used by the determinism tests below to compare two runs byte-for-byte.
+    Helper is local to this test module to avoid polluting production code.
+    """
+    snap: list[np.ndarray] = []
+    for layer in model.layers:
+        snap.append(np.asarray(layer.weight).copy())
+        snap.append(np.asarray(layer.bias).copy())
+    return snap
+
+
+def _assert_weight_snapshots_equal(
+    left: list[np.ndarray], right: list[np.ndarray]
+) -> None:
+    """Byte-identical equality — no tolerance, no approximation."""
+    assert len(left) == len(right)
+    for a, b in zip(left, right):
+        assert a.shape == b.shape
+        assert a.dtype == b.dtype
+        assert np.array_equal(a, b), (
+            "determinism violated — weight snapshots differ"
+        )
+
+
+def test_replay_real_deterministic_under_seed() -> None:
+    """Same seed + same β records → identical post-replay weights.
+
+    Mirrors ``test_recombine_real_deterministic_under_seed`` for the
+    gradient-update path. Two MLPs are built under the same
+    ``mx.random.seed(7)`` so their initial weights match ; after N
+    identical replay episodes, final weights must be byte-identical.
+    """
+    mx.random.seed(7)
+    model1 = _TinyMLP()
+    mx.random.seed(7)
+    model2 = _TinyMLP()
+    # Sanity : initial weights already match under identical seeds.
+    _assert_weight_snapshots_equal(
+        _mlp_weights_as_arrays(model1), _mlp_weights_as_arrays(model2)
+    )
+
+    s1 = ReplayRealState()
+    s2 = ReplayRealState()
+    h1 = replay_real_handler(s1, model=model1, lr=0.01)
+    h2 = replay_real_handler(s2, model=model2, lr=0.01)
+
+    records = [
+        {"x": [0.1, 0.2, 0.3, 0.4], "y": [1.0, 0.0]},
+        {"x": [0.5, 0.6, 0.7, 0.8], "y": [0.0, 1.0]},
+        {"x": [0.9, 0.1, 0.2, 0.3], "y": [0.5, 0.5]},
+    ]
+    # 3 episodes, matching the "small N" convention in the recombine test.
+    for i in range(3):
+        ep = _make_episode(
+            f"de-det-replay-{i}",
+            {"beta_records": records},
+            (Operation.REPLAY,),
+            (OutputChannel.WEIGHT_DELTA,),
+        )
+        h1(ep)
+        h2(ep)
+
+    _assert_weight_snapshots_equal(
+        _mlp_weights_as_arrays(model1), _mlp_weights_as_arrays(model2)
+    )
+    assert s1.last_loss == s2.last_loss
+    assert s1.total_records_consumed == s2.total_records_consumed
+
+
+# --------------------------------------------------------------------------
+# Test 10 — downscale_real deterministic under (seed, input)
+# --------------------------------------------------------------------------
+
+
+def test_downscale_real_deterministic_under_seed() -> None:
+    """Same seed + same shrink_factor → identical post-downscale weights.
+
+    downscale_real is a pure multiplicative op (no RNG), so two models
+    initialized under the same seed must end with byte-identical
+    weights after N identical shrink episodes.
+    """
+    mx.random.seed(7)
+    model1 = _TinyMLP()
+    mx.random.seed(7)
+    model2 = _TinyMLP()
+    _assert_weight_snapshots_equal(
+        _mlp_weights_as_arrays(model1), _mlp_weights_as_arrays(model2)
+    )
+
+    s1 = DownscaleRealState()
+    s2 = DownscaleRealState()
+    h1 = downscale_real_handler(s1, model=model1)
+    h2 = downscale_real_handler(s2, model=model2)
+
+    for i in range(3):
+        ep = _make_episode(
+            f"de-det-downscale-{i}",
+            {"shrink_factor": 0.97},
+            (Operation.DOWNSCALE,),
+            (OutputChannel.WEIGHT_DELTA,),
+        )
+        h1(ep)
+        h2(ep)
+
+    _assert_weight_snapshots_equal(
+        _mlp_weights_as_arrays(model1), _mlp_weights_as_arrays(model2)
+    )
+    assert s1.compound_factor == s2.compound_factor
+
+
+# --------------------------------------------------------------------------
+# Test 11 — restructure_real deterministic under (seed, input)
+# --------------------------------------------------------------------------
+
+
+def test_restructure_real_deterministic_under_seed() -> None:
+    """Same seed + same swap_indices → identical post-reroute topology.
+
+    restructure_real is a pure pointer-swap op (no RNG). Two identically
+    seeded models must end with byte-identical layer ordering **and**
+    weights after N identical reroute episodes.
+    """
+    mx.random.seed(7)
+    model1 = _TinyMLP()
+    mx.random.seed(7)
+    model2 = _TinyMLP()
+    _assert_weight_snapshots_equal(
+        _mlp_weights_as_arrays(model1), _mlp_weights_as_arrays(model2)
+    )
+
+    s1 = RestructureRealState()
+    s2 = RestructureRealState()
+    h1 = restructure_real_handler(s1, model=model1)
+    h2 = restructure_real_handler(s2, model=model2)
+
+    for i in range(3):
+        ep = _make_episode(
+            f"de-det-restructure-{i}",
+            {"topo_op": "reroute", "swap_indices": [0, 1]},
+            (Operation.RESTRUCTURE,),
+            (OutputChannel.HIERARCHY_CHG,),
+        )
+        h1(ep)
+        h2(ep)
+
+    _assert_weight_snapshots_equal(
+        _mlp_weights_as_arrays(model1), _mlp_weights_as_arrays(model2)
+    )
+    assert s1.diff_history == s2.diff_history
+
+
 import numpy as np  # placed at bottom because pytest.importorskip gates file
