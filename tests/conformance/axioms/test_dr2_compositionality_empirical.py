@@ -55,12 +55,20 @@ from hypothesis import strategies as st
 pytest.importorskip("mlx.core")
 pytest.importorskip("mlx.nn")
 
+from kiki_oniric.axioms import DR2  # noqa: E402
 from kiki_oniric.dream.episode import Operation  # noqa: E402
 
 from tests.conformance.axioms._dsl import (  # noqa: E402
     make_episode,
     seeded_runtime,
 )
+
+# DR-2 precondition narrowed to a non-None callable at import time so
+# the type checker can see it is safe to call below. The public API
+# types `predicate` as `Callable[..., bool] | None` to cover axioms
+# without a simple executable form (DR-0, DR-1, DR-3).
+assert DR2.predicate is not None
+_dr2_safe_permutation = DR2.predicate
 
 
 _CANONICAL_OPS: Final[tuple[Operation, ...]] = (
@@ -76,31 +84,25 @@ _CANONICAL_OPS: Final[tuple[Operation, ...]] = (
 _SEED: Final[int] = 7
 
 
-def _restructure_precedes_replay(perm: tuple[Operation, ...]) -> bool:
-    """Structural predicate : does RESTRUCTURE come strictly before REPLAY?
-
-    These are exactly the permutations for which the real-weight
-    substrate collapses closure — the layer swap performed by
-    RESTRUCTURE leaves the MLP un-callable with the canonical input
-    shape, so a later REPLAY raises ``ValueError`` from MLX
-    ``addmm``.
-    """
-    return perm.index(Operation.RESTRUCTURE) < perm.index(Operation.REPLAY)
-
-
 def _enumerate_closure_falsifiers() -> tuple[tuple[Operation, ...], ...]:
+    """Return permutations excluded by weakened DR-2's precondition.
+
+    The precondition (¬∃ i<j : π_i=RESTRUCTURE ∧ π_j=REPLAY) is exposed
+    via ``DR2.predicate``; the falsifiers are its complement, minus the
+    canonical order (covered by DR-2').
+    """
     import itertools
 
     return tuple(
         perm
         for perm in itertools.permutations(_CANONICAL_OPS)
-        if perm != _CANONICAL_OPS and _restructure_precedes_replay(perm)
+        if perm != _CANONICAL_OPS and not _dr2_safe_permutation(perm)
     )
 
 
 # Permutations where RESTRUCTURE precedes REPLAY are known-failing
 # under the current real-weight op implementations (see
-# :func:`_restructure_precedes_replay`). Encoded so the hypothesis
+# ``kiki_oniric.axioms.DR2.predicate``). Encoded so the hypothesis
 # strategy below can filter them out when probing surviving
 # invariants, and so the explicit xfail block documents the
 # refutation.

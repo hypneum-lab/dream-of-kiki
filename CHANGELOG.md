@@ -10,6 +10,27 @@ see `docs/specs/2026-04-17-dreamofkiki-framework-C-design.md` §12).
 
 ---
 
+## [C-v0.8.0+PARTIAL] — 2026-04-21
+
+### Added — kiki_oniric.axioms public API (FC-MINOR bump)
+
+- New module `kiki_oniric/axioms/` exposes the 6 GENIAL axioms
+  (DR-0, DR-1, DR-2, DR-2', DR-3, DR-4) as frozen `Axiom` dataclass
+  instances. Each carries formal statement (verbatim from spec §6.2),
+  spec section, test references, DualVer version, amendment pointers,
+  and an optional executable predicate.
+- Predicates implemented: DR-2 strict-precedence precondition, DR-2'
+  canonical-order equality check, DR-4 set-inclusion. DR-0, DR-1,
+  DR-3 expose `predicate=None` (validated via conformance tests
+  pointed to by `test_references`).
+- Conformance tests for DR-2 now import from `kiki_oniric.axioms`;
+  the local `_restructure_precedes_replay` duplicate was removed.
+- DualVer: FC-MINOR bump per §12.2 (new public surface, no semantic
+  change to existing axioms). EC axis unchanged.
+- Closes issue #5.
+
+---
+
 ## [C-v0.7.1+PARTIAL] — 2026-04-21
 
 ### Changed — DR-2 weakened (FC-PATCH bump)

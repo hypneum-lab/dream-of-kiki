@@ -1,7 +1,7 @@
 # dream-of-kiki — Status
 
 **As of** : 2026-04-20 PLOS CB pivot codified (cycle-3 plan adapted)
-**Version** : C-v0.7.1+PARTIAL
+**Version** : C-v0.8.0+PARTIAL
 **Phase** : Paper 1 v0.2 PLOS CB submission preparation. Cycle-3
 Phase 1 1.5B sanity GO 3/3 (commit `22c58c9`, 46.75 min Studio) ;
 Phase 2 multi-scale (7B + 35B) + Norse cross-substrate + fMRI

@@ -13,6 +13,35 @@ and §6 (axioms).
 | DR-3 | Substrate-agnosticism | Proven / Exec | `tests/conformance/axioms/test_dr3_substrate.py`, `test_dr3_esnn_substrate.py` |
 | DR-4 | Profile chain inclusion | Proven / Exec | `tests/conformance/axioms/test_dr4_profile_inclusion.py` |
 
+## Public API (since C-v0.8.0+PARTIAL)
+
+The 6 axioms are published as a stable Python API at
+`kiki_oniric.axioms`:
+
+```python
+from kiki_oniric.axioms import Axiom, DR0, DR1, DR2, DR2_PRIME, DR3, DR4
+```
+
+Each `Axiom` is a frozen dataclass exposing:
+
+- `name`, `title`, `formal_statement` (verbatim from §6.2)
+- `spec_section`, `test_references`, `version` (DualVer string)
+- `amendments` — paths to amendment docs (DR-2 only, for now)
+- `predicate: Callable[..., bool] | None` — optional executable
+  check. DR-2, DR-2', and DR-4 have predicates; DR-0, DR-1, DR-3
+  have `predicate=None` (validated via their `test_references`).
+
+Runtime example:
+
+```python
+from kiki_oniric.axioms import DR2
+from kiki_oniric.dream.episode import Operation
+
+perm = (Operation.REPLAY, Operation.DOWNSCALE,
+        Operation.RESTRUCTURE, Operation.RECOMBINE)
+assert DR2.predicate(perm)  # canonical order is safe
+```
+
 ## Formal framework (spec §6.1)
 
 - **State** = `(W, H, M)` where W = weights, H = hierarchy topology,
