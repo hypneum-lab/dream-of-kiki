@@ -10,6 +10,28 @@ see `docs/specs/2026-04-17-dreamofkiki-framework-C-design.md` §12).
 
 ---
 
+## [Unreleased]
+
+### Added — micro-kiki substrate (phase-2 draft)
+
+- New substrate `kiki_oniric.substrates.micro_kiki` wrapping the
+  micro-kiki project's Qwen MoE + LoRA adapter training output.
+  DualVer `C-v0.7.0+PARTIAL`, aligned to the sibling E-SNN
+  substrates.
+- Phase 1 : `replay_handler_factory` + `downscale_handler_factory`
+  operate over numpy tensors (CI fallback) and LoRA tensors (Apple
+  Silicon path, env-gated on `mlx_lm`).
+- Phase 2 stubs : `restructure_handler_factory` + `recombine_handler_factory`
+  raise `NotImplementedError` with explicit citations (OPLoRA
+  arXiv 2510.13003 + TIES-merge) so the gap is surfaced in the
+  cycle-3 conformance matrix rather than silently no-op'd.
+- `snapshot` / `load_snapshot` round-trip the accumulator delta
+  via numpy `.npz` (portable across the 3-substrate test matrix).
+- 7 unit tests in `tests/unit/test_micro_kiki_substrate.py` cover
+  the stub mode (no `mlx_lm` installed), handler signatures,
+  snapshot round-trip, and the phase-2 `NotImplementedError`
+  surface.
+
 ## [C-v0.8.0+PARTIAL] — 2026-04-21
 
 ### Added — kiki_oniric.axioms public API (FC-MINOR bump)

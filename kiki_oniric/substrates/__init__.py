@@ -23,6 +23,12 @@ from kiki_oniric.substrates.esnn_thalamocortical import (
     EsnnSubstrate,
     esnn_substrate_components,
 )
+from kiki_oniric.substrates.micro_kiki import (
+    MICRO_KIKI_SUBSTRATE_NAME,
+    MICRO_KIKI_SUBSTRATE_VERSION,
+    MicroKikiSubstrate,
+    micro_kiki_substrate_components,
+)
 
 __all__ = [
     "MLX_SUBSTRATE_NAME",
@@ -33,4 +39,8 @@ __all__ = [
     "EsnnBackend",
     "EsnnSubstrate",
     "esnn_substrate_components",
+    "MICRO_KIKI_SUBSTRATE_NAME",
+    "MICRO_KIKI_SUBSTRATE_VERSION",
+    "MicroKikiSubstrate",
+    "micro_kiki_substrate_components",
 ]
