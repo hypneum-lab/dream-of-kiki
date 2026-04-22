@@ -2,12 +2,12 @@
 
 **A substrate-agnostic formal framework for dream-based knowledge consolidation in artificial cognitive systems.**
 
-Research program producing two complementary papers:
+Research program producing two complementary papers, both released as arXiv preprints + Zenodo DOIs:
 
-- **Paper 1** (PLOS Computational Biology target ; Nature Human Behaviour retired as primary target 2026-04-20): formal framework **C** with axioms **DR-0..DR-4** and invariants families **I / S / K**.
-- **Paper 2** (NeurIPS / ICML / TMLR target): empirical ablation on the `kiki_oniric` substrate across profiles `P_min`, `P_equ`, `P_max`.
+- **Paper 1** — formal framework **C** with axioms **DR-0..DR-4** and invariants families **I / S / K**. Journal submission (PLOS Computational Biology candidate) deferred until preprint signal.
+- **Paper 2** — empirical ablation on the `kiki_oniric` substrate across profiles `P_min`, `P_equ`, `P_max`. Peer-review venue deferred — arXiv preprint first, then decide.
 
-**Status** — DualVer `C-v0.8.0+PARTIAL` (2026-04-21 ; SemVer alias `0.8.0` in `pyproject.toml` / `CITATION.cff`). Paper 1 **v0.2** frozen (22 p), primary submission target **PLOS Computational Biology** (retargeted from Nature Human Behaviour on 2026-04-20 — acknowledged trade-off : IF 15.9 → 4.3, decision time 3–6 months → 44 days). Gates **G1, G7, G8, G9 LOCKED** (cycle 2 closed) ; **G10 deferred to Paper 2** per PLOS CB pivot. 277 tests / 91.17 % coverage. OSF pre-registration **live** at DOI `10.17605/OSF.IO/Q6JYN` (https://osf.io/q6jyn, DataCite-minted 2026-04-19T00:28:05Z). arXiv deposit ready, only web-UI walkthrough pending. Bonferroni amendment (2026-04-19) still to be filed as a linked OSF registration before submit — see `docs/osf-amendment-submission-package.md`.
+**Status** — DualVer `C-v0.8.0+PARTIAL` (2026-04-21 ; SemVer alias `0.8.0` in `pyproject.toml` / `CITATION.cff`). Paper 1 **v0.2** frozen (22 p), release path : arXiv preprint + Zenodo DOI. Journal submission (PLOS Computational Biology candidate) deferred — we want a preprint in the world first and a signal from it before committing to a months-long peer review. Gates **G1, G7, G8, G9 LOCKED** (cycle 2 closed) ; **G10 deferred to Paper 2**. 277 tests / 91.17 % coverage. OSF pre-registration **live** at DOI `10.17605/OSF.IO/Q6JYN` (https://osf.io/q6jyn, DataCite-minted 2026-04-19T00:28:05Z). arXiv deposit ready, only web-UI walkthrough pending. Bonferroni amendment (2026-04-19) still to be filed as a linked OSF registration before submit — see `docs/osf-amendment-submission-package.md`.
 **Author** — Clément Saillant (L'Electron Rare), *dreamOfkiki* program author. Hypneum Lab.
 **License** — MIT (code) + CC-BY-4.0 (docs).
 
