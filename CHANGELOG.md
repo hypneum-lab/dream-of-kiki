@@ -300,8 +300,10 @@ transition rule) because cycle-3 Phase 2 cells are scoped-deferred :
   (sem 6) — deferred
 
 Phase 1 engineering (C3.1-C3.10) is green / in flight ; G10 Gate D
-= CONDITIONAL-GO/PARTIAL. Pivot-4 branch per spec §5.1 R3 replaces
-the final STABLE graduation with a new minor bump if Gate D = NO-GO.
+= CONDITIONAL-GO/PARTIAL. Pivot-4 branch per cycle-3 design spec
+(`docs/superpowers/specs/2026-04-19-dreamofkiki-cycle3-design.md`
+§5.1 R3) replaces the final STABLE graduation with a new minor
+bump if Gate D = NO-GO.
 
 ### Added — Phase 1 cycle-3 (C3.1-C3.5 pre-bump)
 

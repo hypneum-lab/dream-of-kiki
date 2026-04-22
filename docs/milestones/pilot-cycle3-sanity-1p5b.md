@@ -62,7 +62,9 @@ iff they produce the same tuple, which is exactly what the pilot
   full 3-scale matrix.
 - **NO-GO** : H1 rejects in **< 2 / 3** profiles → **abort**. Do
   not launch C3.8. Open a root-cause review (`pivot-4` branch
-  per cycle-3 spec §5.1 R3).
+  per cycle-3 design spec
+  `docs/superpowers/specs/2026-04-19-dreamofkiki-cycle3-design.md`
+  §5.1 R3).
 
 The 3 profiles are `{p_min, p_equ, p_max}` at scale
 `qwen3p5-1p5b` on the MLX substrate.
@@ -301,7 +303,9 @@ so on 3 / 30 cells (10 %), with mean effect ~0 and p = 0.5725.
 **Do not launch** the full 3-scale 1080-config matrix. The
 sanity pilot is doing its job — fail-fast before 18 h of
 Studio compute. Root causes to investigate on the `pivot-4`
-branch (per cycle-3 spec §5.1 R3) :
+branch (per cycle-3 design spec
+`docs/superpowers/specs/2026-04-19-dreamofkiki-cycle3-design.md`
+§5.1 R3) :
 
 - the dream ops operate on a 4-4-4-4 MLP too small to carry
   MMLU-relevant signal ; scale adapter to match Qwen's hidden

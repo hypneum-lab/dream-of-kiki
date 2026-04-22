@@ -46,7 +46,9 @@ GO / NO-GO decision rule (per user spec) :
   cleared, launch C3.8 full 3-scale matrix.
 - **NO-GO** : H1 rejects in < 2 / 3 profiles. Do **not** burn
   Studio compute on 7B + 35B. Open a root-cause review
-  (``pivot-4`` branch per spec §5.1 R3).
+  (``pivot-4`` branch per cycle-3 design spec
+  ``docs/superpowers/specs/2026-04-19-dreamofkiki-cycle3-design.md``
+  §5.1 R3).
 
 Retained-score proxy (MMLU + Qwen logit bias) :
 
@@ -267,7 +269,8 @@ def _seed_everything(seed: int) -> None:
 
     Cells derive their adapter weights + episode-record draws
     from this common seed so the pre/post accuracy delta is a
-    reproducible signal (R1 / R3 discipline).
+    reproducible signal (framework-C spec §8.3 R1 bit-exact +
+    R3 artifact addressability discipline).
     """
     import mlx.core as mx
     import numpy as np

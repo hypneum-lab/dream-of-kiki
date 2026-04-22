@@ -29,7 +29,10 @@ tracks add Norse (PyTorch LIF, CPU fallback) and nilearn (HMM/CCA).
 
 **DualVer:** `C-v0.6.0+STABLE → C-v0.7.0+PARTIAL` (C3.10) →
 `C-v0.7.0+STABLE` (C3.22). Pivot-4 branch replaces final STABLE
-graduation with a new minor bump if Gate D = NO-GO (cf spec §5.1 R3).
+graduation with a new minor bump if Gate D = NO-GO (cf cycle-3
+design spec
+`docs/superpowers/specs/2026-04-19-dreamofkiki-cycle3-design.md`
+§5.1 R3).
 
 **Prerequisites cycle-3 start (sem 1 day 1-3 external locks, spec §5.2):**
 - [x] SHA-256 pin Qwen3.5 1.5B/7B/35B Q4_K_M — `harness/real_models/base_model_registry.py` (commit `f3b0119`)
@@ -213,7 +216,7 @@ dreamOfkiki/
 > new tag. Execution sequence is C3.5 → C3.10 → C3.6, not the
 > numeric C3.5 → C3.6 → … → C3.10.
 
-**Goal** : cartesian `scale ∈ {1.5B, 7B, 35B} × profile ∈ {P_min, P_equ, P_max} × benchmark ∈ {MMLU, HellaSwag, mega-v2} × seed ∈ 1..40` = 1080 runs. Idempotent resume, run-registry manifest per R1/R3, K4 matrix coverage gate.
+**Goal** : cartesian `scale ∈ {1.5B, 7B, 35B} × profile ∈ {P_min, P_equ, P_max} × benchmark ∈ {MMLU, HellaSwag, mega-v2} × seed ∈ 1..40` = 1080 runs. Idempotent resume, run-registry manifest per framework-C spec §8.3 (R1 bit-exact + R3 artifact addressability), K4 matrix coverage gate.
 
 **Files** :
 - Create : `scripts/ablation_cycle3.py`
@@ -294,11 +297,11 @@ dreamOfkiki/
 
 ## Phase 2 — parallel tracks (sem 4-6, conditional Gate D = GO, C3.11-C3.22)
 
-If Gate D = NO-GO → execute Pivot 4 (§5.1 R3) ; re-spec cycle 3 sem 4 onward and replace the C-v0.7.0+STABLE graduation with a new minor bump reflecting the pivot scope.
+If Gate D = NO-GO → execute Pivot 4 (cycle-3 design spec `docs/superpowers/specs/2026-04-19-dreamofkiki-cycle3-design.md` §5.1 R3) ; re-spec cycle 3 sem 4 onward and replace the C-v0.7.0+STABLE graduation with a new minor bump reflecting the pivot scope.
 
 ### C3.11 — Norse fallback substrate wrapper
 
-**Goal** : Norse PyTorch LIF SNN wrapper as Loihi-2 CPU fallback per R3 substrate-agnostic. Implements Conformance Criterion §6.2 : typed signature + axiom property tests + invariants S1/S2/S3/I1 enforceable.
+**Goal** : Norse PyTorch LIF SNN wrapper as Loihi-2 CPU fallback per axiom DR-3 (substrate-agnosticism, framework-C spec §6.2). Implements Conformance Criterion §6.2 : typed signature + axiom property tests + invariants S1/S2/S3/I1 enforceable.
 
 **Files** :
 - Create : `kiki_oniric/substrates/esnn_norse.py`
