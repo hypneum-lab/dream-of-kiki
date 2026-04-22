@@ -10,9 +10,68 @@ see `docs/specs/2026-04-17-dreamofkiki-framework-C-design.md` §12).
 
 ---
 
-## [C-v0.8.1+PARTIAL] — 2026-04-22
+## [C-v0.10.0+PARTIAL] — 2026-04-22 — micro-kiki recombine TIES-merge (PR #13)
 
-### Added — micro-kiki SpikingKiki-V4 real-backend shim (additive, env-gated)
+### Added — `recombine_handler_factory` (FC-MINOR, repo 0.9.0 → 0.10.0)
+
+Fourth (and last) handler on the micro-kiki substrate now backed.
+`recombine_handler_factory` replaces its phase-1
+`NotImplementedError` stub with a numpy port of TIES-Merge
+(Yadav et al., arXiv 2306.01708) : trim → elect-sign →
+disjoint-mean merge on a list of task-specific delta tensors.
+
+**Helper**
+
+- `_ties_merge(deltas, trim_fraction=0.2, alpha=1.0)` —
+  substrate-internal helper. Guards : empty list raises, single
+  delta fast-paths to `alpha * delta`, shape-mismatch across
+  deltas raises, `trim_fraction` outside `(0, 1]` raises.
+  Algebra in float64, output cast back to input dtype.
+
+**Handler contract**
+
+- Takes `(payload: dict, op: str = "ties") -> ndarray`. Payload
+  must carry `"deltas": list[ndarray]` ; optional `"episode_id"`
+  lands on the DR-1 stamp. Honours `op ∈ {"ties", "ties_merge",
+  "merge"}` ; any other op raises `ValueError` (DR-3 condition 1,
+  no silent no-ops).
+- New `MicroKikiRecombineState` dataclass exposed read-only via
+  `MicroKikiSubstrate.recombine_state`. Stamps DR-0 (completed
+  flag + operation label + counters) and DR-1 (episode_id list).
+  Records `last_k_deltas`, `last_input_shape`, `last_output_shape`
+  per call so the conformance harness can audit shape consistency.
+
+**DualVer**
+
+- Repo : `0.9.0` → `0.10.0` (pyproject.toml) — FC-MINOR, new
+  public handler surface (recombine backed).
+- Substrate-internal : `C-v0.8.1+PARTIAL` → `C-v0.9.0+PARTIAL`.
+  All 4 handlers (replay / downscale / restructure / recombine)
+  now backed by a real algorithm ; `+PARTIAL` retained until the
+  Phase-4 conformance run lands.
+
+**Tests**
+
+- New `tests/unit/test_micro_kiki_recombine.py` — 14 unit tests :
+  `_ties_merge` algebra (single-delta fast-path, two-delta sign
+  consensus, three-delta election, regression against
+  hand-computed example, trim-halves check), guard tests
+  (shape-mismatch, empty-list, invalid trim_fraction), handler
+  contract (callable + fresh state, DR-0 + DR-1 stamping on
+  multi-call, unknown-op rejection, missing-deltas-key
+  rejection, empty-deltas error propagation), snapshot /
+  load_snapshot round-trip with accumulator seeded from a real
+  merged delta.
+- `tests/unit/test_micro_kiki_substrate.py` : retired the
+  `test_recombine_raises_phase_2` `NotImplementedError` gate in
+  favour of a wired-assertion smoke test ; updated the
+  version-manifest assertion to `C-v0.9.0+PARTIAL`.
+
+---
+
+## [C-v0.9.0+PARTIAL — substrate-internal patch C-v0.8.1] — 2026-04-22 — micro-kiki SpikingKiki-V4 shim (PR #12)
+
+### Added — real-backend ingestion path (additive, env-gated)
 
 Opt-in real-artifact ingestion path on `MicroKikiSubstrate.load()`
 and a rate-coded spike-synthesis path on `awake()` /
@@ -59,69 +118,7 @@ missing.
 
 ---
 
-## [C-v0.9.0+PARTIAL] — 2026-04-22
-
-### Added — micro-kiki recombine TIES-Merge (FC-MINOR bump, repo 0.9.0 → 0.10.0)
-
-Fourth (and last) handler on the micro-kiki substrate now backed.
-`recombine_handler_factory` replaces its phase-1
-`NotImplementedError` stub with a numpy port of TIES-Merge
-(Yadav et al., arXiv 2306.01708) : trim → elect-sign →
-disjoint-mean merge on a list of task-specific delta tensors.
-
-**Helper**
-
-- `_ties_merge(deltas, trim_fraction=0.2, alpha=1.0)` —
-  substrate-internal helper. Guards : empty list raises, single
-  delta fast-paths to `alpha * delta`, shape-mismatch across
-  deltas raises, `trim_fraction` outside `(0, 1]` raises.
-  Algebra in float64, output cast back to input dtype.
-
-**Handler contract**
-
-- Takes `(payload: dict, op: str = "ties") -> ndarray`. Payload
-  must carry `"deltas": list[ndarray]` ; optional `"episode_id"`
-  lands on the DR-1 stamp. Honours `op ∈ {"ties", "ties_merge",
-  "merge"}` ; any other op raises `ValueError` (DR-3 condition 1,
-  no silent no-ops).
-- New `MicroKikiRecombineState` dataclass exposed read-only via
-  `MicroKikiSubstrate.recombine_state`. Stamps DR-0 (completed
-  flag + operation label + counters) and DR-1 (episode_id list).
-  Records `last_k_deltas`, `last_input_shape`, `last_output_shape`
-  per call so the conformance harness can audit shape consistency.
-
-**Substrate-internal version**
-
-- `MICRO_KIKI_SUBSTRATE_VERSION` bumped `C-v0.8.0+PARTIAL` →
-  `C-v0.9.0+PARTIAL`. All 4 handlers (replay / downscale /
-  restructure / recombine) now backed by a real algorithm ;
-  `+PARTIAL` retained until the Phase-4 conformance run lands.
-
-**Tests**
-
-- New `tests/unit/test_micro_kiki_recombine.py` — 14 unit tests :
-  `_ties_merge` algebra (single-delta fast-path, two-delta sign
-  consensus, three-delta election, regression against
-  hand-computed example, trim-halves check), guard tests
-  (shape-mismatch, empty-list, invalid trim_fraction), handler
-  contract (callable + fresh state, DR-0 + DR-1 stamping on
-  multi-call, unknown-op rejection, missing-deltas-key
-  rejection, empty-deltas error propagation), snapshot /
-  load_snapshot round-trip with accumulator seeded from a real
-  merged delta.
-- `tests/unit/test_micro_kiki_substrate.py` : retired the
-  `test_recombine_raises_phase_2` `NotImplementedError` gate in
-  favour of a wired-assertion smoke test ; updated the
-  version-manifest assertion to `C-v0.9.0+PARTIAL`.
-
-**DualVer**
-
-- Repo `0.9.0` → `0.10.0` (pyproject.toml) — FC-MINOR, new
-  public handler surface (recombine backed).
-- Framework axis stays at `C-v0.9.0+PARTIAL` ; this completes
-  the phase-2 work started with the OPLoRA restructure landing.
-
-## [C-v0.9.0+PARTIAL micro-kiki substrate initial add] — 2026-04-22
+## [C-v0.9.0+PARTIAL] — 2026-04-22 — micro-kiki LoRA substrate initial add (PR #11)
 
 ### Added — micro-kiki LoRA substrate (FC-MINOR bump)
 
