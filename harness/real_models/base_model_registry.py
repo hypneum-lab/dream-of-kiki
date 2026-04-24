@@ -241,7 +241,51 @@ REGISTRY: dict[str, BaseModelPin] = {
             "throughput at ~5-15 tok/s limits per-cell wall time."
         ),
     ),
+    # ------------------------------------------------------------------
+    # Local bf16 pin — exploratory pilot only (no SHA pin, not R1).
+    # ------------------------------------------------------------------
+    # Studio-local path to Qwen3.6-35B-A3B bf16 weights cloned under
+    # ``/Users/clems/KIKI-Mac_tunner/models/``. This pin is used by
+    # the cycle-3 substrate-ablation exploratory pilot (1 model x 3
+    # substrates) and is **not** intended for the reproducibility
+    # publication — no HF revision SHA, no file SHA-256, and the
+    # repo_id is a local absolute path rather than an ``org/repo``
+    # identifier. ``verify_all`` tolerates absolute paths as a
+    # self-consistent local-only pin (see ``_is_local_path`` helper
+    # below) ; any empirical claim derived from this slot must be
+    # tagged as pilot-only in the paper.
+    "qwen3p6-35b-bf16-local": BaseModelPin(
+        name="qwen3p6-35b-bf16-local",
+        scale_params=35_000_000_000,
+        repo_id="/Users/clems/KIKI-Mac_tunner/models/Qwen3.6-35B-A3B",
+        revision_sha="0" * 40,  # dummy ; local path bypasses live check
+        file_sha256=None,  # bypass SHA check (local, no HF oid)
+        quantization="bf16",
+        framework="mlx-lm",
+        approx_ram_gb=70.0,  # observed peak at load (pilot notes)
+        notes=(
+            "Local bf16 Qwen3.6-35B-A3B MoE (256 experts, 8 active). "
+            "Multimodal config but text-only path used by the "
+            "substrate-ablation pilot. Exploratory only — not for "
+            "reproducibility publication (no SHA pin, local path). "
+            "Loaded via ``mlx_lm.load(path)`` which accepts absolute "
+            "directory paths in addition to ``org/repo`` ids."
+        ),
+    ),
 }
+
+
+def _is_local_path(repo_id: str) -> bool:
+    """True when ``repo_id`` is an absolute filesystem path.
+
+    Exploratory pilot pins (e.g. ``qwen3p6-35b-bf16-local``) point
+    at Studio-local bf16 weights rather than a HuggingFace
+    ``org/repo`` identifier. ``verify_all`` treats such entries as
+    self-consistent if the path starts with ``/`` — the R1
+    publication contract requires HF-pinned entries and filters
+    local pins out explicitly.
+    """
+    return repo_id.startswith("/")
 
 
 def get_pin(name: str) -> BaseModelPin:
@@ -282,18 +326,26 @@ def verify_all(live: bool = False) -> dict[str, bool]:
     results: dict[str, bool] = {}
     for name, pin in REGISTRY.items():
         ok = True
-        if not _SHA40_RE.match(pin.revision_sha):
-            ok = False
-        if pin.file_sha256 is not None and not _SHA256_RE.match(
-            pin.file_sha256
-        ):
-            ok = False
         if pin.scale_params <= 0:
             ok = False
-        if not pin.repo_id or pin.repo_id.count("/") != 1:
+        if not pin.repo_id:
             ok = False
-        if ok and live:
-            ok = _verify_live(pin)
+        if _is_local_path(pin.repo_id):
+            # Local exploratory pin — skip HF-shape checks on
+            # revision/file SHA and tolerate multi-slash absolute
+            # path. Live HTTP check is also a no-op (no HF repo).
+            pass
+        else:
+            if not _SHA40_RE.match(pin.revision_sha):
+                ok = False
+            if pin.file_sha256 is not None and not _SHA256_RE.match(
+                pin.file_sha256
+            ):
+                ok = False
+            if pin.repo_id.count("/") != 1:
+                ok = False
+            if ok and live:
+                ok = _verify_live(pin)
         results[name] = ok
     return results
 
