@@ -1,7 +1,7 @@
 # dream-of-kiki — Status
 
-**As of** : 2026-04-20 PLOS CB pivot codified (cycle-3 plan adapted)
-**Version** : C-v0.10.0+PARTIAL
+**As of** : 2026-05-02 K2 phase-coupling invariant added (FC-MINOR)
+**Version** : C-v0.11.0+PARTIAL
 **Phase** : Paper 1 v0.2 PLOS CB submission preparation. Cycle-3
 Phase 1 1.5B sanity GO 3/3 (commit `22c58c9`, 46.75 min Studio) ;
 Phase 2 multi-scale (7B + 35B) + Norse cross-substrate + fMRI
@@ -57,10 +57,10 @@ from the v1 single-hash layout, plus `list_output_hashes(run_id)`.
 
 | Axis | Value | Meaning |
 |------|-------|---------|
-| FC   | v0.10.0 | MINOR bump (micro-kiki recombine TIES-merge handler backed, PR #13, 2026-04-22). Prior bumps: v0.7.0 (cycle-3 launch, H6 profile-ordering + scale-axis), v0.7.1 (DR-2 FC-PATCH weakening, 2026-04-21), v0.8.0 (kiki_oniric.axioms public API, 2026-04-21), v0.9.0 (micro-kiki LoRA substrate, PR #11, 2026-04-22 ; substrate-internal patch C-v0.8.1 for SpikingKiki-V4 shim PR #12 same day) |
+| FC   | v0.11.0 | MINOR bump (K2 phase-coupling invariant added with opt-in PhaseCouplingObservable Protocol, anchor eLife 2025 BF=58, severity WARN, 2026-05-02). Prior bumps: v0.7.0 (cycle-3 launch, H6 profile-ordering + scale-axis), v0.7.1 (DR-2 FC-PATCH weakening, 2026-04-21), v0.8.0 (kiki_oniric.axioms public API, 2026-04-21), v0.9.0 (micro-kiki LoRA substrate, PR #11, 2026-04-22 ; substrate-internal patch C-v0.8.1 for SpikingKiki-V4 shim PR #12 same day), v0.10.0 (micro-kiki recombine TIES-merge handler, PR #13, 2026-04-22) |
 | EC   | PARTIAL | Cycle-3 Phase 1 sem 1-3 DONE (loaders + wrappers + real ops + scaling law + Bonferroni + 1080-runner + 1.5B sanity GO 3/3 + DualVer +PARTIAL bump). Cycle-3 Phase 2 sem 4-5 infra DONE (Norse wrapper + SNN ops + Studyforrest BOLD + HMM + CCA). Multi-scale empirical 7B + 35B, Gate D verdict, Norse cross-substrate pilot, fMRI pilot : deferred to Paper 2 per PLOS CB pivot 2026-04-20 (`docs/milestones/cycle3-plan-adaptation-2026-04-20.md`). STABLE → PARTIAL per framework-C §12.3 transition rule |
 
-Next target : C-v0.10.0+STABLE deferred to Paper 2 closeout (Phase 2 multi-scale cells re-closed). Paper 1 v0.2 PLOS CB submission does **not** trigger STABLE promotion (scope reframing only).
+Next target : C-v0.11.0+STABLE deferred to Paper 2 closeout (Phase 2 multi-scale cells re-closed). Paper 1 v0.2 PLOS CB submission does **not** trigger STABLE promotion (scope reframing only).
 
 ## Gates
 

@@ -35,6 +35,40 @@ see `docs/specs/2026-04-17-dreamofkiki-framework-C-design.md` §12).
 
 ---
 
+## [C-v0.11.0+PARTIAL] — 2026-05-02 — K2 phase-coupling invariant
+
+### Formal axis (FC) — MINOR (v0.10.0 → v0.11.0)
+
+- Add invariant **K2** SO × fast-spindle phase-coupling within
+  empirical CI [0.27, 0.39]. Anchored on eLife 2025 Bayesian
+  meta-analysis (BibTeX `elife2025bayesian`, BF > 58 vs. null,
+  Egger phase-branch p = 0.59). Severity **WARN** (single
+  meta-analysis anchor; substrate physiology can legitimately
+  broaden the CI; synthetic substrate is the only canonical
+  reference until S18+).
+- New opt-in `PhaseCouplingObservable` Protocol in
+  `kiki_oniric/core/observables.py`; new guard
+  `kiki_oniric/dream/guards/coupling.py`
+  (`check_coupling_in_window`, `CouplingGuardError`); new
+  conformance suite `tests/conformance/invariants/test_k2_coupling.py`
+  (18 tests including a Hypothesis property test over 50 seeds);
+  evidence stub `docs/proofs/k2-coupling-evidence.md`.
+- 8-primitive DR-3 surface (`kiki_oniric/core/primitives.py`)
+  unchanged — no breaking change. Real substrates remain free to
+  not implement the new Protocol; K2 only exercises substrates
+  that opt in.
+- Synthetic-substrate calibration: PAC_DEPTH = 0.33 (matches
+  eLife headline 0.33; 50-seed empirical range
+  MVL ∈ [0.328, 0.332] at fs=256 Hz, n=8192).
+
+### Empirical axis (EC) — UNCHANGED (PARTIAL)
+
+- No new gate result; K2 exercised exclusively against the synthetic
+  reference substrate. Real-substrate empirical pins deferred to
+  S18+ (MLX kiki-oniric) / S22+ (E-SNN thalamocortical).
+
+---
+
 ## [C-v0.10.0+PARTIAL] — 2026-04-22 — micro-kiki recombine TIES-merge (PR #13)
 
 ### Added — `recombine_handler_factory` (FC-MINOR, repo 0.9.0 → 0.10.0)
