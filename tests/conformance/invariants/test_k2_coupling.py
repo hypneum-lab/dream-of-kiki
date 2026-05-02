@@ -10,12 +10,16 @@ from __future__ import annotations
 import math
 from typing import Protocol, runtime_checkable
 
+import numpy as np
 import pytest
 
 from kiki_oniric.core.observables import PhaseCouplingObservable
 from kiki_oniric.dream.guards.coupling import (
     CouplingGuardError,
     check_coupling_in_window,
+)
+from tests.conformance.invariants._synthetic_phase_coupling import (
+    SyntheticPhaseCouplingSubstrate,
 )
 
 
@@ -60,3 +64,37 @@ def test_k2_guard_rejects_inverted_window() -> None:
     """ci_low > ci_high is a programmer error, must raise."""
     with pytest.raises(ValueError, match="ci_low"):
         check_coupling_in_window(0.33, ci_low=0.50, ci_high=0.10)
+
+
+def test_synthetic_substrate_satisfies_protocol() -> None:
+    """Synthetic fixture must structurally implement the Protocol."""
+    sub = SyntheticPhaseCouplingSubstrate()
+    assert isinstance(sub, PhaseCouplingObservable)
+
+
+def test_synthetic_substrate_returns_aligned_arrays() -> None:
+    """Phase + amplitude arrays must have the requested length and fs > 0."""
+    sub = SyntheticPhaseCouplingSubstrate()
+    phase, amp, fs = sub.emit_phase_coupling_signal(n_samples=2048, seed=7)
+    assert phase.shape == (2048,)
+    assert amp.shape == (2048,)
+    assert phase.dtype.name == "float32"
+    assert amp.dtype.name == "float32"
+    assert fs > 0.0
+
+
+def test_synthetic_substrate_is_deterministic() -> None:
+    """Same seed -> bit-identical output (R1 reproducibility, parent rule)."""
+    sub = SyntheticPhaseCouplingSubstrate()
+    p1, a1, _ = sub.emit_phase_coupling_signal(n_samples=512, seed=42)
+    p2, a2, _ = sub.emit_phase_coupling_signal(n_samples=512, seed=42)
+    np.testing.assert_array_equal(p1, p2)
+    np.testing.assert_array_equal(a1, a2)
+
+
+def test_synthetic_substrate_seeds_are_independent() -> None:
+    """Distinct seeds produce distinct realisations (no global state)."""
+    sub = SyntheticPhaseCouplingSubstrate()
+    _, a1, _ = sub.emit_phase_coupling_signal(n_samples=512, seed=1)
+    _, a2, _ = sub.emit_phase_coupling_signal(n_samples=512, seed=2)
+    assert not np.array_equal(a1, a2)
