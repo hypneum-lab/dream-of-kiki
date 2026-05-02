@@ -72,3 +72,45 @@ def test_target_rejects_g_outside_ci() -> None:
             profile_target="P_equ",
             stratum=None,
         )
+
+
+# ----------------------------------------------------------------------
+# Hu 2020 TMR meta-analysis constants
+# ----------------------------------------------------------------------
+
+
+def test_hu2020_overall_matches_published() -> None:
+    """[@hu2020tmr] overall Hedges' g = 0.29 [0.21, 0.38], k=91, N=2004."""
+    from harness.benchmarks.effect_size_targets import HU_2020_OVERALL
+
+    assert HU_2020_OVERALL.hedges_g == 0.29
+    assert HU_2020_OVERALL.ci_low == 0.21
+    assert HU_2020_OVERALL.ci_high == 0.38
+    assert HU_2020_OVERALL.k_studies == 91
+    assert HU_2020_OVERALL.sample_size_n == 2004
+    assert HU_2020_OVERALL.source_bibtex_key == "hu2020tmr"
+    assert HU_2020_OVERALL.profile_target == "P_equ"
+    assert HU_2020_OVERALL.stratum is None
+
+
+def test_hu2020_nrem2_matches_published() -> None:
+    """[@hu2020tmr] NREM2 stratum g = 0.32 [0.04, 0.60]."""
+    from harness.benchmarks.effect_size_targets import HU_2020_NREM2
+
+    assert HU_2020_NREM2.hedges_g == 0.32
+    assert HU_2020_NREM2.ci_low == 0.04
+    assert HU_2020_NREM2.ci_high == 0.60
+    assert HU_2020_NREM2.stratum == "NREM2"
+    assert HU_2020_NREM2.profile_target == "P_equ"
+    assert HU_2020_NREM2.source_bibtex_key == "hu2020tmr"
+
+
+def test_hu2020_sws_matches_published() -> None:
+    """[@hu2020tmr] SWS stratum g = 0.27 [0.20, 0.35]."""
+    from harness.benchmarks.effect_size_targets import HU_2020_SWS
+
+    assert HU_2020_SWS.hedges_g == 0.27
+    assert HU_2020_SWS.ci_low == 0.20
+    assert HU_2020_SWS.ci_high == 0.35
+    assert HU_2020_SWS.stratum == "SWS"
+    assert HU_2020_SWS.profile_target == "P_equ"

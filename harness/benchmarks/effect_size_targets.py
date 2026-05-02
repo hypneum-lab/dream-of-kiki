@@ -61,3 +61,46 @@ class EffectSizeTarget:
                 f"[{self.ci_low}, {self.ci_high}] for target "
                 f"{self.name!r}"
             )
+
+
+# ----------------------------------------------------------------------
+# Hu et al. 2020 TMR meta-analysis (Psychological Bulletin)
+# k = 91 reports, 212 effect sizes, N = 2004 participants
+# Source : docs/papers/paper1/references.bib :: hu2020tmr
+# ----------------------------------------------------------------------
+
+HU_2020_OVERALL: EffectSizeTarget = EffectSizeTarget(
+    name="hu2020_overall",
+    hedges_g=0.29,
+    ci_low=0.21,
+    ci_high=0.38,
+    sample_size_n=2004,
+    k_studies=91,
+    source_bibtex_key="hu2020tmr",
+    profile_target="P_equ",
+    stratum=None,
+)
+
+HU_2020_NREM2: EffectSizeTarget = EffectSizeTarget(
+    name="hu2020_nrem2",
+    hedges_g=0.32,
+    ci_low=0.04,
+    ci_high=0.60,
+    sample_size_n=2004,
+    k_studies=91,
+    source_bibtex_key="hu2020tmr",
+    profile_target="P_equ",
+    stratum="NREM2",
+)
+
+HU_2020_SWS: EffectSizeTarget = EffectSizeTarget(
+    name="hu2020_sws",
+    hedges_g=0.27,
+    ci_low=0.20,
+    ci_high=0.35,
+    sample_size_n=2004,
+    k_studies=91,
+    source_bibtex_key="hu2020tmr",
+    profile_target="P_equ",
+    stratum="SWS",
+)
