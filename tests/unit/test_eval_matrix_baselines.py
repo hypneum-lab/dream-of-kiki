@@ -27,7 +27,9 @@ def test_baselines_block_parses(tmp_path: Path) -> None:
         version: "C-v0.12.0+PARTIAL"
         bump_rules: {}
         publication_ready_gate: {}
-        metrics: {}
+        metrics:
+          M1.a: {name: forgetting_rate}
+          M1.b: {name: avg_accuracy}
         baselines:
           wake_sleep_cl:
             name: wake_sleep_consolidated_learning
@@ -41,6 +43,51 @@ def test_baselines_block_parses(tmp_path: Path) -> None:
     assert "wake_sleep_cl" in em.baselines
     assert em.baselines["wake_sleep_cl"]["bibkey"] == "alfarano2024wakesleep"
     assert em.baselines["wake_sleep_cl"]["scores_on"] == ["M1.a", "M1.b"]
+
+
+def test_baseline_scores_on_must_be_list(tmp_path: Path) -> None:
+    """A scalar `scores_on:` must be rejected with a typed error."""
+    p = _write_yaml(
+        tmp_path,
+        """
+        version: "C-v0.12.0+PARTIAL"
+        bump_rules: {}
+        publication_ready_gate: {}
+        metrics:
+          M1.a: {name: forgetting_rate}
+        baselines:
+          bad:
+            bibkey: foo2024
+            scores_on: "M1.a"
+            variant: c
+        """,
+    )
+    with pytest.raises(ValueError, match="scores_on"):
+        load_eval_matrix(p)
+
+
+def test_baseline_scores_on_must_reference_known_metrics(
+    tmp_path: Path,
+) -> None:
+    """Typo'd metric IDs in scores_on must be caught at load time."""
+    p = _write_yaml(
+        tmp_path,
+        """
+        version: "C-v0.12.0+PARTIAL"
+        bump_rules: {}
+        publication_ready_gate: {}
+        metrics:
+          M1.a: {name: forgetting_rate}
+          M1.b: {name: avg_accuracy}
+        baselines:
+          typo:
+            bibkey: foo2024
+            scores_on: [M1.x]
+            variant: c
+        """,
+    )
+    with pytest.raises(ValueError, match="M1.x"):
+        load_eval_matrix(p)
 
 
 def test_baselines_block_optional_for_legacy_yaml(tmp_path: Path) -> None:

@@ -26,7 +26,6 @@ import subprocess
 import sys
 from collections.abc import Iterable
 from dataclasses import asdict, dataclass
-from datetime import date
 from pathlib import Path
 from typing import Any
 
@@ -44,11 +43,16 @@ from kiki_oniric.substrates.wake_sleep_cl_baseline import (  # noqa: E402
 DEFAULT_SEEDS = (42, 123, 7)
 DEFAULT_TASK_SPLIT = "split_fmnist_5tasks"
 DEFAULT_PROFILE = "baseline_wake_sleep_cl"
+# Hardcoded milestone date — the JSON dump path is part of the R1
+# reproducibility contract and must be bit-stable across re-runs.
+# Using `date.today()` would silently shift the path each calendar
+# day even though the file contents are deterministic.
+MILESTONE_DATE = "2026-05-03"
 DEFAULT_OUT = (
     REPO_ROOT
     / "docs"
     / "milestones"
-    / f"wake-sleep-baseline-{date.today().isoformat()}.json"
+    / f"wake-sleep-baseline-{MILESTONE_DATE}.json"
 )
 
 

@@ -53,6 +53,13 @@ def load_eval_matrix(path: Path) -> EvalMatrix:
             f"eval-matrix.yaml missing top-level keys: {missing}"
         )
 
+    metrics = raw["metrics"]
+    if not isinstance(metrics, dict):
+        raise ValueError(
+            f"eval-matrix.yaml `metrics:` must be a mapping, "
+            f"got {type(metrics).__name__}"
+        )
+
     baselines_raw = raw.get("baselines") or {}
     if not isinstance(baselines_raw, dict):
         raise ValueError(
@@ -72,12 +79,24 @@ def load_eval_matrix(path: Path) -> EvalMatrix:
                 f"baselines.{name} missing required fields: "
                 f"{sorted(miss)} (need bibkey, scores_on, variant)"
             )
+        if not isinstance(entry["scores_on"], list):
+            raise ValueError(
+                f"baselines.{name} field 'scores_on' must be a "
+                f"list, got {type(entry['scores_on']).__name__}"
+            )
+        unknown_metrics = set(entry["scores_on"]) - set(metrics.keys())
+        if unknown_metrics:
+            raise ValueError(
+                f"baselines.{name} references unknown metric(s) "
+                f"{sorted(unknown_metrics)} in scores_on; "
+                f"available: {sorted(metrics.keys())}"
+            )
         baselines[name] = entry
 
     return EvalMatrix(
         version=raw["version"],
         bump_rules=raw["bump_rules"],
         publication_ready_gate=raw["publication_ready_gate"],
-        metrics=raw["metrics"],
+        metrics=metrics,
         baselines=baselines,
     )
