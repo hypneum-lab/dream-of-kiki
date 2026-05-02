@@ -191,6 +191,32 @@ engineering-complete on 2 substrates + 3 profiles + 4 ops +
 rows share a predictor. A `+STABLE` qualifier requires cycle 3
 real-predictor evidence.
 
+## 5.8 Wake-Sleep CL baseline row (Alfarano 2024)
+
+Paper 2 §7 includes a fourth row in the ablation table : the
+**Wake-Sleep Consolidated Learning** baseline of Alfarano et al.
+2024 [@alfarano2024wakesleep, IEEE TNNLS, arXiv 2401.08623].
+Paper 1 §3 already names this work as the "closest published
+NREM/REM dual-phase analog" and the natural Paper 2 ablation
+comparator. The baseline is registered in the substrates
+namespace via
+`kiki_oniric/substrates/wake_sleep_cl_baseline.py` for
+discoverability, but it is **not DR-3 conformant** — it does not
+implement the 4 dream operations. Its single comparator API,
+`WakeSleepCLBaseline.evaluate_continual(seed, task_split)`,
+returns the two M1.* metrics (`forgetting_rate`, `avg_accuracy`)
+on Split-FMNIST 5-task class-incremental — the same dataset
+shape already used in `experiments/h1_split_mnist/`. The
+eval-matrix schema gains a top-level `baselines:` block
+(FC-MINOR additive addition,
+`C-v0.11.0+PARTIAL → C-v0.12.0+PARTIAL`) registering the
+bibkey, arXiv id, variant, and the metric IDs scored. The
+baseline row is dumped to
+`docs/milestones/wake-sleep-baseline-2026-05-03.{md,json}` and
+each cell carries an R1 `run_id`. **Variant : c** (published
+reference values from Alfarano 2024 Tables 2-3, frozen ;
+Paper 2 §6.4 caveat applies).
+
 ---
 
 ## Notes for revision

@@ -80,3 +80,10 @@ Rename only via DualVer MINOR bump of the framework spec.
 - **M3.c** energy per episode
 - **M4.a** recombination quality (teacher scorer gelé)
 - **M4.b** structure discovery (permutation test)
+
+## Baselines
+
+- **Wake-Sleep CL** — Wake-Sleep Consolidated Learning, Alfarano et al.
+  2024 [IEEE TNNLS, arXiv 2401.08623] — closest published NREM/REM
+  dual-phase analog ; Paper 2 §5.8 baseline (variant-c published
+  reference, FC-MINOR `baselines:` block landed C-v0.12.0).

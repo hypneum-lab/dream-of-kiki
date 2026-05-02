@@ -67,7 +67,16 @@ reject_h0, statistic)` for downstream handling.
 
 Paper 2's matrix dimension is new : Paper 1 ran 3 profiles ×
 3 seeds = 9 cells. Paper 2 crosses substrates, giving
-**2 × 3 × 3 = 18 cells**. Each cell produces :
+**2 × 3 × 3 = 18 cells**, plus a **fourth standalone row** for
+the Wake-Sleep CL baseline [@alfarano2024wakesleep, IEEE TNNLS,
+arXiv 2401.08623] scored on the same 3 seeds (`[42, 123, 7]`)
+— see §5.8 + dump
+`docs/milestones/wake-sleep-baseline-2026-05-03.json` (variant
+c, published reference values, Paper 2 §6.4 caveat applies).
+The baseline scores only on M1.* metrics (`forgetting_rate`,
+`avg_accuracy`) ; it does not enter H2/H3/H4 because it does
+not produce a P_min/P_equ/P_max grouping. Each substrate-cell
+still produces :
 
 - accuracy (for H1, H2, H3)
 - forgetting := 1 − accuracy (for H1)
