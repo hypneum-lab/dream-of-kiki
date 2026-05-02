@@ -34,6 +34,21 @@ Any code referencing an invariant MUST cite its code and version here.
 - **K1** Dream-episode budget respected — **BLOCKING** (per DE)
   FLOPs_actual ≤ budget.FLOPs and wall_time and energy. Enforced via
   A.4 runtime context manager.
+- **K2** SO × fast-spindle phase-coupling within empirical CI —
+  **WARN** (measurement-class invariant)
+  For any substrate implementing the opt-in
+  `PhaseCouplingObservable` Protocol, the measured coupling
+  strength (Tort 2010-style mean-vector-length) must lie inside
+  the 95 % CI [0.27, 0.39] reported by the eLife 2025 Bayesian
+  meta-analysis (`elife2025bayesian` ; 23 studies, 297 effect
+  sizes, BF > 58 vs. null, Egger phase-branch p = 0.59). Enforced
+  by `tests/conformance/invariants/test_k2_coupling.py` against
+  the synthetic substrate; real substrates plug in via the
+  Protocol. Severity is WARN (not BLOCKING) because (a) only one
+  meta-analysis pins the window, (b) substrate physiology can
+  legitimately broaden the CI, (c) the synthetic substrate is the
+  only canonical reference until S18+. Evidence stub:
+  `docs/proofs/k2-coupling-evidence.md`.
 - **K3** Swap latency bounded — **WARN**
   wall_clock(swap_atomic) ≤ K3_max (default 1s).
 - **K4** Eval matrix coverage — **BLOCKING** (for tagging)
