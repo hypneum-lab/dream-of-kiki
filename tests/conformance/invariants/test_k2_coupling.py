@@ -98,3 +98,42 @@ def test_synthetic_substrate_seeds_are_independent() -> None:
     _, a1, _ = sub.emit_phase_coupling_signal(n_samples=512, seed=1)
     _, a2, _ = sub.emit_phase_coupling_signal(n_samples=512, seed=2)
     assert not np.array_equal(a1, a2)
+
+
+def _mean_vector_length(
+    phase: np.ndarray, amplitude: np.ndarray
+) -> float:
+    """Tort 2010-style mean vector length (PAC strength).
+
+    MVL = | mean_t [ amplitude(t) * exp(i * phase(t)) ] | / mean_t amplitude(t)
+
+    Returns a float in [0, 1]. Pure numpy, no SciPy needed; SciPy
+    is reserved for any future Hilbert-transform based estimator.
+    """
+    if phase.shape != amplitude.shape:
+        raise ValueError("phase and amplitude must have identical shapes")
+    z = amplitude.astype(np.float64) * np.exp(1j * phase.astype(np.float64))
+    num = float(np.abs(z.mean()))
+    denom = float(np.abs(amplitude.astype(np.float64)).mean())
+    if denom == 0.0:
+        return 0.0
+    return num / denom
+
+
+def test_estimator_zero_for_random_phase() -> None:
+    """No coupling: random uniform phase yields MVL ~= 0 (large N)."""
+    rng = np.random.default_rng(0)
+    n = 8192
+    phase = rng.uniform(-np.pi, np.pi, size=n).astype(np.float32)
+    amp = (0.5 + rng.normal(0.0, 0.05, size=n)).astype(np.float32)
+    mvl = _mean_vector_length(phase, amp)
+    assert mvl < 0.05, f"expected near-zero MVL on random phase, got {mvl}"
+
+
+def test_estimator_one_for_perfect_coupling() -> None:
+    """Perfect coupling: amplitude = 1 only at phase 0 -> MVL = 1.0."""
+    n = 1024
+    phase = np.zeros(n, dtype=np.float32)
+    amp = np.ones(n, dtype=np.float32)
+    mvl = _mean_vector_length(phase, amp)
+    assert abs(mvl - 1.0) < 1e-6
