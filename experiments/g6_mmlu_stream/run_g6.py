@@ -535,6 +535,46 @@ def _render_md_report(payload: dict[str, Any]) -> str:
         "verdict scalars above are exploratory infrastructure "
         "validation."
     )
+    lines.append("")
+    lines.append("## Pilot caveats — spectator pattern under Path B")
+    lines.append("")
+    lines.append(
+        "The Path B implementation runs the four dream handlers on "
+        "synthetic payloads (built by ``build_episode_payload``), not "
+        "on the live ``InferenceOnlyAdapter._deltas`` buffer. The "
+        "adapter accumulates per-subdomain perturbations via "
+        "``adapt_subdomain`` ; the dream-handler return tensors are "
+        "**not** fed back into the adapter delta. Consequently the "
+        "adapter state is identical across the four arms (modulo "
+        "DR-0 / DR-1 stamps on the substrate's recombine / "
+        "restructure dataclasses), so the L2-norm-driven Path B "
+        "accuracy proxy yields bit-identical retention vectors per "
+        "seed across arms — Hedges' g collapses to 0.0 and the "
+        "Jonckheere monotonicity check is degenerate (equal means)."
+    )
+    lines.append("")
+    lines.append(
+        "This mirrors the G4 spectator pattern (pre-coupling) and "
+        "is the expected outcome when dream handlers operate on "
+        "synthetic payloads disjoint from the evaluation surface. "
+        "A genuine forgetting differential requires (a) Path A real "
+        "LoRA fine-tune so the adapter sees gradient updates that "
+        "the four handlers can perturb, or (b) extending Path B so "
+        "the handler return tensors mutate ``adapter.set_delta``. "
+        "The latter is post-hoc relative to this pre-reg ; per "
+        "§7, any extension is logged as a deviation in a separate "
+        "dated immutable before re-running."
+    )
+    lines.append("")
+    lines.append(
+        "**Honest verdict on this run** : G6 Path B successfully "
+        "validates the pipeline shape (60 forgetting measurements, "
+        "12 R1 run_ids registered, deterministic across re-runs) "
+        "and confirms the spectator-only handler wiring needs to "
+        "be promoted to coupling before any STABLE EC bump is "
+        "warranted. Path A on Studio remains the publishable "
+        "G6 path."
+    )
     return "\n".join(lines)
 
 
