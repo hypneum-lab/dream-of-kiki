@@ -12,6 +12,48 @@ see `docs/specs/2026-04-17-dreamofkiki-framework-C-design.md` §12).
 
 ## [Unreleased]
 
+### Empirical (G5-ter spiking-CNN cross-substrate, 2026-05-03)
+
+- G5-ter pilot ported the G4-quinto Step 2 small-CNN architecture
+  onto the E-SNN thalamocortical substrate as a 4-layer spiking
+  CNN (`EsnnG5TerSpikingCNN` : Conv2d-LIF + Conv2d-LIF + avg-pool
+  4x4 + FC-LIF + Linear, STE backward over all three LIF stages,
+  pure-numpy Conv2d via im2col). 40 cells x 4 arms x 10 seeds
+  Option B, 36 min wall on M1 Max. Pre-reg
+  `docs/osf-prereg-g5-ter-spiking-cnn.md` locked at commit
+  `f18030b`. Documented compute-budget amendment under
+  `docs/osf-deviations-g5-ter-2026-05-03.md` D-1 subsamples the
+  CIFAR-10 train shard to 1500 examples per task per cell (test
+  shard intact) ; design 4-arm x N=10 x HP combo C5 preserved.
+- Own-substrate finding : `g_h8 = -0.1093` (E-SNN spiking-CNN
+  P_equ vs baseline), Welch one-sided p = 0.5992 at α/4 = 0.0125
+  -> **fail-to-reject H0**. H7B_G_THRESHOLD = 0.5 not reached.
+- Cross-substrate aggregate vs G4-quinto Step 2 MLX small-CNN :
+  all 4 arms reject H0 at α/4 = 0.0125. `g_mlx_minus_esnn` in
+  `[+1.21, +1.32]` ; `g_p_equ_cross = +1.31` falls between the
+  H8-A floor (2.0) and H8-B ceiling (1.0). The cross-substrate
+  retention level gap closes from +4.02 (G5-bis MLP) to +1.31
+  (G5-ter CNN) at P_equ -- about two thirds reduction.
+- **Classification : H8-C (partial -- both architecture and LIF
+  non-linearity contribute)**. The CNN architecture closes the
+  level gap partially but the own-substrate cycle-3 positive
+  effect remains absent (g_h8 < 0.5, fail-to-reject) regardless
+  of whether the architecture is dense or convolutional.
+- DR-3 evidence revised
+  (`docs/proofs/dr3-substrate-evidence.md` empirical-evidence
+  amendment 2026-05-03 G5-ter appended) : axiom-property-test-
+  level substrate-agnosticism guarantee preserved at every
+  architectural depth ; empirical effect-size transferability now
+  refuted at *two* architectural depths (3-layer LIF MLP H7-B +
+  4-layer spiking-CNN H8-C). EC stays PARTIAL. No FC bump.
+- Milestones :
+  `docs/milestones/g5-ter-spiking-cnn-2026-05-03.{json,md}` +
+  cross-substrate aggregate
+  `docs/milestones/g5-ter-aggregate-2026-05-03.{json,md}`. Paper 2
+  §7.1.10 EN+FR appended.
+- Future work per pre-reg §11 : confirmatory N=30 Option A
+  follow-up scheduled to tighten the H8-C reading.
+
 ### Empirical (G5-bis richer-head cross-substrate, 2026-05-03)
 
 - G5-bis pilot ported G4-ter MLX richer head to E-SNN
