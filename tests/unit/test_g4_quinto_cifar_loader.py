@@ -56,8 +56,8 @@ def _write_hf_parquet(
         label : int64
     Each ``img.bytes`` is a PNG-encoded 32x32 RGB image.
     """
-    import pyarrow as pa
-    import pyarrow.parquet as pq
+    import pyarrow as pa  # type: ignore[import-untyped]
+    import pyarrow.parquet as pq  # type: ignore[import-untyped]
     from PIL import Image
 
     img_bytes_list: list[bytes] = []

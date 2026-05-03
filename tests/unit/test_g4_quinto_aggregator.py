@@ -11,7 +11,7 @@ from experiments.g4_quinto_test.aggregator import (
 
 def _h5_jonckheere_payload(
     *, reject: bool, monotonic: bool
-) -> dict:
+) -> dict[str, object]:
     return {
         "reject_h0": reject,
         "monotonic_observed": monotonic,
@@ -24,7 +24,7 @@ def _h5_jonckheere_payload(
     }
 
 
-def _h5c_payload(*, confirmed: bool) -> dict:
+def _h5c_payload(*, confirmed: bool) -> dict[str, object]:
     return {
         "h5c_recombine_empty_confirmed": confirmed,
         "fail_to_reject_h0": confirmed,
@@ -39,7 +39,7 @@ def _h5c_payload(*, confirmed: bool) -> dict:
     }
 
 
-def _ae_payload() -> dict:
+def _ae_payload() -> dict[str, object]:
     return {
         "n_p_max_ae": 30,
         "n_p_max_none": 30,
@@ -50,11 +50,13 @@ def _ae_payload() -> dict:
     }
 
 
-def _write(path: Path, key: str, payload: dict) -> None:
+def _write(path: Path, key: str, payload: dict[str, object]) -> None:
     path.write_text(json.dumps({"verdict": {key: payload}}))
 
 
-def _write_step3(path: Path, h5c: dict, ae: dict) -> None:
+def _write_step3(
+    path: Path, h5c: dict[str, object], ae: dict[str, object]
+) -> None:
     path.write_text(
         json.dumps(
             {
