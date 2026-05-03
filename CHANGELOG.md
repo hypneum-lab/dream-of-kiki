@@ -12,6 +12,31 @@ see `docs/specs/2026-04-17-dreamofkiki-framework-C-design.md` §12).
 
 ## [Unreleased]
 
+### Empirical (no DualVer bump — partial confirmation)
+- G4 pilot 2026-05-03 (Split-FMNIST × profile sweep, MLX
+  substrate) returned partial confirmation of pre-registered
+  hypotheses in `docs/osf-prereg-g4-pilot.md`. See
+  `docs/milestones/g4-pilot-2026-05-03.md` for per-hypothesis
+  verdict scalars (H1 g_h1 = 0.0, H3 g_h3 = 0.0, H_DR4
+  monotonic with equal means at 0.5988 — Welch p = 0.5 across
+  all paired tests). The minimal `dream_episode()` wrapper
+  dispatches profile ops via `runtime.execute(...)` for DR-0
+  accountability without mutating classifier weights, so the
+  four arms produce identical retention per seed by design.
+- Per framework-C §12.3, partial confirmation does not
+  promote EC out of PARTIAL. A confirmatory N ≥ 30 follow-up is
+  scheduled before any STABLE promotion, after weight-mutating
+  coupling lands (dream-driven LoRA delta or replay buffer
+  feeding the optimizer).
+- Milestone artefacts : `docs/milestones/g4-pilot-2026-05-03.{json,md}`
+- Run-registry rows : 20 cells under
+  `(C-v0.12.0+PARTIAL, g4/{baseline,P_min,P_equ,P_max}, seed)`
+  with R1 bit-stable run_ids verified across two re-runs
+
+### Versioning
+- **No DualVer bump.** EC stays PARTIAL (partial confirmation
+  is not a STABLE-promotion event per §12.3). FC stays at v0.12.0.
+
 ### Documentation
 - Document outcome of Alfarano 2024 (arXiv 2401.08623) verify
   attempt for the Wake-Sleep CL baseline placeholder pair
