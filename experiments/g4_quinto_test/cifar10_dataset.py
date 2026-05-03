@@ -54,10 +54,14 @@ CIFAR10_RECORD_SIZE: Final[int] = (
 CIFAR10_URL: Final[str] = (
     "https://www.cs.toronto.edu/~kriz/cifar-10-binary.tar.gz"
 )
-# One-shot SHA-256 pin — value is replaced at first download in
-# Task 9 §2 of the G4-quinto plan. The placeholder leading "..."
-# disables the integrity check until the real hash is committed.
-CIFAR10_TAR_SHA256: Final[str] = "...replace_in_task9..."
+# Toronto canonical mirror was unavailable (HTTP 503) at G4-quinto
+# pilot time — see `docs/osf-prereg-g4-quinto-pilot.md` §9.1
+# amendment. The HF parquet fallback path below is the load-bearing
+# data acquisition route. This SHA-256 string is intentionally a
+# placeholder ("..." prefix disables the integrity check) so the
+# canonical Toronto path is gated off until a real hash is pinned
+# at first successful download.
+CIFAR10_TAR_SHA256: Final[str] = "unavailable_2026-05-03_per_prereg_g4-quinto_section_9p1"
 
 # HF mirror fallback — pinned 2026-05-03 against
 # https://huggingface.co/datasets/uoft-cs/cifar10 (commit
@@ -160,7 +164,14 @@ def download_if_missing(data_dir: Path) -> Path:
             raise FileNotFoundError(
                 f"CIFAR-10 download failed : {exc}"
             ) from exc
-    if not CIFAR10_TAR_SHA256.startswith("..."):
+    # Skip integrity check when the SHA-256 pin is a placeholder
+    # ("..." prefix or "unavailable_" prefix per §9.1 amendment). The
+    # canonical Toronto path is dead at pilot time ; the HF parquet
+    # fallback owns the load-bearing data path.
+    if not (
+        CIFAR10_TAR_SHA256.startswith("...")
+        or CIFAR10_TAR_SHA256.startswith("unavailable_")
+    ):
         h = hashlib.sha256(tar_path.read_bytes()).hexdigest()
         if h != CIFAR10_TAR_SHA256:
             raise ValueError(
@@ -168,7 +179,9 @@ def download_if_missing(data_dir: Path) -> Path:
                 f"expected {CIFAR10_TAR_SHA256}"
             )
     with tarfile.open(tar_path, "r:gz") as tar:
-        tar.extractall(data_dir)
+        # PEP 706 / CVE-2007-4559 hardening — restrict extracted paths to
+        # data files within data_dir, no symlinks, no setuid bits.
+        tar.extractall(data_dir, filter="data")
     return bin_dir
 
 

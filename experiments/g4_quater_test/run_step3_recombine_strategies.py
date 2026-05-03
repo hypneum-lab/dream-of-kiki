@@ -4,6 +4,18 @@ Reuses the existing G4-ter 3-layer ``G4HierarchicalClassifier`` and
 threads a ``RecombineStrategy`` switch ({mog, ae, none}) through a
 local ``_dream_episode_strategy`` mirror of ``dream_episode_hier``.
 
+**S-windowed coupling note** (post-quality-review 2026-05-03) :
+``_strategy_aware_recombine`` and ``_dream_episode_strategy`` reach
+into private attributes of ``G4HierarchicalClassifier`` (``clf._l3``,
+``clf._replay_optimizer_step``, ``clf._downscale_step``,
+``clf._restructure_step``). This is **deliberately scoped to the
+G4-quater milestone** (commits e7232b9..b07004d) and is not a
+reusable pattern. If those private symbols are renamed in a later
+sprint, this driver silently breaks. Future reuse should expose
+public versions on ``G4HierarchicalClassifier`` first ; the
+G4-quater milestone JSON pins the pre-rename SHAs so this driver's
+verdict remains reproducible at the pinned commits.
+
 3 strategies x 4 arms x N seeds = 1140 cells (N=95 default).
 
 H4-C : Welch two-sided between (P_max with mog) and (P_max with
