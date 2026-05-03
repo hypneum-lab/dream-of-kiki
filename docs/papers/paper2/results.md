@@ -620,6 +620,107 @@ porting `G4SmallCNN` to a spiking-CNN would test whether the
 spike non-linearity is the load-bearing washout mechanism. Both
 scheduled as future work per pre-reg §6 row 6.
 
+## 7.1.10 G5-ter pilot — spiking-CNN cross-substrate H8 verdict (2026-05-03)
+
+To disambiguate the G5-bis §7.1.9 H7-B fail-to-reject verdict
+(`g_h7a = +0.1043`, MLX-only artefact for the 3-layer LIF MLP),
+we ported the G4-quinto Step 2 small-CNN architecture onto the
+E-SNN substrate as a 4-layer spiking CNN
+(`EsnnG5TerSpikingCNN` : Conv2d(3→16) → LIF rates → Conv2d(16→32)
+→ LIF rates → avg-pool 4×4 → flatten + Linear(2048→64) → LIF
+rates → Linear(64→2), STE backward over all three LIF stages,
+pure-numpy Conv2d via im2col). Pre-registration
+[`docs/osf-prereg-g5-ter-spiking-cnn.md`](../../osf-prereg-g5-ter-spiking-cnn.md)
+locked at commit `f18030b` ; pilot run at commit `5174220`.
+Sister milestones :
+[`g5-ter-spiking-cnn-2026-05-03.md`](../../milestones/g5-ter-spiking-cnn-2026-05-03.md)
++
+[`g5-ter-aggregate-2026-05-03.md`](../../milestones/g5-ter-aggregate-2026-05-03.md).
+A documented compute-budget amendment subsamples the CIFAR-10
+train shard to 1500 examples per task per cell (test shard
+intact) per
+[`docs/osf-deviations-g5-ter-2026-05-03.md`](../../osf-deviations-g5-ter-2026-05-03.md);
+the pre-registered 4-arm × N=10 × HP combo C5 design is preserved
+verbatim.
+
+The pre-registered decision rule (LOCKED thresholds 0.5 / 1.0
+/ 2.0) maps the observed (`g_h8`, own-Welch outcome,
+`g_p_equ_cross`) tuple to one of three hypotheses : H8-A (LIF
+non-linearity is the load-bearing washout), H8-B (architecture
+mismatch was the issue ; CNN structure recovers the signal), or
+H8-C (partial — both contribute).
+
+**Within-substrate finding (E-SNN spiking-CNN, N=10 seeds,
+36 min wall on M1 Max)** :
+
+- mean retention `baseline = 0.8537`, `P_min = 0.8463`,
+  `P_equ = 0.8417`, `P_max = 0.8417` ;
+- observed `g_h8 = -0.1093` (E-SNN spiking-CNN P_equ vs
+  baseline) — i.e. the dream-arm mean is marginally **below**
+  baseline ;
+- Welch one-sided p = 0.5992 at α/4 = 0.0125 → fail-to-reject
+  H₀ ;
+- pre-registered own-substrate threshold `H7B_G_THRESHOLD =
+  0.5` not reached (and not exceeded in the negative direction
+  either).
+
+**Cross-substrate aggregate vs G4-quinto Step 2 MLX small-CNN**
+([`g5-ter-aggregate-2026-05-03.md`](../../milestones/g5-ter-aggregate-2026-05-03.md)) :
+
+| Arm | g (MLX − E-SNN) | Welch two-sided p | reject H₀ ? |
+|-----|-----------------|---------------------|-------------|
+| baseline | +1.21 | 3.4 × 10⁻³ | YES |
+| P_min | +1.32 | 4.3 × 10⁻⁴ | YES |
+| P_equ | +1.31 | 1.2 × 10⁻³ | YES |
+| P_max | +1.31 | 1.2 × 10⁻³ | YES |
+
+`g_p_equ_cross = +1.31` falls **between** the H8-A floor (2.0)
+and the H8-B ceiling (1.0).
+
+**Classification : H8-C (partial — both architecture and LIF
+non-linearity contribute).**
+
+**Honest reading.** The aggregator emits `h8_classification =
+"H8-C"`. Two empirical observations frame the verdict :
+
+1. *LIF non-linearity contributes to washout* : own-substrate
+   `g_h8 = -0.1093` and Welch fail-to-reject (p = 0.60) confirm
+   that the cycle-3 positive-effect channel does **not** transfer
+   through E-SNN rate-coding **even when the architecture is
+   convolutional**. The G5-bis MLP washout is reproduced by the
+   G5-ter spiking-CNN.
+2. *Architecture mismatch is not the sole driver* : but the
+   cross-substrate gap at P_equ (`g_p_equ_cross = +1.31`) is
+   markedly smaller than the G5-bis MLP gap (`+4.02`). Moving
+   from a 3-layer LIF MLP to a 4-layer spiking CNN closes
+   roughly two thirds of the cross-substrate retention level
+   gap, which is consistent with architectural inductive bias
+   contributing partially.
+
+Per Critic precedent, fail-to-reject is read as
+absence-of-evidence at this N (Option B detection floor `g ≈
+1.27`), not evidence-of-absence ; the negative point estimate is
+small in magnitude (|g| = 0.11) and its 95 % bootstrap interval
+straddles zero. The Hu 2020 anchor remains a directional
+reference (sign of the alternative hypothesis), not a magnitude
+calibrator. H8-C is the predicted outcome under the pre-reg if
+neither the pure-LIF-washout (H8-A) nor the
+architecture-recovery (H8-B) extreme matches the data.
+
+**Implications for DR-3.** DR-3 substrate-agnosticism remains
+formally valid at the axiom-property-test level. The empirical
+substrate-agnosticism guarantee on the cycle-3 positive-effect
+channel is now refuted at *two* architectural depths (3-layer
+LIF MLP : G5-bis H7-B ; 4-layer spiking-CNN : G5-ter H8-C with
+`g_h8 = -0.11`), and the residual cross-substrate gap survives
+even after the architectural-bias correction. The DR-3 evidence
+file `docs/proofs/dr3-substrate-evidence.md` is appended with a
+H8-C row recording the partial contribution of both mechanisms.
+A confirmatory N=30 Option A follow-up is scheduled to tighten
+the H8-C reading (the Option B detection floor would already
+have surfaced any g ≥ 1.27 effect at the chosen α). EC stays
+PARTIAL ; no FC bump.
+
 ## 7.2 Cross-substrate H1-H4 comparative table (synthetic substitute — not empirical claim)
 
 **Table 7.2 — MLX vs E-SNN hypotheses at Bonferroni α = 0.0125
