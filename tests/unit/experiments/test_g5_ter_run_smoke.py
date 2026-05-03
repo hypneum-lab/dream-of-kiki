@@ -10,9 +10,9 @@ import pytest
 from experiments.g5_ter_spiking_cnn import run_g5_ter
 
 
-def _synthetic_cifar_tasks() -> list[dict]:
+def _synthetic_cifar_tasks() -> list[dict[str, np.ndarray]]:
     rng = np.random.default_rng(0)
-    out: list[dict] = []
+    out: list[dict[str, np.ndarray]] = []
     for _ in range(5):
         n = 8
         x = rng.standard_normal((n, 32, 32, 3)).astype(np.float32)

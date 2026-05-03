@@ -10,13 +10,13 @@ from experiments.g5_ter_spiking_cnn.aggregator import (
 )
 
 
-def _write(path: Path, retention: dict) -> None:
+def _write(path: Path, retention: dict[str, list[float]]) -> None:
     path.write_text(
         json.dumps({"verdict": {"retention_by_arm": retention}})
     )
 
 
-def _ret(b: float, p: float) -> dict:
+def _ret(b: float, p: float) -> dict[str, list[float]]:
     return {
         "baseline": [b + 0.001 * i for i in range(10)],
         "P_min": [b + 0.05 + 0.001 * i for i in range(10)],
