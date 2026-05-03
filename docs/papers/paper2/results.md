@@ -149,6 +149,61 @@ Per N = 5 / arm this pilot remains exploratory for absolute
 g magnitudes ; pre-reg §4 still triggers a confirmatory N ≥ 30
 follow-up before any STABLE promotion.
 
+## 7.1.3 G5 cross-substrate pilot (E-SNN thalamocortical — 2026-05-03)
+
+First cross-substrate empirical pilot of framework C : the
+20-cell sweep of §7.1.2 was repeated on the E-SNN
+thalamocortical substrate (`kiki_oniric.substrates.esnn_thalamocortical`,
+numpy LIF fallback ; no `norse` dependency). Pre-registration :
+[`docs/osf-prereg-g5-cross-substrate.md`](../../osf-prereg-g5-cross-substrate.md)
+locked at commit `1411228` before the pilot run at
+`5fb36f0`. Sister milestone :
+[`docs/milestones/g5-cross-substrate-2026-05-03.md`](../../milestones/g5-cross-substrate-2026-05-03.md).
+
+Within-substrate finding (E-SNN, [@hu2020tmr ; @javadi2024sleeprestriction]
+anchors) :
+- mean retention `P_min = P_equ = P_max = 0.5119` across all
+  three dream profiles, mirroring the spectator pattern of §7.1.2 ;
+- `g_h1 = 0`, `g_h3 = 0`, `H_DR4` trivially monotonic (degenerate
+  equal means).
+
+Cross-substrate aggregate (Welch two-sided per arm at Bonferroni
+α/4 = 0.0125, sister milestone
+[`g5-cross-substrate-aggregate-2026-05-03.md`](../../milestones/g5-cross-substrate-aggregate-2026-05-03.md)) :
+
+| Arm | g (MLX − E-SNN) | Welch two-sided p | reject H₀ ? |
+|-----|-----------------|---------------------|-------------|
+| baseline | 9.98 | 5.2 × 10⁻⁵ | YES |
+| P_min | 3.49 | 3.5 × 10⁻³ | YES |
+| P_equ | 3.49 | 3.5 × 10⁻³ | YES |
+| P_max | 3.49 | 3.5 × 10⁻³ | YES |
+
+`dr3_cross_substrate_consistency_ok = False`. The two substrates
+**diverge in absolute retention level** : MLX baseline lands at
+0.5988 (G4-bis), E-SNN baseline at 0.5119 — a ≈ 0.087 retention
+gap that is itself substantively larger than the within-substrate
+spectator effect.
+
+**Honest reading**. The two substrates exhibit *the same
+qualitative spectator pattern* within each (P_min ≡ P_equ ≡
+P_max), so DR-3 axiom-level conformance (DR-0 / DR-1 / DR-2' /
+DR-4) holds on both. The cross-substrate verdict on *absolute*
+retention is divergence : the E-SNN spike-rate dynamics produce
+a uniformly lower absolute retention than the MLX MLP head, so
+mean values do not match across substrates. This rules out a
+simple "consistency" upgrade of `docs/proofs/dr3-substrate-evidence.md`
+to "real-substrate empirical evidence" *at the absolute-retention
+level*. A coarser reading at the *qualitative-pattern* level
+(both substrates exhibit the spectator pattern) is consistent
+with substrate-agnosticism, but is not the test the pre-reg
+specified.
+
+The G4-ter richer-head positive finding (g_h2 = + 2.77 on MLX
+hierarchical, §7.1.5) is not yet ported to E-SNN ; a future
+G5-bis would re-run this protocol on a hierarchical E-SNN
+classifier and ask whether the dream effect itself transfers
+across substrates.
+
 ## 7.1.4 G6 pilot Path B (real-LLM CL stream — 2026-05-03)
 
 First exposure of `kiki_oniric.substrates.micro_kiki.MicroKikiSubstrate`

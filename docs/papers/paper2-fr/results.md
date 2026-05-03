@@ -162,6 +162,65 @@ amplitudes absolues de g ; le pré-enregistrement §4
 déclenche toujours un suivi confirmatoire N ≥ 30 avant toute
 promotion STABLE.
 
+## 7.1.3 Pilote G5 cross-substrat (E-SNN thalamo-cortical — 2026-05-03)
+
+Premier pilote empirique cross-substrat du framework C : le
+balayage 20-cellules du §7.1.2 a été reproduit sur le substrat
+E-SNN thalamo-cortical (`kiki_oniric.substrates.esnn_thalamocortical`,
+fallback LIF en numpy ; aucune dépendance à `norse`).
+Pré-enregistrement :
+[`docs/osf-prereg-g5-cross-substrate.md`](../../osf-prereg-g5-cross-substrate.md)
+verrouillé au commit `1411228` avant l'exécution du pilote au
+`5fb36f0`. Jalon associé :
+[`docs/milestones/g5-cross-substrate-2026-05-03.md`](../../milestones/g5-cross-substrate-2026-05-03.md).
+
+Trouvaille intra-substrat (E-SNN, ancres [@hu2020tmr ;
+@javadi2024sleeprestriction]) :
+- rétention moyenne `P_min = P_equ = P_max = 0,5119` à travers
+  les trois profils oniriques, reproduisant le motif spectateur
+  du §7.1.2 ;
+- `g_h1 = 0`, `g_h3 = 0`, `H_DR4` trivialement monotone (égalité
+  dégénérée).
+
+Agrégat cross-substrat (Welch bilatéral par bras au seuil
+Bonferroni α/4 = 0,0125, jalon associé
+[`g5-cross-substrate-aggregate-2026-05-03.md`](../../milestones/g5-cross-substrate-aggregate-2026-05-03.md)) :
+
+| Bras | g (MLX − E-SNN) | p Welch bilatéral | rejet H₀ ? |
+|------|-----------------|---------------------|-------------|
+| baseline | 9,98 | 5,2 × 10⁻⁵ | OUI |
+| P_min | 3,49 | 3,5 × 10⁻³ | OUI |
+| P_equ | 3,49 | 3,5 × 10⁻³ | OUI |
+| P_max | 3,49 | 3,5 × 10⁻³ | OUI |
+
+`dr3_cross_substrate_consistency_ok = False`. Les deux substrats
+**divergent en niveau absolu de rétention** : la baseline MLX
+atterrit à 0,5988 (G4-bis), la baseline E-SNN à 0,5119 — un
+écart de rétention de ≈ 0,087 qui est lui-même substantivement
+plus grand que l'effet spectateur intra-substrat.
+
+**Lecture honnête**. Les deux substrats exhibent *le même motif
+spectateur qualitatif* à l'intérieur de chacun (P_min ≡ P_equ ≡
+P_max), donc la conformité DR-3 au niveau axiomatique (DR-0 /
+DR-1 / DR-2' / DR-4) tient sur les deux. Le verdict
+cross-substrat sur la rétention *absolue* est divergence : la
+dynamique de taux-de-spike E-SNN produit une rétention absolue
+uniformément plus basse que la tête MLP MLX, donc les valeurs
+moyennes ne correspondent pas à travers les substrats. Cela
+exclut une mise à niveau simple de
+`docs/proofs/dr3-substrate-evidence.md` de « substitut
+synthétique » à « preuve empirique réel-substrat » *au niveau
+de la rétention absolue*. Une lecture plus grossière au niveau
+*motif qualitatif* (les deux substrats exhibent le motif
+spectateur) est cohérente avec la substrat-agnosticité, mais ce
+n'est pas le test que le pré-enregistrement spécifiait.
+
+La trouvaille positive G4-ter sur tête riche (g_h2 = + 2,77 sur
+MLX hiérarchique, §7.1.5) n'est pas encore portée vers E-SNN ;
+un futur G5-bis ré-exécuterait ce protocole sur un classifieur
+E-SNN hiérarchique et demanderait si l'effet onirique lui-même
+transfère à travers les substrats.
+
 ## 7.1.4 Pilote G6 Voie B (LLM réel, flux d'apprentissage continu — 2026-05-03)
 
 Première exposition de
