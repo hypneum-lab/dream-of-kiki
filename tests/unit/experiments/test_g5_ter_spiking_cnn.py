@@ -103,3 +103,13 @@ def test_conv2d_forward_backward_shapes() -> None:
 def test_invalid_n_classes() -> None:
     with pytest.raises(ValueError):
         EsnnG5TerSpikingCNN(n_classes=1, seed=0)
+
+
+def test_lif_population_rates_matches_unvectorised() -> None:
+    """Vectorised LIF rates must match per-sample reference."""
+    clf = EsnnG5TerSpikingCNN(n_classes=2, seed=0, n_steps=5)
+    rng = np.random.default_rng(0)
+    currents = rng.standard_normal((4, 16)).astype(np.float32)
+    fast = clf._lif_population_rates(currents)
+    ref = clf._lif_population_rates_unvectorised(currents)
+    np.testing.assert_allclose(fast, ref, rtol=1e-6, atol=1e-6)

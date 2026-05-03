@@ -290,9 +290,45 @@ class EsnnG5TerSpikingCNN:
     ) -> NDArray[np.float32]:
         """Drive flat ``(N, K)`` currents through a LIF pop, return rates.
 
-        Per-sample loop matches ``EsnnG5BisHierarchicalClassifier``.
-        Caller flattens spatial dims before calling and reshapes the
-        output.
+        Vectorised across the batch axis with the same Euler dynamics
+        as ``simulate_lif_step`` (used by the G5-bis sister) :
+        ``v_t+1 = v_t * decay + I * dt`` ; spike when ``v_t+1 >=
+        threshold`` ; reset to zero post-spike. Equivalent semantics
+        to the per-sample loop but ~2 orders of magnitude faster on
+        Apple-Silicon numpy. Sanity-checked against the per-sample
+        path in ``test_lif_population_rates_matches_unvectorised``.
+        """
+        n, n_neurons = currents.shape
+        if n == 0 or n_neurons == 0:
+            return np.zeros((n, n_neurons), dtype=np.float32)
+        decay = np.float32(max(0.0, 1.0 - 1.0 / float(self.tau)))
+        currents_f = np.ascontiguousarray(
+            currents, dtype=np.float32
+        )
+        v = np.zeros_like(currents_f)
+        spike_count = np.zeros(currents_f.shape, dtype=np.int32)
+        thr = np.float32(self.threshold)
+        for _ in range(self.n_steps):
+            # In-place: v = v * decay + currents_f
+            np.multiply(v, decay, out=v)
+            np.add(v, currents_f, out=v)
+            # Spike mask : v >= threshold
+            spike_mask = v >= thr
+            spike_count += spike_mask  # int32 += bool, no cast
+            # Reset where spike fired (in-place, no temp tensor)
+            v[spike_mask] = 0.0
+        denom = max(self.n_steps, 1)
+        return (spike_count / np.float32(denom)).astype(np.float32)
+
+    def _lif_population_rates_unvectorised(
+        self,
+        currents: NDArray[np.float32],
+    ) -> NDArray[np.float32]:
+        """Reference per-sample implementation for cross-checking.
+
+        Matches the G5-bis ``_lif_population_rates`` byte-for-byte
+        (same ``simulate_lif_step`` calls) ; kept for the equivalence
+        unit test only — the hot path uses the vectorised version.
         """
         n, n_neurons = currents.shape
         rates = np.zeros((n, n_neurons), dtype=np.float32)

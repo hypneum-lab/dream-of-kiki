@@ -121,6 +121,30 @@ def _resolve_commit_sha() -> str:
     return "unknown"
 
 
+def _subsample_task(
+    task: SplitCIFAR10Task, n_train_per_task: int, seed: int
+) -> dict[str, Any]:
+    """Return a subsampled view of ``task`` keeping NHWC layout intact.
+
+    Deterministic per ``(seed, n_train_per_task)``. Test set is left
+    intact so the retention denominator is comparable across cells.
+    """
+    n = task["x_train_nhwc"].shape[0]
+    if n_train_per_task <= 0 or n_train_per_task >= n:
+        return dict(task)
+    rng = np.random.default_rng(seed)
+    idx = rng.choice(n, size=n_train_per_task, replace=False)
+    idx.sort()
+    return {
+        "x_train": task["x_train"][idx],
+        "x_train_nhwc": task["x_train_nhwc"][idx],
+        "y_train": task["y_train"][idx],
+        "x_test": task["x_test"],
+        "x_test_nhwc": task["x_test_nhwc"],
+        "y_test": task["y_test"],
+    }
+
+
 def _run_cell(
     arm: str,
     seed: int,
@@ -130,9 +154,15 @@ def _run_cell(
     batch_size: int,
     lr: float,
     n_steps: int,
+    n_train_per_task: int = 0,
 ) -> _CellPartial:
     start = time.time()
     combo = representative_combo()
+    if n_train_per_task > 0:
+        tasks = [
+            _subsample_task(t, n_train_per_task, seed + 100 * idx)
+            for idx, t in enumerate(tasks)
+        ]
     clf = EsnnG5TerSpikingCNN(
         n_classes=2,
         seed=seed,
@@ -141,14 +171,19 @@ def _run_cell(
     buffer = EsnnCNNBetaBuffer(capacity=BETA_BUFFER_CAPACITY)
     fill_rng = np.random.default_rng(seed + 5_000)
 
-    def _push_task(task: SplitCIFAR10Task) -> None:
+    def _push_task(task: dict[str, Any]) -> None:
         n = task["x_train_nhwc"].shape[0]
         n_take = min(BETA_BUFFER_FILL_PER_TASK, n)
         idx = fill_rng.choice(n, size=n_take, replace=False)
-        for i in idx.tolist():
-            x = task["x_train_nhwc"][i].astype(np.float32)
-            latent = clf.latent(x[None, ...])[0]
-            buffer.push(x=x, y=int(task["y_train"][i]), latent=latent)
+        # Vectorised latent computation for the buffer fill
+        xs = task["x_train_nhwc"][idx].astype(np.float32)
+        latents = clf.latent(xs)
+        for k, i in enumerate(idx.tolist()):
+            buffer.push(
+                x=xs[k],
+                y=int(task["y_train"][i]),
+                latent=latents[k],
+            )
 
     clf.train_task(
         {
@@ -354,6 +389,7 @@ def run_pilot(
     batch_size: int,
     lr: float,
     n_steps: int,
+    n_train_per_task: int = 0,
 ) -> dict[str, Any]:
     tasks = load_split_cifar10_5tasks_auto(data_dir)
     if len(tasks) != 5:
@@ -376,6 +412,7 @@ def run_pilot(
                 batch_size=batch_size,
                 lr=lr,
                 n_steps=n_steps,
+                n_train_per_task=n_train_per_task,
             )
             run_id = registry.register(
                 c_version=C_VERSION,
@@ -399,6 +436,7 @@ def run_pilot(
         "arms": list(ARMS),
         "data_dir": str(data_dir),
         "wall_time_s": wall,
+        "n_train_per_task": int(n_train_per_task),
         "cells": cells,
         "verdict": verdict,
     }
@@ -431,6 +469,17 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--seeds", type=int, nargs="+", default=list(DEFAULT_SEEDS)
     )
+    parser.add_argument(
+        "--n-train-per-task",
+        type=int,
+        default=0,
+        help=(
+            "Subsample CIFAR-10 train shard to this many examples "
+            "per task ; 0 (default) keeps the full shard. Documented "
+            "amendment under docs/osf-deviations-g5-ter-2026-05-03.md "
+            "when used."
+        ),
+    )
     args = parser.parse_args(argv)
 
     seeds = (0, 1) if args.smoke else tuple(args.seeds)
@@ -444,6 +493,7 @@ def main(argv: list[str] | None = None) -> int:
         batch_size=args.batch_size,
         lr=args.lr,
         n_steps=args.n_steps,
+        n_train_per_task=args.n_train_per_task,
     )
     print(f"Wrote {args.out_json}")
     print(f"Wrote {args.out_md}")
