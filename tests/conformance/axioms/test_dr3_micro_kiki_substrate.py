@@ -19,6 +19,8 @@ Reference: docs/specs/2026-04-17-dreamofkiki-framework-C-design.md §6.2
 """
 from __future__ import annotations
 
+from typing import Any
+
 import numpy as np
 import pytest
 
@@ -164,18 +166,52 @@ def test_c2_micro_kiki_restructure_dr1_episode_stamp() -> None:
     assert state.last_episode_id == "ep-conformance-dr1"
 
 
-def test_c2_micro_kiki_recombine_stub_surfaces_honestly() -> None:
-    """Phase-3 stub : ``recombine`` raises ``NotImplementedError``
-    rather than silently no-op'ing. The conformance matrix must
-    show this gap as a *visible* not-yet-backed cell.
+def test_c2_micro_kiki_recombine_ties_merge_contract() -> None:
+    """TIES-Merge contract (Yadav et al., arXiv 2306.01708, §3) :
+    the recombine handler merges a list of per-task delta tensors
+    via trim → elect-sign → disjoint-mean and returns a tensor of
+    the input shape and dtype.
 
-    When the TIES-merge backend lands this test gets replaced by a
-    positive contract test, mirroring the OPLoRA migration path.
+    This is the positive contract test that supersedes the
+    earlier ``recombine`` stub-surface test once the TIES-merge
+    backend landed (commit f27f745, ``feat(micro_kiki): TIES
+    recombine handler``), mirroring the OPLoRA migration path
+    used for ``restructure``.
     """
     substrate = MicroKikiSubstrate()
     handler = substrate.recombine_handler_factory()
-    with pytest.raises(NotImplementedError, match="TIES"):
-        handler(np.zeros((2, 4), dtype=np.float32), seed=0, n_steps=1)
+
+    rng = np.random.default_rng(11)
+    shape = (4, 3)
+    deltas = [
+        rng.standard_normal(shape).astype(np.float32),
+        rng.standard_normal(shape).astype(np.float32),
+        rng.standard_normal(shape).astype(np.float32),
+    ]
+    payload: dict[str, Any] = {"deltas": deltas}
+    merged = handler(payload, "ties")
+
+    assert merged.shape == shape
+    assert merged.dtype == np.float32
+    np.testing.assert_array_equal(np.isfinite(merged), True)
+    # Single-element fast path : alpha * delta (alpha defaults to 1).
+    single_payload: dict[str, Any] = {"deltas": [deltas[0]]}
+    single_out = handler(single_payload, "ties")
+    np.testing.assert_allclose(single_out, deltas[0], atol=1e-6)
+
+
+def test_c2_micro_kiki_recombine_rejects_unknown_op() -> None:
+    """DR-3 condition (1) : unsupported ops surface ``ValueError``
+    rather than silently no-op'ing. Mirrors the strict op-check on
+    :meth:`restructure_handler_factory`.
+    """
+    substrate = MicroKikiSubstrate()
+    handler = substrate.recombine_handler_factory()
+    payload: dict[str, Any] = {
+        "deltas": [np.zeros((2, 4), dtype=np.float32)],
+    }
+    with pytest.raises(ValueError, match="unsupported"):
+        handler(payload, "not-a-merge-op")
 
 
 # ===== Condition 3: BLOCKING invariants enforceable =====
