@@ -658,6 +658,19 @@ def run_pilot(
         "wall_time_s": wall,
         "cells": list(cells),
         "verdict": verdict,
+        # Path A LoRA hyperparams ; recorded for traceability even
+        # under Path B (which silently ignores them — the inference
+        # shim does not consume gradient-descent state). On a
+        # future Path A activation the same call signature becomes
+        # load-bearing, so audit logs preserve them now.
+        "hyperparams": {
+            "inner_steps": inner_steps,
+            "lr": lr,
+            "rank": rank,
+            "alpha": alpha,
+            "n_train": n_train,
+            "n_eval": n_eval,
+        },
     }
     out_json.parent.mkdir(parents=True, exist_ok=True)
     out_md.parent.mkdir(parents=True, exist_ok=True)

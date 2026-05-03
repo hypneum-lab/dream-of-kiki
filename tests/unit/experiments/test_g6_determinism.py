@@ -18,7 +18,7 @@ from harness.real_benchmarks.mmlu import MMLURecord
 from kiki_oniric.substrates.micro_kiki import MicroKikiSubstrate
 
 
-@settings(max_examples=20, deadline=2_000)
+@settings(max_examples=20, deadline=2_000, derandomize=True)
 @given(seed=st.integers(min_value=0, max_value=2**31 - 1))
 def test_dream_runner_deterministic_for_fixed_seed(seed: int) -> None:
     """Same seed + profile + subdomain -> same substrate state."""
@@ -43,7 +43,7 @@ def test_dream_runner_deterministic_for_fixed_seed(seed: int) -> None:
     )
 
 
-@settings(max_examples=10, deadline=2_000)
+@settings(max_examples=10, deadline=2_000, derandomize=True)
 @given(seed=st.integers(min_value=0, max_value=2**31 - 1))
 def test_inference_adapter_deterministic_for_fixed_seed(seed: int) -> None:
     """Two adapters with the same seed produce the same delta."""

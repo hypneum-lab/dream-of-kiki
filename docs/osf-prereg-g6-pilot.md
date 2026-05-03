@@ -100,8 +100,9 @@ retention) on the real Qwen + MMLU stream is >= HU_2020_OVERALL.ci_low
 **Operationalisation** :
 - g_h1' = compute_hedges_g(retention[P_equ], retention[baseline])
 - Reject H0 iff g_h1' >= 0.21
-- Welch one-sided (baseline, P_equ) at α = 0.05 / 4 (Bonferroni
-  for 4 hypotheses)
+- Welch one-sided (baseline, P_equ) at α = 0.05 / 3 (Bonferroni
+  for 3 confirmatory hypotheses ; H_NEW excluded as exploratory —
+  see family-size note below)
 
 ### H3' — P_min retention decrement on real LLM matches Javadi 2024
 **Statement** : observed |Hedges' g| of (P_min vs baseline) >=
@@ -109,7 +110,8 @@ JAVADI_2024_OVERALL.ci_low (0.13), with negative sign (decrement).
 **Operationalisation** :
 - g_h3' = compute_hedges_g(retention[P_min], retention[baseline])
 - Reject H0 iff g_h3' <= -0.13
-- Welch one-sided (P_min, baseline) at α = 0.05 / 4
+- Welch one-sided (P_min, baseline) at α = 0.05 / 3 (same
+  Bonferroni family as H1' — see family-size note below)
 
 ### H_DR4' — DR-4 monotonicity on real LLM
 **Statement** : mean retention is monotonically ordered
@@ -151,6 +153,17 @@ H_NEW is reformulated as :
   amended formulation (it is exploratory). The H1' / H3' / H_DR4'
   family-wise correction (α/3) on Path B remains applicable but
   is itself flagged exploratory in the milestone dump.
+
+### Bonferroni family-size note (binding for §2 + §3 + code)
+
+α revised from §2's literal "Bonferroni for 4" earlier-draft
+phrasing to "Bonferroni for 3" because H_NEW is exploratory (per
+§6 DualVer table) and is excluded from the confirmatory family
+per pre-registration discipline. The confirmatory family is
+{H1', H3', H_DR4'} ; H_NEW is reported alongside but never
+contributes to the family-wise α budget. §2, §3, and the driver
+(`experiments/g6_mmlu_stream/run_g6.py`) all use
+α_per_test = 0.05 / 3.
 
 ## 3. Pre-specified analyses
 
