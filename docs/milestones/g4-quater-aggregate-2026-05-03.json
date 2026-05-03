@@ -1,0 +1,80 @@
+{
+  "h4a_substrate_depth": {
+    "alpha_per_test": 0.016666666666666666,
+    "confirmed": false,
+    "j_statistic": 13511.5,
+    "mean_p_equ": 0.5958091239026735,
+    "mean_p_max": 0.5958091239026735,
+    "mean_p_min": 0.5958984848947165,
+    "monotonic_observed": false,
+    "p_value": 0.513689982741115,
+    "reject_h0": false
+  },
+  "h4b_hp_calibration": {
+    "any_factor_recovers_ordering": false,
+    "confirmed": false,
+    "per_factor": [
+      {
+        "alpha_per_test": 0.005555555555555556,
+        "factor": 0.85,
+        "j_statistic": 1034.0,
+        "mean_p_equ": 0.6553808460070584,
+        "mean_p_max": 0.6553808460070584,
+        "mean_p_min": 0.7065121878297067,
+        "monotonic_observed": false,
+        "p_value": 0.9903772368781011,
+        "reject_h0": false
+      },
+      {
+        "alpha_per_test": 0.005555555555555556,
+        "factor": 0.95,
+        "j_statistic": 1076.0,
+        "mean_p_equ": 0.6582182935842609,
+        "mean_p_max": 0.6582182935842609,
+        "mean_p_min": 0.7065121878297067,
+        "monotonic_observed": false,
+        "p_value": 0.9788028996124601,
+        "reject_h0": false
+      },
+      {
+        "alpha_per_test": 0.005555555555555556,
+        "factor": 0.99,
+        "j_statistic": 1094.0,
+        "mean_p_equ": 0.6588852729861738,
+        "mean_p_max": 0.6588852729861738,
+        "mean_p_min": 0.7065121878297067,
+        "monotonic_observed": false,
+        "p_value": 0.9710395621212976,
+        "reject_h0": false
+      }
+    ]
+  },
+  "h4c_recombine_emptiness": {
+    "ae_secondary": {
+      "mean_p_max_ae": 0.7005726085623528,
+      "mean_p_max_none": 0.7005729334691897,
+      "n_p_max_ae": 95,
+      "n_p_max_none": 95,
+      "welch_p_two_sided": 0.9999596964353933,
+      "welch_t": -5.058024336909671e-05
+    },
+    "alpha_per_test": 0.016666666666666666,
+    "confirmed": true,
+    "fail_to_reject_h0": true,
+    "h4c_recombine_empty_confirmed": true,
+    "hedges_g_mog_vs_none": 0.00207307892311975,
+    "mean_p_max_mog": 0.700665059871932,
+    "mean_p_max_none": 0.7005729334691897,
+    "n_p_max_mog": 95,
+    "n_p_max_none": 95,
+    "welch_p_two_sided": 0.9885699389585751,
+    "welch_t": 0.014345014123230757
+  },
+  "summary": {
+    "all_three_confirmed": false,
+    "any_confirmed": true,
+    "h4a_confirmed": false,
+    "h4b_confirmed": false,
+    "h4c_confirmed": true
+  }
+}
