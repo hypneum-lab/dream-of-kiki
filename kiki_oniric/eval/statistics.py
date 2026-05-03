@@ -221,3 +221,70 @@ def apply_bonferroni_family(
 # explicit, grep-able change.
 CYCLE1_FAMILY = BonferroniFamily(family_size=4)   # α_per_test = 0.0125
 CYCLE3_FAMILY = BonferroniFamily(family_size=8)   # α_per_test = 0.00625
+
+
+def compute_hedges_g(
+    treatment: list[float],
+    control: list[float],
+) -> float:
+    """Bias-corrected Cohen's d (Hedges & Olkin 1985) for two samples.
+
+    Standardised mean difference :
+
+        d = (mean(treatment) - mean(control)) / pooled_sd
+        pooled_sd = sqrt(((n1-1) * var(t) + (n2-1) * var(c)) / (n1+n2-2))
+        J = 1 - 3 / (4 * df - 1),  df = n1 + n2 - 2
+        g = J * d
+
+    The small-sample correction factor ``J`` is the closed-form
+    Hedges-Olkin approximation, exact to four decimal places for
+    df >= 5 and within 1 % for df = 2-4. For our G4 pilot (N=5 seeds
+    per arm, df=8) the approximation error is < 0.001.
+
+    Returns 0.0 when both samples are constant **and equal** (no
+    effect, no spread). Raises ValueError when both samples are
+    constant but have different means (undefined Cohen's d).
+
+    Parameters :
+        treatment : observed values for the treatment / dream-active
+                    arm. Must contain >=2 finite floats.
+        control   : observed values for the no-dream baseline arm.
+                    Must contain >=2 finite floats.
+
+    Returns :
+        Hedges' g — positive when treatment mean exceeds control mean,
+        negative otherwise.
+
+    Raises :
+        ValueError : empty input, singleton input, or zero pooled SD
+                     with non-equal means.
+    """
+    if not treatment or not control:
+        raise ValueError(
+            "compute_hedges_g requires non-empty treatment and control"
+        )
+    if len(treatment) < 2 or len(control) < 2:
+        raise ValueError(
+            "compute_hedges_g requires at least 2 observations per arm "
+            f"(got n_t={len(treatment)}, n_c={len(control)})"
+        )
+    t_arr = np.asarray(treatment, dtype=float)
+    c_arr = np.asarray(control, dtype=float)
+    n1 = t_arr.size
+    n2 = c_arr.size
+    df = n1 + n2 - 2
+    var_t = float(t_arr.var(ddof=1))
+    var_c = float(c_arr.var(ddof=1))
+    pooled_var = ((n1 - 1) * var_t + (n2 - 1) * var_c) / df
+    pooled_sd = pooled_var ** 0.5
+    diff = float(t_arr.mean() - c_arr.mean())
+    if pooled_sd == 0.0:
+        if diff == 0.0:
+            return 0.0
+        raise ValueError(
+            "compute_hedges_g: zero pooled SD with non-equal means — "
+            "Cohen's d undefined"
+        )
+    cohens_d = diff / pooled_sd
+    correction_j = 1.0 - 3.0 / (4.0 * df - 1.0)
+    return float(correction_j * cohens_d)
