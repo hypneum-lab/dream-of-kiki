@@ -195,3 +195,95 @@ def test_recombine_step_seed_determinism() -> None:
     np.testing.assert_array_equal(
         np.asarray(a._l3.weight), np.asarray(b._l3.weight)
     )
+
+
+from experiments.g4_split_fmnist.dream_wrap import build_profile  # noqa: E402
+
+
+def _fill_buffer(buf: BetaBufferHierFIFO, clf: G4HierarchicalClassifier,
+                 n_per_class: int = 6) -> None:
+    rng = np.random.default_rng(0)
+    for cls in (0, 1):
+        for _ in range(n_per_class):
+            x = rng.standard_normal(10).astype(np.float32)
+            latent = clf.latent(x[None, :])[0]
+            buf.push(x=x, y=cls, latent=latent)
+
+
+def test_dream_episode_hier_p_min_runs() -> None:
+    clf = G4HierarchicalClassifier(
+        in_dim=10, hidden_1=4, hidden_2=3, n_classes=2, seed=13
+    )
+    buf = BetaBufferHierFIFO(capacity=32)
+    _fill_buffer(buf, clf)
+    profile = build_profile("P_min", seed=13)
+    clf.dream_episode_hier(
+        profile,
+        seed=13,
+        beta_buffer=buf,
+        replay_n_records=8,
+        replay_n_steps=1,
+        replay_lr=0.01,
+        downscale_factor=0.95,
+        restructure_factor=0.05,
+        recombine_n_synthetic=4,
+        recombine_lr=0.01,
+    )
+    assert len(profile.runtime.log) == 1
+
+
+def test_dream_episode_hier_p_equ_mutates_l2() -> None:
+    clf = G4HierarchicalClassifier(
+        in_dim=10, hidden_1=4, hidden_2=3, n_classes=2, seed=13
+    )
+    buf = BetaBufferHierFIFO(capacity=32)
+    _fill_buffer(buf, clf)
+    w2_before = np.asarray(clf._l2.weight)
+    profile = build_profile("P_equ", seed=13)
+    clf.dream_episode_hier(
+        profile,
+        seed=13,
+        beta_buffer=buf,
+        replay_n_records=8,
+        replay_n_steps=1,
+        replay_lr=0.01,
+        downscale_factor=0.95,
+        restructure_factor=0.05,
+        recombine_n_synthetic=4,
+        recombine_lr=0.01,
+    )
+    w2_after = np.asarray(clf._l2.weight)
+    # P_equ runs RESTRUCTURE -> _l2.weight changes (perturb + downscale).
+    assert not np.array_equal(w2_before, w2_after)
+
+
+def test_dream_episode_hier_p_min_does_not_perturb_l2_random() -> None:
+    """P_min runs DOWNSCALE only on _l2 (deterministic factor *), no random
+    perturbation. Two runs with same seed must be bit-identical."""
+    a = G4HierarchicalClassifier(
+        in_dim=10, hidden_1=4, hidden_2=3, n_classes=2, seed=13
+    )
+    b = G4HierarchicalClassifier(
+        in_dim=10, hidden_1=4, hidden_2=3, n_classes=2, seed=13
+    )
+    buf_a = BetaBufferHierFIFO(capacity=32)
+    buf_b = BetaBufferHierFIFO(capacity=32)
+    _fill_buffer(buf_a, a)
+    _fill_buffer(buf_b, b)
+    pa = build_profile("P_min", seed=13)
+    pb = build_profile("P_min", seed=13)
+    a.dream_episode_hier(
+        pa, seed=13, beta_buffer=buf_a,
+        replay_n_records=8, replay_n_steps=1, replay_lr=0.01,
+        downscale_factor=0.95, restructure_factor=0.05,
+        recombine_n_synthetic=4, recombine_lr=0.01,
+    )
+    b.dream_episode_hier(
+        pb, seed=13, beta_buffer=buf_b,
+        replay_n_records=8, replay_n_steps=1, replay_lr=0.01,
+        downscale_factor=0.95, restructure_factor=0.05,
+        recombine_n_synthetic=4, recombine_lr=0.01,
+    )
+    np.testing.assert_array_equal(
+        np.asarray(a._l2.weight), np.asarray(b._l2.weight)
+    )

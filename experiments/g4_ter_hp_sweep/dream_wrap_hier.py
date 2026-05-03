@@ -225,6 +225,161 @@ class G4HierarchicalClassifier:
         opt.update(self._l3, grads)
         mx.eval(self._l3.parameters(), opt.state)
 
+    def _replay_optimizer_step(
+        self,
+        records: list[BetaRecordHier],
+        *,
+        lr: float,
+        n_steps: int,
+    ) -> None:
+        if not records:
+            return
+        x = mx.array([r["x"] for r in records])
+        y = mx.array([r["y"] for r in records])
+        opt = optim.SGD(learning_rate=lr)
+
+        def loss_fn(model: nn.Module, xb: mx.array, yb: mx.array) -> mx.array:
+            return nn.losses.cross_entropy(model(xb), yb, reduction="mean")
+
+        loss_and_grad = nn.value_and_grad(self._model, loss_fn)
+        for _ in range(n_steps):
+            _loss, grads = loss_and_grad(self._model, x, y)
+            opt.update(self._model, grads)
+            mx.eval(self._model.parameters(), opt.state)
+
+    def _downscale_step(self, *, factor: float) -> None:
+        """Multiply every weight + bias in ``self._model`` by ``factor``.
+
+        Bounds : ``factor`` must lie in ``(0, 1]`` - same constraint
+        as ``downscale_real_handler``.
+        """
+        if not (0.0 < factor <= 1.0):
+            raise ValueError(
+                f"shrink_factor must be in (0, 1], got {factor}"
+            )
+        for layer in (self._l1, self._l2, self._l3):
+            layer.weight = layer.weight * factor
+            if getattr(layer, "bias", None) is not None:
+                layer.bias = layer.bias * factor
+        mx.eval(self._model.parameters())
+
+    def dream_episode_hier(
+        self,
+        profile: object,
+        seed: int,
+        *,
+        beta_buffer: "BetaBufferHierFIFO",
+        replay_n_records: int,
+        replay_n_steps: int,
+        replay_lr: float,
+        downscale_factor: float,
+        restructure_factor: float,
+        recombine_n_synthetic: int,
+        recombine_lr: float,
+    ) -> None:
+        """Drive one DreamEpisode and mutate classifier weights for G4-ter.
+
+        Coupling map (richer substrate):
+        - ``Operation.REPLAY`` -> ``_replay_optimizer_step`` over
+          buffer sample of ``replay_n_records``.
+        - ``Operation.DOWNSCALE`` -> ``_downscale_step`` with
+          ``downscale_factor``.
+        - ``Operation.RESTRUCTURE`` -> ``_restructure_step`` on
+          ``_l2.weight`` with ``restructure_factor``.
+        - ``Operation.RECOMBINE`` -> ``_recombine_step`` over Gaussian-
+          MoG synthetic latents drawn from ``beta_buffer``.
+
+        DR-0 spectator runtime path is preserved (synthetic
+        input_slice values), so every episode appends one
+        EpisodeLogEntry to ``profile.runtime.log``.
+        """
+        # Local imports to keep module-level deps minimal.
+        from kiki_oniric.dream.episode import (
+            BudgetCap,
+            DreamEpisode,
+            EpisodeTrigger,
+            Operation,
+            OutputChannel,
+        )
+        from kiki_oniric.profiles.p_min import PMinProfile
+
+        if isinstance(profile, PMinProfile):
+            ops: tuple[Operation, ...] = (
+                Operation.REPLAY,
+                Operation.DOWNSCALE,
+            )
+            channels: tuple[OutputChannel, ...] = (
+                OutputChannel.WEIGHT_DELTA,
+            )
+        else:
+            ops = (
+                Operation.REPLAY,
+                Operation.DOWNSCALE,
+                Operation.RESTRUCTURE,
+                Operation.RECOMBINE,
+            )
+            channels = (
+                OutputChannel.WEIGHT_DELTA,
+                OutputChannel.HIERARCHY_CHG,
+                OutputChannel.LATENT_SAMPLE,
+            )
+
+        # Spectator runtime path (DR-0 logging).
+        rng = np.random.default_rng(seed + 10_000)
+        synthetic_records = [
+            {
+                "x": rng.standard_normal(4).astype(np.float32).tolist(),
+                "y": rng.standard_normal(4).astype(np.float32).tolist(),
+            }
+            for _ in range(4)
+        ]
+        delta_latents = [
+            rng.standard_normal(4).astype(np.float32).tolist()
+            for _ in range(2)
+        ]
+        episode = DreamEpisode(
+            trigger=EpisodeTrigger.SCHEDULED,
+            input_slice={
+                "beta_records": synthetic_records,
+                "shrink_factor": 0.99,
+                "topo_op": "reroute",
+                "swap_indices": [0, 1],
+                "delta_latents": delta_latents,
+            },
+            operation_set=ops,
+            output_channels=channels,
+            budget=BudgetCap(
+                flops=10_000_000, wall_time_s=10.0, energy_j=1.0
+            ),
+            episode_id=f"g4-ter-{type(profile).__name__}-seed{seed}",
+        )
+        profile.runtime.execute(episode)  # type: ignore[attr-defined]
+
+        # ---- Plan G4-ter coupling on richer substrate ----
+        if Operation.REPLAY in ops:
+            sampled = beta_buffer.sample(n=replay_n_records, seed=seed)
+            self._replay_optimizer_step(
+                sampled, lr=replay_lr, n_steps=replay_n_steps
+            )
+        if Operation.DOWNSCALE in ops:
+            self._downscale_step(factor=downscale_factor)
+        if Operation.RESTRUCTURE in ops:
+            self._restructure_step(
+                factor=restructure_factor, seed=seed + 20_000
+            )
+        if Operation.RECOMBINE in ops:
+            latents_records: list[tuple[list[float], int]] = []
+            for r in beta_buffer.snapshot():
+                lat = r["latent"]
+                if lat is not None:
+                    latents_records.append((list(lat), int(r["y"])))
+            self._recombine_step(
+                latents=latents_records,
+                n_synthetic=recombine_n_synthetic,
+                lr=recombine_lr,
+                seed=seed + 30_000,
+            )
+
 
 class BetaBufferHierFIFO:
     """Bounded curated episodic buffer with optional latents (beta channel).
