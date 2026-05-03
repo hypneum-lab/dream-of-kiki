@@ -50,7 +50,7 @@ import subprocess
 import sys
 import time
 from pathlib import Path
-from typing import Any
+from typing import Any, TypedDict
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(REPO_ROOT) not in sys.path:
@@ -68,12 +68,41 @@ from kiki_oniric.eval.statistics import (  # noqa: E402
 )
 
 from experiments.g4_split_fmnist.dataset import (  # noqa: E402
+    SplitFMNISTTask,
     load_split_fmnist_5tasks,
 )
 from experiments.g4_split_fmnist.dream_wrap import (  # noqa: E402
     G4Classifier,
     build_profile,
 )
+
+
+# --------------------------------------------------------------------
+# Typed cell shapes — mirror SplitFMNISTTask pattern from dataset.py
+# --------------------------------------------------------------------
+
+
+class _CellPartial(TypedDict):
+    """Per-cell measurement dict produced by ``_run_cell``.
+
+    ``run_id`` is appended later by ``run_pilot`` once the cell is
+    registered against ``RunRegistry``. Together with ``run_id``,
+    this becomes :class:`CellResult` — the canonical cell shape.
+    """
+
+    arm: str
+    seed: int
+    acc_task1_initial: float
+    acc_task1_final: float
+    retention: float
+    excluded_underperforming_baseline: bool
+    wall_time_s: float
+
+
+class CellResult(_CellPartial):
+    """A fully-registered pilot cell : a :class:`_CellPartial` + ``run_id``."""
+
+    run_id: str
 
 
 # --------------------------------------------------------------------
@@ -126,18 +155,20 @@ def _resolve_commit_sha() -> str:
 def _run_cell(
     arm: str,
     seed: int,
-    tasks: list,
+    tasks: list[SplitFMNISTTask],
     *,
     epochs: int,
     batch_size: int,
     hidden_dim: int,
     lr: float,
-) -> dict[str, Any]:
-    """Execute one (arm, seed) cell and return a result dict.
+) -> _CellPartial:
+    """Execute one (arm, seed) cell and return a :class:`_CellPartial`.
 
-    Returns ``{arm, seed, acc_task1_initial, acc_task1_final,
-    retention, wall_time_s}``. Excludes the cell from the verdict
-    aggregation when ``acc_task1_initial < 0.5`` (per pre-reg §5).
+    The returned dict carries ``arm, seed, acc_task1_initial,
+    acc_task1_final, retention, excluded_underperforming_baseline,
+    wall_time_s``. Excludes the cell from the verdict aggregation
+    when ``acc_task1_initial < 0.5`` (per pre-reg §5). The caller
+    upgrades it to :class:`CellResult` by adding ``run_id``.
     """
     start = time.time()
     feat_dim = tasks[0]["x_train"].shape[1]
@@ -188,7 +219,7 @@ def _run_cell(
 # --------------------------------------------------------------------
 
 
-def _retention_by_arm(cells: list[dict]) -> dict[str, list[float]]:
+def _retention_by_arm(cells: list[CellResult]) -> dict[str, list[float]]:
     """Group retention by arm, dropping excluded cells."""
     out: dict[str, list[float]] = {arm: [] for arm in ARMS}
     for c in cells:
@@ -279,7 +310,7 @@ def _h_dr4_verdict(retention: dict[str, list[float]]) -> dict[str, Any]:
     }
 
 
-def _aggregate_verdict(cells: list[dict]) -> dict[str, Any]:
+def _aggregate_verdict(cells: list[CellResult]) -> dict[str, Any]:
     retention = _retention_by_arm(cells)
     return {
         "h1_p_equ_vs_baseline": _h1_verdict(retention),
@@ -294,7 +325,7 @@ def _aggregate_verdict(cells: list[dict]) -> dict[str, Any]:
 # --------------------------------------------------------------------
 
 
-def _render_md_report(payload: dict) -> str:
+def _render_md_report(payload: dict[str, Any]) -> str:
     """Render the human-readable milestone report."""
     h1 = payload["verdict"]["h1_p_equ_vs_baseline"]
     h3 = payload["verdict"]["h3_p_min_vs_baseline"]
@@ -475,7 +506,7 @@ def run_pilot(
     registry = RunRegistry(registry_db)
     commit_sha = _resolve_commit_sha()
 
-    cells: list[dict] = []
+    cells: list[CellResult] = []
     sweep_start = time.time()
     for arm in ARMS:
         for seed in seeds:
@@ -494,7 +525,7 @@ def run_pilot(
                 seed=seed,
                 commit_sha=commit_sha,
             )
-            cells.append({**cell, "run_id": run_id})
+            cells.append(CellResult(**cell, run_id=run_id))
     wall = time.time() - sweep_start
 
     verdict = _aggregate_verdict(cells)

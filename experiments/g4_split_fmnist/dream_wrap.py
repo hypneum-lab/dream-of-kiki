@@ -21,13 +21,14 @@ from __future__ import annotations
 
 import random
 from dataclasses import dataclass, field
-from typing import Any, Callable
+from typing import Callable
 
 import mlx.core as mx
 import mlx.nn as nn
 import mlx.optimizers as optim
 import numpy as np
 
+from experiments.g4_split_fmnist.dataset import SplitFMNISTTask
 from kiki_oniric.dream.episode import (
     BudgetCap,
     DreamEpisode,
@@ -40,14 +41,20 @@ from kiki_oniric.profiles.p_max import PMaxProfile
 from kiki_oniric.profiles.p_min import PMinProfile
 
 
-PROFILE_FACTORIES: dict[str, Callable[..., Any]] = {
+# Type alias for the three concrete profile classes the G4 pilot
+# wires through. ``baseline`` arm runs no dream-episode and never
+# instantiates a profile, so it does not appear in this union.
+ProfileT = PMinProfile | PEquProfile | PMaxProfile
+
+
+PROFILE_FACTORIES: dict[str, Callable[..., ProfileT]] = {
     "P_min": PMinProfile,
     "P_equ": PEquProfile,
     "P_max": PMaxProfile,
 }
 
 
-def build_profile(name: str, seed: int) -> Any:
+def build_profile(name: str, seed: int) -> ProfileT:
     """Construct a fresh profile of the given ``name`` with ``seed``.
 
     ``P_equ`` and ``P_max`` accept a seeded RNG (used by their
@@ -144,7 +151,7 @@ class G4Classifier:
 
     def train_task(
         self,
-        task: dict,
+        task: SplitFMNISTTask,
         *,
         epochs: int,
         batch_size: int,
@@ -183,7 +190,7 @@ class G4Classifier:
 
     # -------------------- dream --------------------
 
-    def dream_episode(self, profile: Any, seed: int) -> None:
+    def dream_episode(self, profile: ProfileT, seed: int) -> None:
         """Drive one :class:`DreamEpisode` through the profile's runtime.
 
         Builds an episode whose ``operation_set`` matches the
@@ -199,7 +206,7 @@ class G4Classifier:
         is what distinguishes the dream-active arms from baseline.
         """
         profile_name = type(profile).__name__
-        if profile_name == "PMinProfile":
+        if isinstance(profile, PMinProfile):
             ops: tuple[Operation, ...] = (
                 Operation.REPLAY,
                 Operation.DOWNSCALE,
