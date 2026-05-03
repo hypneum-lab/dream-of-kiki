@@ -631,7 +631,17 @@ def run_pilot(
                 seed=seed,
                 commit_sha=commit_sha,
             )
-            cells.append(CellResult(**cell, run_id=run_id))
+            cell_with_id: CellResult = {
+                "arm": cell["arm"],
+                "seed": cell["seed"],
+                "retention": cell["retention"],
+                "excluded_underperforming_baseline":
+                    cell["excluded_underperforming_baseline"],
+                "wall_time_s": cell["wall_time_s"],
+                "acc_matrix": cell["acc_matrix"],
+                "run_id": run_id,
+            }
+            cells.append(cell_with_id)
     wall = time.time() - sweep_start
 
     verdict = _aggregate_verdict(cells)

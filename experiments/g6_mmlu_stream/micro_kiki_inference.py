@@ -53,9 +53,11 @@ class InferenceOnlyAdapter:
     out_dim: int
     rank: int
     seed: int
-    _deltas: dict[str, NDArray] = field(default_factory=dict, init=False)
+    _deltas: dict[str, NDArray[np.float32]] = field(
+        default_factory=dict, init=False,
+    )
 
-    def current_delta(self, key: str) -> NDArray:
+    def current_delta(self, key: str) -> NDArray[np.float32]:
         """Return the current delta for ``key`` (zero-init on first read)."""
         if key not in self._deltas:
             self._deltas[key] = np.zeros(
@@ -63,7 +65,7 @@ class InferenceOnlyAdapter:
             )
         return self._deltas[key]
 
-    def set_delta(self, key: str, value: NDArray) -> None:
+    def set_delta(self, key: str, value: NDArray[np.float32]) -> None:
         if value.shape != (self.out_dim, self.rank):
             raise ValueError(
                 f"delta shape {value.shape} != expected "

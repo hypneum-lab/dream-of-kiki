@@ -15,7 +15,7 @@ from harness.real_benchmarks.mmlu import MMLURecord
 
 def _write_fixture(tmp_path: Path) -> Path:
     """Write 8 records each across 5 target subdomains (40 rows total)."""
-    rows: list[dict] = []
+    rows: list[dict[str, object]] = []
     subjects = (
         "anatomy", "astronomy", "business_ethics",
         "clinical_knowledge", "college_biology",

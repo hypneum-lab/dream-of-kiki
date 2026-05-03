@@ -17,7 +17,7 @@ import json
 import random
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Sequence
+from typing import Any, Sequence
 
 from harness.real_benchmarks.mmlu import MMLURecord
 
@@ -57,7 +57,7 @@ class SubdomainSplit:
     eval_: list[MMLURecord]
 
 
-def _record_from_raw(row: dict) -> MMLURecord:
+def _record_from_raw(row: dict[str, Any]) -> MMLURecord:
     """Validate a raw JSON row and lift it to a frozen MMLURecord.
 
     Mirrors `MMLULoader._record_from_raw` (private) so this loader
@@ -134,7 +134,7 @@ def build_subdomain_stream(
         raise FileNotFoundError(
             f"MMLU stream fixture not found at {fixture_path!s}"
         )
-    by_subject: dict[str, list[dict]] = {}
+    by_subject: dict[str, list[dict[str, Any]]] = {}
     with fixture_path.open("r", encoding="utf-8") as fh:
         for line in fh:
             line = line.strip()

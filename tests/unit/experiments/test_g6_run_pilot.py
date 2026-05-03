@@ -43,7 +43,7 @@ def test_g6_help_smokes() -> None:
 def test_compute_retention_identity_when_no_forgetting() -> None:
     from experiments.g6_mmlu_stream.run_g6 import compute_retention
 
-    matrix = {
+    matrix: dict[str, list[float | None]] = {
         "anatomy": [0.5, 0.5, 0.5, 0.5, 0.5],
         "astronomy": [None, 0.5, 0.5, 0.5, 0.5],
         "business_ethics": [None, None, 0.5, 0.5, 0.5],
@@ -63,7 +63,7 @@ def test_compute_retention_identity_when_no_forgetting() -> None:
 def test_compute_retention_drops_with_forgetting() -> None:
     from experiments.g6_mmlu_stream.run_g6 import compute_retention
 
-    matrix = {
+    matrix: dict[str, list[float | None]] = {
         "anatomy": [0.8, 0.7, 0.6, 0.5, 0.4],
         "astronomy": [None, 0.8, 0.7, 0.6, 0.5],
         "business_ethics": [None, None, 0.8, 0.7, 0.6],
@@ -90,7 +90,7 @@ def test_compute_retention_excludes_zero_initial() -> None:
     """When acc[S_j after S_j] is 0, the ratio is undefined."""
     from experiments.g6_mmlu_stream.run_g6 import compute_retention
 
-    matrix = {
+    matrix: dict[str, list[float | None]] = {
         "anatomy": [0.0, 0.0, 0.0, 0.0, 0.0],  # underperforming
         "astronomy": [None, 0.8, 0.4, 0.4, 0.4],
         "business_ethics": [None, None, 0.8, 0.4, 0.4],
