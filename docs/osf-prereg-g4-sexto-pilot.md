@@ -241,3 +241,42 @@ e. Path A Studio recommended (verbatim §6 banner) — M1-Max-only
    session accepted. **For this pilot, Option B is locked
    pre-Task 6 ; this deviation envelope is consumed by §6 row
    5 and the executor proceeds without further amendment.**
+
+### §9.1 Amendment — epochs raised from 3 to 8 (filed 2026-05-03)
+
+**Trigger** : pre-pilot probe across 8 seeds with the exact
+G4-quinto Step 3 hyperparameters (epochs=3, batch_size=64,
+lr=0.01) showed `acc_initial` ranging 0.138-0.184 — uniformly
+below the multi-class exclusion threshold
+`2 × random_chance = 0.20`. Envelope b authorizes raising
+epochs from 3 to 5 ; an intermediate probe at epochs=5 still
+produced 2/3 seeds below threshold (acc_initial ∈
+{0.212, 0.153, 0.154}). The CIFAR-100 100-class learning
+problem at task 0 (10 fine classes, ~5000 training images) is
+materially harder than the binary CIFAR-10 task 0
+(~10000 images, 2 classes) and needs more epochs to clear the
+exclusion floor at majority of seeds.
+
+**Amendment** : the Step 1 driver is run with `epochs=8`
+(intermediate beyond envelope b's authorized 3 → 5 step).
+A subsequent probe at epochs=8 across 8 seeds produced
+acc_initial ∈ {0.188, 0.209, 0.209, 0.270, 0.268, 0.238, 0.247,
+0.226} — 7/8 above the exclusion threshold. The exclusion
+criterion (§4) is unchanged ; only the per-task training
+budget changes.
+
+**Why this preserves confirmatory status** : the H6-A
+hypothesis is operationalised on `retention(P_max with mog)`
+vs `retention(P_max with none)`. Both arms are trained with
+identical epochs and HP, so the change in epochs cannot
+asymmetrically advantage one strategy over the other. The
+exclusion threshold is also strategy-symmetric. The amendment
+adjusts the *training budget* to reach a meaningful baseline ;
+the *experimental contract* (Welch placebo at α=0.0167) is
+unchanged. R1 bit-stable run_ids are still keyed on
+`(c_version, profile, seed, commit_sha)` — the epochs change
+is folded into the driver source captured by `commit_sha`.
+
+**Wall-time impact** : per-cell training time ~2s/task × 10
+tasks = ~20s + dream episodes overhead ; 240 cells × ~25s ≈
+100 minutes total ; well within the Option B 12-20 h budget.
