@@ -54,6 +54,63 @@ Reproductibilité : exécuter
 sérialisation déterministe) sous la grille de seeds
 fixée.
 
+## 7.1.1 Pilote G4 (première évidence empirique — 2026-05-03)
+
+Le pilote G4 est le premier résultat **non synthétique** de la
+§7. Le balayage est `4 bras × 5 graines = 20 cellules` sur
+l'apprentissage continu Split-FMNIST 5 tâches, substrat MLX
+(`kiki_oniric.substrates.mlx_kiki_oniric`), pilote
+`experiments/g4_split_fmnist/run_g4.py`. Pré-enregistrement :
+[`docs/osf-prereg-g4-pilot.md`](../../osf-prereg-g4-pilot.md).
+Dépôt du jalon :
+[`docs/milestones/g4-pilot-2026-05-03.{json,md}`](../../milestones/g4-pilot-2026-05-03.md).
+
+Trois hypothèses pré-enregistrées :
+
+- **H1** : Hedges' g observé de `(rétention[P_equ] vs
+  rétention[baseline])` ≥ borne inférieure de l'IC 95 % Hu 2020
+  (0,21). Observé `g_h1 = 0.0000` ; dans l'IC 95 % Hu 2020 :
+  `False` ; p Welch unilatérale
+  (α/3 = 0,0167) `0.5000` → reject_h0 = `False`.
+
+- **H3** : |Hedges' g| observé de `(rétention[P_min] vs
+  rétention[baseline])` ≥ borne inférieure de l'IC 95 %
+  Javadi 2024 (0,13), signe décrément (g ≤ -0,13). Observé
+  `g_h3 = 0.0000` ; rejet côté décrément = `False`.
+
+- **H_DR4** : ordre monotone `rétention moyenne[P_max] ≥
+  rétention moyenne[P_equ] ≥ rétention moyenne[P_min]`
+  (Jonckheere-Terpstra). Monotonie observée = `True` (moyennes
+  égales à 0,5988 sur les trois profils) ; p unilatérale =
+  `0.5000` → reject_h0 = `False`.
+
+Le wrapper `dream_episode()` dispatche le jeu d'opérations de
+chaque profil via `profile.runtime.execute(...)` pour la
+traçabilité DR-0 ; dans ce pilote minimal il **ne mute pas** les
+poids du classifieur, ce qui explique que les quatre bras
+produisent une rétention identique par graine. Le pilote établit
+donc le plancher empirique : effet nul sous un wrapper de pure
+journalisation DR-0, avec p Welch = 0,5 pour tous les tests
+appariés. Un couplage mutant les poids (par ex. delta LoRA
+piloté par les rêves ou buffer de replay alimentant
+l'optimiseur) constitue le premier suivi.
+
+À N = 5 / bras, ce pilote est **exploratoire** pour les
+magnitudes absolues de g (g minimal détectable à 80 % de
+puissance ≈ 1,4). Franchir ou rester sous la borne inférieure
+de l'IC Hu / Javadi dans ce pilote est traité, conformément au
+pré-enregistrement §4, comme un **signal d'ordonnancement**
+pour un suivi confirmatoire N ≥ 30, et non comme une
+confirmation / falsification empirique finale.
+
+Traçabilité R1 : chaque cellule porte un `run_id` déterministe
+de 32 chiffres hex enregistré dans
+`harness/storage/run_registry.RunRegistry`. Ré-exécuter
+`experiments/g4_split_fmnist/run_g4.py` sur le même tuple
+`(c_version, profile, seed, commit_sha)` est stable au bit près
+sur Apple Silicon M3 Ultra (vérifié 2026-05-03, identifiants
+identiques sur deux balayages consécutifs).
+
 ## 7.2 Table comparative inter-substrats H1-H4 (substitution synthétique — pas de revendication empirique)
 
 **Table 7.2 — MLX vs E-SNN hypothèses à Bonferroni

@@ -49,6 +49,60 @@ Reproducibility : running
 stable) and identical Markdown (modulo deterministic
 serialization) under the fixed seed grid.
 
+## 7.1.1 G4 pilot (first empirical evidence — 2026-05-03)
+
+The G4 pilot is the first **non-synthetic** result in §7. The
+sweep is `4 arms × 5 seeds = 20 cells` on Split-FMNIST 5-task
+class-incremental learning, MLX substrate
+(`kiki_oniric.substrates.mlx_kiki_oniric`), driver
+`experiments/g4_split_fmnist/run_g4.py`. Pre-registration :
+[`docs/osf-prereg-g4-pilot.md`](../../osf-prereg-g4-pilot.md).
+Milestone dump :
+[`docs/milestones/g4-pilot-2026-05-03.{json,md}`](../../milestones/g4-pilot-2026-05-03.md).
+
+Three pre-registered hypotheses :
+
+- **H1** : observed Hedges' g of `(retention[P_equ] vs
+  retention[baseline])` ≥ Hu 2020 lower CI 0.21.
+  Observed `g_h1 = 0.0000` ; within Hu 2020 95 % CI :
+  `False` ; Welch one-sided p
+  (α/3 = 0.0167) `0.5000` → reject_h0 = `False`.
+
+- **H3** : observed |Hedges' g| of `(retention[P_min] vs
+  retention[baseline])` ≥ Javadi 2024 lower CI 0.13, sign
+  decrement (g ≤ -0.13). Observed `g_h3 = 0.0000` ;
+  decrement-side rejection = `False`.
+
+- **H_DR4** : monotonic ordering `mean retention[P_max] ≥
+  mean retention[P_equ] ≥ mean retention[P_min]` (Jonckheere-
+  Terpstra). Observed monotonic = `True` (means equal at
+  0.5988 across the three profiles) ; one-sided p = `0.5000`
+  → reject_h0 = `False`.
+
+The wrapper `dream_episode()` dispatches each profile's
+operation set through `profile.runtime.execute(...)` for DR-0
+accountability ; in this minimal pilot it does **not** mutate
+the classifier weights, which is why the four arms produce
+identical retention per seed. The pilot therefore establishes
+the empirical floor : zero-effect under a pure-DR-0-logging
+wrapper, with Welch p = 0.5 for all paired tests. A weight-
+mutating coupling (e.g. dream-driven LoRA delta or replay
+buffer feeding the optimizer) is the first follow-up.
+
+Per N = 5 / arm, this pilot is **exploratory** for absolute g
+magnitudes (minimum detectable g at 80 % power ≈ 1.4). Crossing
+or undershooting the Hu / Javadi lower CI in this pilot is treated
+per pre-reg §4 as a **scheduling signal** for a confirmatory
+N ≥ 30 follow-up, not as final empirical confirmation /
+falsification.
+
+R1 traceability : every cell carries a deterministic 32-hex
+`run_id` registered in `harness/storage/run_registry.RunRegistry`.
+Re-running `experiments/g4_split_fmnist/run_g4.py` against the
+same `(c_version, profile, seed, commit_sha)` tuple is
+bit-stable on Apple Silicon M3 Ultra (verified 2026-05-03,
+ids identical across two consecutive sweeps).
+
 ## 7.2 Cross-substrate H1-H4 comparative table (synthetic substitute — not empirical claim)
 
 **Table 7.2 — MLX vs E-SNN hypotheses at Bonferroni α = 0.0125
