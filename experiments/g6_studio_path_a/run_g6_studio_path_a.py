@@ -607,6 +607,19 @@ def main(argv: Optional[list[str]] = None) -> int:
     )
     args = parser.parse_args(argv)
 
+    # Metal cache configuration : prevent OOM at 35B bf16 + LoRA on
+    # Studio M3 Ultra (512 GB unified memory). Cache limit at 3x
+    # model footprint (~210 GB) lets MLX retain allocations across
+    # CL stream subdomains without thrashing ; memory limit at
+    # 400 GB leaves 100+ GB headroom for OS / other processes.
+    if not args.smoke:
+        try:
+            import mlx.core as mx
+            mx.metal.set_memory_limit(400 * 1024**3)
+            mx.metal.set_cache_limit(210 * 1024**3)
+        except (ImportError, AttributeError):
+            pass
+
     hp = TrainHyperparams(
         lr=args.lr,
         iters=args.iters,

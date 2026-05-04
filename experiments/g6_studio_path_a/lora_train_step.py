@@ -77,7 +77,7 @@ def train_subdomain_lora(
         keys are silently dropped — the caller decides whether the
         live-delta dict is allowed to be empty.
     """
-    from mlx_lm.tuner.lora import train as lora_train
+    from mlx_lm.tuner.trainer import train as lora_train
 
     args = {
         "learning_rate": hyperparams.lr,
