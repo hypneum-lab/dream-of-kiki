@@ -263,12 +263,18 @@ def _run_cell_real(
                 subdomain=split.subject,
             )
         else:
+            # Apply LoRA layers only on the FIRST subdomain of a
+            # ``fresh_init`` cell. Subsequent subdomains inherit the
+            # already-wrapped layers ; re-wrapping would double-stack
+            # LoRA modules and break the live-delta key contract.
+            apply_lora = wrapper.fresh_init and idx == 0
             post = train_subdomain_lora(
                 model=wrapper.model,
                 tokenizer=wrapper.tokenizer,
                 train_records=split.train,
                 hyperparams=hp,
                 adapter_keys=adapter_keys,
+                apply_lora_layers=apply_lora,
             )
 
         # Promote post-step delta into the live_delta dict that the
