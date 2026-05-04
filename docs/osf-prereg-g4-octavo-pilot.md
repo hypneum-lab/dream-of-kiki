@@ -170,3 +170,41 @@ in Paper 2 §7.1.12 acknowledging the deviation and its impact on
 confirmatory status.
 
 ### §9.1 — TBD on first run if surprises surface
+
+### §9.2 — Pilot ABANDONED (filed 2026-05-04)
+
+**Trigger** : Path D launched on Studio at 09:48 (PID 54775).
+Per-cell wall observed at ~4.5 min/cell during the first 25 min
+(5 cells), well above the §9 envelope c threshold (90 s sustained
+→ extrapolated total > 6 h → escalate). Extrapolated total run
+time at this rate : ~18 h, vs the §"Compute" budget of ~4-6 h.
+Root cause : `mlx.nn.MultiHeadAttention` on Studio M3 Ultra has
+no flash-attn / mixed-precision optimised path at the `(seq=257,
+heads=3, dim=64)` working point ; the attention forward+backward
+dominates per-iter cost.
+
+**Decision** : pilot ABANDONED before any milestone artefact was
+committed. Process killed at 10:30 (5/240 cells written ; the
+partial JSON in flight was never committed to git). Studio
+compute reallocated to G6-Studio Path A (PID 60194 → 61031 →
+63102 → 66815 → final 66815 commit `d963b24`) per user
+go-instruction.
+
+**Consequences for the empirical program** :
+- The H7-A / H7-B hypotheses about transformer architectural
+  break-through are **not resolved by this pilot**. The 5
+  collected cells are insufficient (N too small for any test) and
+  not committed. The G4-{quater..septimo} CNN/MLP H6-C
+  universality scope ceiling stands unaffected.
+- Future re-launches under this pre-reg require an §9.3
+  amendment with either : (a) optimised MLX attention path, or
+  (b) reduced compute (N=20 instead of N=30, or 4-bit quantised
+  ViT), or (c) Studio side-by-side launch with a faster substrate.
+- The pre-reg remains valid for any future re-attempt ; it is not
+  invalidated, just consumed-but-not-resolved by this Path D
+  attempt.
+
+This §9.2 amendment closes the abandoned-pilot loop. The
+pre-reg's §"Lock commit" line refers to the original lock
+(`698af7d`) ; this amendment is filed at a later commit and does
+NOT alter the original timestamp.

@@ -69,3 +69,56 @@ Any deviation outside the envelopes requires an amendment commit *before* the af
 ### §9.1 — TBD on first run if surprises surface
 
 Reserved per the pattern.
+
+### §9.2 — Partial-dump filename collision across Path A / A* / D (filed 2026-05-04)
+
+**Trigger** : the driver's `PARTIAL_TEMPLATE` constant in
+`experiments/g6_studio_path_a/run_g6_studio_path_a.py` is
+hardcoded :
+
+    PARTIAL_TEMPLATE = (
+        "g6-studio-path-a-partial-{subdomain}-{arm}-seed{seed}-"
+        "step{idx:02d}-{DATE_TAG}.json"
+    )
+
+It does NOT include a per-pilot label. Path A* (this pilot) and
+Path D (Helium-2B on M1 Max, parallel run) write per-subdomain
+partial dumps to the same filename namespace as Path A and Path
+C, all under `g6-studio-path-a-partial-...-2026-05-04.json`.
+Same date + same template → the partials of the latest-running
+pilot **silently overwrite** earlier pilots' partials on disk.
+
+**Impact assessment** :
+- Final milestone JSONs use distinct names per pilot
+  (`g6-studio-path-a-2026-05-04.json` vs
+  `g6-studio-path-a-star-2026-05-04.json` vs
+  `g6-m1max-path-d-mmlu-2026-05-04.json` etc.) and ARE distinct on
+  disk + in git. The full data record for each pilot is preserved
+  in its committed final JSON.
+- Per-subdomain partial dumps are NOT committed to git (gitignored
+  per plan §"File structure"). Their role is **purely operational**
+  (resumability under watchdog kill within a single pilot's run).
+  Their overwriting across pilots does NOT impair scientific
+  reproducibility — every cell measurement is recorded in the
+  final milestone JSON.
+- If a pilot is killed mid-run AND a sibling pilot is started
+  concurrently with overlapping partial namespace, resume logic
+  could read the wrong pilot's partials. **This did not happen in
+  this run** (Path A's process was already finished and committed
+  before Path A* started ; Path D started after Path A's termination
+  too).
+
+**Documentation** : this collision is **noted but not corrected**
+in this pre-reg amendment. The fix is scheduled for any future
+G6 family pilot that runs concurrently with another, via either :
+(a) parameterising `PARTIAL_TEMPLATE` to embed a pilot label
+(`g6-studio-path-a-star-partial-...`), or (b) relocating partial
+dumps to a per-pilot subdirectory (`docs/milestones/<pilot>/`).
+The existing pre-reg §6 outcome rules and milestone-provenance
+clauses are unaffected.
+
+**Honest reporting clause for Paper 2 §7.1.13** : reviewers
+should be informed that per-subdomain partial dumps shared a
+filename namespace across the G6 family ; final JSONs and paper
+verdicts are derived only from the committed per-pilot final
+milestone files, not from the operational partial dumps.
