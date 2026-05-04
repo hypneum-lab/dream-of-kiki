@@ -122,3 +122,56 @@ should be informed that per-subdomain partial dumps shared a
 filename namespace across the G6 family ; final JSONs and paper
 verdicts are derived only from the committed per-pilot final
 milestone files, not from the operational partial dumps.
+
+### §9.3 — Path A* ABANDONED at user request (filed 2026-05-04)
+
+**Trigger** : at 17:25 (~3 h 52 min into the run, ~30/100
+partial dumps written, ETA ~7 h remaining), the user explicitly
+requested termination of all dreamOfkiki compute on Studio and
+M1 Max in order to reallocate hardware to other projects.
+PID 80542 (parent `uv`) and PID 80543 (child python) were sent
+SIGTERM and confirmed dead.
+
+**State at termination** :
+- ~30 (arm, seed, subdomain) measurements completed
+  out of 100 planned (5 seeds × 4 arms × 5 subdomains)
+- Final milestone JSON
+  `docs/milestones/g6-studio-path-a-star-2026-05-04.{json,md}`
+  was NOT written (driver writes only at end of full sweep)
+- Per-subdomain partial dumps survive on Studio at
+  `/Users/clems/Projets/dream-of-kiki/docs/milestones/g6-studio-
+  path-a-partial-...-2026-05-04.json` (gitignored, not
+  committed) — these can in principle be aggregated post-hoc
+  into a partial verdict, but **this pre-reg amendment elects
+  NOT to do so** : the H9-{A,B,C} decision rules locked in §2
+  require the full N=5 × 4 arm × 5 subdomain sweep to compute
+  the Welch tests at full power, and a partial-N verdict would
+  conflate "INSUFFICIENT" with "ABANDONED".
+
+**Decision** : pilot ABANDONED, no milestone artefact committed.
+The H9-{A,B,C} hypotheses are NOT resolved by this pilot. The
+Path A* verdict is recorded as **ABANDONED** in Paper 2 §7.1.13
+and CHANGELOG.
+
+**Consequences for the convergent-validation matrix** :
+- The {Qwen-35B, real MMLU} cell remains EMPTY
+  (no verdict, neither H9-A nor H9-B nor H9-C nor INSUFFICIENT).
+- Path C ({Qwen-35B, symbolic CL}) was scaffolded but NEVER
+  launched — also empty.
+- The convergent-validation matrix at programme close has only
+  2 of 4 cells filled :
+    - Helium-2B + MMLU = H9-B (null)
+    - Helium-2B + symbolic CL = INSUFFICIENT
+  The H10-D / H11-D conjunctions cannot fire ; the framework C
+  real-LLM tier verdict is provisionally read as : *no positive
+  empirical claim has fired across any pre-registered scope
+  ceiling tested ; the Helium-tier null is the only confirmed-
+  cell finding ; Qwen-tier paths are deferred indefinitely.*
+- The pre-reg remains valid for any future re-attempt ; it is
+  not invalidated, just consumed-but-not-resolved by this
+  Path A* attempt.
+
+This §9.3 amendment closes the abandoned-pilot loop. The
+pre-reg's §"Lock commit" line refers to the original lock
+(`fd8bf52`) ; this amendment is filed at a later commit and
+does NOT alter the original timestamp.

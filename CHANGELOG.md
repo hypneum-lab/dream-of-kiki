@@ -12,6 +12,36 @@ see `docs/specs/2026-04-17-dreamofkiki-framework-C-design.md` §12).
 
 ## [Unreleased]
 
+### Operational (G6 family compute closeout, 2026-05-04 17:30)
+
+- User-requested termination of all dreamOfkiki compute on
+  Studio and M1 Max to reallocate hardware to other projects.
+- Path A* (Studio Qwen-35B + real MMLU) ABANDONED at ~30/100
+  partial dumps written, no final milestone JSON. PID 80542 +
+  child PID 80543 sent SIGTERM and confirmed dead. Per-subdomain
+  partial dumps survive on Studio (gitignored). The H9-{A,B,C}
+  decision rules cannot be evaluated from a partial-N sweep ;
+  ABANDONED is the honest verdict, NOT INSUFFICIENT.
+  Documented in `docs/osf-prereg-g6-studio-path-a-star.md` §9.3.
+- Path C (Studio Qwen-35B + symbolic CL) NEVER LAUNCHED.
+  Pre-reg `docs/osf-prereg-g6-studio-path-c.md` remains valid
+  for future re-attempts ; the H10-{A,B,C} decision rules are
+  not resolved.
+- Convergent-validation matrix CLOSED with 2 of 4 cells filled :
+  (Helium-2B + MMLU = H9-B null) and (Helium-2B + symbolic CL
+  = INSUFFICIENT). H10-D / H11-D conjunctions UNRESOLVED.
+  Qwen-tier real-LLM verdicts deferred indefinitely.
+- **Programme-level provisional read** : NO positive empirical
+  claim of the framework C 4-channel coupling has fired across
+  any pre-registered scope ceiling tested. The Helium-2B + MMLU
+  null verdict is the only confirmed real-LLM-tier finding ;
+  the CNN/MLP escalation ladder (G4-{quater..septimo} H6-C
+  universality confirmed) and the Helium real-LLM null are
+  concordant. The framework's RECOMBINE prediction remains
+  empirically vacuous at every scope ceiling that completed
+  successfully.
+- EC stays PARTIAL ; FC stays C-v0.12.0+PARTIAL. No promotion.
+
 ### Empirical (G6-M1Max Path D Helium-2B cross-family, 2026-05-04)
 
 - G6-M1Max Path D pilot completed both steps on M1 Max with
