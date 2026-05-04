@@ -70,22 +70,20 @@ class _MMLURecordDataset:
     """
 
     def __init__(self, data: Sequence[Any], tokenizer: Any) -> None:
-        self._data = list(data)
+        # Pre-format records to text strings so CacheDataset.itemlen
+        # (which calls ``len(self._data[idx])`` for length-bucket
+        # sorting) returns string length rather than crashing on a
+        # dataclass record. Tokenization happens lazily in ``process``.
         self._tokenizer = tokenizer
+        self._texts: list[str] = [self._record_to_text(r) for r in data]
 
-    def __len__(self) -> int:
-        return len(self._data)
-
-    def __getitem__(self, idx: int) -> Any:
-        return self._data[idx]
-
-    def process(self, record: Any) -> tuple[list[int], int]:
-        """Tokenise one record and return ``(tokens, mask_offset=0)``."""
+    @staticmethod
+    def _record_to_text(record: Any) -> str:
         if isinstance(record, dict) and "text" in record:
-            text = str(record["text"])
-        elif hasattr(record, "question") and hasattr(record, "choices"):
+            return str(record["text"])
+        if hasattr(record, "question") and hasattr(record, "choices"):
             letter = "ABCD"[int(record.answer)]
-            text = (
+            return (
                 f"Question: {record.question}\n"
                 f"A. {record.choices[0]}\n"
                 f"B. {record.choices[1]}\n"
@@ -93,8 +91,16 @@ class _MMLURecordDataset:
                 f"D. {record.choices[3]}\n"
                 f"Answer: {letter}"
             )
-        else:
-            text = str(record)
+        return str(record)
+
+    def __len__(self) -> int:
+        return len(self._texts)
+
+    def __getitem__(self, idx: int) -> str:
+        return self._texts[idx]
+
+    def process(self, text: str) -> tuple[list[int], int]:
+        """Tokenise one pre-formatted text string ; returns ``(tokens, 0)``."""
         tokens = self._tokenizer.encode(text)
         eos = getattr(self._tokenizer, "eos_token_id", None)
         if eos is not None and (not tokens or tokens[-1] != eos):
