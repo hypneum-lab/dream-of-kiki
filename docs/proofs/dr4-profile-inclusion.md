@@ -266,3 +266,75 @@ Provenance :
 - Step 1 milestone : `docs/milestones/g4-sexto-step1-2026-05-03.{json,md}`
 - Aggregate verdict : `docs/milestones/g4-sexto-aggregate-2026-05-03.{json,md}`
 - Paper 2 §7.1.8 : `docs/papers/paper2/results.md` + `docs/papers/paper2-fr/results.md`
+
+## Empirical-evidence amendment — G4-septimo Tiny-IN H6-C closure (2026-05-04)
+
+**v0.6 (2026-05-04 G4-septimo addendum)** — closes the H6-C
+universality conjunction at its full pre-registered scope.
+The four-benchmark × four-substrate empirical-emptiness flag
+fires.
+
+The structural inclusions and Lemma DR-4.L proof remain
+unchanged.
+
+What G4-septimo positively establishes is that the DR-4
+prediction "richer profile retains more on capacity-monotone
+metrics" is **empirically vacuous** for the RECOMBINE channel
+at the Tiny-ImageNet 200-class / 64×64 RGB scale on a medium
+CNN substrate :
+
+- Split-Tiny-ImageNet × G4MediumCNN (G4-septimo H6-B, N = 30) :
+  Welch p = 0.9247, Hedges' g = -0.0246,
+  mean P_max(mog) = 0.3864 vs mean P_max(none) = 0.3891.
+
+H6-C universality conjunction `H6-A_confirmed AND
+H6-B_confirmed` resolves to **CONFIRMED** : the
+RECOMBINE-empty universality flag now spans the full
+pre-registered scope :
+
+- {Split-FMNIST, Split-CIFAR-10, Split-CIFAR-100,
+  Split-Tiny-ImageNet} ×
+- {3-layer MLX MLP (G4-quater H4-C, N=95), 5-layer MLX MLP
+  (G4-quinto Step 1 Jonckheere monotonic), small CNN
+  (G4-quinto H5-C N=30 + G4-sexto H6-A N=30 + N=95 Studio
+  confirmatory), medium CNN (G4-septimo H6-B N=30)}
+
+The DR-4 prediction is empirically refuted across the entire
+escalation ladder. The "richer ops yield richer consolidation"
+claim is shown to be empirically vacuous specifically for the
+RECOMBINE channel at the small-and-medium-CNN classification
+tier, ≤ 200 classes per benchmark.
+
+Caveats unchanged from G4-sexto :
+- Transformer substrates not yet tested
+- Hierarchical E-SNN substrates not yet tested
+- ImageNet-1k scale not yet tested
+- Real-LLM substrates not yet tested (G6-Studio Path A plan
+  pending)
+
+Open empirical questions outside the closed pre-reg scope :
+the G6-Studio Path A pilot
+(`docs/superpowers/plans/2026-05-04-g6-studio-path-a-real-lora.md`)
+addresses the real-LLM tier by porting REPLAY+DOWNSCALE+
+RESTRUCTURE+RECOMBINE to the SpikingKiki-V4 35B-A3B-V4
+substrate under an MMLU CL stream. That pilot's verdict will
+extend or bound the empirical-emptiness scope at the
+real-LLM-scale tier.
+
+This amendment does **not** weaken the inclusion proof itself
+nor invalidate Lemma DR-4.L. It scopes the empirical
+prediction at its tightest pre-registered ceiling : the
+channel inclusion is formally true across all profiles, but
+the empirically observed *gain* from the richer channels is
+within statistical noise on **all four benchmarks of the
+escalation ladder**. STABLE promotion of the framework-C
+"richer ops yield richer consolidation" claim cannot occur
+at this scope ceiling, and the empirical scope of any future
+promotion would have to explicitly exclude the four-benchmark
+× four-substrate cells of the closed escalation ladder.
+
+Provenance :
+- Pre-registration : `docs/osf-prereg-g4-septimo-pilot.md`
+- Step 1 milestone : `docs/milestones/g4-septimo-step1-2026-05-04.{json,md}`
+- Aggregate verdict : `docs/milestones/g4-septimo-aggregate-2026-05-04.{json,md}`
+- Paper 2 §7.1.11 : `docs/papers/paper2/results.md` + `docs/papers/paper2-fr/results.md`

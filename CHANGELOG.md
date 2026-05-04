@@ -12,6 +12,42 @@ see `docs/specs/2026-04-17-dreamofkiki-framework-C-design.md` §12).
 
 ## [Unreleased]
 
+### Empirical (G4-septimo Tiny-IN H6-C UNIVERSALITY CONFIRMED, 2026-05-04)
+
+- G4-septimo Step 1 N=30 pilot completed on Mac Studio M3 Ultra
+  (240 cells, ~3 h 11 min wall, 54-58 s/cell sustained — under
+  but near the §9 envelope c 60 s threshold). Pre-reg
+  `docs/osf-prereg-g4-septimo-pilot.md` locked at commit `6b8d138`
+  BEFORE any G4-septimo code was written ; aggregator
+  `experiments/g4_septimo_test/aggregator.py`.
+- **H6-B confirmed** : Welch two-sided between (P_max with mog)
+  and (P_max with none) on Split-Tiny-ImageNet (n_classes=20/task,
+  10 tasks, 64×64 RGB, G4MediumCNN), `t = -0.0950`, `p = 0.9247`,
+  `Hedges' g = -0.0246`, `mean_mog = 0.3864`, `mean_none = 0.3891`,
+  α = 0.05 (single new test, no Bonferroni inheritance per
+  pre-reg §2). Fail-to-reject H0 → H6-B confirmed. RECOMBINE
+  adds nothing measurable beyond REPLAY+DOWNSCALE on medium-CNN
+  at Tiny-ImageNet 200-class scale.
+- **H6-C UNIVERSALITY CONFIRMED** : conjunction
+  `H6-A_confirmed AND H6-B_confirmed` resolves to confirmed.
+  The RECOMBINE-empty universality flag now spans the full
+  pre-registered scope `{Split-FMNIST, Split-CIFAR-10,
+  Split-CIFAR-100, Split-Tiny-ImageNet} × {3-layer MLP, 5-layer
+  MLP, small CNN, medium CNN}`. The DR-4 prediction "richer
+  ops yield richer consolidation" is empirically refuted across
+  the entire escalation ladder.
+- **DR-4 evidence amended** : `docs/proofs/dr4-profile-inclusion.md`
+  v0.6 G4-septimo addendum closes the H6-C conjunction at its
+  full pre-reg scope. Lemma DR-4.L formal proof unchanged.
+  STABLE promotion of "richer ops yield richer consolidation"
+  cannot occur at this scope ceiling ; transformer / hierarchical-
+  E-SNN / ImageNet-1k / real-LLM substrates remain open.
+- EC stays PARTIAL ; FC stays C-v0.12.0+PARTIAL.
+- Milestones :
+  `docs/milestones/g4-septimo-step1-2026-05-04.{json,md}` +
+  `docs/milestones/g4-septimo-aggregate-2026-05-04.{json,md}`.
+  Paper 2 §7.1.11 EN+FR appended.
+
 ### Empirical (G4-sexto Step 1 CIFAR-100 100-class, 2026-05-04)
 
 - G4-sexto Step 1 N=30 Option B pilot completed on M1 Max (240

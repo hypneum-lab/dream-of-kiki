@@ -870,6 +870,123 @@ pour resserrer la lecture H8-C (le plancher de détection
 Option B aurait déjà fait apparaître un effet `g ≥ 1,27` à
 l'α choisi). EC reste PARTIAL ; pas de bump FC.
 
+## 7.1.11 Pilote G4-septimo — universalité H6-C de la vacuité RECOMBINE CONFIRMÉE sur 4 benchmarks × 4 substrats (2026-05-04)
+
+Suite à la confirmation G4-sexto §7.1.8 de H6-A (CIFAR-100
+100-classes, RECOMBINE-vide) et au statut reporté de H6-B
+(Tiny-ImageNet 200-classes, verrouillé sous l'option B de
+G4-sexto), le plan G4-septimo exécute l'étape 2 reportée
+comme un pilote autonome sur Mac Studio M3 Ultra pour clore
+la conjonction d'universalité H6-C sur l'échelle d'escalade
+pré-enregistrée à quatre benchmarks.
+
+Le pré-enregistrement
+[`docs/osf-prereg-g4-septimo-pilot.md`](../../osf-prereg-g4-septimo-pilot.md)
+verrouillé le 2026-05-04 au commit `6b8d138` AVANT toute
+écriture de code G4-septimo ; calcul Path A Studio,
+N = 30 graines × 4 bras × 2 stratégies = 240 cellules.
+
+### Verdict
+
+- **H6-B (Tiny-ImageNet, 200-classes / 64×64 RGB,
+  G4MediumCNN)** : Welch bilatéral entre (P_max avec mog) et
+  (P_max avec none), α = 0,05 (un seul nouveau test, pas
+  d'héritage de Bonferroni par §2 du pré-enregistrement).
+  Résultat : `t = -0,0950`, `p = 0,9247`,
+  `g de Hedges = -0,0246`, `mean_mog = 0,3864`,
+  `mean_none = 0,3891`. **Échec à rejeter H0 → H6-B
+  confirmé**. RECOMBINE n'apporte rien de mesurable au-delà
+  de REPLAY+DOWNSCALE sur le substrat medium CNN à l'échelle
+  Tiny-ImageNet 200 classes.
+- **H6-C (universalité de la vacuité RECOMBINE sur 4
+  benchmarks × 4 substrats)** : conjonction
+  `H6-A_confirmé ET H6-B_confirmé` se résout à **CONFIRMÉE**.
+  L'universalité G4-quinto H5-C (FMNIST + CIFAR-10), étendue
+  via G4-sexto H6-A (CIFAR-100), est désormais entièrement
+  close à l'extrémité Tiny-ImageNet de l'échelle d'escalade.
+
+### Ce que H6-C confirmé établit positivement
+
+Le canal RECOMBINE n'apporte rien de mesurable au-delà de
+REPLAY+DOWNSCALE sur la portée pré-enregistrée :
+
+| Benchmark | Substrat | Welch p | g de Hedges | Source |
+|-----------|----------|---------|-------------|--------|
+| Split-FMNIST (10-classes) | MLP MLX 3 couches | 0,989 | 0,002 | G4-quater H4-C, N=95 |
+| Split-FMNIST (10-classes) | MLP MLX 5 couches | 0,4646 | — | G4-quinto étape 1 (Jonckheere monotone non significatif) |
+| Split-CIFAR-10 (binaire) | small CNN | 0,9918 | -0,0026 | G4-quinto H5-C, N=30 |
+| Split-CIFAR-100 (10-classes/tâche) | small CNN | 0,8450 | 0,057 | G4-sexto H6-A, N=30 |
+| Split-CIFAR-100 (10-classes/tâche) | small CNN | 0,3457 | 0,153 | G4-sexto N=95 confirmatoire (Studio) |
+| Split-Tiny-ImageNet (20-classes/tâche) | medium CNN | **0,9247** | **-0,0246** | G4-septimo H6-B, N=30 |
+
+L'indicateur d'universalité complète est validé sur
+{Split-FMNIST, Split-CIFAR-10, Split-CIFAR-100,
+Split-Tiny-ImageNet} × {MLP 3 couches, MLP 5 couches,
+small CNN, medium CNN}.
+
+### Lecture honnête
+
+- **La réfutation partielle de DR-4 atteint son plafond de
+  portée pré-enregistré.** De G4-ter §7.1.5 (substrat positif
+  unique) → G4-quater §7.1.6 (RECOMBINE-vide à un benchmark)
+  → G4-quinto §7.1.7 (deux benchmarks) → G4-sexto §7.1.8
+  (trois benchmarks, 100 classes) → G4-septimo §7.1.11
+  (quatre benchmarks, 200 classes / 64×64 RGB). La revendication
+  du framework « ops plus riches → consolidation plus riche »
+  est empiriquement réfutée sur la totalité de l'échelle
+  d'escalade pré-enregistrée.
+- **Portée.** Il s'agit d'un verdict de vacuité empirique
+  small-CNN-et-medium-CNN sur des benchmarks de classification
+  à ≤ 200 classes. Il ne dit PAS encore que RECOMBINE est vide
+  sur transformeurs, sur substrats E-SNN hiérarchiques, sur
+  ImageNet-1k ou sur substrats real-LLM. Ces suivis restent
+  ouverts (le plan G6-Studio Path A dans
+  `docs/superpowers/plans/2026-05-04-g6-studio-path-a-real-lora.md`
+  adresse le palier real-LLM).
+- **Ce que le verdict ne dit pas.** L'échec à rejeter Welch
+  exige toujours une lecture prudente : « pas de différence
+  mesurable à ce N » n'est pas « RECOMBINE est prouvée vide
+  universellement ». Le cadrage de la clause de lecture
+  honnête §7 du pré-enregistrement est conservé verbatim :
+  *« Welch fail-to-reject = absence de preuve à ce N pour une
+  différence entre mog et none — sous H6-B spécifiquement,
+  c'est **bien** la prédiction empirique positive selon
+  laquelle RECOMBINE n'apporte rien de mesurable au-delà de
+  REPLAY+DOWNSCALE sur le substrat medium CNN à l'échelle
+  Tiny-ImageNet 200-classes / 64×64 RGB. »*
+- **Signe de la taille d'effet.** g_h6b = -0,0246 (légèrement
+  en faveur de *none* sur *mog*) est cohérent avec le motif
+  plus large d'effet quasi-nul symétrique en stratégie sur les
+  quatre benchmarks ; les inversions de signe à l'intérieur de
+  la fourchette « négligeable » de Cohen (< 0,1) ne portent
+  pas d'interprétation.
+
+### Impact DualVer
+
+EC reste PARTIAL (par §6 ligne 1 du pré-enregistrement : la
+confirmation H6-B étend mais ne promeut pas vers STABLE
+seule). FC reste à C-v0.12.0. Sous H6-C confirmé, le fichier
+de preuve DR-4 (`docs/proofs/dr4-profile-inclusion.md`) v0.6
+amende l'addendum v0.5 G4-sexto avec l'indicateur
+d'universalité à quatre benchmarks. La promotion STABLE reste
+bloquée en attente des suivis ImageNet-1k, transformeur,
+E-SNN hiérarchique, et real-LLM — le plafond de portée de la
+vacuité empirique s'arrête maintenant à « classification
+small-et-medium-CNN à ≤ 200 classes ».
+
+### Provenance
+
+- Pré-enregistrement : [docs/osf-prereg-g4-septimo-pilot.md](../../osf-prereg-g4-septimo-pilot.md)
+- Jalon Étape 1 : `docs/milestones/g4-septimo-step1-2026-05-04.{json,md}`
+- Agrégat : `docs/milestones/g4-septimo-aggregate-2026-05-04.{json,md}`
+- Pilote : `experiments/g4_septimo_test/run_step1_tiny_imagenet.py`
+- Substrat : `experiments.g4_septimo_test.medium_cnn.G4MediumCNN`
+- Loader : `experiments.g4_septimo_test.tiny_imagenet_dataset.load_split_tiny_imagenet_10tasks_auto`
+- Agrégateur : `experiments/g4_septimo_test/aggregator.py`
+- 240 cellules, ~3 h 11 min de paroi sur Studio M3 Ultra
+  (54-58 s/cellule ; par §9 envelope c du pré-enregistrement,
+  juste sous le seuil de 60 s soutenu).
+
 ## 7.2 Table comparative inter-substrats H1-H4 (substitution synthétique — pas de revendication empirique)
 
 **Table 7.2 — MLX vs E-SNN hypothèses à Bonferroni

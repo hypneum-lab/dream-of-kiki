@@ -1,0 +1,41 @@
+{
+  "h6a_cifar100": {
+    "alpha_per_test": 0.016666666666666666,
+    "confirmed": true,
+    "fail_to_reject_h0": true,
+    "h6a_recombine_empty_confirmed": true,
+    "hedges_g_mog_vs_none": 0.056983484124934085,
+    "mean_p_max_mog": 0.36219385007335886,
+    "mean_p_max_none": 0.35801370875454774,
+    "n_p_max_mog": 23,
+    "n_p_max_none": 23,
+    "welch_p_two_sided": 0.8450374128979047,
+    "welch_t": 0.196610868493051
+  },
+  "h6b_tiny_imagenet": {
+    "alpha_per_test": 0.05,
+    "confirmed": true,
+    "fail_to_reject_h0": true,
+    "h6b_recombine_empty_confirmed": true,
+    "hedges_g_mog_vs_none": -0.024606136791876777,
+    "mean_p_max_mog": 0.3864498553007448,
+    "mean_p_max_none": 0.3891322361348867,
+    "n_p_max_mog": 29,
+    "n_p_max_none": 29,
+    "welch_p_two_sided": 0.9246738841769725,
+    "welch_t": -0.09497506891951987
+  },
+  "h6c_universality": {
+    "confirmed": true,
+    "falsified": false,
+    "partial": false
+  },
+  "summary": {
+    "h5c_to_h6c_universality_extension": true,
+    "h6a_confirmed_from_g4_sexto_aggregate": true,
+    "h6b_confirmed_from_g4_septimo": true,
+    "h6c_confirmed": true,
+    "h6c_falsified": false,
+    "h6c_partial": false
+  }
+}

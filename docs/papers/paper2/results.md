@@ -813,6 +813,117 @@ the H8-C reading (the Option B detection floor would already
 have surfaced any g ≥ 1.27 effect at the chosen α). EC stays
 PARTIAL ; no FC bump.
 
+## 7.1.11 G4-septimo pilot — RECOMBINE-empty H6-C universality CONFIRMED on 4 benchmarks × 4 substrates (2026-05-04)
+
+Following the G4-sexto §7.1.8 confirmation of H6-A (CIFAR-100
+100-class, RECOMBINE-empty) and the deferred status of H6-B
+(Tiny-ImageNet 200-class, locked under G4-sexto Option B),
+Plan G4-septimo executes the deferred Step 2 as a standalone
+pilot on Mac Studio M3 Ultra to close the H6-C universality
+conjunction across the full pre-registered four-benchmark
+escalation ladder.
+
+Pre-registration
+[`docs/osf-prereg-g4-septimo-pilot.md`](../../osf-prereg-g4-septimo-pilot.md)
+locked 2026-05-04 at commit `6b8d138` BEFORE any G4-septimo
+code was written ; Path A Studio compute, N = 30 seeds × 4
+arms × 2 strategies = 240 cells.
+
+### Verdict
+
+- **H6-B (Tiny-ImageNet, 200-class / 64×64 RGB,
+  G4MediumCNN)** : Welch two-sided between (P_max with mog)
+  and (P_max with none), α = 0.05 (single new test, no
+  Bonferroni inheritance per pre-reg §2). Result :
+  `t = -0.0950`, `p = 0.9247`, `Hedges' g = -0.0246`,
+  `mean_mog = 0.3864`, `mean_none = 0.3891`.
+  **Fail-to-reject H0 → H6-B confirmed**. RECOMBINE adds
+  nothing measurable beyond REPLAY+DOWNSCALE on the medium
+  CNN substrate at Tiny-ImageNet 200-class scale.
+- **H6-C (universality of RECOMBINE-empty across 4 benchmarks
+  × 4 substrates)** : conjunction `H6-A_confirmed AND
+  H6-B_confirmed` resolves to **CONFIRMED**. The G4-quinto
+  H5-C universality (FMNIST + CIFAR-10) extended via G4-sexto
+  H6-A (CIFAR-100) is now fully closed at the Tiny-ImageNet
+  end of the escalation ladder.
+
+### What H6-C confirmed positively establishes
+
+The RECOMBINE channel adds nothing measurable beyond
+REPLAY+DOWNSCALE across the pre-registered scope :
+
+| Benchmark | Substrate | Welch p | Hedges' g | Source |
+|-----------|-----------|---------|-----------|--------|
+| Split-FMNIST (10-class) | 3-layer MLX MLP | 0.989 | 0.002 | G4-quater H4-C, N=95 |
+| Split-FMNIST (10-class) | 5-layer MLX MLP | 0.4646 | — | G4-quinto Step 1 (Jonckheere monotonic but not significant) |
+| Split-CIFAR-10 (binary) | small CNN | 0.9918 | -0.0026 | G4-quinto H5-C, N=30 |
+| Split-CIFAR-100 (10-class/task) | small CNN | 0.8450 | 0.057 | G4-sexto H6-A, N=30 |
+| Split-CIFAR-100 (10-class/task) | small CNN | 0.3457 | 0.153 | G4-sexto N=95 confirmatory (Studio) |
+| Split-Tiny-ImageNet (20-class/task) | medium CNN | **0.9247** | **-0.0246** | G4-septimo H6-B, N=30 |
+
+The full universality flag fires across {Split-FMNIST,
+Split-CIFAR-10, Split-CIFAR-100, Split-Tiny-ImageNet} ×
+{3-layer MLP, 5-layer MLP, small CNN, medium CNN}.
+
+### Honest reading
+
+- **The DR-4 partial refutation reaches its pre-registered
+  scope ceiling.** From G4-ter §7.1.5 (single-substrate
+  positive) → G4-quater §7.1.6 (one-benchmark RECOMBINE-empty)
+  → G4-quinto §7.1.7 (two-benchmark) → G4-sexto §7.1.8
+  (three-benchmark, 100-class) → G4-septimo §7.1.11
+  (four-benchmark, 200-class / 64×64 RGB). The framework's
+  claim "richer ops yield richer consolidation" is empirically
+  refuted across the full pre-registered escalation ladder.
+- **Scope.** This is a small-CNN-and-medium-CNN
+  empirical-emptiness verdict on classification benchmarks at
+  ≤ 200-class scale. It does NOT yet say RECOMBINE is empty on
+  transformers, on hierarchical E-SNN substrates, on ImageNet-1k,
+  or on real-LLM substrates. Those follow-ups remain open
+  (the G6-Studio Path A plan in
+  `docs/superpowers/plans/2026-05-04-g6-studio-path-a-real-lora.md`
+  addresses the real-LLM tier).
+- **What the verdict does not say.** Welch fail-to-reject is
+  always interpretation-careful : "no measurable difference at
+  this N" is not "RECOMBINE is provably empty universally".
+  The pre-reg §7 honest-reading clause framing is preserved
+  verbatim : *"Welch fail-to-reject = absence of evidence at
+  this N for a difference between mog and none — under H6-B
+  specifically, this **is** the predicted positive empirical
+  claim that RECOMBINE adds nothing measurable beyond
+  REPLAY+DOWNSCALE on the medium CNN substrate at Tiny-ImageNet
+  200-class / 64×64 RGB scale."*
+- **Effect-size sign.** g_h6b = -0.0246 (slightly favouring
+  *none* over *mog*) is consistent with the broader pattern
+  of strategy-symmetric near-zero effect across the four
+  benchmarks ; sign flips inside Cohen's "negligible" range
+  (< 0.1) are not interpretively load-bearing.
+
+### DualVer impact
+
+EC stays PARTIAL (per pre-reg §6 row 1 : H6-B confirmation
+extends but does not promote to STABLE alone). FC stays at
+C-v0.12.0. Under H6-C confirmed, the DR-4 evidence file
+(`docs/proofs/dr4-profile-inclusion.md`) v0.6 amends the v0.5
+G4-sexto addendum with the four-benchmark universality flag.
+STABLE promotion remains blocked pending ImageNet-1k,
+transformer, hierarchical-E-SNN, and real-LLM follow-ups —
+the empirical-emptiness scope ceiling now stops at "small-and-
+medium-CNN classification at ≤ 200 classes".
+
+### Provenance
+
+- Pre-registration : [docs/osf-prereg-g4-septimo-pilot.md](../../osf-prereg-g4-septimo-pilot.md)
+- Step 1 milestone : `docs/milestones/g4-septimo-step1-2026-05-04.{json,md}`
+- Aggregate : `docs/milestones/g4-septimo-aggregate-2026-05-04.{json,md}`
+- Driver : `experiments/g4_septimo_test/run_step1_tiny_imagenet.py`
+- Substrate : `experiments.g4_septimo_test.medium_cnn.G4MediumCNN`
+- Loader : `experiments.g4_septimo_test.tiny_imagenet_dataset.load_split_tiny_imagenet_10tasks_auto`
+- Aggregator : `experiments/g4_septimo_test/aggregator.py`
+- 240 cells, ~3 h 11 min wall on Studio M3 Ultra (54-58 s/cell ;
+  per pre-reg §9 envelope c, just under the 60 s sustained
+  threshold).
+
 ## 7.2 Cross-substrate H1-H4 comparative table (synthetic substitute — not empirical claim)
 
 **Table 7.2 — MLX vs E-SNN hypotheses at Bonferroni α = 0.0125
