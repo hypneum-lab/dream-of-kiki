@@ -1,0 +1,113 @@
+{
+  "permutations": {
+    "REP\u2192DOW\u2192RES\u2192REC": {
+      "perm": [
+        "REPLAY",
+        "DOWNSCALE",
+        "RESTRUCTURE",
+        "RECOMBINE"
+      ],
+      "accs": [
+        0.6129999816417694,
+        0.543999993801117,
+        0.6399999856948853,
+        0.7070000000298023,
+        0.8699999928474427
+      ],
+      "mean": 0.6747999908030033,
+      "std": 0.11070573796863664
+    },
+    "DOW\u2192REP\u2192RES\u2192REC": {
+      "perm": [
+        "DOWNSCALE",
+        "REPLAY",
+        "RESTRUCTURE",
+        "RECOMBINE"
+      ],
+      "accs": [
+        0.6339999884366989,
+        0.5309999883174896,
+        0.6649999916553497,
+        0.7049999948590994,
+        0.8949999868869781
+      ],
+      "mean": 0.6859999900311232,
+      "std": 0.11934152629997616,
+      "hedges_g_vs_canonical": 0.07860794807439878
+    },
+    "REP\u2192RES\u2192DOW\u2192REC": {
+      "perm": [
+        "REPLAY",
+        "RESTRUCTURE",
+        "DOWNSCALE",
+        "RECOMBINE"
+      ],
+      "accs": [
+        0.6129999816417694,
+        0.543999993801117,
+        0.6399999856948853,
+        0.7070000000298023,
+        0.8699999928474427
+      ],
+      "mean": 0.6747999908030033,
+      "std": 0.11070573796863664,
+      "hedges_g_vs_canonical": 0.0
+    },
+    "REC\u2192REP\u2192DOW\u2192RES": {
+      "perm": [
+        "RECOMBINE",
+        "REPLAY",
+        "DOWNSCALE",
+        "RESTRUCTURE"
+      ],
+      "accs": [
+        0.6339999884366989,
+        0.5309999883174896,
+        0.6649999916553497,
+        0.7049999948590994,
+        0.8949999868869781
+      ],
+      "mean": 0.6859999900311232,
+      "std": 0.11934152629997616,
+      "hedges_g_vs_canonical": 0.07860794807439878
+    },
+    "RES\u2192REC\u2192REP\u2192DOW": {
+      "perm": [
+        "RESTRUCTURE",
+        "RECOMBINE",
+        "REPLAY",
+        "DOWNSCALE"
+      ],
+      "accs": [
+        0.6309999734163284,
+        0.514999982714653,
+        0.6569999843835831,
+        0.7,
+        0.8979999899864197
+      ],
+      "mean": 0.6801999861001967,
+      "std": 0.12496303828700588,
+      "hedges_g_vs_canonical": 0.03695467377868395
+    },
+    "REP\u2192REC\u2192DOW\u2192RES": {
+      "perm": [
+        "REPLAY",
+        "RECOMBINE",
+        "DOWNSCALE",
+        "RESTRUCTURE"
+      ],
+      "accs": [
+        0.6129999816417694,
+        0.543999993801117,
+        0.6399999856948853,
+        0.7070000000298023,
+        0.8699999928474427
+      ],
+      "mean": 0.6747999908030033,
+      "std": 0.11070573796863664,
+      "hedges_g_vs_canonical": 0.0
+    }
+  },
+  "max_abs_hedges_g": 0.07860794807439878,
+  "verdict": "H_RO-A: permutation effect SMALL (max |g| < 0.2) \u2014 order does not materially affect retention"
+}

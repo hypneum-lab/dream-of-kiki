@@ -12,6 +12,41 @@ see `docs/specs/2026-04-17-dreamofkiki-framework-C-design.md` §12).
 
 ## [Unreleased]
 
+### Exploratory (Studio CPU pilots — K2 + R1 + Robertson, 2026-05-04)
+
+- Three small CPU pilots on Mac Studio M3 Ultra launched in parallel
+  with G4-sexto Studio N=95 GPU run. ~6 min total wall. Status :
+  exploratory, no individual OSF pre-registration.
+- **K2 real-substrate** : 24 random `.npz` modules sampled from
+  SpikingKiki-V4 35B-A3B (31 070 modules), LIF metadata applied
+  (`T=128, threshold=0.0625, tau=1.0`), 276 pairwise mean-vector-
+  length measurements. Result : MVL mean = 0.3855, median = 0.3797,
+  5-95 percentile = [0.2557, 0.5434]. K2 invariant range
+  `[0.27, 0.39]` (eLife 2025 BF=58 SO-spindle anchor) : mean and
+  median both *inside* the band ; 45.7 % of pairs strictly within
+  K2. Verdict : *partial empirical support* on real substrate, with
+  inter-pair variability beyond the band.
+- **R1 cross-machine verification** : ran `tests/reproducibility/`
+  (5 bit-exact + 4 contract = 9 tests) on Studio M3 Ultra Python
+  3.14.4 / MLX 0.31.1. All 9 tests PASS with hashes identical to
+  M1 Max Python 3.12 baseline. `golden_hashes.json` status field
+  promoted from `pending_review` to
+  `validated_cross_machine_2026-05-04` for all 5 bit-exact entries.
+  Caveat : both machines are Apple Silicon, does not establish
+  CUDA/Linux portability.
+- **Robertson 2018 sequential-ordering test** : 6 permutations of
+  (REPLAY, DOWNSCALE, RESTRUCTURE, RECOMBINE) × 5 seeds = 30 cells,
+  5-task synthetic CL stream, MLP 2×32 with dream-op stubs. Max
+  pairwise Hedges' g vs canonical = 0.079. Verdict H_RO-A :
+  permutation effect SMALL (max |g| < 0.2) ; ordering does not
+  materially affect retention in this regime. Descriptive support
+  for DR-3 substrate-independence intra-cycle ordering corollary.
+- Milestones : `docs/milestones/studio-cpu-2026-05-04/`
+  (`README.md`, `k2_real_substrate.py`, `k2_real_substrate_result.json`,
+  `robertson_sequential_ordering.py`, `robertson_sequential_result.json`).
+- No FC or EC bump — exploratory results, not part of confirmatory
+  Paper 2 claims.
+
 ### Empirical (G5-ter spiking-CNN cross-substrate, 2026-05-03)
 
 - G5-ter pilot ported the G4-quinto Step 2 small-CNN architecture

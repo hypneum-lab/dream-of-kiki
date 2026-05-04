@@ -1,30 +1,30 @@
 {
   "test_r1_downscale": {
-    "commit": "87d627dc03d3",
+    "commit": "7372da6713d8",
     "hash": "81297292f562ba9d9378e068e313071e54e129b50e0a4830ad2a9825813b9e28",
     "mlx_version": "0.31.1",
     "status": "pending_review"
   },
   "test_r1_full_pipeline": {
-    "commit": "87d627dc03d3",
+    "commit": "7372da6713d8",
     "hash": "3c9e7dbe456fb660668ab457b31fbbd4a5b580eb886e77dd4eab86028b64a86f",
     "mlx_version": "0.31.1",
     "status": "pending_review"
   },
   "test_r1_recombine": {
-    "commit": "87d627dc03d3",
+    "commit": "7372da6713d8",
     "hash": "b5ae6f5e2284a9759790fe6c162a2217573a64a9029364ca9b0b79c46fd4e9d4",
     "mlx_version": "0.31.1",
     "status": "pending_review"
   },
   "test_r1_replay": {
-    "commit": "87d627dc03d3",
+    "commit": "7372da6713d8",
     "hash": "cd53efd35fe868501726ac79f12d59de2156218bf3ebb3c3552409c1aee66692",
     "mlx_version": "0.31.1",
     "status": "pending_review"
   },
   "test_r1_restructure": {
-    "commit": "87d627dc03d3",
+    "commit": "7372da6713d8",
     "hash": "1adfe6b3924fc33af3b1f07db8aaa60b4a2b41b891fee717650e8370d99b6b83",
     "mlx_version": "0.31.1",
     "status": "pending_review"
