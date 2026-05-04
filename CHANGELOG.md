@@ -12,6 +12,53 @@ see `docs/specs/2026-04-17-dreamofkiki-framework-C-design.md` §12).
 
 ## [Unreleased]
 
+### Empirical (G6-Studio Path A real-LoRA INSUFFICIENT, 2026-05-04)
+
+- G6-Studio Path A pilot completed end-to-end on Mac Studio M3
+  Ultra (20 cells × 5 subdomains = 100 measurements, ~52 min
+  wall, peak Metal mem 139 GB under the 210 GB cache budget).
+  Pre-reg `docs/osf-prereg-g6-studio-path-a.md` locked at commit
+  `fae8c32`. First real-LLM-scale run of the dreamOfkiki
+  programme — fixes the G6 Path B "spectator wrapper" caveat by
+  mutating live LoRA delta tensors via the KIKI-Mac_tunner
+  `mlx_lm` fork at `/Users/clems/KIKI-Mac_tunner/lib/mlx_lm_fork/`.
+- **Verdict : INSUFFICIENT**. 19 of 20 (arm, seed) cells excluded
+  by the underperforming-baseline rule
+  (`acc[S_1 after S_1] < 0.30` at the synthetic 10-train / 10-eval
+  per-subdomain fixture). Aggregator returns
+  `h9a_classification = INSUFFICIENT`, `h9c_classification =
+  INSUFFICIENT`, NaN test statistics — H9-A / H9-B / H9-C cannot
+  be evaluated at this fixture size.
+- **Pipeline integrity verified** : 35B bf16 base load + LoRA
+  fine-tune (loss 0.74 → 0.07 typical) + 4-channel dream coupling
+  on live delta tensors + `mlx_lm.generate` letter-argmax MMLU
+  eval, all under the Metal memory budget. Engineering-level
+  success ; the substrate-independence formal guarantee (DR-3
+  Conformance Criterion) is preserved end-to-end on the real
+  spiking-LIF Qwen substrate.
+- **Follow-up required** : pre-reg §9.1 amendment slot logs the
+  fixture-size limitation ; a G6-Studio Path A* re-run with the
+  production MMLU shards (200 records per subject) under
+  unchanged H9 hypotheses but a larger train/eval budget per
+  subdomain is queued. The CNN-tier scope ceiling
+  (G4-septimo H6-C confirmed, `docs/proofs/dr4-profile-inclusion.md`
+  v0.6) is unaffected ; the framework's RECOMBINE prediction
+  status at real-LLM scale is documented as *deferred to
+  G6-Studio Path A** in DR-3 evidence amendments.
+- EC stays PARTIAL ; FC stays C-v0.12.0+PARTIAL.
+- Milestone : `docs/milestones/g6-studio-path-a-2026-05-04.{json,md}`
+  + 100 per-subdomain partial dumps (resumability).
+  Paper 2 §7.1.13 EN+FR appended.
+- Production-blocker fixes shipped in this run : (i) fork import
+  rebinding (`tuner.lora.train` → `tuner.trainer.train`) ;
+  (ii) `mx.metal.set_memory_limit` / `set_cache_limit`
+  configuration to prevent OOM at 35B bf16 ; (iii)
+  `_MMLURecordDataset` text pre-formatting for the fork's
+  `CacheDataset.itemlen` length-bucket sort ;
+  (iv) base-path correction (Qwen3.6-35B-A3B vs SpikingKiki-V4
+  which lacks `config.json`) ; (v) fork activation via
+  `PYTHONPATH=/tmp` → symlink → `mlx_lm_fork`.
+
 ### Empirical (G4-septimo Tiny-IN H6-C UNIVERSALITY CONFIRMED, 2026-05-04)
 
 - G4-septimo Step 1 N=30 pilot completed on Mac Studio M3 Ultra

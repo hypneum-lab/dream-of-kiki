@@ -924,6 +924,105 @@ medium-CNN classification at ≤ 200 classes".
   per pre-reg §9 envelope c, just under the 60 s sustained
   threshold).
 
+## 7.1.13 G6-Studio Path A — real-LoRA SpikingKiki-V4 × MMLU CL pilot, INSUFFICIENT verdict (2026-05-04)
+
+The G6-Studio Path A pilot (pre-reg
+[`docs/osf-prereg-g6-studio-path-a.md`](../../osf-prereg-g6-studio-path-a.md)
+locked at commit `fae8c32`) targets the first real-LLM-scale
+verdict of the framework C 4-channel coupling, fixing the G6
+Path B "spectator wrapper" caveat by mutating live LoRA delta
+tensors (vs synthetic-shaped placeholders) on the real
+SpikingKiki-V4 35B-A3B-V4 substrate via the KIKI-Mac_tunner
+mlx_lm fork's `tuner.trainer.train` pipeline.
+
+### Pipeline outcome
+
+100 (arm × seed × subdomain) measurements completed end-to-end
+on Mac Studio M3 Ultra in 52 min wall, with peak Metal memory
+139 GB (under the 210 GB cache budget and 400 GB hard limit
+configured per `mx.metal.set_{memory,cache}_limit`). Real LoRA
+fine-tunes converged on each subdomain (loss 0.74 → 0.07 typical),
+the 4 dream handlers ran on live delta tensors (load-bearing fix
+vs Path B), and `mlx_lm.generate` letter-argmax MMLU eval
+executed on the dream-modified adapters.
+
+### Verdict : INSUFFICIENT
+
+Of 20 (arm, seed) cells, **19 were excluded** by the
+underperforming-baseline rule
+(`acc[S_1 after S_1] < UNDERPERFORM_THRESHOLD = 0.30` per
+`experiments/g6_mmlu_stream/run_g6.py:119`). With only 10 train
++ 10 eval records per subdomain (the synthetic
+`tests/fixtures/mmlu_g6_synthetic.jsonl` fixture used here), 50
+LoRA iterations on top of Qwen-35B-A3B do not push the
+first-subdomain eval accuracy above the exclusion floor. The
+aggregator therefore returns `h9a_classification = INSUFFICIENT`,
+`h9a_g = NaN`, `h9c_classification = INSUFFICIENT` —
+the H9-A / H9-B / H9-C decision rules cannot be evaluated at
+this fixture size.
+
+### Honest reading
+
+- **Pipeline integrity = engineering success.** The real-LLM
+  path is verified end-to-end : 35B bf16 base + LoRA on top +
+  4-channel dream coupling on live delta + MMLU eval, all under
+  the Metal memory budget and the OSF pre-reg's per-cell wall
+  envelope (~50 min wall vs §9 envelope c 50 h ceiling). This
+  is the first dreamOfkiki run on a real production-scale LLM
+  substrate.
+- **Fixture-size limitation.** The synthetic G6 fixture (200
+  records total, ~40/subject) is too small for confirmatory
+  H9 testing at 35B scale. The pre-reg §9.1 amendment slot is
+  used to log this finding ; a follow-up G6-Studio Path A* will
+  re-run with the production MMLU shards (200 records per
+  subject — full MMLU dev/test splits) under unchanged pre-reg
+  hypotheses but a larger train/eval budget per subdomain.
+- **What this does not tell us.** Whether the 4-channel
+  coupling produces a measurable retention effect on real-LLM
+  substrates remains an open empirical question. The CNN-tier
+  scope ceiling (G4-septimo H6-C confirmed,
+  `docs/proofs/dr4-profile-inclusion.md` v0.6) is unaffected ;
+  the framework's RECOMBINE prediction remains
+  empirically-empty across the four-benchmark CNN/MLP escalation
+  ladder, with the real-LLM tier verdict deferred to G6-Studio
+  Path A*.
+- **DR-3 implication.** The substrate-independence formal
+  guarantee (DR-3 Conformance Criterion) is preserved : the
+  pipeline runs end-to-end on the real spiking-LIF Qwen
+  substrate without violating any axiom-level invariant. The
+  G5-bis "MLX-only artefact" verdict at toy E-SNN scale is not
+  yet refuted *or* confirmed at real-LLM scale — pending G6-Studio
+  Path A*.
+
+### DualVer impact
+
+EC stays PARTIAL (per pre-reg §6 row 2 : INSUFFICIENT does not
+promote the empirical axis). FC stays at C-v0.12.0. No new
+evidence row added to DR-3 evidence file (the pilot does not
+resolve a hypothesis). The `dr4-profile-inclusion.md` v0.6
+G4-septimo amendment is unchanged ; the framework's RECOMBINE
+prediction status at real-LLM scale is documented as
+*deferred to G6-Studio Path A* follow-up* in DR-3 evidence
+amendments.
+
+### Provenance
+
+- Pre-registration : [docs/osf-prereg-g6-studio-path-a.md](../../osf-prereg-g6-studio-path-a.md)
+- Milestone : `docs/milestones/g6-studio-path-a-2026-05-04.{json,md}`
+- Per-subdomain partial dumps :
+  `docs/milestones/g6-studio-path-a-partial-<subdomain>-<arm>-seed<seed>-step<NN>-2026-05-04.json`
+  (100 partials for resumability).
+- Driver : `experiments/g6_studio_path_a/run_g6_studio_path_a.py`
+- Substrate : `kiki_oniric.substrates.micro_kiki.MicroKikiSubstrate`
+  (real backend, `DREAM_MICRO_KIKI_REAL=1`)
+- Base model : `/Users/clems/KIKI-Mac_tunner/models/Qwen3.6-35B-A3B`
+  (bf16, 26 safetensor shards, ~70 GB)
+- LoRA pipeline : KIKI-Mac_tunner `mlx_lm` fork at
+  `/Users/clems/KIKI-Mac_tunner/lib/mlx_lm_fork/`
+  (activated via `PYTHONPATH=/tmp` → symlink → fork)
+- 20 (arm, seed) cells × 5 subdomains = 100 measurements,
+  ~52 min wall on Studio M3 Ultra, peak GPU mem 139 GB.
+
 ## 7.2 Cross-substrate H1-H4 comparative table (synthetic substitute — not empirical claim)
 
 **Table 7.2 — MLX vs E-SNN hypotheses at Bonferroni α = 0.0125
