@@ -42,6 +42,15 @@ class EpisodeLogEntry:
     error: str | None = None
     channel_outputs: tuple[ChannelOutput | None, ...] = ()
 
+    def __post_init__(self) -> None:
+        if self.channel_outputs and len(self.channel_outputs) != len(
+            self.operations_executed
+        ):
+            raise ValueError(
+                "channel_outputs must be empty or the same length "
+                "as operations_executed"
+            )
+
 
 class DreamRuntime:
     """Single-threaded dream-episode scheduler (S5.2 skeleton).

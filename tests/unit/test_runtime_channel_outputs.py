@@ -70,3 +70,14 @@ def test_execute_channel_outputs_parallel_on_error() -> None:
     assert entry.completed is False
     assert len(entry.channel_outputs) == len(entry.operations_executed)
     assert entry.channel_outputs == (None, None)
+
+
+def test_log_entry_rejects_mismatched_channel_outputs() -> None:
+    wu = WeightUpdate(lora_delta={"l0": np.zeros(2, dtype=np.float32)})
+    with pytest.raises(ValueError, match="channel_outputs"):
+        EpisodeLogEntry(
+            episode_id="de-bad",
+            operations_executed=(Operation.REPLAY, Operation.DOWNSCALE),
+            completed=True,
+            channel_outputs=(wu,),
+        )
