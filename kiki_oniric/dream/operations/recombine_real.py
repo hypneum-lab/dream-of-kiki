@@ -23,6 +23,11 @@ Contract :
 - ``state.last_sample`` stores the decoder output as a list[float]
   (length 4 in the _TinyDecoder test fixture).
 - ``state.last_compute_flops`` is tagged with a rough cost estimate.
+- B4 (issue #15) widens the return type to ``LatentSample | None`` —
+  the handler builds and returns a channel-2 ``LatentSample`` whose
+  ``latent_vector`` is the sampled ``z``. ``species`` comes from
+  ``input_slice`` (default ``"default"``); ``provenance`` is auto-
+  derived from ``(episode_id, episode_count, key_seed)``.
 
 Reference :
   docs/specs/2026-04-17-dreamofkiki-framework-C-design.md §4.2
@@ -30,6 +35,13 @@ Reference :
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import TYPE_CHECKING, Callable
+
+import numpy as np
+
+if TYPE_CHECKING:
+    from kiki_oniric.dream.channels import LatentSample
+    from kiki_oniric.dream.episode import DreamEpisode
 
 
 @dataclass
@@ -53,14 +65,19 @@ def recombine_real_handler(
     encoder,
     decoder,
     seed: int,
-):
+) -> Callable[["DreamEpisode"], "LatentSample | None"]:
     """Build a real-weight recombine handler bound to ``state``.
 
     Imports MLX lazily so pure-synthetic callers don't pay the cost.
+    Returns a ``LatentSample`` (channel 2) carrying the sampled
+    latent ``z`` as ``latent_vector``. The decoded output continues
+    to live in ``state.last_sample`` for backwards compatibility.
     """
     import mlx.core as mx
 
-    def handler(episode) -> None:
+    from kiki_oniric.dream.channels import LatentSample
+
+    def handler(episode: "DreamEpisode") -> "LatentSample | None":
         latents = episode.input_slice.get("delta_latents", [])
         if not latents:
             raise ValueError(
@@ -84,16 +101,40 @@ def recombine_real_handler(
         # Flatten to a 1-D list[float] — decoder may return a
         # multi-dimensional array (batch / feature axes) and calling
         # float(v) on a nested list would raise TypeError.
-        import numpy as _np
-
         state.last_sample = [
-            float(v) for v in _np.asarray(sample_arr).ravel().tolist()
+            float(v) for v in np.asarray(sample_arr).ravel().tolist()
         ]
         # K1 tag : encoder + decoder fwd passes over a tiny latent.
         state.last_compute_flops = max(
             2 * (mu.size + sample_arr.size), 1
         )
+
+        # B4 — build the LatentSample BEFORE bumping the counter so
+        # `provenance` reads `ep=<state._episode_count>` directly
+        # (no off-by-one). If LatentSample.__post_init__ raises (non-
+        # finite z), the counter does not advance — sound semantics
+        # for "this episode didn't actually emit".
+        latent_vector = (
+            np.asarray(z, dtype=np.float32).ravel().copy()
+        )
+        species = episode.input_slice.get("species", "default")
+        if not isinstance(species, str):
+            raise ValueError(
+                f"recombine: species must be str, "
+                f"got {type(species).__name__}"
+            )
+        provenance = (
+            f"recombine:de={episode.episode_id}:"
+            f"ep={state._episode_count}:seed={key_seed}"
+        )
+        sample = LatentSample(
+            species=species,
+            latent_vector=latent_vector,
+            provenance=provenance,
+        )
+
         state._episode_count += 1
+        return sample
 
     return handler
 
