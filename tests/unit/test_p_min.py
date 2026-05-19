@@ -4,6 +4,8 @@ Swap protocol E2E tests are in test_p_min_e2e.py (S9.4+).
 """
 from __future__ import annotations
 
+from typing import Any
+
 from kiki_oniric.dream.episode import (
     BudgetCap,
     DreamEpisode,
@@ -14,7 +16,7 @@ from kiki_oniric.dream.episode import (
 from kiki_oniric.profiles.p_min import PMinProfile
 
 
-def make_replay_de(ep_id: str, records: list[dict]) -> DreamEpisode:
+def make_replay_de(ep_id: str, records: list[dict[str, Any]]) -> DreamEpisode:
     return DreamEpisode(
         trigger=EpisodeTrigger.SCHEDULED,
         input_slice={"beta_records": records},

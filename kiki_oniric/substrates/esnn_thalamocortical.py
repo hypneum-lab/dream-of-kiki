@@ -118,7 +118,7 @@ class EsnnSubstrate:
 
     def replay_handler_factory(
         self,
-    ) -> Callable[[list[dict], int], NDArray]:
+    ) -> Callable[..., NDArray]:
         """Build a replay handler using numpy LIF spike-rate sim.
 
         Handler signature: (beta_records: list[dict], n_steps: int)
@@ -147,7 +147,7 @@ class EsnnSubstrate:
 
     def downscale_handler_factory(
         self,
-    ) -> Callable[[NDArray, float], NDArray]:
+    ) -> Callable[..., NDArray]:
         """Build a downscale handler using synaptic scaling.
 
         Handler signature: (weights: NDArray, factor: float)
@@ -165,7 +165,7 @@ class EsnnSubstrate:
 
     def restructure_handler_factory(
         self,
-    ) -> Callable[[NDArray, str, int, int], NDArray]:
+    ) -> Callable[..., NDArray]:
         """Build a restructure handler modifying connectivity.
 
         Handler signature: (conn: NDArray, op: str, src: int,
@@ -195,7 +195,7 @@ class EsnnSubstrate:
 
     def recombine_handler_factory(
         self,
-    ) -> Callable[[NDArray, int, int], NDArray]:
+    ) -> Callable[..., NDArray]:
         """Build a recombine handler via Poisson spike train mix.
 
         Handler signature: (latents: NDArray of shape (2, n),

@@ -79,9 +79,10 @@ def _load_checkpoint_fp16(repo_id: str) -> tuple[Any, Any]:  # pragma: no cover 
     production this imports :func:`mlx_lm.load` (same function ;
     mlx-lm auto-detects the quantization from the repo config).
     """
-    from mlx_lm import load as _load  # type: ignore[import-not-found]
+    from mlx_lm import load as _load
 
-    return _load(repo_id)
+    model, tokenizer = _load(repo_id)[:2]
+    return model, tokenizer
 
 
 def _weights_bytes(model: Any) -> bytes:
@@ -93,7 +94,7 @@ def _weights_bytes(model: Any) -> bytes:
     wrapper types when the underlying parameter tree is identical.
     """
     if hasattr(model, "weights_bytes"):
-        return model.weights_bytes()
+        return bytes(model.weights_bytes())
     # Never return b"" on failure — that would yield the sha256 of
     # empty bytes and silently mask integrity violations during
     # enforce_pin checks. Re-raise so callers fail loudly.

@@ -168,8 +168,10 @@ class StudyforrestLoader:
             import nibabel as nib  # pragma: no cover - env-gated
 
             img = nib.load(str(path))  # pragma: no cover - env-gated
+            # get_fdata exists on SpatialImage subclasses; the
+            # FileBasedImage return type of nib.load is too broad.
             return np.asarray(  # pragma: no cover - env-gated
-                img.get_fdata(), dtype=np.float32,
+                img.get_fdata(), dtype=np.float32,  # type: ignore[attr-defined]
             )
         return None
 
@@ -230,8 +232,12 @@ class StudyforrestLoader:
 
         n_samples = int(round(duration_s / tr_seconds))
         t = np.arange(n_samples) * tr_seconds
-        peak = gamma.pdf(t, a=6.0, scale=1.0)
-        undershoot = gamma.pdf(t, a=16.0, scale=1.0)
+        peak: NDArray[np.floating] = np.asarray(
+            gamma.pdf(t, a=6.0, scale=1.0), dtype=np.float64,
+        )
+        undershoot: NDArray[np.floating] = np.asarray(
+            gamma.pdf(t, a=16.0, scale=1.0), dtype=np.float64,
+        )
         hrf = peak - undershoot / 6.0
         max_val = float(np.max(np.abs(hrf)))
         if max_val > 0.0:

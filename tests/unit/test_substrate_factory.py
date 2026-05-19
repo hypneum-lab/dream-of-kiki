@@ -1,6 +1,7 @@
 """Task 1: SubstrateAdapter Protocol + CellRequest dataclass."""
 
 from pathlib import Path
+from typing import Any
 
 from kiki_oniric.substrates.factory import (
     CellRequest,
@@ -9,7 +10,7 @@ from kiki_oniric.substrates.factory import (
 )
 
 
-def test_cell_request_fields():
+def test_cell_request_fields() -> None:
     req = CellRequest(
         substrate="mlx_kiki_oniric",
         profile="p_equ",
@@ -22,7 +23,7 @@ def test_cell_request_fields():
     assert req.substrate in SUBSTRATE_NAMES
 
 
-def test_substrate_names_is_3_tuple():
+def test_substrate_names_is_3_tuple() -> None:
     assert SUBSTRATE_NAMES == (
         "mlx_kiki_oniric",
         "esnn_thalamocortical",
@@ -30,13 +31,13 @@ def test_substrate_names_is_3_tuple():
     )
 
 
-def test_substrate_adapter_protocol_is_runtime_checkable():
+def test_substrate_adapter_protocol_is_runtime_checkable() -> None:
     # Protocol is structural -- any object with the two methods satisfies it.
     class Dummy:
-        def execute_profile(self, request):
+        def execute_profile(self, request: Any) -> dict[str, Any]:
             return {}
 
-        def teardown(self):
+        def teardown(self) -> None:
             pass
 
     d = Dummy()
@@ -47,7 +48,7 @@ def test_substrate_adapter_protocol_is_runtime_checkable():
     assert SubstrateAdapter is not None
 
 
-def test_esnn_adapter_executes_all_four_handlers(tmp_path):
+def test_esnn_adapter_executes_all_four_handlers(tmp_path: Path) -> None:
     from kiki_oniric.substrates.factory import ESNNAdapter
 
     adapter = ESNNAdapter()

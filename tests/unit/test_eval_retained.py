@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Any
 
 import pytest
 
@@ -16,22 +17,22 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 BENCH_DIR = REPO_ROOT / "harness" / "benchmarks" / "retained"
 
 
-def _always_correct_model(item: dict) -> str:
+def _always_correct_model(item: dict[str, Any]) -> str:
     """Mock model: returns the expected output verbatim."""
-    return item["expected"]
+    return str(item["expected"])
 
 
-def _always_wrong_model(item: dict) -> str:
+def _always_wrong_model(item: dict[str, Any]) -> str:
     """Mock model: returns a string that never matches."""
     return "WRONG_PREDICTION_NEVER_MATCHES"
 
 
-def _half_correct_model(item: dict) -> str:
+def _half_correct_model(item: dict[str, Any]) -> str:
     """Mock model: correct on even ids, wrong on odd ids."""
     rid_token = item["id"].split("-")[-1]
     rid = int(rid_token)
     if rid % 2 == 0:
-        return item["expected"]
+        return str(item["expected"])
     return "WRONG"
 
 

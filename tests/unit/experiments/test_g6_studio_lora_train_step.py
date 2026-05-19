@@ -101,7 +101,7 @@ def mock_tuner(monkeypatch: pytest.MonkeyPatch) -> dict[str, Any]:
     fake_utils = types.ModuleType("mlx_lm.tuner.utils")
 
     def fake_linear_to_lora_layers(
-        model: Any, num_layers: int, config: dict, use_dora: bool = False,
+        model: Any, num_layers: int, config: dict[str, Any], use_dora: bool = False,
     ) -> None:
         captured["lora_applied"] = True
         captured["lora_num_layers"] = num_layers

@@ -22,6 +22,8 @@ Numpy-only ; runs on any host (no MLX / torch dep). Reference :
 """
 from __future__ import annotations
 
+from pathlib import Path
+
 import numpy as np
 import pytest
 
@@ -244,7 +246,9 @@ def test_recombine_handler_propagates_empty_deltas_error() -> None:
         handler({"deltas": []}, "ties")
 
 
-def test_recombine_snapshot_roundtrip_with_accumulator(tmp_path) -> None:
+def test_recombine_snapshot_roundtrip_with_accumulator(
+    tmp_path: Path,
+) -> None:
     """Snapshot / load_snapshot round-trip survives recombine state.
 
     The ``.npz`` accumulator is separate from the recombine state

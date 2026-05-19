@@ -23,7 +23,7 @@ import logging
 import random
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterator
+from typing import Any, Iterator
 
 from harness.real_benchmarks import MissingLocalDatasetError
 
@@ -108,7 +108,7 @@ class MegaV2EvalLoader:
     def local_file_sha256(self) -> str:
         return self._actual_sha256
 
-    def _iter_raw(self) -> Iterator[dict]:
+    def _iter_raw(self) -> Iterator[dict[str, Any]]:
         with self._path.open("r", encoding="utf-8") as fh:
             for line in fh:
                 line = line.strip()
@@ -116,7 +116,7 @@ class MegaV2EvalLoader:
                     continue
                 yield json.loads(line)
 
-    def _record_from_raw(self, row: dict) -> MegaV2EvalRecord:
+    def _record_from_raw(self, row: dict[str, Any]) -> MegaV2EvalRecord:
         return MegaV2EvalRecord(
             id=str(row["id"]),
             context=str(row["context"]),
@@ -195,7 +195,7 @@ _DEFAULT_MEGA_V2_FALLBACK = (
 )
 
 
-def _mega_v2_default_fallback_records() -> list[dict]:
+def _mega_v2_default_fallback_records() -> list[dict[str, Any]]:
     """Hand-authored mega-v2-schema fallback (≥ 16 rows).
 
     Sized to support the Phase B 8-train / 8-eval split — the full
@@ -357,7 +357,7 @@ def _load_mega_v2_records(
     hand-authored fallback at 20 rows) fall back to cycled sampling
     that still keeps the two folds disjoint at the index level.
     """
-    def _materialise(raws: list[dict]) -> list[MegaV2EvalRecord]:
+    def _materialise(raws: list[dict[str, Any]]) -> list[MegaV2EvalRecord]:
         rng = random.Random(seed)
         # Copy so we don't mutate the caller's list.
         shuffled = list(raws)
@@ -423,8 +423,8 @@ def _load_mega_v2_records(
 
 
 def _per_token_nll(
-    model_callable,
-    tokenizer,
+    model_callable: Any,
+    tokenizer: Any,
     context_ids: list[int],
     expected_ids: list[int],
 ) -> float:
@@ -460,8 +460,8 @@ def _per_token_nll(
 
 
 def evaluate_mega_v2(
-    model,
-    tokenizer,
+    model: Any,
+    tokenizer: Any,
     *,
     n_samples: int = 100,
     seed: int = 0,

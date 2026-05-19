@@ -22,7 +22,9 @@ def test_episode_is_frozen_dataclass() -> None:
         episode_id="de-0000",
     )
     with pytest.raises((AttributeError, TypeError)):
-        ep.episode_id = "de-mutated"
+        # Intentional write to a read-only property to assert it
+        # is immutable; mypy correctly flags the assignment.
+        ep.episode_id = "de-mutated"  # type: ignore[misc]
 
 
 def test_episode_has_required_5_tuple_fields() -> None:

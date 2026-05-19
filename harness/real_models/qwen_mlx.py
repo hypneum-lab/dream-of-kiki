@@ -85,9 +85,10 @@ def _load_checkpoint(repo_id: str) -> tuple[Any, Any]:  # pragma: no cover - sea
     by :func:`unittest.mock.patch` with a synthetic model, so the
     real mlx-lm load is never triggered by the unit suite.
     """
-    from mlx_lm import load as _load  # type: ignore[import-not-found]
+    from mlx_lm import load as _load
 
-    return _load(repo_id)
+    model, tokenizer = _load(repo_id)[:2]
+    return model, tokenizer
 
 
 def _weights_bytes(model: Any) -> bytes:
@@ -98,7 +99,7 @@ def _weights_bytes(model: Any) -> bytes:
     the object (used by test fixtures).
     """
     if hasattr(model, "weights_bytes"):
-        return model.weights_bytes()
+        return bytes(model.weights_bytes())
     # Never return b"" on failure — that yields the sha256 of empty
     # bytes and would silently mask integrity violations during
     # enforce_pin checks. Re-raise so callers fail loudly.

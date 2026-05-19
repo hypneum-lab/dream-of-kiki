@@ -52,7 +52,7 @@ def test_dr4_p_equ_contains_restructure_and_recombine() -> None:
 # === DR-4 P_equ ⊆ P_max chain (S16.2 extension) ===
 
 
-def _p_max_metadata():
+def _p_max_metadata() -> PMaxProfile:
     """Read PMaxProfile target metadata (handlers not yet wired)."""
     return PMaxProfile()
 

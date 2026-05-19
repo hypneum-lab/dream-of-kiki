@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import hashlib
 from unittest.mock import patch
+from typing import Any
 
 import mlx.core as mx
 import numpy as np
@@ -265,7 +266,7 @@ class _RealLikeModel:
             ],
         }
 
-    def parameters(self) -> dict:
+    def parameters(self) -> dict[str, Any]:
         return self._params
 
     def __call__(self, tokens: mx.array) -> mx.array:

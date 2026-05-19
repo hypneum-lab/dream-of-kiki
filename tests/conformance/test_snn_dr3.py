@@ -24,6 +24,7 @@ Reference :
 from __future__ import annotations
 
 from dataclasses import is_dataclass
+from typing import Any
 
 import numpy as np
 import pytest
@@ -44,7 +45,7 @@ from kiki_oniric.dream.operations import (
 )
 
 
-def _make_episode(input_slice: dict, op: Operation) -> DreamEpisode:
+def _make_episode(input_slice: dict[str, Any], op: Operation) -> DreamEpisode:
     """Minimal DreamEpisode fixture for the SNN-proxy ops."""
     return DreamEpisode(
         trigger=EpisodeTrigger.SCHEDULED,
@@ -206,7 +207,9 @@ def test_dr3_snn_ops_typed_protocol() -> None:
                 restructure_snn.RestructureSNNState(),
         }[factory]
         w = np.zeros(weights_shape, dtype=float)
-        handler = factory(state, weights=w, **kwargs)
+        # state is paired with its matching factory via the dict
+        # lookup above; mypy collapses the value type to object.
+        handler = factory(state, weights=w, **kwargs)  # type: ignore[arg-type]
         assert callable(handler)
 
     # recombine factory has a different signature (seed-based).

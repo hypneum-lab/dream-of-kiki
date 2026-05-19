@@ -26,9 +26,14 @@ def test_register_run_creates_entry(tmp_registry: RunRegistry) -> None:
 
 
 def test_register_run_is_idempotent_for_same_inputs(tmp_registry: RunRegistry) -> None:
-    args = dict(c_version="C-v0.1.0+STABLE", profile="P_equ", seed=1, commit_sha="def")
-    run_id_1 = tmp_registry.register(**args)
-    run_id_2 = tmp_registry.register(**args)
+    run_id_1 = tmp_registry.register(
+        c_version="C-v0.1.0+STABLE", profile="P_equ", seed=1,
+        commit_sha="def",
+    )
+    run_id_2 = tmp_registry.register(
+        c_version="C-v0.1.0+STABLE", profile="P_equ", seed=1,
+        commit_sha="def",
+    )
     assert run_id_1 == run_id_2  # Deterministic run_id for repro contract R1
 
 

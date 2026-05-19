@@ -10,6 +10,7 @@ from __future__ import annotations
 import json
 import subprocess
 import sys
+from typing import Any
 from pathlib import Path
 
 import pytest
@@ -20,7 +21,7 @@ RESULTS_PATH = REPO_ROOT / "docs/milestones/q2-conformance-negative-results.json
 
 
 @pytest.fixture(scope="module")
-def audit_results() -> dict:
+def audit_results() -> dict[str, Any]:
     """Run the audit script if results don't exist; return the JSON."""
     if not RESULTS_PATH.exists():
         subprocess.run(
@@ -28,16 +29,17 @@ def audit_results() -> dict:
             cwd=REPO_ROOT,
             check=True,
         )
-    return json.loads(RESULTS_PATH.read_text())
+    parsed: dict[str, Any] = json.loads(RESULTS_PATH.read_text())
+    return parsed
 
 
-def test_audit_results_exist(audit_results: dict) -> None:
+def test_audit_results_exist(audit_results: dict[str, Any]) -> None:
     assert "audits" in audit_results
     assert "verdict" in audit_results
     assert len(audit_results["audits"]) == 15
 
 
-def test_all_15_substrates_present(audit_results: dict) -> None:
+def test_all_15_substrates_present(audit_results: dict[str, Any]) -> None:
     expected_names = {
         "IdentitySubstrate", "RandomNoiseSubstrate", "LookupSubstrate",
         "FrozenZerosSubstrate", "ConstantSubstrate",
@@ -51,7 +53,7 @@ def test_all_15_substrates_present(audit_results: dict) -> None:
     assert actual == expected_names
 
 
-def test_verdict_in_known_brackets(audit_results: dict) -> None:
+def test_verdict_in_known_brackets(audit_results: dict[str, Any]) -> None:
     assert audit_results["verdict"] in {
         "0_FP_robust", "1_to_2_FP_strengthen", "ge_3_FP_reformulate",
     }

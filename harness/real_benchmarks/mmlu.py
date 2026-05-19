@@ -29,7 +29,7 @@ import json
 import random
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterator
+from typing import Any, Iterator
 
 from harness.real_benchmarks import MissingLocalDatasetError
 from harness.real_benchmarks.dataset_registry import DatasetPin
@@ -130,7 +130,7 @@ class MMLULoader:
         """Return the SHA-256 of the local fixture (64-char hex)."""
         return self._actual_sha256
 
-    def _iter_raw(self) -> Iterator[dict]:
+    def _iter_raw(self) -> Iterator[dict[str, Any]]:
         with self._path.open("r", encoding="utf-8") as fh:
             for line in fh:
                 line = line.strip()
@@ -138,7 +138,7 @@ class MMLULoader:
                     continue
                 yield json.loads(line)
 
-    def _record_from_raw(self, row: dict) -> MMLURecord:
+    def _record_from_raw(self, row: dict[str, Any]) -> MMLURecord:
         choices = row["choices"]
         if len(choices) != 4:
             raise ValueError(
@@ -244,7 +244,7 @@ def _load_mmlu_records(
        is meant to validate the pipeline only ; empirical claims
        require the full cais/mmlu export.
     """
-    def _materialise(raws: list[dict]) -> list[MMLURecord]:
+    def _materialise(raws: list[dict[str, Any]]) -> list[MMLURecord]:
         # Trim / expand to n_samples deterministically — seeded
         # permutation of the underlying rows then cycle-and-slice.
         if not raws:
@@ -336,7 +336,7 @@ def _mmlu_prompt(record: MMLURecord) -> str:
     )
 
 
-def _letter_token_ids(tokenizer) -> list[int]:
+def _letter_token_ids(tokenizer: Any) -> list[int]:
     """Single-token IDs for the four letter choices.
 
     Raises :class:`ValueError` if any letter does not tokenise to
@@ -365,8 +365,8 @@ def _letter_token_ids(tokenizer) -> list[int]:
 
 
 def evaluate_mmlu(
-    model,
-    tokenizer,
+    model: Any,
+    tokenizer: Any,
     *,
     n_samples: int = 100,
     seed: int = 0,

@@ -73,7 +73,8 @@ def test_ring_buffer_respects_capacity_integrity() -> None:
 def test_ring_buffer_order_validation() -> None:
     """Order must be 'fifo' or 'lifo'."""
     with pytest.raises(ValueError, match="order"):
-        AlphaStreamBuffer(capacity=4, order="invalid")
+        # Intentionally invalid literal to exercise the guard.
+        AlphaStreamBuffer(capacity=4, order="invalid")  # type: ignore[arg-type]
 
 
 def test_ring_buffer_len_reflects_live_count() -> None:

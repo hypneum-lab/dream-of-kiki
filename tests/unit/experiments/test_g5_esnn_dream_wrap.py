@@ -35,7 +35,7 @@ def test_build_esnn_profile_rebinds_all_required_ops() -> None:
     """After rebind, every op in the profile is bound to an E-SNN
     adapter (introspect the runtime's private handler dict)."""
     profile = build_esnn_profile("P_max", seed=0)
-    handlers = profile.runtime._handlers  # type: ignore[attr-defined]
+    handlers = profile.runtime._handlers
     expected = {
         Operation.REPLAY,
         Operation.DOWNSCALE,

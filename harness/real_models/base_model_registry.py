@@ -364,6 +364,6 @@ def _verify_live(pin: BaseModelPin) -> bool:
         url = f"https://huggingface.co/api/models/{pin.repo_id}"
         with urlopen(url, timeout=10) as resp:  # noqa: S310
             payload = json.load(resp)
-        return payload.get("sha") == pin.revision_sha
+        return bool(payload.get("sha") == pin.revision_sha)
     except Exception:  # pragma: no cover - network path
         return False

@@ -249,23 +249,23 @@ def test_schema_validation_typed_records(
         HellaSwagLoader(hs_pin, local_path=hs_path).iter_records()
     )
     assert hs_records
-    for r in hs_records:
-        assert isinstance(r, HellaSwagRecord)
-        assert isinstance(r.ctx, str)
-        assert isinstance(r.endings, tuple)
-        assert len(r.endings) == 4
-        assert 0 <= r.label < 4
+    for hr in hs_records:
+        assert isinstance(hr, HellaSwagRecord)
+        assert isinstance(hr.ctx, str)
+        assert isinstance(hr.endings, tuple)
+        assert len(hr.endings) == 4
+        assert 0 <= hr.label < 4
 
     mega_records = list(
         MegaV2EvalLoader(local_path=mega_v2_fixture).iter_records()
     )
     assert mega_records
-    for r in mega_records:
-        assert isinstance(r, MegaV2EvalRecord)
-        assert r.id.startswith("mv2-")
-        assert isinstance(r.context, str)
-        assert isinstance(r.expected, str)
-        assert isinstance(r.domain, str)
+    for mvr in mega_records:
+        assert isinstance(mvr, MegaV2EvalRecord)
+        assert mvr.id.startswith("mv2-")
+        assert isinstance(mvr.context, str)
+        assert isinstance(mvr.expected, str)
+        assert isinstance(mvr.domain, str)
 
 
 # --------------------------------------------------------------------------

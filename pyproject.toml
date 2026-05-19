@@ -68,46 +68,12 @@ target-version = "py312"
 [tool.mypy]
 strict = true
 python_version = "3.12"
+follow_imports = "silent"
 
 [[tool.mypy.overrides]]
-module = ["mlx_lm", "mlx_lm.*"]
+# Third-party packages that ship no type stubs.
+module = ["mlx_lm", "mlx_lm.*", "scipy", "scipy.*", "pandas", "pandas.*"]
 ignore_missing_imports = true
-
-# Micro-cleanup C (post-N6): scope-relax mypy debt in tests.
-# Tests use bare `dict`/`list` generics and torch nn.Module dynamic
-# imports under pytest.importorskip. Full annotation TODO for N7+.
-[[tool.mypy.overrides]]
-module = ["tests.*"]
-disable_error_code = [
-    "type-arg",
-    "no-untyped-def",
-    "name-defined",
-    "misc",
-    "no-untyped-call",
-    "unused-ignore",
-    "call-arg",
-    "arg-type",
-    "no-any-return",
-    "attr-defined",
-    "assignment",
-    "union-attr",
-    "return-value",
-    "import-untyped",
-]
-
-# Harness type-arg debt: bare dict/list generics in 17 spots.
-# Suppressed for now; N7+ should annotate properly.
-[[tool.mypy.overrides]]
-module = ["harness.*"]
-disable_error_code = [
-    "type-arg",
-    "no-untyped-def",
-    "no-any-return",
-    "unused-ignore",
-    "return-value",
-    "attr-defined",
-    "import-untyped",
-]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -55,7 +55,9 @@ def test_runtime_log_entry_immutable() -> None:
     runtime.execute(make_episode("de-0003", (Operation.REPLAY,)))
     entry = runtime.log[0]
     with pytest.raises((AttributeError, TypeError)):
-        entry.episode_id = "de-mutated"
+        # Intentional write to a read-only property to assert it
+        # is immutable; mypy correctly flags the assignment.
+        entry.episode_id = "de-mutated"  # type: ignore[misc]
 
 
 def test_runtime_unknown_operation_raises() -> None:

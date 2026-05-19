@@ -21,7 +21,7 @@ import logging
 import random
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterator
+from typing import Any, Iterator
 
 from harness.real_benchmarks import MissingLocalDatasetError
 from harness.real_benchmarks.dataset_registry import DatasetPin
@@ -111,7 +111,7 @@ class HellaSwagLoader:
     def local_file_sha256(self) -> str:
         return self._actual_sha256
 
-    def _iter_raw(self) -> Iterator[dict]:
+    def _iter_raw(self) -> Iterator[dict[str, Any]]:
         with self._path.open("r", encoding="utf-8") as fh:
             for line in fh:
                 line = line.strip()
@@ -119,7 +119,7 @@ class HellaSwagLoader:
                     continue
                 yield json.loads(line)
 
-    def _record_from_raw(self, row: dict) -> HellaSwagRecord:
+    def _record_from_raw(self, row: dict[str, Any]) -> HellaSwagRecord:
         endings = row["endings"]
         if len(endings) != 4:
             raise ValueError(
@@ -174,7 +174,7 @@ _DEFAULT_HELLASWAG_FALLBACK = (
 )
 
 
-def _hellaswag_default_fallback_records() -> list[dict]:
+def _hellaswag_default_fallback_records() -> list[dict[str, Any]]:
     """Tiny hand-authored fallback — 8 commonsense-style rows.
 
     The full HellaSwag eval needs the real ``Rowan/hellaswag`` HF
@@ -292,7 +292,7 @@ def _load_hellaswag_records(
     4. The 8-row hand-authored in-module fallback —
        :func:`_hellaswag_default_fallback_records`.
     """
-    def _materialise(raws: list[dict]) -> list[HellaSwagRecord]:
+    def _materialise(raws: list[dict[str, Any]]) -> list[HellaSwagRecord]:
         rng = random.Random(seed)
         rng.shuffle(raws)
         if len(raws) >= n_samples:
@@ -369,8 +369,8 @@ def _load_hellaswag_records(
 
 
 def _continuation_logprob(
-    model_callable,
-    tokenizer,
+    model_callable: Any,
+    tokenizer: Any,
     ctx_ids: list[int],
     ending_ids: list[int],
 ) -> float:
@@ -413,8 +413,8 @@ def _continuation_logprob(
 
 
 def evaluate_hellaswag(
-    model,
-    tokenizer,
+    model: Any,
+    tokenizer: Any,
     *,
     n_samples: int = 100,
     seed: int = 0,

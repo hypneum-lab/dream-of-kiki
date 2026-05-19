@@ -1,6 +1,8 @@
 """Unit tests for replay operation (P_min op 1/2, A-Walker source)."""
 from __future__ import annotations
 
+from typing import Any
+
 from kiki_oniric.dream.episode import (
     BudgetCap,
     DreamEpisode,
@@ -15,7 +17,7 @@ from kiki_oniric.dream.operations.replay import (
 from kiki_oniric.dream.runtime import DreamRuntime
 
 
-def make_replay_episode(ep_id: str, records: list[dict]) -> DreamEpisode:
+def make_replay_episode(ep_id: str, records: list[dict[str, Any]]) -> DreamEpisode:
     return DreamEpisode(
         trigger=EpisodeTrigger.SCHEDULED,
         input_slice={"beta_records": records},

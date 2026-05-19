@@ -23,10 +23,18 @@ stays deterministic and under 1 s.
 """
 from __future__ import annotations
 
+from typing import Any
+
 import pytest
 
-mx = pytest.importorskip("mlx.core")
-nn = pytest.importorskip("mlx.nn")
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    import mlx.core as mx
+    import mlx.nn as nn
+else:
+    mx = pytest.importorskip("mlx.core")
+    nn = pytest.importorskip("mlx.nn")
 
 # Deterministic seed for MLX random init across all tests.
 mx.random.seed(7)
@@ -63,41 +71,41 @@ from kiki_oniric.dream.runtime import DreamRuntime  # noqa: E402
 # --------------------------------------------------------------------------
 
 
-class _TinyMLP(nn.Module):
+class _TinyMLP(nn.Module):  # type: ignore[misc,name-defined]  # mlx.nn dynamic
     def __init__(self) -> None:
         super().__init__()
-        self.layers = [nn.Linear(4, 8), nn.Linear(8, 2)]
+        self.layers = [nn.Linear(4, 8), nn.Linear(8, 2)]  # type: ignore[attr-defined]  # mlx dynamic
         self.input_dim = 4
 
-    def __call__(self, x):
-        h = nn.relu(self.layers[0](x))
-        return self.layers[1](h)
+    def __call__(self, x: mx.array) -> mx.array:
+        h = nn.relu(self.layers[0](x))  # type: ignore[attr-defined]  # mlx dynamic
+        return self.layers[1](h)  # type: ignore[no-any-return]  # mlx dynamic
 
 
-class _TinyEncoder(nn.Module):
+class _TinyEncoder(nn.Module):  # type: ignore[misc,name-defined]  # mlx.nn dynamic
     def __init__(self) -> None:
         super().__init__()
-        self.fc = nn.Linear(4, 4)
+        self.fc = nn.Linear(4, 4)  # type: ignore[attr-defined]  # mlx dynamic
 
-    def __call__(self, x):
+    def __call__(self, x: mx.array) -> tuple[mx.array, mx.array]:
         h = self.fc(x)
         mu = h
         log_var = h * 0.0  # zero log-var ⇒ deterministic sigma = 1
         return mu, log_var
 
 
-class _TinyDecoder(nn.Module):
+class _TinyDecoder(nn.Module):  # type: ignore[misc,name-defined]  # mlx.nn dynamic
     def __init__(self) -> None:
         super().__init__()
-        self.fc = nn.Linear(4, 4)
+        self.fc = nn.Linear(4, 4)  # type: ignore[attr-defined]  # mlx dynamic
 
-    def __call__(self, z):
-        return self.fc(z)
+    def __call__(self, z: mx.array) -> mx.array:
+        return self.fc(z)  # type: ignore[no-any-return]  # mlx dynamic
 
 
 def _make_episode(
     ep_id: str,
-    input_slice: dict,
+    input_slice: dict[str, Any],
     operations: tuple[Operation, ...],
     channels: tuple[OutputChannel, ...],
     flops: int = 1_000_000,
@@ -346,7 +354,7 @@ def test_weight_tensor_shape_invariant_preserved() -> None:
     """
     model = _TinyMLP()
 
-    def _shapes():
+    def _shapes() -> list[tuple[Any, Any]]:
         return [
             (layer.weight.shape, layer.bias.shape)
             for layer in model.layers

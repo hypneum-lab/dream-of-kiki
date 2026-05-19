@@ -19,6 +19,7 @@ sub-second.
 from __future__ import annotations
 
 import hashlib
+from typing import Any
 from unittest.mock import patch
 
 import mlx.core as mx
@@ -43,7 +44,7 @@ from kiki_oniric.core.primitives import GammaSnapshotProtocol
 # --------------------------------------------------------------------------
 
 
-class _TinyTrainableModel(nn.Module):
+class _TinyTrainableModel(nn.Module):  # type: ignore[misc,name-defined]
     """Minimal ``nn.Module`` exposing ``parameters()`` + ``__call__``.
 
     A single ``nn.Linear(hidden, vocab_size)`` is enough to drive a
@@ -56,7 +57,7 @@ class _TinyTrainableModel(nn.Module):
         super().__init__()
         self.hidden = hidden
         self.vocab_size = vocab_size
-        self.linear = nn.Linear(hidden, vocab_size)
+        self.linear = nn.Linear(hidden, vocab_size)  # type: ignore[attr-defined]
 
     def __call__(self, token_ids: mx.array) -> mx.array:
         # Token id → one-hot row in the input space so the linear
@@ -214,11 +215,11 @@ def test_sgd_step_runs_on_tiny_synthetic() -> None:
         np.zeros((2, w.model.vocab_size), dtype=np.float32)
     )
 
-    def loss_fn(model, x, y):
+    def loss_fn(model: Any, x: mx.array, y: mx.array) -> mx.array:
         pred = model(x)
         return mx.mean((pred - y) ** 2)
 
-    grad_fn = nn.value_and_grad(w.model, loss_fn)
+    grad_fn = nn.value_and_grad(w.model, loss_fn)  # type: ignore[attr-defined]
     loss, grads = grad_fn(w.model, xs, ys)
     optimizer = optim.SGD(learning_rate=0.1)
     optimizer.update(w.model, grads)

@@ -12,6 +12,7 @@ Reference : ``docs/specs/2026-04-17-dreamofkiki-framework-C-design.md``
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 import pytest
@@ -115,7 +116,7 @@ def test_restructure_handler_oplora_wired() -> None:
     handler = substrate.restructure_handler_factory()
     assert callable(handler)
 
-    adapter: dict = {
+    adapter: dict[str, Any] = {
         "layers.0.q_proj_B": np.zeros((4, 2), dtype=np.float32),
         "prior_deltas": [],  # empty → no-op projection leg
         "episode_id": "ep-restruct-0",

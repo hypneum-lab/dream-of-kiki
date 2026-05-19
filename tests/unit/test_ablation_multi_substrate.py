@@ -11,6 +11,7 @@ Reference : docs/specs/2026-04-17-dreamofkiki-master-design.md §5
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Any
 
 import pytest
 
@@ -33,17 +34,17 @@ def _bench_fixture() -> RetainedBenchmark:
     )
 
 
-def _correct(item: dict) -> str:
-    return item["expected"]
+def _correct(item: dict[str, Any]) -> str:
+    return str(item["expected"])
 
 
-def _wrong(item: dict) -> str:
+def _wrong(item: dict[str, Any]) -> str:
     return "WRONG"
 
 
-def _half(item: dict) -> str:
+def _half(item: dict[str, Any]) -> str:
     rid = int(item["id"].split("-")[-1])
-    return item["expected"] if rid % 2 == 0 else "WRONG"
+    return str(item["expected"]) if rid % 2 == 0 else "WRONG"
 
 
 def test_substrate_spec_dataclass_holds_name() -> None:
@@ -110,6 +111,7 @@ def test_full_cartesian_grid_size(tmp_path: Path) -> None:
         (r["substrate"], r["profile"], r["seed"])
         for _, r in df.iterrows()
     }
+    assert runner.substrate_specs is not None
     expected = {
         (sub.name, prof.name, seed)
         for sub in runner.substrate_specs

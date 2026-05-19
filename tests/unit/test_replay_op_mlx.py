@@ -2,9 +2,16 @@
 from __future__ import annotations
 
 import pytest
+from typing import Any
 
-mx = pytest.importorskip("mlx.core")
-nn = pytest.importorskip("mlx.nn")
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    import mlx.core as mx
+    import mlx.nn as nn
+else:
+    mx = pytest.importorskip("mlx.core")
+    nn = pytest.importorskip("mlx.nn")
 
 # Deterministic seed for MLX random init across all tests
 mx.random.seed(42)
@@ -22,19 +29,19 @@ from kiki_oniric.dream.operations.replay import (
 )
 
 
-class TinyMLP(nn.Module):
+class TinyMLP(nn.Module):  # type: ignore[misc,name-defined]  # mlx.nn dynamic
     """Minimal 2-layer MLP for replay tests (seeded via mx.random.seed)."""
 
     def __init__(self) -> None:
         super().__init__()
-        self.fc1 = nn.Linear(4, 8)
-        self.fc2 = nn.Linear(8, 2)
+        self.fc1 = nn.Linear(4, 8)  # type: ignore[attr-defined]  # mlx dynamic
+        self.fc2 = nn.Linear(8, 2)  # type: ignore[attr-defined]  # mlx dynamic
 
-    def __call__(self, x):
-        return self.fc2(nn.relu(self.fc1(x)))
+    def __call__(self, x: mx.array) -> mx.array:
+        return self.fc2(nn.relu(self.fc1(x)))  # type: ignore[attr-defined,no-any-return]  # mlx dynamic
 
 
-def make_replay_episode(ep_id: str, records: list[dict]) -> DreamEpisode:
+def make_replay_episode(ep_id: str, records: list[dict[str, Any]]) -> DreamEpisode:
     return DreamEpisode(
         trigger=EpisodeTrigger.SCHEDULED,
         input_slice={"beta_records": records},

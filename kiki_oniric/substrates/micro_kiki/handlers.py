@@ -39,7 +39,7 @@ class MicroKikiHandlersMixin:
 
     def replay_handler_factory(
         self,
-    ) -> Callable[[list[dict], int], NDArray]:
+    ) -> Callable[..., NDArray]:
         """A-Walker/Stickgold replay → LoRA gradient proxy.
 
         Signature matches
@@ -72,7 +72,7 @@ class MicroKikiHandlersMixin:
 
     def downscale_handler_factory(
         self,
-    ) -> Callable[[NDArray, float], NDArray]:
+    ) -> Callable[..., NDArray]:
         """B-Tononi SHY → LoRA B-matrix multiplicative shrink.
 
         Preserves DR-1 on the adapter state : the caller stamps
@@ -95,7 +95,7 @@ class MicroKikiHandlersMixin:
     def restructure_handler_factory(
         self,
         rank_thresh: float = 1e-4,
-    ) -> Callable[[dict, str, str], dict]:
+    ) -> Callable[..., dict[str, NDArray]]:
         """D-Friston FEP restructure → **OPLoRA projection (phase 2)**.
 
         Wires the Orthogonal-Projection LoRA algorithm of Du et
@@ -202,7 +202,7 @@ class MicroKikiHandlersMixin:
         self,
         trim_fraction: float = 0.2,
         alpha: float = 1.0,
-    ) -> Callable[[dict, str], NDArray]:
+    ) -> Callable[..., NDArray]:
         """C-Hobson recombine → **TIES-Merge (phase 2)**.
 
         Wires the TIES-Merging algorithm of Yadav et al. (arXiv

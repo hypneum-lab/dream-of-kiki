@@ -10,6 +10,7 @@ import math
 import pytest
 from hypothesis import given, settings
 from hypothesis import strategies as st
+from hypothesis.strategies import DrawFn
 
 from kiki_oniric.dream.episode import (
     BudgetCap,
@@ -22,7 +23,7 @@ from kiki_oniric.dream.runtime import DreamRuntime
 
 
 @st.composite
-def dream_episodes_with_replay_only(draw) -> DreamEpisode:
+def dream_episodes_with_replay_only(draw: DrawFn) -> DreamEpisode:
     flops = draw(st.integers(min_value=1, max_value=10_000_000))
     wall = draw(st.floats(min_value=0.0, max_value=60.0,
                           allow_nan=False, allow_infinity=False))

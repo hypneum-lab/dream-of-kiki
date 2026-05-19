@@ -2,30 +2,37 @@
 from __future__ import annotations
 
 import pytest
+from typing import Any
 
-mx = pytest.importorskip("mlx.core")
-nn = pytest.importorskip("mlx.nn")
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    import mlx.core as mx
+    import mlx.nn as nn
+else:
+    mx = pytest.importorskip("mlx.core")
+    nn = pytest.importorskip("mlx.nn")
 
 from harness.benchmarks.retained.retained import RetainedBenchmark
 from kiki_oniric.dream.swap import SwapAborted, SwapResult
 from kiki_oniric.profiles.p_min import PMinProfile
 
 
-class TinyMLP(nn.Module):
+class TinyMLP(nn.Module):  # type: ignore[misc,name-defined]  # mlx.nn dynamic
     def __init__(self) -> None:
         super().__init__()
-        self.fc1 = nn.Linear(4, 8)
-        self.fc2 = nn.Linear(8, 2)
+        self.fc1 = nn.Linear(4, 8)  # type: ignore[attr-defined]  # mlx dynamic
+        self.fc2 = nn.Linear(8, 2)  # type: ignore[attr-defined]  # mlx dynamic
 
-    def __call__(self, x):
-        return self.fc2(nn.relu(self.fc1(x)))
-
-
-def _always_correct_predictor(item: dict) -> str:
-    return item["expected"]
+    def __call__(self, x: mx.array) -> mx.array:
+        return self.fc2(nn.relu(self.fc1(x)))  # type: ignore[attr-defined,no-any-return]  # mlx dynamic
 
 
-def _always_wrong_predictor(item: dict) -> str:
+def _always_correct_predictor(item: dict[str, Any]) -> str:
+    return str(item["expected"])
+
+
+def _always_wrong_predictor(item: dict[str, Any]) -> str:
     return "WRONG"
 
 
