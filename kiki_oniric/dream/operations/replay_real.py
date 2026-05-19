@@ -24,9 +24,12 @@ Reference :
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Callable
+from typing import TYPE_CHECKING, Callable
 
 from kiki_oniric.dream.episode import DreamEpisode
+
+if TYPE_CHECKING:
+    from kiki_oniric.dream.channels import WeightUpdate
 
 
 @dataclass
@@ -48,6 +51,19 @@ def _flop_estimate(n_records: int, x_dim: int, y_dim: int) -> int:
     """
     # 4-8-2 MLP : ~48 mul-adds in fwd × 2 (bwd) × n_records
     per_record = max(2 * (x_dim * y_dim + x_dim + y_dim), 1)
+    return max(per_record * n_records, 1)
+
+
+def _flop_estimate_lora(model, n_records: int) -> int:
+    """Rough FLOP count for a LoRA-adapter replay step.
+
+    Dominated by the per-layer low-rank product ``B @ A`` (forward +
+    backward) over ``n_records``. Smaller than a full-weight step.
+    """
+    per_record = sum(
+        2 * layer.rank * layer.in_features * layer.out_features
+        for layer in model.layers
+    )
     return max(per_record * n_records, 1)
 
 
@@ -115,7 +131,82 @@ def replay_real_handler(
     return handler
 
 
+def replay_lora_handler(
+    state: ReplayRealState,
+    *,
+    model,  # LoRAModel — typed loosely for lazy MLX import
+    lr: float = 0.01,
+) -> Callable[[DreamEpisode], "WeightUpdate | None"]:
+    """Build a LoRA-only replay handler that emits a ``WeightUpdate``.
+
+    Runs one SGD step on ``model``'s adapters — the base weight is
+    frozen by ``LoRALinear``, so MLX excludes it from the gradient
+    tree and only the A/B adapters move. Returns the per-adapter
+    low-rank delta as a channel-1 ``WeightUpdate``; empty
+    ``beta_records`` returns ``None`` (S1 no-op).
+
+    Reference:
+      docs/specs/2026-04-17-dreamofkiki-framework-C-design.md §4.2
+    """
+    import mlx.core as mx
+    import mlx.nn as nn
+    import mlx.optimizers as optim
+
+    from kiki_oniric.dream.channels import WeightUpdate
+    from kiki_oniric.substrates.micro_kiki.lora_model import adapter_delta
+
+    optimizer = optim.SGD(learning_rate=lr)
+
+    def loss_fn(model_inner, x, y):
+        pred = model_inner(x)
+        return mx.mean((pred - y) ** 2)
+
+    grad_fn = nn.value_and_grad(model, loss_fn)
+
+    def handler(episode: DreamEpisode) -> "WeightUpdate | None":
+        records = episode.input_slice.get("beta_records", [])
+        if not records:
+            # S1 no-op branch : no signal, no compute, no tag.
+            state.last_loss = None
+            state.last_compute_flops = 0
+            return None
+
+        for idx, r in enumerate(records):
+            if "x" not in r or "y" not in r:
+                raise ValueError(
+                    f"record {idx} missing 'x' or 'y' key: {r!r}"
+                )
+
+        # Snapshot the adapters before the step. mx.array() copy is a
+        # defensive detach (the optimizer rebinds, so the old refs
+        # are also stable, but copy makes the snapshot self-evident).
+        before = {
+            k: mx.array(v)
+            for k, v in model.adapter_parameters().items()
+        }
+        xs = mx.array([r["x"] for r in records])
+        ys = mx.array([r["y"] for r in records])
+        loss, grads = grad_fn(model, xs, ys)
+        optimizer.update(model, grads)
+        mx.eval(model.parameters())
+        after = model.adapter_parameters()
+
+        flops = _flop_estimate_lora(model, len(records))
+        state.total_records_consumed += len(records)
+        state.last_loss = float(loss.item())
+        state.last_compute_flops = flops
+        state.total_compute_flops += flops
+
+        return WeightUpdate(
+            lora_delta=adapter_delta(before, after),
+            fisher_bump=None,
+        )
+
+    return handler
+
+
 __all__ = [
     "ReplayRealState",
     "replay_real_handler",
+    "replay_lora_handler",
 ]
