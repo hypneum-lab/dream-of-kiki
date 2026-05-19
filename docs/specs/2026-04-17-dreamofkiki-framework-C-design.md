@@ -222,6 +222,14 @@ per-adapter low-rank delta. With `replay` (B1b) and `downscale`
 (B2), two of the four dream operations now emit real channel
 outputs. `restructure` and `recombine` still return `None`.
 
+As of B3 (issue #15), `restructure` emits a real channel-3
+`TopologyDiff`: `restructure_lora_handler` mutates a `LoRAModel`'s
+adapter stack with the full `{add, remove, reroute}` vocab,
+applies an INSS soft cap on `add`, and returns an executable +
+SHA-256-fingerprinted diff. With `replay` (B1b), `downscale`
+(B2), and `restructure` (B3), three of the four dream operations
+now emit real channel outputs. `recombine` still returns `None`.
+
 **restructure** — apply predictive processing update, minimize free energy over hierarchy, add/remove/reroute layers if needed
 - Source : D-Friston FEP
 - Input : δ snapshot

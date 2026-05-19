@@ -679,6 +679,48 @@ see `docs/specs/2026-04-17-dreamofkiki-framework-C-design.md` §12).
 
 ---
 
+## [C-v0.18.0+PARTIAL] — 2026-05-20 — restructure emits TopologyDiff (B3)
+
+### Formal axis (FC) — MINOR (v0.17.0 → v0.18.0)
+
+- **New handler** `restructure_lora_handler` in
+  `kiki_oniric/dream/operations/restructure_real.py`: mutates a
+  `LoRAModel`'s adapter stack with the full
+  `{add, remove, reroute}` vocab and emits a channel-3
+  `TopologyDiff`. Validates every op pre-mutation with `"S3:"`-
+  tagged errors. INSS soft cap on `add`
+  (`max_adds_per_episode`, default 1) silently skips overflowing
+  adds (no entry in the diff). `remove` snapshots
+  `base_weight` / `lora_a` / `lora_b` / `bias` and the
+  reconstruction dims into the payload so B5 can undo or rebuild
+  the layer. Each applied op carries a 64-hex
+  `model_sha256_post` fingerprint (R1).
+- **Hardened type** `TopologyDiff` now has a `__post_init__`
+  enforcing structural S3 validity (vocab, per-op required keys,
+  positive `rank`, finite snapshot arrays, 64-hex sha). B0 had
+  documented the deferral; B3 fills it in.
+- **State** `RestructureRealState` gains 4 backwards-compatible
+  counter fields (`adds_this_episode`, `total_adds`,
+  `total_removes`, `total_reroutes`).
+- Sub-project B3 of issue #15. `restructure` is the third dream
+  operation to emit a real channel output (after `replay` B1b
+  and `downscale` B2). `recombine` (B4) remains the only
+  skeleton-only op. No profile wiring — the handler is exercised
+  via a direct `DreamRuntime`. CasCor partial weight-freeze
+  (INSS hint, optional companion to the Add bound) is **not**
+  implemented in B3 and is flagged as future work.
+
+### Empirical axis (EC) — UNCHANGED (PARTIAL)
+
+- No new substrate, axiom, or empirical claim. EC stays
+  `+PARTIAL`.
+
+### Packaging
+
+- `pyproject.toml` version bumped `0.15.0 → 0.16.0`.
+
+---
+
 ## [C-v0.17.0+PARTIAL] — 2026-05-20 — downscale emits WeightUpdate (B2)
 
 ### Formal axis (FC) — MINOR (v0.16.0 → v0.17.0)

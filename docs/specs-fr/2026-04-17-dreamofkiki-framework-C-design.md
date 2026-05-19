@@ -226,6 +226,15 @@ delta de bas rang par adaptateur. Avec `replay` (B1b) et
 désormais de véritables sorties sur canal. `restructure` et
 `recombine` renvoient toujours `None`.
 
+Depuis B3 (issue #15), `restructure` émet un véritable
+`TopologyDiff` (canal 3) : `restructure_lora_handler` mute la
+pile d'adaptateurs d'un `LoRAModel` avec le vocabulaire complet
+`{add, remove, reroute}`, applique un plafond INSS doux sur
+`add`, et retourne un diff exécutable avec empreinte SHA-256.
+Avec `replay` (B1b), `downscale` (B2) et `restructure` (B3),
+trois des quatre opérations de rêve émettent désormais des
+sorties de canal réelles. `recombine` retourne encore `None`.
+
 **restructure** — applique une mise à jour de codage prédictif, minimise l'énergie libre sur la hiérarchie, ajoute/supprime/reroute des couches si nécessaire
 - Source : D-Friston FEP
 - Entrée : snapshot δ
