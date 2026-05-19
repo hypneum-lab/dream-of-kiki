@@ -679,6 +679,54 @@ see `docs/specs/2026-04-17-dreamofkiki-framework-C-design.md` §12).
 
 ---
 
+## [C-v0.13.0+PARTIAL] — 2026-05-19 — `consolidate()` public facade
+
+### Formal axis (FC) — MINOR (v0.12.0 → v0.13.0)
+
+- **New public top-level API** : `kiki_oniric.consolidate()`,
+  re-exported from `kiki_oniric/consolidate.py` via
+  `kiki_oniric/__init__.py`. Single entry point for downstream
+  consumers — notably `nerve-wml`'s `bridge/dream_bridge.py`
+  scaffold — that previously had to compose primitives themselves
+  or import through private sub-module paths.
+- **Facade only — zero new semantics.** Pure composition over
+  already-tested primitives : decodes an event `trace` into one
+  `DreamEpisode` per phase-clock window, runs the profile's
+  `DreamRuntime` (S2/S3 guards + DR-0 log fire unchanged), and
+  aggregates a per-transducer delta tensor. No primitive signature
+  changes — hence FC-MINOR, not MAJOR.
+- Signature : `consolidate(trace, profile, *, n_transducers=12,
+  alphabet_size=64) -> np.ndarray`. Output shape
+  `[n_transducers, alphabet_size, alphabet_size]`, dtype
+  `float32`. Contract covers shape, dtype and R1 bit-exact
+  determinism only — delta magnitude carries no semantic promise.
+- `alphabet_size` default fixed at **64** (issue #14 prose
+  mentioning "32" was stale) — matches the canonical `nerve-wml`
+  alphabet (`Nerve.ALPHABET_SIZE`, `track_p/transducer.py`
+  `alphabet_size: int = 64`).
+- DR-4 chain inclusion holds at the facade level : because the
+  op-set of `P_min` is a strict subset of `P_equ`'s (and `P_equ`'s
+  of `P_max`'s) and each op contributes additively, the delta
+  tensors satisfy `delta(P_min) ⊆ delta(P_equ) ⊆ delta(P_max)`.
+- New unit suite `tests/unit/test_consolidate_facade.py`
+  (11 tests) : zero-trace → zero delta, default shape/dtype,
+  DR-4 inclusion (`P_min ⊆ P_equ`, `P_equ ⊆ P_max`), R1 bit-exact
+  determinism, malformed-trace and non-finite (S2) guard failures,
+  out-of-range index clamping.
+
+### Empirical axis (EC) — UNCHANGED (PARTIAL)
+
+- The facade introduces no new substrate, op, or empirical claim.
+  It composes already-validated primitives ; the DR-3 conformance
+  matrix is unaffected. EC stays `+PARTIAL`.
+
+### Packaging
+
+- `pyproject.toml` package version bumped `0.10.0 → 0.11.0`
+  (FC-MINOR facade addition).
+
+---
+
 ## [C-v0.12.0+PARTIAL] — 2026-05-03 — Wake-Sleep CL ablation baseline
 
 ### Formal axis (FC) — MINOR (v0.11.0 → v0.12.0)
