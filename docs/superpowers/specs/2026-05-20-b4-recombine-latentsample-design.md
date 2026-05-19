@@ -116,9 +116,11 @@ For each `DreamEpisode`:
    `z = mu + sigma * epsilon`; `sample_arr = decoder(z)`;
    `mx.eval(sample_arr)` (existing).
 4. `state.last_sample = [...]` flattening as today;
-   `state.last_compute_flops = max(2*(mu.size + sample_arr.size), 1)`;
-   `state._episode_count += 1` (existing).
-5. **New** — build the `LatentSample`:
+   `state.last_compute_flops = max(2*(mu.size + sample_arr.size), 1)`
+   (existing).
+5. **New** — build the `LatentSample` *before* bumping the
+   counter, so `ep=<state._episode_count>` is the index of
+   *this* episode:
    ```python
    latent_vector = (
        np.asarray(z, dtype=np.float32).ravel().copy()
@@ -126,23 +128,26 @@ For each `DreamEpisode`:
    species = episode.input_slice.get("species", "default")
    if not isinstance(species, str):
        raise ValueError(
-           f"I3: species must be str, got {type(species).__name__}"
+           f"recombine: species must be str, "
+           f"got {type(species).__name__}"
        )
    provenance = (
        f"recombine:de={episode.episode_id}:"
-       f"ep={state._episode_count - 1}:seed={key_seed}"
+       f"ep={state._episode_count}:seed={key_seed}"
    )
-   return LatentSample(
+   sample = LatentSample(
        species=species,
        latent_vector=latent_vector,
        provenance=provenance,
    )
    ```
+6. `state._episode_count += 1`; `return sample`.
 
-The `state._episode_count - 1` in `provenance` is intentional: by
-the time we build the LatentSample the counter has already been
-bumped (step 4), so `ep=<count-1>` is the index of *this*
-episode (matches the `key_seed` that drove sampling).
+The counter bump moves **after** the `LatentSample` construction
+to keep the `provenance` reading `ep=<count>` (no off-by-one
+arithmetic). If `LatentSample.__post_init__` raises (non-finite),
+the counter does *not* advance — sound semantics for "this
+episode didn't actually emit".
 
 ### `latent_vector` shape and dtype
 
@@ -155,8 +160,10 @@ episode (matches the `key_seed` that drove sampling).
 ### `species` and `provenance`
 
 - `species`: arbitrary string, defaults to `"default"`. Type
-  check raises `ValueError("I3: ...")` on non-str. No vocabulary
-  restriction beyond `str`.
+  check raises a plain `ValueError("recombine: species must be
+  str, ...")` on non-str (no invariant tag — `I3` is about
+  latent-dim coherence, not species typing; `S2/S3` don't fit
+  either). No vocabulary restriction beyond `str`.
 - `provenance` format (fixed):
   `f"recombine:de={episode_id}:ep={count}:seed={key_seed}"`.
   Reconstructible bit-by-bit from
@@ -233,7 +240,7 @@ inline to stay self-contained).
 5. **species_from_input** — `input_slice["species"] =
    "replay-mix"` → `sample.species == "replay-mix"`.
 6. **species_non_str_rejected** — `input_slice["species"] = 42`
-   → `ValueError(r"^I3:")`.
+   → `ValueError(r"^recombine: species must be str")`.
 7. **provenance_format** — regex
    `r"^recombine:de=.+:ep=\d+:seed=\d+$"` matches.
 8. **provenance_count_increments** — two episodes with the
@@ -279,7 +286,7 @@ np.float32).ravel().copy()` conversion.
 2. `latent_vector = np.asarray(z, dtype=np.float32).ravel()
    .copy()` — the sampled latent, detached.
 3. `species` is read from `input_slice` (default `"default"`);
-   non-str raises `ValueError(r"^I3:")`.
+   non-str raises `ValueError(r"^recombine: species must be str")`.
 4. `provenance` matches
    `r"^recombine:de=.+:ep=\d+:seed=\d+$"`.
 5. State (`last_sample`, `last_compute_flops`, `_episode_count`),
