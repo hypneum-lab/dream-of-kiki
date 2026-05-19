@@ -1003,6 +1003,10 @@ claim empirical parity.
 | @gavranovic2024fundamental (Fundamental Components of Deep Learning, PhD thesis / arXiv:2403.13001) | Unified category-theoretic account of deep learning architectures and training (parametric optics over semicartesian categories) | Orthogonal prior art for categorical ML : we formalise *dream-phase consolidation operations* rather than gradient-based training, and use a strictly weaker algebraic structure (free semigroup) adequate for the compositional-semantics claim without committing to the full optics stack |
 | @klinzing2019mechanisms (Nature Neuroscience, systems-consolidation review) ; @rasch2025sleep (Physiological Reviews, sleep-contribution review) | Canonical three-process framing (active systems consolidation + SHY + integration) with extensive empirical grounding | Empirical anchor we commit to (cf. §3 preamble) ; our four-primitive decomposition refines *integration* into `restructure` and `recombine` — the extra generator is justified by non-commutativity with `downscale` (DR-2 proof), not by disagreement with the review literature |
 | @huh2024platonic (Platonic Representation Hypothesis, ICML 2024) | Sufficiently capable models converge to a shared statistical representation independent of architecture and modality | Theoretical underpinning for our DR-3 substrate-agnosticism claim : if PRH holds, conformance is *expected* to transfer across the MLX, E-SNN and LoRA substrates rather than being an architectural coincidence ; companion empirical PRH probe in a cognitive-architecture setting reported in @saillant2026nervewml (`nerve-wml` v1.7.0, GammaThetaMultiplexer experiment) |
+| @liu2021dvnc (Discrete-Valued Neural Communication, NeurIPS 2021) | VQ-VAE shared global codebook for discrete messages between neural modules | Closest prior art for cross-module discrete communication ; DVNC uses one shared codebook and homogeneous modules, whereas our substrate-portability claim (DR-3) and the companion nerve-wml protocol use per-substrate codebooks with learned transducers and typed prediction/error roles — DVNC is a special case (single substrate, single codebook) of the more general portability our Conformance Criterion targets |
+| @pedersen2024nir (Neuromorphic Intermediate Representation, Nature Communications 2024) | Static computational-graph IR : a hardware-agnostic instruction set for compiling one spiking model onto many neuromorphic backends | Operates at the *model-graph* layer ; orthogonal to our framework, which composes *consolidation operations* over a substrate and is agnostic to the IR that lowers any one substrate to hardware — NIR could serve as the compilation target for our E-SNN substrate (§9.1) without altering the axioms |
+| @aer2025biohybrid (Address-Event Representation over UDP/Ethernet, arXiv:2501.09128, 2025) | Transport / encoding layer specifying how spike events are timestamped, addressed and physically carried, including biohybrid silicon–wetware links | Operates at the *transport* layer ; orthogonal to our framework — the Conformance Criterion constrains the semantics of consolidation operations, not the wire protocol that moves spikes, and AER is one admissible carrier for a conformant E-SNN substrate |
+| @liu2024hybrid (Advancing brain-inspired computing with hybrid neural networks, National Science Review 2024) | Survey arguing hybrid ANN/SNN systems are the path to brain-inspired computing | Canonical hybrid-neural-network anchor for our cross-substrate claim : our cycle-1 validation across an MLX dense substrate and a LIF spiking substrate is precisely a hybrid-neural-network configuration, and the executable Conformance Criterion supplies the contract such hybrids currently lack |
 
 Our distinguishing features relative to the above : **(a)** a
 unified *formal* framework covering all four pillars with a
@@ -1030,6 +1034,27 @@ companion `nerve-wml` v1.7.0 working-memory layer
 GammaThetaMultiplexer experiment ; the cross-substrate conformance
 matrix reported here (cycle 2 + 3) is the dreamOfkiki side of the
 same empirical bet.
+
+**The 2026 critiques and a global-versus-local refinement.** The PRH
+has since been contested. @platoscave2026 report that cross-model
+representational alignment is fragile and degrades as model scale
+grows, and @aristotelianprh2026 show that the *global* convergence
+originally claimed is substantially a width/depth confounder : once
+alignment is null-calibrated against capacity-matched random baselines,
+only *local* neighbourhood structure survives as a genuine
+cross-substrate signal. We fold this into DR-3 rather than against it.
+Our substrate-agnosticism claim does not require that the MLX, E-SNN and
+LoRA substrates share one global representation ; it requires only that
+a *conformant* substrate preserves the *local* operational structure the
+Conformance Criterion checks — that the same consolidation operations,
+composed in the same order, produce neighbourhood-equivalent episode
+states. This is the local form of PRH, and it is the form the 2026
+evidence still supports. The companion nerve-wml probe
+[@saillant2026nervewml] is consistent with this reading : its
+mutual-kNN measurement is a local-neighbourhood metric reported against
+a capacity-matched random baseline, exactly the null-calibrated, local
+quantity @aristotelianprh2026 argue is the defensible one. DR-3 is
+therefore anchored to local, not global, representational convergence.
 
 ---
 
