@@ -11,7 +11,10 @@ else:
     mx = pytest.importorskip("mlx.core")
     tree_flatten = pytest.importorskip("mlx.utils").tree_flatten
 
-from kiki_oniric.substrates.micro_kiki.lora_model import LoRALinear
+from kiki_oniric.substrates.micro_kiki.lora_model import (
+    LoRALinear,
+    LoRAModel,
+)
 
 
 def test_lora_linear_shapes() -> None:
@@ -65,3 +68,45 @@ def test_lora_linear_base_weight_is_frozen() -> None:
 def test_lora_linear_rejects_nonpositive_rank() -> None:
     with pytest.raises(ValueError, match="rank"):
         LoRALinear(4, 8, rank=0, alpha=4.0, key=mx.random.key(0))
+
+
+def test_lora_model_forward_shape() -> None:
+    model = LoRAModel((4, 8, 2), rank=2, alpha=4.0, seed=0)
+    x = mx.array([[0.1, 0.2, 0.3, 0.4]])
+    assert model(x).shape == (1, 2)
+
+
+def test_lora_model_adapter_parameters_keys() -> None:
+    model = LoRAModel((4, 8, 2), rank=2, alpha=4.0, seed=0)
+    params = model.adapter_parameters()
+    assert set(params) == {
+        "layer0.lora_a",
+        "layer0.lora_b",
+        "layer1.lora_a",
+        "layer1.lora_b",
+    }
+    assert params["layer0.lora_a"].shape == (2, 4)
+    assert params["layer1.lora_b"].shape == (2, 2)
+
+
+def test_lora_model_adapter_parameters_excludes_base() -> None:
+    model = LoRAModel((4, 8, 2), rank=2, alpha=4.0, seed=0)
+    for name in model.adapter_parameters():
+        assert "base_weight" not in name
+        assert "bias" not in name
+
+
+def test_lora_model_is_deterministic_under_seed() -> None:
+    m1 = LoRAModel((4, 8, 2), rank=2, alpha=4.0, seed=7)
+    m2 = LoRAModel((4, 8, 2), rank=2, alpha=4.0, seed=7)
+    assert bool(
+        mx.allclose(m1.layers[0].base_weight, m2.layers[0].base_weight).item()
+    )
+    assert bool(
+        mx.allclose(m1.layers[1].lora_a, m2.layers[1].lora_a).item()
+    )
+
+
+def test_lora_model_rejects_too_few_sizes() -> None:
+    with pytest.raises(ValueError, match="layer_sizes"):
+        LoRAModel((4,), rank=2, alpha=4.0, seed=0)
