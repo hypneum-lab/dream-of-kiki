@@ -26,10 +26,13 @@ Reference :
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Callable
+from typing import TYPE_CHECKING, Callable
 
 from kiki_oniric.dream.episode import DreamEpisode
 from kiki_oniric.dream.guards.finite import FiniteGuardError, check_finite
+
+if TYPE_CHECKING:
+    from kiki_oniric.dream.channels import WeightUpdate
 
 
 @dataclass
@@ -51,6 +54,20 @@ def _param_count(model) -> int:
         if b is not None:
             total += int(b.size)
     return total
+
+
+def _flop_estimate_downscale_lora(model) -> int:
+    """Rough FLOP count for a LoRA-adapter shrinkage step.
+
+    Dominated by the per-layer elementwise scale of the A/B
+    adapters: ``rank * (in + out)`` ops per layer, times two
+    (forward + scratch). Smaller than a full-weight shrinkage.
+    """
+    per_layer = sum(
+        2 * layer.rank * (layer.in_features + layer.out_features)
+        for layer in model.layers
+    )
+    return max(per_layer, 1)
 
 
 def downscale_real_handler(
@@ -117,9 +134,76 @@ def downscale_real_handler(
     return handler
 
 
+def downscale_lora_handler(
+    state: DownscaleRealState,
+    *,
+    model,  # LoRAModel — typed loosely for lazy MLX import
+) -> Callable[[DreamEpisode], "WeightUpdate | None"]:
+    """Build a LoRA-only downscale handler that emits a ``WeightUpdate``.
+
+    Reads ``shrink_factor`` from the episode (default ``1.0``),
+    validates ``0 < factor <= 1``, then multiplies every
+    ``LoRALinear``'s ``lora_a`` / ``lora_b`` by the factor in place.
+    The frozen base weight is not touched — SHY shrinkage on the
+    LoRA substrate targets the adaptation only. ``factor == 1.0``
+    is an S1 no-op (returns ``None``, FLOPs 0). Returns
+    ``WeightUpdate(lora_delta=..., fisher_bump=None)`` with the
+    per-adapter low-rank deltas keyed as ``adapter_parameters()``.
+
+    Reference:
+      docs/specs/2026-04-17-dreamofkiki-framework-C-design.md §4.2
+    """
+    import mlx.core as mx
+
+    from kiki_oniric.dream.channels import WeightUpdate
+    from kiki_oniric.substrates.micro_kiki.lora_model import adapter_delta
+
+    def handler(episode: DreamEpisode) -> "WeightUpdate | None":
+        factor = episode.input_slice.get("shrink_factor", 1.0)
+        # Validate BEFORE any mutation — S2 / operations/CLAUDE.md.
+        if not (0.0 < factor <= 1.0):
+            raise ValueError(
+                f"shrink_factor must be in (0, 1], got {factor}"
+            )
+
+        if factor == 1.0:
+            # S1 no-op branch : zero compute, no emission.
+            state.last_compute_flops = 0
+            return None
+
+        # Snapshot adapters before shrinkage. MLX arrays are
+        # immutable values; the optimizer rebinds them, so
+        # ``mx.array(v)`` is a defensive detach.
+        before = {
+            k: mx.array(v)
+            for k, v in model.adapter_parameters().items()
+        }
+
+        # Per-layer shrinkage of A/B adapters. Base weight + bias
+        # are frozen by LoRALinear and intentionally untouched.
+        for layer in model.layers:
+            layer.lora_a = layer.lora_a * factor
+            layer.lora_b = layer.lora_b * factor
+
+        mx.eval(model.parameters())
+        after = model.adapter_parameters()
+
+        flops = _flop_estimate_downscale_lora(model)
+        state.compound_factor *= factor
+        state.last_compute_flops = flops
+
+        return WeightUpdate(
+            lora_delta=adapter_delta(before, after),
+            fisher_bump=None,
+        )
+
+    return handler
+
+
 __all__ = [
     "DownscaleRealState",
     "downscale_real_handler",
+    "downscale_lora_handler",
     # Re-export FiniteGuardError so test imports read naturally.
     "FiniteGuardError",
 ]
