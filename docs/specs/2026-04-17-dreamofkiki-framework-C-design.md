@@ -183,7 +183,7 @@ value, captured in `EpisodeLogEntry.channel_outputs`:
 
 - Channel 1 — `WeightUpdate(lora_delta, fisher_bump)`
 - Channel 2 — `LatentSample(species, latent_vector, provenance)`
-- Channel 3 — `HierarchyDiff(diff)`
+- Channel 3 — `TopologyDiff(diff)`
 - Channel 4 — `AttentionPrior(prior)`
 
 `ChannelOutput` is their union. Implemented in

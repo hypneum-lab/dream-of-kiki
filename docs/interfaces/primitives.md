@@ -150,7 +150,7 @@ Topology diff applied atomically at swap time.
 **Constraint**: must satisfy invariant S3 (validate_topology
 passes on post-state).
 
-**Produced value**: `HierarchyDiff` (`kiki_oniric/dream/channels/`),
+**Produced value**: `TopologyDiff` (`kiki_oniric/dream/channels/`),
 captured in `EpisodeLogEntry.channel_outputs`.
 
 ### Canal 4 — AttentionPriorChannel

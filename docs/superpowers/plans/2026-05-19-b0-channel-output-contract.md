@@ -49,7 +49,7 @@ import pytest
 from kiki_oniric.dream.channels import (
     AttentionPrior,
     ChannelOutput,
-    HierarchyDiff,
+    TopologyDiff,
     LatentSample,
     WeightUpdate,
 )
@@ -84,7 +84,7 @@ def test_attention_prior_rejects_non_finite() -> None:
 
 
 def test_hierarchy_diff_holds_tuple() -> None:
-    hd = HierarchyDiff(diff=(("add_node", {"id": "n1"}),))
+    hd = TopologyDiff(diff=(("add_node", {"id": "n1"}),))
     assert hd.diff[0][0] == "add_node"
 
 
@@ -95,7 +95,7 @@ def test_channel_types_are_frozen() -> None:
 
 
 def test_channel_output_union_members() -> None:
-    members = (WeightUpdate, LatentSample, HierarchyDiff, AttentionPrior)
+    members = (WeightUpdate, LatentSample, TopologyDiff, AttentionPrior)
     for member in members:
         assert member in ChannelOutput.__args__  # type: ignore[attr-defined]
 ```
@@ -132,7 +132,7 @@ from numpy.typing import NDArray
 __all__ = [
     "WeightUpdate",
     "LatentSample",
-    "HierarchyDiff",
+    "TopologyDiff",
     "AttentionPrior",
     "ChannelOutput",
 ]
@@ -182,7 +182,7 @@ class LatentSample:
 
 
 @dataclass(frozen=True)
-class HierarchyDiff:
+class TopologyDiff:
     """Channel 3 output — topology diff.
 
     Consumed by ``HierarchyChangeChannel.apply_diff`` (invariant S3).
@@ -207,7 +207,7 @@ class AttentionPrior:
             raise ValueError("S2: AttentionPrior.prior non-finite")
 
 
-ChannelOutput = WeightUpdate | LatentSample | HierarchyDiff | AttentionPrior
+ChannelOutput = WeightUpdate | LatentSample | TopologyDiff | AttentionPrior
 ```
 
 - [ ] **Step 4: Run test to verify it passes**
@@ -231,7 +231,7 @@ Commit body (subject ≤50, body ≤72, no AI attribution):
 ```
 feat: add channel-output value types
 
-B0 / issue #15. Define WeightUpdate, LatentSample, HierarchyDiff
+B0 / issue #15. Define WeightUpdate, LatentSample, TopologyDiff
 and AttentionPrior — the value types carried on the four
 dream-awake channels — plus the ChannelOutput union. Frozen
 dataclasses with S2 finiteness validation. No runtime wiring
@@ -520,7 +520,7 @@ value, captured in `EpisodeLogEntry.channel_outputs`:
 
 - Channel 1 — `WeightUpdate(lora_delta, fisher_bump)`
 - Channel 2 — `LatentSample(species, latent_vector, provenance)`
-- Channel 3 — `HierarchyDiff(diff)`
+- Channel 3 — `TopologyDiff(diff)`
 - Channel 4 — `AttentionPrior(prior)`
 
 `ChannelOutput` is their union. Implemented in
@@ -544,7 +544,7 @@ at the produced value type, e.g. under Canal 1:
 captured in `EpisodeLogEntry.channel_outputs`.
 ```
 
-Repeat for canals 2-4 with `LatentSample`, `HierarchyDiff`,
+Repeat for canals 2-4 with `LatentSample`, `TopologyDiff`,
 `AttentionPrior`.
 
 - [ ] **Step 5: Add the CHANGELOG entry**
@@ -559,7 +559,7 @@ before the most recent entry):
 
 - **New module** `kiki_oniric/dream/channels.py` : the four
   channel-output value types (`WeightUpdate`, `LatentSample`,
-  `HierarchyDiff`, `AttentionPrior`) and the `ChannelOutput`
+  `TopologyDiff`, `AttentionPrior`) and the `ChannelOutput`
   union. Frozen dataclasses with S2 finiteness validation.
 - **`EpisodeLogEntry`** gains `channel_outputs`, a tuple parallel
   to `operations_executed`. Default `()` — data-level backward
@@ -645,4 +645,4 @@ unblocked (the channel-output contract is now frozen).
 
 - **Spec coverage:** four channel types (Task 1) ✓; `channel_outputs` field (Task 2) ✓; handler signature widening (Task 2) ✓; runtime collection (Task 3) ✓; spec/primitives.md/FR/CHANGELOG/DualVer sync (Task 4) ✓. The spec's "migrate four handlers to the new signature" item is intentionally dropped — the return-type widening is non-breaking, so handlers returning `None` already conform; they are touched in B1-B4. The spec's "update core/primitives.py / test_dr3" items are dropped — confirmed out of scope (the four ops are not DR-3 primitives).
 - **Placeholder scan:** the FR spec filename is resolved by an explicit `ls` command in Task 4 Step 1, not left vague. No other placeholders.
-- **Type consistency:** `WeightUpdate`, `LatentSample`, `HierarchyDiff`, `AttentionPrior`, `ChannelOutput`, `OperationHandler`, `EpisodeLogEntry.channel_outputs` used identically across Tasks 1-4. `WeightUpdate.lora_delta` is `dict[str, NDArray[np.float32]]` to match `WeightDeltaChannel.apply` in `core/primitives.py`.
+- **Type consistency:** `WeightUpdate`, `LatentSample`, `TopologyDiff`, `AttentionPrior`, `ChannelOutput`, `OperationHandler`, `EpisodeLogEntry.channel_outputs` used identically across Tasks 1-4. `WeightUpdate.lora_delta` is `dict[str, NDArray[np.float32]]` to match `WeightDeltaChannel.apply` in `core/primitives.py`.

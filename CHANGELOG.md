@@ -685,7 +685,7 @@ see `docs/specs/2026-04-17-dreamofkiki-framework-C-design.md` §12).
 
 - **New module** `kiki_oniric/dream/channels/` : the four
   channel-output value types (`WeightUpdate`, `LatentSample`,
-  `HierarchyDiff`, `AttentionPrior`) and the `ChannelOutput`
+  `TopologyDiff`, `AttentionPrior`) and the `ChannelOutput`
   union. Frozen dataclasses with S2 finiteness validation.
 - **`EpisodeLogEntry`** gains `channel_outputs`, a tuple parallel
   to `operations_executed`. Default `()` — data-level backward

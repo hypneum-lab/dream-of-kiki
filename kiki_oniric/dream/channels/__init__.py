@@ -21,7 +21,7 @@ from numpy.typing import NDArray
 __all__ = [
     "WeightUpdate",
     "LatentSample",
-    "HierarchyDiff",
+    "TopologyDiff",
     "AttentionPrior",
     "ChannelOutput",
 ]
@@ -71,7 +71,7 @@ class LatentSample:
 
 
 @dataclass(frozen=True)
-class HierarchyDiff:
+class TopologyDiff:
     """Channel 3 output — topology diff.
 
     Consumed by ``HierarchyChangeChannel.apply_diff`` (invariant S3).
@@ -97,4 +97,4 @@ class AttentionPrior:
             raise ValueError("S2: AttentionPrior.prior non-finite")
 
 
-ChannelOutput = WeightUpdate | LatentSample | HierarchyDiff | AttentionPrior
+ChannelOutput = WeightUpdate | LatentSample | TopologyDiff | AttentionPrior

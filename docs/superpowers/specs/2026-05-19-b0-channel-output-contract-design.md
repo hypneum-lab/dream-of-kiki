@@ -24,7 +24,7 @@ into six sub-projects:
 | **B0** | Channel-output contract + runtime/log threading | — |
 | B1 | `replay` produces a real `WeightUpdate` | B0 |
 | B2 | `downscale` produces a real `WeightUpdate` | B0 |
-| B3 | `restructure` produces a real `HierarchyDiff` (+ I2) | B0 |
+| B3 | `restructure` produces a real `TopologyDiff` (+ I2) | B0 |
 | B4 | `recombine` produces a real `LatentSample` | B0 |
 | B5 | `consolidate()` substrate→transducer adapter + FC spec | B1-B4 |
 
@@ -87,10 +87,10 @@ WeightUpdate(lora_delta: NDArray[float32],
 LatentSample(species: str,
              latent_vector: NDArray[float32],
              provenance: str)                        # channel 2
-HierarchyDiff(diff: tuple[tuple[str, dict], ...])    # channel 3
+TopologyDiff(diff: tuple[tuple[str, dict], ...])    # channel 3
 AttentionPrior(prior: NDArray[float32])              # channel 4
 
-ChannelOutput = WeightUpdate | LatentSample | HierarchyDiff | AttentionPrior
+ChannelOutput = WeightUpdate | LatentSample | TopologyDiff | AttentionPrior
 ```
 
 All dataclasses are `frozen=True`. NDArray fields are stored as

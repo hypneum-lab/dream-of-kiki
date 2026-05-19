@@ -9,8 +9,8 @@ import pytest
 from kiki_oniric.dream.channels import (
     AttentionPrior,
     ChannelOutput,
-    HierarchyDiff,
     LatentSample,
+    TopologyDiff,
     WeightUpdate,
 )
 
@@ -43,8 +43,8 @@ def test_attention_prior_rejects_non_finite() -> None:
         AttentionPrior(prior=np.array([np.inf], dtype=np.float32))
 
 
-def test_hierarchy_diff_holds_tuple() -> None:
-    hd = HierarchyDiff(diff=(("add_node", {"id": "n1"}),))
+def test_topology_diff_holds_tuple() -> None:
+    hd = TopologyDiff(diff=(("add_node", {"id": "n1"}),))
     assert hd.diff[0][0] == "add_node"
 
 
@@ -55,7 +55,7 @@ def test_channel_types_are_frozen() -> None:
 
 
 def test_channel_output_union_members() -> None:
-    members = (WeightUpdate, LatentSample, HierarchyDiff, AttentionPrior)
+    members = (WeightUpdate, LatentSample, TopologyDiff, AttentionPrior)
     for member in members:
         assert member in ChannelOutput.__args__
 

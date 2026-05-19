@@ -185,7 +185,7 @@ sortie de canal typée, capturée dans
 
 - Canal 1 — `WeightUpdate(lora_delta, fisher_bump)`
 - Canal 2 — `LatentSample(species, latent_vector, provenance)`
-- Canal 3 — `HierarchyDiff(diff)`
+- Canal 3 — `TopologyDiff(diff)`
 - Canal 4 — `AttentionPrior(prior)`
 
 `ChannelOutput` est leur union. Implémenté dans
