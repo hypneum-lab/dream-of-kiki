@@ -15,10 +15,11 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Callable
 
+from kiki_oniric.dream.channels import ChannelOutput
 from kiki_oniric.dream.episode import DreamEpisode, Operation
 
 
-OperationHandler = Callable[[DreamEpisode], None]
+OperationHandler = Callable[[DreamEpisode], "ChannelOutput | None"]
 
 
 @dataclass(frozen=True)
@@ -28,12 +29,18 @@ class EpisodeLogEntry:
     `completed=False` + non-empty `error` means the DE raised during
     handler execution. DR-0 still satisfied: every DE produces a log
     entry regardless of handler outcome.
+
+    `channel_outputs` is strictly parallel to `operations_executed`
+    (same length, same order); index `i` holds the output of
+    `operations_executed[i]`, or `None` if that op emitted nothing.
+    Empty `()` marks a legacy entry where no outputs were captured.
     """
 
     episode_id: str
     operations_executed: tuple[Operation, ...]
     completed: bool
     error: str | None = None
+    channel_outputs: tuple[ChannelOutput | None, ...] = ()
 
 
 class DreamRuntime:
