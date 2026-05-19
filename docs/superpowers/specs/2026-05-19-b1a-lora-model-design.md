@@ -68,7 +68,7 @@ utilities).
 
 A LoRA-adapted linear layer.
 
-- `weight` — base weight `W0`, shape `(out, in)`, **frozen**
+- `base_weight` — base weight `W0`, shape `(out, in)`, **frozen**
   (not in the trainable-parameter set).
 - `bias` — optional base bias, shape `(out,)`, frozen.
 - `lora_a` — adapter matrix `A`, shape `(rank, in)`, trainable,
@@ -80,8 +80,10 @@ A LoRA-adapted linear layer.
 - Forward: `y = x @ (W0 + (alpha/rank) * (B @ A)).T` (`+ bias`).
 
 Construction: `LoRALinear(in_features, out_features, rank, alpha,
-*, bias=True, seed=...)`. Seeding is explicit (research-repo
-determinism rule); the `A` init draws from a seeded generator.
+*, bias=True, key=...)` where `key` is an MLX PRNG key. Seeding is
+explicit (research-repo determinism rule); the `A` init draws from
+a seeded generator. `LoRAModel(..., *, seed=...)` is the
+seed-based entry point — it derives a `key` per layer.
 
 ### `LoRAModel(nn.Module)`
 
@@ -124,7 +126,8 @@ New `tests/unit/test_lora_model.py`:
   `(out, rank)`; `lora_b` is all-zeros at construction; the
   initial forward equals the base-only forward (`B=0` ⇒ ΔW=0);
   a non-zero `lora_b` changes the output; the `alpha/rank` scale
-  is applied; the base `weight` is not among the trainable params.
+  is applied; the base `base_weight` is not among the trainable
+  params.
 - `LoRAModel`: forward output shape matches the last layer size;
   `adapter_parameters()` returns exactly the A/B arrays (two per
   layer), correctly named; base weights are excluded; the model

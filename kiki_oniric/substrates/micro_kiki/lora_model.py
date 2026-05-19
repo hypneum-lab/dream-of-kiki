@@ -19,7 +19,7 @@ import mlx.nn as nn
 __all__ = ["LoRALinear", "LoRAModel"]
 
 
-class LoRALinear(nn.Module):  # type: ignore[misc]  # mlx.nn dynamic
+class LoRALinear(nn.Module):  # type: ignore[name-defined,misc]  # mlx.nn dynamic
     """A LoRA-adapted linear layer.
 
     Base weight `W0` (and optional bias) are frozen; the rank-`r`
@@ -76,10 +76,10 @@ class LoRALinear(nn.Module):  # type: ignore[misc]  # mlx.nn dynamic
         y = x @ (self.base_weight + delta).T
         if self.use_bias:
             y = y + self.bias
-        return y
+        return y  # type: ignore[no-any-return]  # mlx.nn dynamic
 
 
-class LoRAModel(nn.Module):  # type: ignore[misc]  # mlx.nn dynamic
+class LoRAModel(nn.Module):  # type: ignore[name-defined,misc]  # mlx.nn dynamic
     """A feed-forward stack of named `LoRALinear` layers.
 
     `layer_sizes` is the sequence of widths, e.g. `(4, 8, 2)` →
@@ -118,13 +118,16 @@ class LoRAModel(nn.Module):  # type: ignore[misc]  # mlx.nn dynamic
         for i, layer in enumerate(self.layers):
             x = layer(x)
             if i < last:
-                x = nn.relu(x)
+                x = nn.relu(x)  # type: ignore[attr-defined]  # mlx.nn dynamic
         return x
 
     def adapter_parameters(self) -> dict[str, mx.array]:
         """Return ONLY the trainable adapter arrays, keyed by
         `layer<i>.lora_a` / `layer<i>.lora_b`. Base weights are
         excluded — this is the surface a B1b gradient step trains.
+
+        The returned arrays are the layer attributes themselves,
+        not copies — in-place mutations are visible to the model.
         """
         out: dict[str, mx.array] = {}
         for i, layer in enumerate(self.layers):

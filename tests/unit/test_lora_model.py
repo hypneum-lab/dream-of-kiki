@@ -120,3 +120,13 @@ def test_lora_model_different_seeds_differ() -> None:
     assert not bool(
         mx.allclose(m1.layers[0].base_weight, m2.layers[0].base_weight).item()
     )
+
+
+def test_lora_linear_no_bias() -> None:
+    layer = LoRALinear(4, 8, rank=2, alpha=4.0, bias=False, key=mx.random.key(5))
+    assert not hasattr(layer, "bias")
+    x = mx.array([[0.1, 0.2, 0.3, 0.4]])
+    assert layer(x).shape == (1, 8)
+    trainable = dict(tree_flatten(layer.trainable_parameters()))
+    assert "bias" not in trainable
+    assert "base_weight" not in trainable
