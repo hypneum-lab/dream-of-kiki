@@ -57,7 +57,7 @@ def test_channel_types_are_frozen() -> None:
 def test_channel_output_union_members() -> None:
     members = (WeightUpdate, LatentSample, HierarchyDiff, AttentionPrior)
     for member in members:
-        assert member in ChannelOutput.__args__  # type: ignore[attr-defined]
+        assert member in ChannelOutput.__args__
 
 
 def test_weight_update_rejects_non_finite_fisher_bump() -> None:
