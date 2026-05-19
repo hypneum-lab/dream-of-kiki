@@ -679,6 +679,52 @@ see `docs/specs/2026-04-17-dreamofkiki-framework-C-design.md` §12).
 
 ---
 
+## [C-v0.19.0+PARTIAL] — 2026-05-20 — recombine emits LatentSample (B4)
+
+### Formal axis (FC) — MINOR (v0.18.0 → v0.19.0)
+
+- **Patched handler** `recombine_real_handler` in
+  `kiki_oniric/dream/operations/recombine_real.py`: return type
+  widened from `Callable[[DE], None]` to
+  `Callable[[DE], LatentSample | None]`. The handler now builds
+  and returns a channel-2 `LatentSample` whose
+  `latent_vector` is the sampled VAE latent `z` (not the decoded
+  output — `state.last_sample` continues to hold that for
+  backwards compatibility). `species` is read from
+  `input_slice` (default `"default"`; non-str raises
+  `ValueError("recombine: species must be str, …")`).
+  `provenance` is auto-derived as
+  `"recombine:de={episode_id}:ep={count}:seed={key_seed}"`,
+  R1-traceable.
+- **Asymmetry preserved** — empty `delta_latents` continues to
+  raise `ValueError("I3: …")` instead of falling through to a
+  silent S1 no-op (the pattern used by B1b/B2/B3). Invariant I3
+  presumes a non-empty latent buffer; an empty input is an
+  upstream scheduling error, not a recombine no-op.
+- **Counter-bump ordering** — the `LatentSample` is constructed
+  *before* the per-episode counter increments, so `provenance`
+  reads `ep=<state._episode_count>` directly (no off-by-one).
+  If `LatentSample.__post_init__` raises on non-finite `z`, the
+  counter does not advance — sound "this episode didn't emit"
+  semantics.
+- Sub-project B4 of issue #15 — **4 of 4** dream operations now
+  emit real channel outputs. `replay` (B1b) and `downscale` (B2)
+  on channel 1 (`WeightUpdate`), `restructure` (B3) on channel
+  3 (`TopologyDiff`), `recombine` (B4) on channel 2
+  (`LatentSample`). B5 will rewire `consolidate()` to actually
+  apply the four channel outputs to a target model.
+
+### Empirical axis (EC) — UNCHANGED (PARTIAL)
+
+- No new substrate, axiom, or empirical claim. EC stays
+  `+PARTIAL`.
+
+### Packaging
+
+- `pyproject.toml` version bumped `0.16.0 → 0.17.0`.
+
+---
+
 ## [C-v0.18.0+PARTIAL] — 2026-05-20 — restructure emits TopologyDiff (B3)
 
 ### Formal axis (FC) — MINOR (v0.17.0 → v0.18.0)

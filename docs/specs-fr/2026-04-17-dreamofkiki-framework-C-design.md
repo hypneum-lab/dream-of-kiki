@@ -235,6 +235,16 @@ Avec `replay` (B1b), `downscale` (B2) et `restructure` (B3),
 trois des quatre opérations de rêve émettent désormais des
 sorties de canal réelles. `recombine` retourne encore `None`.
 
+Depuis B4 (issue #15), `recombine` émet un véritable
+`LatentSample` (canal 2) : `recombine_real_handler` retourne le
+latent VAE échantillonné `z` comme `latent_vector`, avec
+`species` (lu depuis `input_slice`, défaut `"default"`) et un
+`provenance` auto-dérivé au format
+`recombine:de={episode_id}:ep={count}:seed={key_seed}`. Avec
+B1b/B2/B3/B4, **les quatre** opérations de rêve émettent
+désormais des sorties de canal réelles. B5 recâblera
+`consolidate()` pour appliquer ces sorties à un modèle cible.
+
 **restructure** — applique une mise à jour de codage prédictif, minimise l'énergie libre sur la hiérarchie, ajoute/supprime/reroute des couches si nécessaire
 - Source : D-Friston FEP
 - Entrée : snapshot δ

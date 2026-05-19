@@ -230,6 +230,15 @@ SHA-256-fingerprinted diff. With `replay` (B1b), `downscale`
 (B2), and `restructure` (B3), three of the four dream operations
 now emit real channel outputs. `recombine` still returns `None`.
 
+As of B4 (issue #15), `recombine` emits a real channel-2
+`LatentSample`: `recombine_real_handler` returns the sampled
+VAE latent `z` as `latent_vector`, with `species` (from the
+episode `input_slice`, default `"default"`) and an auto-derived
+`provenance` string `recombine:de={episode_id}:ep={count}:seed={key_seed}`.
+With B1b/B2/B3/B4, **all four** dream operations now emit real
+channel outputs. B5 will rewire `consolidate()` to actually
+apply them to a target model.
+
 **restructure** — apply predictive processing update, minimize free energy over hierarchy, add/remove/reroute layers if needed
 - Source : D-Friston FEP
 - Input : δ snapshot

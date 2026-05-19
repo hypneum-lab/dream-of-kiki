@@ -1,6 +1,6 @@
 [project]
 name = "dreamofkiki"
-version = "0.16.0"
+version = "0.17.0"
 description = "Substrate-agnostic formal framework for dream-based knowledge consolidation"
 readme = "README.md"
 requires-python = ">=3.12"
