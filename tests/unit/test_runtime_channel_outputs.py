@@ -4,14 +4,8 @@ from __future__ import annotations
 import numpy as np
 
 from kiki_oniric.dream.channels import WeightUpdate
-from kiki_oniric.dream.episode import (
-    BudgetCap,
-    DreamEpisode,
-    EpisodeTrigger,
-    Operation,
-    OutputChannel,
-)
-from kiki_oniric.dream.runtime import DreamRuntime, EpisodeLogEntry
+from kiki_oniric.dream.episode import Operation
+from kiki_oniric.dream.runtime import EpisodeLogEntry
 
 
 def test_log_entry_channel_outputs_defaults_empty() -> None:
