@@ -154,6 +154,10 @@ def test_replay_lora_is_deterministic() -> None:
 
 def test_replay_lora_rejects_malformed_record() -> None:
     model = LoRAModel((4, 8, 2), rank=2, alpha=4.0, seed=0)
+    before = {
+        k: np.asarray(v, dtype=np.float32)
+        for k, v in model.adapter_parameters().items()
+    }
     state = ReplayRealState()
     runtime = DreamRuntime()
     runtime.register_handler(
@@ -161,3 +165,10 @@ def test_replay_lora_rejects_malformed_record() -> None:
     )
     with pytest.raises(ValueError, match="missing"):
         runtime.execute(_episode([{"x": [0.1, 0.2, 0.3, 0.4]}]))
+    # Validation must run BEFORE any adapter mutation.
+    after = {
+        k: np.asarray(v, dtype=np.float32)
+        for k, v in model.adapter_parameters().items()
+    }
+    for k in before:
+        np.testing.assert_array_equal(before[k], after[k])

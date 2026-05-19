@@ -30,6 +30,7 @@ from kiki_oniric.dream.episode import DreamEpisode
 
 if TYPE_CHECKING:
     from kiki_oniric.dream.channels import WeightUpdate
+    from kiki_oniric.substrates.micro_kiki.lora_model import LoRAModel
 
 
 @dataclass
@@ -54,7 +55,7 @@ def _flop_estimate(n_records: int, x_dim: int, y_dim: int) -> int:
     return max(per_record * n_records, 1)
 
 
-def _flop_estimate_lora(model, n_records: int) -> int:
+def _flop_estimate_lora(model: "LoRAModel", n_records: int) -> int:
     """Rough FLOP count for a LoRA-adapter replay step.
 
     Dominated by the per-layer low-rank product ``B @ A`` (forward +
@@ -134,7 +135,7 @@ def replay_real_handler(
 def replay_lora_handler(
     state: ReplayRealState,
     *,
-    model,  # LoRAModel — typed loosely for lazy MLX import
+    model: "LoRAModel",
     lr: float = 0.01,
 ) -> Callable[[DreamEpisode], "WeightUpdate | None"]:
     """Build a LoRA-only replay handler that emits a ``WeightUpdate``.
