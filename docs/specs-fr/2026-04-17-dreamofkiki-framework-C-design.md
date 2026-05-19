@@ -207,6 +207,12 @@ Le substrat de bas rang sur lequel opère `replay` est le modèle
 (`LoRALinear` / `LoRAModel`) — poids de base gelés, adaptateurs
 A/B entraînables (B1a, issue #15).
 
+Depuis B1b (issue #15), `replay` émet un véritable `WeightUpdate`
+sur le canal 1 : `replay_lora_handler` effectue un pas de SGD
+restreint aux adaptateurs sur un `LoRAModel` et renvoie le delta
+de bas rang par adaptateur. Les trois autres opérations
+renvoient toujours `None`.
+
 **downscale** — applique un régulariseur homéostatique (SHY-style), rétrécit les poids vers un prior, réduit le bruit
 - Source : homéostasie synaptique B-Tononi
 - Entrée : γ ou W directement

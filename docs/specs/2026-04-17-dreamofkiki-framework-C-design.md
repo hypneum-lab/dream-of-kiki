@@ -205,6 +205,11 @@ model `kiki_oniric/substrates/micro_kiki/lora_model.py`
 (`LoRALinear` / `LoRAModel`) — frozen base weights, trainable
 A/B adapters (B1a, issue #15).
 
+As of B1b (issue #15), `replay` emits a real channel-1
+`WeightUpdate`: `replay_lora_handler` runs an adapter-only SGD
+step on a `LoRAModel` and returns the per-adapter low-rank
+delta. The other three operations still return `None`.
+
 **downscale** — apply homeostatic regularizer (SHY-style), shrink weights toward prior, reduce noise
 - Source : B-Tononi synaptic homeostasis
 - Input : γ or W directly

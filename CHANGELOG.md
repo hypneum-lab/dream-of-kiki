@@ -679,6 +679,36 @@ see `docs/specs/2026-04-17-dreamofkiki-framework-C-design.md` §12).
 
 ---
 
+## [C-v0.16.0+PARTIAL] — 2026-05-19 — replay emits WeightUpdate (B1b)
+
+### Formal axis (FC) — MINOR (v0.15.0 → v0.16.0)
+
+- **New handler** `replay_lora_handler` in
+  `kiki_oniric/dream/operations/replay_real.py`: runs an
+  adapter-only SGD step on a `LoRAModel` (the base weight is
+  frozen, so MLX trains only the A/B adapters) and returns a
+  channel-1 `WeightUpdate` whose `lora_delta` carries the
+  per-adapter low-rank deltas. Empty `beta_records` returns
+  `None`. K1 FLOPs tagged on `ReplayRealState`.
+- **New helper** `adapter_delta` in
+  `kiki_oniric/substrates/micro_kiki/lora_model.py`: diffs two
+  `adapter_parameters()` snapshots into a float32 numpy delta
+  dict, keeping the MLX-only `replay_real.py` free of numpy.
+- Sub-project B1b of issue #15. `replay` is the first dream
+  operation to emit a real channel output. No profile wiring —
+  the handler is exercised via a direct `DreamRuntime`.
+
+### Empirical axis (EC) — UNCHANGED (PARTIAL)
+
+- No new substrate, axiom, or empirical claim. EC stays
+  `+PARTIAL`.
+
+### Packaging
+
+- `pyproject.toml` version bumped `0.13.0 → 0.14.0`.
+
+---
+
 ## [C-v0.15.0+PARTIAL] — 2026-05-19 — LoRA model abstraction (B1a)
 
 ### Formal axis (FC) — MINOR (v0.14.0 → v0.15.0)
