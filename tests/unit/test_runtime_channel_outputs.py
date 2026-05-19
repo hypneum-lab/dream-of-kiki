@@ -4,8 +4,14 @@ from __future__ import annotations
 import numpy as np
 
 from kiki_oniric.dream.channels import WeightUpdate
-from kiki_oniric.dream.episode import Operation
-from kiki_oniric.dream.runtime import EpisodeLogEntry
+from kiki_oniric.dream.episode import (
+    BudgetCap,
+    DreamEpisode,
+    EpisodeTrigger,
+    Operation,
+    OutputChannel,
+)
+from kiki_oniric.dream.runtime import DreamRuntime, EpisodeLogEntry
 
 
 def test_log_entry_channel_outputs_defaults_empty() -> None:
@@ -26,3 +32,42 @@ def test_log_entry_accepts_channel_outputs() -> None:
         channel_outputs=(wu,),
     )
     assert entry.channel_outputs == (wu,)
+
+
+def _episode(ops: tuple[Operation, ...]) -> DreamEpisode:
+    return DreamEpisode(
+        trigger=EpisodeTrigger.SCHEDULED,
+        input_slice={},
+        operation_set=ops,
+        output_channels=(OutputChannel.WEIGHT_DELTA,),
+        budget=BudgetCap(flops=1, wall_time_s=1.0, energy_j=1.0),
+        episode_id="de-exec",
+    )
+
+
+def test_execute_collects_handler_returns() -> None:
+    wu = WeightUpdate(lora_delta={"l0": np.zeros(2, dtype=np.float32)})
+    runtime = DreamRuntime()
+    runtime.register_handler(Operation.REPLAY, lambda ep: wu)
+    runtime.register_handler(Operation.DOWNSCALE, lambda ep: None)
+    runtime.execute(_episode((Operation.REPLAY, Operation.DOWNSCALE)))
+    entry = runtime.log[-1]
+    assert entry.channel_outputs == (wu, None)
+    assert len(entry.channel_outputs) == len(entry.operations_executed)
+
+
+def test_execute_channel_outputs_parallel_on_error() -> None:
+    def boom(ep: DreamEpisode) -> None:
+        raise RuntimeError("handler failed")
+
+    runtime = DreamRuntime()
+    runtime.register_handler(Operation.REPLAY, lambda ep: None)
+    runtime.register_handler(Operation.DOWNSCALE, boom)
+    try:
+        runtime.execute(_episode((Operation.REPLAY, Operation.DOWNSCALE)))
+    except RuntimeError:
+        pass
+    entry = runtime.log[-1]
+    assert entry.completed is False
+    assert len(entry.channel_outputs) == len(entry.operations_executed)
+    assert entry.channel_outputs == (None, None)

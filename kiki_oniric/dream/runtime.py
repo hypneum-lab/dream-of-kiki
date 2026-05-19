@@ -86,10 +86,12 @@ class DreamRuntime:
         error: str | None = None
         completed = False
         executed_ops: list[Operation] = []
+        outputs: list[ChannelOutput | None] = []
         try:
             for op in episode.operation_set:
                 executed_ops.append(op)
-                self._handlers[op](episode)
+                outputs.append(None)  # placeholder keeps lengths equal
+                outputs[-1] = self._handlers[op](episode)
             completed = True
         except Exception as exc:
             error = f"{type(exc).__name__}: {exc}"
@@ -101,5 +103,6 @@ class DreamRuntime:
                     operations_executed=tuple(executed_ops),
                     completed=completed,
                     error=error,
+                    channel_outputs=tuple(outputs),
                 )
             )
