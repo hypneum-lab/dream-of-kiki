@@ -679,6 +679,40 @@ see `docs/specs/2026-04-17-dreamofkiki-framework-C-design.md` §12).
 
 ---
 
+## [C-v0.17.0+PARTIAL] — 2026-05-20 — downscale emits WeightUpdate (B2)
+
+### Formal axis (FC) — MINOR (v0.16.0 → v0.17.0)
+
+- **New handler** `downscale_lora_handler` in
+  `kiki_oniric/dream/operations/downscale_real.py`: shrinks every
+  `LoRALinear`'s A/B adapters by a validated `shrink_factor` in
+  `(0, 1]` and returns a channel-1 `WeightUpdate` whose
+  `lora_delta` carries the per-adapter low-rank deltas. The
+  frozen base weight is untouched — SHY shrinkage on the LoRA
+  substrate targets the adaptation only. `factor == 1.0` is an
+  S1 no-op (returns `None`, FLOPs 0). `compound_factor` compounds
+  multiplicatively across episodes (Tononi non-idempotence).
+- Re-uses the `adapter_delta` helper shipped with B1b
+  (`kiki_oniric/substrates/micro_kiki/lora_model.py`) — no new
+  file in `substrates/`.
+- Sub-project B2 of issue #15. `downscale` is the second dream
+  operation to emit a real channel output (after `replay` in B1b).
+  No profile wiring — the handler is exercised via a direct
+  `DreamRuntime`. `I-Wmag` is trivially satisfied by multiplicative
+  shrinkage (`f ≤ 1` only decreases magnitudes) and flagged as an
+  out-of-scope cleanup item for `docs/invariants/registry.md`.
+
+### Empirical axis (EC) — UNCHANGED (PARTIAL)
+
+- No new substrate, axiom, or empirical claim. EC stays
+  `+PARTIAL`.
+
+### Packaging
+
+- `pyproject.toml` version bumped `0.14.0 → 0.15.0`.
+
+---
+
 ## [C-v0.16.0+PARTIAL] — 2026-05-19 — replay emits WeightUpdate (B1b)
 
 ### Formal axis (FC) — MINOR (v0.15.0 → v0.16.0)

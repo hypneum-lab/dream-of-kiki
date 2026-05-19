@@ -218,6 +218,14 @@ renvoient toujours `None`.
 - Entrée : γ ou W directement
 - Sortie : WeightUpdate (canal 1)
 
+Depuis B2 (issue #15), `downscale` émet un véritable `WeightUpdate`
+sur le canal 1 : `downscale_lora_handler` rétrécit les adaptateurs
+A/B d'un `LoRAModel` par un `shrink_factor` validé et renvoie le
+delta de bas rang par adaptateur. Avec `replay` (B1b) et
+`downscale` (B2), deux des quatre opérations de rêve émettent
+désormais de véritables sorties sur canal. `restructure` et
+`recombine` renvoient toujours `None`.
+
 **restructure** — applique une mise à jour de codage prédictif, minimise l'énergie libre sur la hiérarchie, ajoute/supprime/reroute des couches si nécessaire
 - Source : D-Friston FEP
 - Entrée : snapshot δ

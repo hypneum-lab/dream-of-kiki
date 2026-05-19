@@ -215,6 +215,13 @@ delta. The other three operations still return `None`.
 - Input : γ or W directly
 - Output : WeightUpdate (channel 1)
 
+As of B2 (issue #15), `downscale` emits a real channel-1
+`WeightUpdate`: `downscale_lora_handler` shrinks the A/B adapters
+of a `LoRAModel` by a validated `shrink_factor` and returns the
+per-adapter low-rank delta. With `replay` (B1b) and `downscale`
+(B2), two of the four dream operations now emit real channel
+outputs. `restructure` and `recombine` still return `None`.
+
 **restructure** — apply predictive processing update, minimize free energy over hierarchy, add/remove/reroute layers if needed
 - Source : D-Friston FEP
 - Input : δ snapshot
