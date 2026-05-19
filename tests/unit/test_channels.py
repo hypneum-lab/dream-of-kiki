@@ -58,3 +58,12 @@ def test_channel_output_union_members() -> None:
     members = (WeightUpdate, LatentSample, HierarchyDiff, AttentionPrior)
     for member in members:
         assert member in ChannelOutput.__args__  # type: ignore[attr-defined]
+
+
+def test_weight_update_rejects_non_finite_fisher_bump() -> None:
+    bad_fisher = {"layer0": np.array([np.inf], dtype=np.float32)}
+    with pytest.raises(ValueError, match="S2"):
+        WeightUpdate(
+            lora_delta={"layer0": np.zeros(4, dtype=np.float32)},
+            fisher_bump=bad_fisher,
+        )

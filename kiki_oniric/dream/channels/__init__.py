@@ -80,6 +80,7 @@ class HierarchyDiff:
     """
 
     diff: tuple[tuple[str, dict[str, object]], ...]
+    # No __post_init__ — S3 structural validity deferred to B3.
 
 
 @dataclass(frozen=True)
