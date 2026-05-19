@@ -679,6 +679,36 @@ see `docs/specs/2026-04-17-dreamofkiki-framework-C-design.md` §12).
 
 ---
 
+## [C-v0.14.0+PARTIAL] — 2026-05-19 — channel-output contract (B0)
+
+### Formal axis (FC) — MINOR (v0.13.0 → v0.14.0)
+
+- **New module** `kiki_oniric/dream/channels/` : the four
+  channel-output value types (`WeightUpdate`, `LatentSample`,
+  `HierarchyDiff`, `AttentionPrior`) and the `ChannelOutput`
+  union. Frozen dataclasses with S2 finiteness validation.
+- **`EpisodeLogEntry`** gains `channel_outputs`, a tuple parallel
+  to `operations_executed`. Default `()` — data-level backward
+  compatible.
+- **`OperationHandler`** return type widened `None →
+  ChannelOutput | None`. Non-breaking: a handler returning `None`
+  still conforms. The four DR-3 primitive Protocols in
+  `core/primitives.py` are unchanged — hence FC-MINOR.
+- **`DreamRuntime.execute()`** records each handler return into
+  `channel_outputs`.
+- Sub-project B0 of issue #15. Operations still return `None`;
+  B1-B4 populate real values, B5 rewires `consolidate()`.
+
+### Empirical axis (EC) — UNCHANGED (PARTIAL)
+
+- No new substrate, op, or empirical claim. EC stays `+PARTIAL`.
+
+### Packaging
+
+- `pyproject.toml` version bumped `0.11.0 → 0.12.0`.
+
+---
+
 ## [C-v0.13.0+PARTIAL] — 2026-05-19 — `consolidate()` public facade
 
 ### Formal axis (FC) — MINOR (v0.12.0 → v0.13.0)

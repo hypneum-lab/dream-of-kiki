@@ -176,6 +176,21 @@ where:
 - `output_delta ∈ {WeightUpdate, LatentSample, TopologyDiff, AttentionPrior}` (channels 1-4)
 - `budget = max(FLOPs, wall_time, energy_J)` (resource cap)
 
+#### Channel-output value types (B0, issue #15)
+
+Each operation publishes its result as a typed channel-output
+value, captured in `EpisodeLogEntry.channel_outputs`:
+
+- Channel 1 — `WeightUpdate(lora_delta, fisher_bump)`
+- Channel 2 — `LatentSample(species, latent_vector, provenance)`
+- Channel 3 — `HierarchyDiff(diff)`
+- Channel 4 — `AttentionPrior(prior)`
+
+`ChannelOutput` is their union. Implemented in
+`kiki_oniric/dream/channels/` (package `__init__.py`). The
+operations return `None` until sub-projects B1-B4 populate real
+values.
+
 ### 4.2 Operations
 
 Four canonical operations, typed `Op : State × Budget → State × Output`:

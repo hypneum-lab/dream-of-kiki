@@ -177,6 +177,22 @@ où :
 - `output_delta ∈ {WeightUpdate, LatentSample, TopologyDiff, AttentionPrior}` (canaux 1-4)
 - `budget = max(FLOPs, wall_time, energy_J)` (plafond de ressources)
 
+#### Types de valeur de sortie de canal (B0, issue #15)
+
+Chaque opération publie son résultat sous forme d'une valeur de
+sortie de canal typée, capturée dans
+`EpisodeLogEntry.channel_outputs` :
+
+- Canal 1 — `WeightUpdate(lora_delta, fisher_bump)`
+- Canal 2 — `LatentSample(species, latent_vector, provenance)`
+- Canal 3 — `HierarchyDiff(diff)`
+- Canal 4 — `AttentionPrior(prior)`
+
+`ChannelOutput` est leur union. Implémenté dans
+`kiki_oniric/dream/channels/` (package `__init__.py`). Les
+opérations renvoient `None` jusqu'à ce que les sous-projets B1-B4
+peuplent des valeurs réelles.
+
 ### 4.2 Opérations
 
 Quatre opérations canoniques, typées `Op : State × Budget → State × Output` :

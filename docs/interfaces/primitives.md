@@ -119,6 +119,9 @@ Parametric consolidation output, applied via swap.
 **Constraint**: must satisfy invariants S1 (retained non-regression)
 + S2 (finite values). Enforcement: swap protocol guards.
 
+**Produced value**: `WeightUpdate` (`kiki_oniric/dream/channels/`),
+captured in `EpisodeLogEntry.channel_outputs`.
+
 ### Canal 2 — LatentSampleChannel
 
 Generative replay / data augmentation queue.
@@ -132,6 +135,9 @@ Generative replay / data augmentation queue.
 **Constraint**: must satisfy invariant I3 (distributional drift
 bounded, KL ≤ ε_drift).
 
+**Produced value**: `LatentSample` (`kiki_oniric/dream/channels/`),
+captured in `EpisodeLogEntry.channel_outputs`.
+
 ### Canal 3 — HierarchyChangeChannel
 
 Topology diff applied atomically at swap time.
@@ -143,6 +149,9 @@ Topology diff applied atomically at swap time.
 
 **Constraint**: must satisfy invariant S3 (validate_topology
 passes on post-state).
+
+**Produced value**: `HierarchyDiff` (`kiki_oniric/dream/channels/`),
+captured in `EpisodeLogEntry.channel_outputs`.
 
 ### Canal 4 — AttentionPriorChannel
 
@@ -156,6 +165,9 @@ Meta-cognitive attention guidance.
 
 **Constraint**: must satisfy invariant S4 (each component in [0,1],
 sum ≤ budget_attention).
+
+**Produced value**: `AttentionPrior` (`kiki_oniric/dream/channels/`),
+captured in `EpisodeLogEntry.channel_outputs`.
 
 ---
 
