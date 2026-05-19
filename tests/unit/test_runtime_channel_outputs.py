@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import numpy as np
+import pytest
 
 from kiki_oniric.dream.channels import WeightUpdate
 from kiki_oniric.dream.episode import (
@@ -63,10 +64,8 @@ def test_execute_channel_outputs_parallel_on_error() -> None:
     runtime = DreamRuntime()
     runtime.register_handler(Operation.REPLAY, lambda ep: None)
     runtime.register_handler(Operation.DOWNSCALE, boom)
-    try:
+    with pytest.raises(RuntimeError, match="handler failed"):
         runtime.execute(_episode((Operation.REPLAY, Operation.DOWNSCALE)))
-    except RuntimeError:
-        pass
     entry = runtime.log[-1]
     assert entry.completed is False
     assert len(entry.channel_outputs) == len(entry.operations_executed)
