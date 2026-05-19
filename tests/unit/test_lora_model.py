@@ -2,15 +2,16 @@
 from __future__ import annotations
 
 import pytest
+from typing import TYPE_CHECKING
 
-if True:  # mlx is a hard dep; importorskip mirrors the repo's MLX tests
+if TYPE_CHECKING:
+    import mlx.core as mx
+    from mlx.utils import tree_flatten
+else:
     mx = pytest.importorskip("mlx.core")
-    nn = pytest.importorskip("mlx.nn")
+    tree_flatten = pytest.importorskip("mlx.utils").tree_flatten
 
-from kiki_oniric.substrates.micro_kiki.lora_model import (
-    LoRALinear,
-    LoRAModel,
-)
+from kiki_oniric.substrates.micro_kiki.lora_model import LoRALinear
 
 
 def test_lora_linear_shapes() -> None:
@@ -23,7 +24,7 @@ def test_lora_linear_shapes() -> None:
 
 def test_lora_linear_b_init_is_zero() -> None:
     layer = LoRALinear(4, 8, rank=2, alpha=4.0, key=mx.random.key(0))
-    assert bool(mx.all(layer.lora_b == 0.0).item())
+    assert bool(mx.all(mx.equal(layer.lora_b, 0.0)).item())
 
 
 def test_lora_linear_initial_forward_equals_base() -> None:
@@ -54,7 +55,7 @@ def test_lora_linear_scale_applied() -> None:
 
 def test_lora_linear_base_weight_is_frozen() -> None:
     layer = LoRALinear(4, 8, rank=2, alpha=4.0, key=mx.random.key(4))
-    trainable = dict(nn.utils.tree_flatten(layer.trainable_parameters()))
+    trainable = dict(tree_flatten(layer.trainable_parameters()))
     assert "base_weight" not in trainable
     assert "bias" not in trainable
     assert "lora_a" in trainable

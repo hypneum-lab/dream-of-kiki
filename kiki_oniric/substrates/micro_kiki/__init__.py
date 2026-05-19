@@ -57,9 +57,17 @@ from kiki_oniric.substrates.micro_kiki.spike_loader import (  # noqa: F401
     SpikeLoaderMixin,
 )
 
+# LoRA-adapter model abstraction (B1a Task 1 — :mod:`.lora_model`).
+from kiki_oniric.substrates.micro_kiki.lora_model import (  # noqa: F401
+    LoRALinear,
+    LoRAModel,
+)
+
 __all__ = [
     "MICRO_KIKI_SUBSTRATE_NAME",
     "MICRO_KIKI_SUBSTRATE_VERSION",
+    "LoRALinear",
+    "LoRAModel",
     "MicroKikiHandlersMixin",
     "MicroKikiRecombineState",
     "MicroKikiRestructureState",
