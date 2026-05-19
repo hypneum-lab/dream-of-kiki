@@ -58,8 +58,12 @@ def _flop_estimate(n_records: int, x_dim: int, y_dim: int) -> int:
 def _flop_estimate_lora(model: "LoRAModel", n_records: int) -> int:
     """Rough FLOP count for a LoRA-adapter replay step.
 
-    Dominated by the per-layer low-rank product ``B @ A`` (forward +
-    backward) over ``n_records``. Smaller than a full-weight step.
+    Order-of-magnitude heuristic for K1 budget tagging, dominated
+    by the per-layer low-rank product ``B @ A`` over ``n_records``
+    batched examples in one gradient step. The backward pass adds
+    a similar constant factor but is not modelled explicitly — K1
+    only needs a non-zero proportional tag, not a precise count.
+    Still smaller than a full-weight replay step.
     """
     per_record = sum(
         2 * layer.rank * layer.in_features * layer.out_features
@@ -156,6 +160,9 @@ def replay_lora_handler(
     from kiki_oniric.dream.channels import WeightUpdate
     from kiki_oniric.substrates.micro_kiki.lora_model import adapter_delta
 
+    # Plain SGD is stateless across calls. If a future variant
+    # uses Adam/AdamW (momentum), instantiate inside the closure
+    # so per-episode steps stay independent.
     optimizer = optim.SGD(learning_rate=lr)
 
     def loss_fn(model_inner, x, y):
