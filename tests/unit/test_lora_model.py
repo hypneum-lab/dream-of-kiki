@@ -87,6 +87,8 @@ def test_lora_model_adapter_parameters_keys() -> None:
     }
     assert params["layer0.lora_a"].shape == (2, 4)
     assert params["layer1.lora_b"].shape == (2, 2)
+    assert params["layer0.lora_b"].shape == (8, 2)
+    assert params["layer1.lora_a"].shape == (2, 8)
 
 
 def test_lora_model_adapter_parameters_excludes_base() -> None:
@@ -110,3 +112,11 @@ def test_lora_model_is_deterministic_under_seed() -> None:
 def test_lora_model_rejects_too_few_sizes() -> None:
     with pytest.raises(ValueError, match="layer_sizes"):
         LoRAModel((4,), rank=2, alpha=4.0, seed=0)
+
+
+def test_lora_model_different_seeds_differ() -> None:
+    m1 = LoRAModel((4, 8, 2), rank=2, alpha=4.0, seed=7)
+    m2 = LoRAModel((4, 8, 2), rank=2, alpha=4.0, seed=99)
+    assert not bool(
+        mx.allclose(m1.layers[0].base_weight, m2.layers[0].base_weight).item()
+    )
