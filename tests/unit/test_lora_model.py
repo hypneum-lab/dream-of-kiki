@@ -136,14 +136,29 @@ def test_lora_linear_no_bias() -> None:
 
 
 def test_adapter_delta_computes_float32_difference() -> None:
-    before = {"layer0.lora_a": mx.zeros((2, 4))}
-    after = {"layer0.lora_a": mx.ones((2, 4))}
+    before = {
+        "layer0.lora_a": mx.zeros((2, 4)),
+        "layer0.lora_b": mx.full((8, 2), 2.0),
+    }
+    after = {
+        "layer0.lora_a": mx.ones((2, 4)),
+        "layer0.lora_b": mx.full((8, 2), 5.0),
+    }
     delta = adapter_delta(before, after)
     assert delta["layer0.lora_a"].dtype == np.float32
     assert delta["layer0.lora_a"].shape == (2, 4)
     assert bool((delta["layer0.lora_a"] == 1.0).all())
+    assert bool((delta["layer0.lora_b"] == 3.0).all())
 
 
 def test_adapter_delta_rejects_key_mismatch() -> None:
     with pytest.raises(ValueError, match="keys"):
         adapter_delta({"a": mx.zeros((1,))}, {"b": mx.zeros((1,))})
+
+
+def test_adapter_delta_rejects_shape_mismatch() -> None:
+    with pytest.raises(ValueError, match="shape mismatch"):
+        adapter_delta(
+            {"layer0.lora_a": mx.zeros((2, 4))},
+            {"layer0.lora_a": mx.zeros((2, 8))},
+        )

@@ -145,15 +145,21 @@ def adapter_delta(
     """Per-adapter delta ``after - before`` as float32 numpy arrays.
 
     ``before`` / ``after`` are `LoRAModel.adapter_parameters()`
-    snapshots taken around a gradient step; their key sets must
-    match. The MLX→numpy conversion lives here (a `substrates/`
-    module) so MLX-only op modules need not import numpy.
+    snapshots taken around a gradient step; their key sets and
+    per-key shapes must match. The MLX→numpy conversion lives here
+    (a `substrates/` module) so MLX-only op modules need not
+    import numpy.
     """
     if before.keys() != after.keys():
         raise ValueError(
             "adapter_delta: before/after adapter keys differ"
         )
-    return {
-        k: np.asarray(after[k] - before[k], dtype=np.float32)
-        for k in before
-    }
+    out: dict[str, NDArray[np.float32]] = {}
+    for k in before:
+        if before[k].shape != after[k].shape:
+            raise ValueError(
+                f"adapter_delta: shape mismatch for {k!r}: "
+                f"{before[k].shape} vs {after[k].shape}"
+            )
+        out[k] = np.asarray(after[k] - before[k], dtype=np.float32)
+    return out
