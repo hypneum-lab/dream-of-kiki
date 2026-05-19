@@ -200,6 +200,11 @@ Four canonical operations, typed `Op : State × Budget → State × Output`:
 - Input : β slice
 - Output : WeightUpdate (channel 1)
 
+The low-rank substrate `replay` operates on is the LoRA-adapter
+model `kiki_oniric/substrates/micro_kiki/lora_model.py`
+(`LoRALinear` / `LoRAModel`) — frozen base weights, trainable
+A/B adapters (B1a, issue #15).
+
 **downscale** — apply homeostatic regularizer (SHY-style), shrink weights toward prior, reduce noise
 - Source : B-Tononi synaptic homeostasis
 - Input : γ or W directly

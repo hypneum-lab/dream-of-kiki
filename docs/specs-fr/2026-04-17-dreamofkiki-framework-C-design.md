@@ -202,6 +202,11 @@ Quatre opérations canoniques, typées `Op : State × Budget → State × Output
 - Entrée : tranche β
 - Sortie : WeightUpdate (canal 1)
 
+Le substrat de bas rang sur lequel opère `replay` est le modèle
+à adaptateurs LoRA `kiki_oniric/substrates/micro_kiki/lora_model.py`
+(`LoRALinear` / `LoRAModel`) — poids de base gelés, adaptateurs
+A/B entraînables (B1a, issue #15).
+
 **downscale** — applique un régulariseur homéostatique (SHY-style), rétrécit les poids vers un prior, réduit le bruit
 - Source : homéostasie synaptique B-Tononi
 - Entrée : γ ou W directement

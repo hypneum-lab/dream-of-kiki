@@ -679,6 +679,32 @@ see `docs/specs/2026-04-17-dreamofkiki-framework-C-design.md` §12).
 
 ---
 
+## [C-v0.15.0+PARTIAL] — 2026-05-19 — LoRA model abstraction (B1a)
+
+### Formal axis (FC) — MINOR (v0.14.0 → v0.15.0)
+
+- **New module** `kiki_oniric/substrates/micro_kiki/lora_model.py`:
+  `LoRALinear` (a linear layer with a frozen base weight and a
+  trainable rank-r adapter pair `A`/`B`, effective weight
+  `W0 + (alpha/rank) * B@A`) and `LoRAModel` (a named stack of
+  `LoRALinear` exposing `adapter_parameters()`).
+- Standard LoRA init: `A` seeded-random, `B` zeros — the initial
+  effective weight equals the base weight.
+- Sub-project B1a of issue #15: the model abstraction `replay`
+  (B1b) will gradient-step to emit a low-rank `WeightUpdate`. No
+  training, no channel output, no runtime wiring in B1a.
+
+### Empirical axis (EC) — UNCHANGED (PARTIAL)
+
+- New substrate component only; no op, axiom, or empirical claim.
+  EC stays `+PARTIAL`.
+
+### Packaging
+
+- `pyproject.toml` version bumped `0.12.0 → 0.13.0`.
+
+---
+
 ## [C-v0.14.0+PARTIAL] — 2026-05-19 — channel-output contract (B0)
 
 ### Formal axis (FC) — MINOR (v0.13.0 → v0.14.0)
