@@ -15,8 +15,10 @@ from __future__ import annotations
 
 import mlx.core as mx
 import mlx.nn as nn
+import numpy as np
+from numpy.typing import NDArray
 
-__all__ = ["LoRALinear", "LoRAModel"]
+__all__ = ["LoRALinear", "LoRAModel", "adapter_delta"]
 
 
 class LoRALinear(nn.Module):  # type: ignore[name-defined,misc]  # mlx.nn dynamic
@@ -134,3 +136,24 @@ class LoRAModel(nn.Module):  # type: ignore[name-defined,misc]  # mlx.nn dynamic
             out[f"layer{i}.lora_a"] = layer.lora_a
             out[f"layer{i}.lora_b"] = layer.lora_b
         return out
+
+
+def adapter_delta(
+    before: dict[str, mx.array],
+    after: dict[str, mx.array],
+) -> dict[str, NDArray[np.float32]]:
+    """Per-adapter delta ``after - before`` as float32 numpy arrays.
+
+    ``before`` / ``after`` are `LoRAModel.adapter_parameters()`
+    snapshots taken around a gradient step; their key sets must
+    match. The MLX→numpy conversion lives here (a `substrates/`
+    module) so MLX-only op modules need not import numpy.
+    """
+    if before.keys() != after.keys():
+        raise ValueError(
+            "adapter_delta: before/after adapter keys differ"
+        )
+    return {
+        k: np.asarray(after[k] - before[k], dtype=np.float32)
+        for k in before
+    }

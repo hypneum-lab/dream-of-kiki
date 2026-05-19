@@ -11,9 +11,12 @@ else:
     mx = pytest.importorskip("mlx.core")
     tree_flatten = pytest.importorskip("mlx.utils").tree_flatten
 
+import numpy as np
+
 from kiki_oniric.substrates.micro_kiki.lora_model import (
     LoRALinear,
     LoRAModel,
+    adapter_delta,
 )
 
 
@@ -130,3 +133,17 @@ def test_lora_linear_no_bias() -> None:
     trainable = dict(tree_flatten(layer.trainable_parameters()))
     assert "bias" not in trainable
     assert "base_weight" not in trainable
+
+
+def test_adapter_delta_computes_float32_difference() -> None:
+    before = {"layer0.lora_a": mx.zeros((2, 4))}
+    after = {"layer0.lora_a": mx.ones((2, 4))}
+    delta = adapter_delta(before, after)
+    assert delta["layer0.lora_a"].dtype == np.float32
+    assert delta["layer0.lora_a"].shape == (2, 4)
+    assert bool((delta["layer0.lora_a"] == 1.0).all())
+
+
+def test_adapter_delta_rejects_key_mismatch() -> None:
+    with pytest.raises(ValueError, match="keys"):
+        adapter_delta({"a": mx.zeros((1,))}, {"b": mx.zeros((1,))})
