@@ -50,6 +50,47 @@ ready.
 
 ---
 
+## 2026-05-19 update — Paper 1 §8.4 prior-art extended + biophysical stratification (i)+(ii)
+
+Paper 1 §8.4 ("Comparison with prior art") now lists **DVNC, NIR,
+AER, and Liu 2024 HNN** as adjacent prior art and engages the
+2026 PRH critiques (`platoscave2026` arXiv:2604.18572 ;
+`aristotelianprh2026` arXiv:2602.14486). DR-3 substrate-agnosticism
+is now explicitly anchored to the **local** form of PRH — mutual-kNN
+against a capacity-matched random baseline, per nerve-wml empirical
+evidence — rather than the unqualified global form. DVNC is
+positioned as a special case of nerve-wml's general portability. NIR
+and AER are classified as orthogonal layers that could compile to
+an E-SNN substrate without altering DR-0..DR-4.
+
+A new sub-theory spec `docs/specs/2026-05-20-biophysical-stratification.md`
+(280 lines, **non-revision contract** — never weakens DR-0..DR-4 /
+N-1..N-5 / W-1..W-4) routes nine deep-research references into five
+biophysical strata (coupled-field substrate, theta-gamma sequencing,
+multimodal efficient + predictive coding, embodied sensorimotor
+grounding, critical dynamics). This spec operates under the
+**(i)+(ii) co-existent framing** agreed after the session:
+
+| Item | Location | What |
+|---|---|---|
+| Paper 1 §8.4 extended | `docs/papers/paper1/full-draft.md` + `discussion.md` | 4 new prior-art rows (DVNC, NIR, AER, Liu 2024 HNN); new "2026 PRH critiques + global-vs-local refinement" paragraph anchoring DR-3 to local-form PRH |
+| NEW sub-theory spec | `docs/specs/2026-05-20-biophysical-stratification.md` | 5 strata routing 9-10 (b′)-classified deep-research refs; non-revision contract; (ii) side of (i)+(ii) framing |
+
+**(i)+(ii) framing** — DR-3 is preserved as **universal**:
+`BioFieldWML` (in `nerve-wml`) is one conformant substrate among N
+alongside MLX, LIF, and Transformer; this is the (i) side.
+The new biophysical stratification spec is the **(ii) side**: a
+family of empirical scaffolding beside framework-C, stratifying
+biological evidence without weakening any axiom. OQ defaults applied:
+OQ-1 BioFieldWML.step() = one synchronous Up-Down cycle (DR-0
+preserved); OQ-2 STDP scoped to BioFieldWML (YAGNI bounded, not
+revoked); OQ-3 spec scope = Paper 2 appendix scaffolding.
+
+Follow-up: `dream-of-kiki#20` for paper1-fr EN→FR sync of PR #18
+§8.4 changes.
+
+---
+
 ## What this repo is
 
 - **Research code**, not a product. Correctness > performance.
