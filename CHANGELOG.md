@@ -689,12 +689,11 @@ see `docs/specs/2026-04-17-dreamofkiki-framework-C-design.md` §12).
   consumers — notably `nerve-wml`'s `bridge/dream_bridge.py`
   scaffold — that previously had to compose primitives themselves
   or import through private sub-module paths.
-- **Facade only — zero new semantics.** Pure composition over
+- **Facade only — no new primitive logic.** Pure composition over
   already-tested primitives : decodes an event `trace` into one
   `DreamEpisode` per phase-clock window, runs the profile's
-  `DreamRuntime` (S2/S3 guards + DR-0 log fire unchanged), and
-  aggregates a per-transducer delta tensor. No primitive signature
-  changes — hence FC-MINOR, not MAJOR.
+  `DreamRuntime` (S2/S3 guards + DR-0 log fire unchanged). No
+  primitive signature changes — hence FC-MINOR, not MAJOR.
 - Signature : `consolidate(trace, profile, *, n_transducers=12,
   alphabet_size=64) -> np.ndarray`. Output shape
   `[n_transducers, alphabet_size, alphabet_size]`, dtype
@@ -713,6 +712,17 @@ see `docs/specs/2026-04-17-dreamofkiki-framework-C-design.md` §12).
   DR-4 inclusion (`P_min ⊆ P_equ`, `P_equ ⊆ P_max`), R1 bit-exact
   determinism, malformed-trace and non-finite (S2) guard failures,
   out-of-range index clamping.
+
+### Known limitation — placeholder delta magnitude
+
+- The skeleton op handlers mutate state counters only ;
+  `EpisodeLogEntry` carries no delta payload. The facade therefore
+  **synthesises** the returned delta from the executed-op count
+  scattered over event-indexed cells — a deterministic scaffold,
+  not a framework-C consolidation result. Shape, dtype and R1
+  determinism are contractual ; magnitude is not. A real delta
+  needs `EpisodeLogEntry` extended to carry an op payload —
+  tracked as a separate follow-up issue.
 
 ### Empirical axis (EC) — UNCHANGED (PARTIAL)
 
