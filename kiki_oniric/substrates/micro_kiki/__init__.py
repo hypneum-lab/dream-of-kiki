@@ -58,10 +58,20 @@ from kiki_oniric.substrates.micro_kiki.spike_loader import (  # noqa: F401
 )
 
 # LoRA-adapter model abstraction (B1a Task 1 — :mod:`.lora_model`).
-from kiki_oniric.substrates.micro_kiki.lora_model import (  # noqa: F401
-    LoRALinear,
-    LoRAModel,
-)
+# Imported lazily : `lora_model` depends on MLX, which only ships
+# wheels for arm64-darwin. On non-Apple-Silicon platforms (e.g. the
+# Linux CI runners), MLX is missing and importing the package would
+# raise `ImportError: libmlx.so: cannot open shared object file`.
+# Tests that exercise LoRA paths import `lora_model` directly and
+# are gated by `conftest.py::collect_ignore_glob`.
+try:
+    from kiki_oniric.substrates.micro_kiki.lora_model import (  # noqa: F401
+        LoRALinear,
+        LoRAModel,
+    )
+except ImportError:  # pragma: no cover - MLX-less platforms (Linux CI)
+    LoRALinear = None  # type: ignore[assignment,misc]
+    LoRAModel = None  # type: ignore[assignment,misc]
 
 __all__ = [
     "MICRO_KIKI_SUBSTRATE_NAME",
