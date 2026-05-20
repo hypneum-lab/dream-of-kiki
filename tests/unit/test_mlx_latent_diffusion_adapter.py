@@ -188,9 +188,14 @@ def test_forward_passes_return_correct_shapes() -> None:
     alpha_bar_t = schedule.alpha_bar(t)
     assert alpha_bar_t.shape == t.shape
     # σ and ᾱ are non-negative and ᾱ is monotone decreasing on [0..t_steps-1].
-    sigma_list = sigma_t.tolist()
+    # mx.array.tolist() returns int | float | list — cast through numpy for
+    # a clean typed list[float] without nesting issues.
+    import numpy as np
+    sigma_list: list[float] = np.asarray(sigma_t).astype(float).tolist()
     assert all(s >= 0.0 for s in sigma_list)
-    ab_full = schedule.alpha_bar(mx.arange(t_steps, dtype=mx.int32)).tolist()
+    ab_full: list[float] = np.asarray(
+        schedule.alpha_bar(mx.arange(t_steps, dtype=mx.int32))
+    ).astype(float).tolist()
     assert all(ab_full[i + 1] <= ab_full[i] for i in range(t_steps - 1))
 
 
@@ -220,5 +225,7 @@ def test_skeleton_methods_raise_not_implemented_where_deferred() -> None:
     with pytest.raises(NotImplementedError, match="Wave 3b M3"):
         denoiser.train_step()
 
-    # teardown is a real no-op in M2 (not deferred): it must return None.
-    assert adapter.teardown() is None
+    # teardown is a real no-op in M2 (not deferred): it must be callable
+    # without raising. The return annotation is ``-> None`` so we just
+    # invoke it; mypy disallows asserting on a None-returning callable.
+    adapter.teardown()
