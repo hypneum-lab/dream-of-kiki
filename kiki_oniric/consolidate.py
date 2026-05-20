@@ -49,13 +49,20 @@ from kiki_oniric.dream.episode import (
     Operation,
     OutputChannel,
 )
+from kiki_oniric.dream.channels import (
+    AttentionPrior,
+    LatentSample,
+    TopologyDiff,
+    WeightUpdate,
+)
+from kiki_oniric.dream.runtime import EpisodeLogEntry
 from kiki_oniric.profiles.p_equ import PEquProfile
 from kiki_oniric.profiles.p_max import PMaxProfile
 from kiki_oniric.profiles.p_min import PMinProfile
 
 Profile = PMinProfile | PEquProfile | PMaxProfile
 
-__all__ = ["consolidate", "Profile"]
+__all__ = ["consolidate", "Profile", "apply_channel_outputs"]
 
 # Per-op input_slice keys that satisfy the registered skeleton
 # handlers without tripping their pre-mutation guards. These are
@@ -251,3 +258,82 @@ def consolidate(
         )
 
     return delta
+
+
+def apply_channel_outputs(
+    log: list[EpisodeLogEntry],
+    *,
+    weight_channel,
+    hierarchy_channel,
+    latent_channel,
+    attention_channel=None,
+) -> int:
+    """Dispatch every non-``None`` channel output in ``log`` to the
+    matching concrete channel and return the count.
+
+    Parameters
+    ----------
+    log
+        The ``DreamRuntime.log`` (list of ``EpisodeLogEntry``) produced
+        by running episodes through a runtime registered with the
+        B1b/B2/B3/B4 emitting handlers.
+    weight_channel
+        A ``WeightDeltaChannel`` implementation (e.g.
+        ``LoRAWeightDeltaChannel``) that consumes ``WeightUpdate``
+        outputs.
+    hierarchy_channel
+        A ``HierarchyChangeChannel`` implementation that consumes
+        ``TopologyDiff`` outputs.
+    latent_channel
+        A ``LatentSampleChannel`` implementation that consumes
+        ``LatentSample`` outputs.
+    attention_channel
+        Optional ``AttentionPriorChannel`` — required only if the
+        log carries an ``AttentionPrior``; otherwise pass ``None``.
+
+    Returns
+    -------
+    int
+        Number of channel outputs dispatched (``None`` entries are
+        skipped).
+
+    Raises
+    ------
+    TypeError
+        On a non-``None`` log entry whose type isn't in the
+        ``ChannelOutput`` union.
+    ValueError
+        If an ``AttentionPrior`` is encountered but
+        ``attention_channel is None``.
+    """
+    count = 0
+    for entry in log:
+        for output in entry.channel_outputs:
+            if output is None:
+                continue
+            if isinstance(output, WeightUpdate):
+                weight_channel.apply(
+                    output.lora_delta, output.fisher_bump,
+                )
+            elif isinstance(output, TopologyDiff):
+                hierarchy_channel.apply_diff(list(output.diff))
+            elif isinstance(output, LatentSample):
+                latent_channel.enqueue(
+                    output.species,
+                    output.latent_vector,
+                    output.provenance,
+                )
+            elif isinstance(output, AttentionPrior):
+                if attention_channel is None:
+                    raise ValueError(
+                        "apply_channel_outputs: attention_channel "
+                        "required for AttentionPrior outputs"
+                    )
+                attention_channel.set_prior(output.prior)
+            else:
+                raise TypeError(
+                    f"apply_channel_outputs: unknown ChannelOutput "
+                    f"type {type(output).__name__}"
+                )
+            count += 1
+    return count
