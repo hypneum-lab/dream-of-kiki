@@ -115,3 +115,13 @@ class DreamRuntime:
                     channel_outputs=tuple(outputs),
                 )
             )
+
+    def reset_log(self) -> None:
+        """Clear the accountability log (DR-0 trace).
+
+        Profile-driven consolidation flows that consume the log
+        via ``apply_channel_outputs`` use this to start the next
+        dream cycle with a clean slate. The handler registrations
+        and ``_handlers`` mapping are not touched.
+        """
+        self._log.clear()
