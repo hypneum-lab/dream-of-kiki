@@ -13,6 +13,13 @@ Formal proofs supporting framework spec axioms DR-0..DR-4.
 | DR-3 (substrate-agnosticism) | `dr3-substrate-evidence.md` | Two-substrate evidence (C2.10) |
 | DR-4 (profile inclusion) | `dr4-profile-inclusion.md` | Draft (S7-S8) |
 
+## Invariant evidence notes
+
+| Invariant | File | Status |
+|-----------|------|--------|
+| K2 (SO×spindle coupling) | `k2-coupling-evidence.md` | Evidence stub for invariant K2 (registry Family K) |
+| R1 (reproducibility) | `r1-cross-machine.md` | **Evidence note v0.1** (2026-05-20) — qualifies R1 within-machine BLOCKING / cross-machine WARN-conditional per the 3-machine M5/M3U/M1Max probe and `ml-explore/mlx#3568` |
+
 See also:
 - Framework spec §6 Axioms : `docs/specs/2026-04-17-dreamofkiki-framework-C-design.md`
 - G3 decision log : `g3-decision-log.md` (S8)

@@ -1,6 +1,26 @@
 # R1 — cross-machine reproducibility qualification
 
-**Status** : evidence note v0.1 (2026-05-20).
+**Version** : v0.1 (2026-05-20)
+**Supersedes** : none — first dated qualification of R1's
+cross-machine clause.
+**Amendment pointer** : none — this is an evidence note that
+refines wording without changing the formal axis. No
+`docs/specs/amendments/` entry required (no FC bump).
+**Target venue** : framework-C spec §8.3 wording refinement
+(future revision); not paper-cited.
+**Executable counterpart** :
+`tests/reproducibility/test_r1_bit_exact.py`,
+`tests/reproducibility/_r1_helpers.py:_chip_family`,
+plus per-family golden files
+`tests/reproducibility/golden_hashes_<family>.json`.
+
+> **Scope note** : R1 is an *invariant* (Family R in
+> `docs/invariants/registry.md`), not an axiom (DR-0..DR-4).
+> This document lives under `docs/proofs/` as an evidence stub
+> alongside the axiom proofs, matching the K2-coupling pattern
+> (`docs/proofs/k2-coupling-evidence.md`) where an empirical CI
+> refines an invariant's claim.
+
 **Trigger** : 3-machine R1 probe at commit `0a8ec29` (Apple M5,
 M3 Ultra, M1 Max) and matching MLX primitive probe.
 **Source data** :
