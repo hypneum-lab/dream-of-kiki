@@ -1,0 +1,80 @@
+{
+  "milestone": "r1-cross-machine-m5-vs-m1-2026-05-20",
+  "date": "2026-05-20",
+  "trigger_commit": "0a8ec29f1c21",
+  "status": "partial_cross_machine_failure",
+  "machines": {
+    "grosmac": {
+      "chip": "Apple M5",
+      "ram_gb": 16,
+      "macos": "26.3.1",
+      "python": "3.14.4",
+      "mlx": "0.31.1"
+    },
+    "macM1": {
+      "chip": "Apple M1",
+      "ram_gb": 32,
+      "macos": "25.4.0",
+      "python": "3.14.4",
+      "mlx": "0.31.1"
+    }
+  },
+  "hash_comparison": {
+    "test_r1_downscale": {
+      "grosmac_M5": "81297292f562ba9d9378e068e313071e54e129b50e0a4830ad2a9825813b9e28",
+      "macM1_M1":   "81297292f562ba9d9378e068e313071e54e129b50e0a4830ad2a9825813b9e28",
+      "match": true,
+      "uses_mlx_rng": false
+    },
+    "test_r1_restructure": {
+      "grosmac_M5": "1adfe6b3924fc33af3b1f07db8aaa60b4a2b41b891fee717650e8370d99b6b83",
+      "macM1_M1":   "1adfe6b3924fc33af3b1f07db8aaa60b4a2b41b891fee717650e8370d99b6b83",
+      "match": true,
+      "uses_mlx_rng": false
+    },
+    "test_r1_replay": {
+      "grosmac_M5": "37e1a4b47dfbc40df1b0b2921234ce546ebb5f32e1382a27730b59b9761c02c6",
+      "macM1_M1":   "cd53efd35fe868501726ac79f12d59de2156218bf3ebb3c3552409c1aee66692",
+      "match": false,
+      "uses_mlx_rng": true,
+      "rng_source": "LoRA model init (mx.random.uniform + mx.random.normal in LoRALinear)"
+    },
+    "test_r1_recombine": {
+      "grosmac_M5": "2f947c43b3abc5da51e3d7d3d6931f6ebbde9a1659e5b05c562d0e82e9b2c3f3",
+      "macM1_M1":   "b5ae6f5e2284a9759790fe6c162a2217573a64a9029364ca9b0b79c46fd4e9d4",
+      "match": false,
+      "uses_mlx_rng": true,
+      "rng_source": "VAE reparameterization (mx.random.normal for epsilon)"
+    },
+    "test_r1_full_pipeline": {
+      "grosmac_M5": "ba105f1432028d70b74441de8405a7fb50f30586787287626b5d973332c776c3",
+      "macM1_M1":   "3c9e7dbe456fb660668ab457b31fbbd4a5b580eb886e77dd4eab86028b64a86f",
+      "match": false,
+      "uses_mlx_rng": true,
+      "rng_source": "composes replay + recombine"
+    }
+  },
+  "summary": {
+    "matches": 2,
+    "diverges": 3,
+    "total": 5,
+    "within_machine_r1_intact": true,
+    "cross_machine_r1_intact": false,
+    "diverging_ops_all_use_mlx_rng": true,
+    "matching_ops_all_skip_mlx_rng": true,
+    "working_hypothesis": "mx.random.normal / mx.random.uniform produce different outputs on Apple M1 vs M5 for the same PRNG key (Metal kernel path differs across hardware generations)"
+  },
+  "functional_verdict": {
+    "pytest_passed": {"grosmac_M5": 816, "macM1_M1": 816},
+    "pytest_skipped": {"grosmac_M5": 3, "macM1_M1": 3},
+    "pytest_xfailed": {"grosmac_M5": 12, "macM1_M1": 12},
+    "coverage_pct": {"grosmac_M5": 87.70, "macM1_M1": 87.70},
+    "pytest_wall_s_approx": {"grosmac_M5": 9.5, "macM1_M1": 48.3},
+    "mypy_pass": true,
+    "ruff_pass": true,
+    "reproducibility_tests_pass_per_machine": true
+  },
+  "fc_bump": false,
+  "ec_bump": false,
+  "ec_axis": "PARTIAL"
+}
