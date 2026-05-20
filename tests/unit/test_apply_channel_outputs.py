@@ -520,3 +520,71 @@ def test_apply_rejects_unknown_output_type() -> None:
             hierarchy_channel=LoRAHierarchyChangeChannel(target),
             latent_channel=LatentSampleQueue(),
         )
+
+
+# ---------------------------------------------------------------------------
+# B5 T6 — End-to-end clone-bit-equality acceptance test
+# ---------------------------------------------------------------------------
+
+
+def test_end_to_end_replay_dream_to_awake_bit_equal() -> None:
+    """Run replay_lora_handler on dream-model, apply log to awake-model,
+    assert the two models are bit-equal — closes the awake/dream loop."""
+    from kiki_oniric.consolidate import apply_channel_outputs
+    from kiki_oniric.dream.channels.hierarchy_change import (
+        LoRAHierarchyChangeChannel,
+    )
+    from kiki_oniric.dream.channels.latent_sample import LatentSampleQueue
+    from kiki_oniric.dream.channels.weight_delta import LoRAWeightDeltaChannel
+    from kiki_oniric.dream.episode import (
+        BudgetCap,
+        DreamEpisode,
+        EpisodeTrigger,
+        Operation,
+        OutputChannel,
+    )
+    from kiki_oniric.dream.operations.replay_real import (
+        ReplayRealState,
+        replay_lora_handler,
+    )
+    from kiki_oniric.dream.runtime import DreamRuntime
+
+    dream, awake = _clones(seed=0)
+    state = ReplayRealState()
+    runtime = DreamRuntime()
+    runtime.register_handler(
+        Operation.REPLAY,
+        replay_lora_handler(state, model=dream, lr=0.05),
+    )
+    episode = DreamEpisode(
+        trigger=EpisodeTrigger.SCHEDULED,
+        input_slice={
+            "beta_records": [
+                {"x": [0.1, 0.2, 0.3, 0.4], "y": [1.0, 0.0]},
+                {"x": [0.5, 0.6, 0.7, 0.8], "y": [0.0, 1.0]},
+            ],
+        },
+        operation_set=(Operation.REPLAY,),
+        output_channels=(OutputChannel.WEIGHT_DELTA,),
+        budget=BudgetCap(flops=10_000_000, wall_time_s=1.0, energy_j=1.0),
+        episode_id="de-e2e-replay",
+    )
+    runtime.execute(episode)
+
+    # Sanity: handler did mutate the dream model — at least one adapter
+    # array differs from the untouched awake clone.
+    diff_before_apply = not np.array_equal(
+        np.asarray(dream.layers[0].lora_b),
+        np.asarray(awake.layers[0].lora_b),
+    )
+    assert diff_before_apply
+
+    apply_channel_outputs(
+        runtime.log,
+        weight_channel=LoRAWeightDeltaChannel(awake),
+        hierarchy_channel=LoRAHierarchyChangeChannel(awake),
+        latent_channel=LatentSampleQueue(),
+    )
+
+    # After apply, dream and awake match bit-for-bit.
+    _assert_lora_models_equal(dream, awake)
