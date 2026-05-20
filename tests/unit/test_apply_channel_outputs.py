@@ -278,3 +278,21 @@ def test_latent_sample_queue_dequeue_empty_returns_none() -> None:
 
     queue = LatentSampleQueue()
     assert queue.dequeue() is None
+
+
+# ---------------------------------------------------------------------------
+# B5 T4 — set_prior alias on AttentionPriorChannel
+# ---------------------------------------------------------------------------
+
+
+def test_attention_prior_set_prior_is_alias_of_emit() -> None:
+    from kiki_oniric.dream.channels.attention_prior import (
+        AttentionPriorChannel,
+    )
+
+    ch = AttentionPriorChannel()
+    prior = np.array([0.2, 0.3, 0.4], dtype=np.float32)
+    ch.set_prior(prior)
+    got = ch.get_prior()
+    assert got is not None
+    np.testing.assert_array_equal(got, prior)

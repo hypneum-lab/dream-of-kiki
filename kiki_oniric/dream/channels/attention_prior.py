@@ -67,6 +67,12 @@ class AttentionPriorChannel:
         view.flags.writeable = False
         return view
 
+    def set_prior(self, prior: NDArray) -> None:
+        """Alias of :meth:`emit` — matches the ``AttentionPriorChannel``
+        Protocol vocabulary (Protocol uses ``set_prior``; the cycle-2
+        class shipped with ``emit``)."""
+        self.emit(prior)
+
     def clear(self) -> None:
         """Reset to no prior (None)."""
         self._prior = None
