@@ -222,7 +222,7 @@ def test_hierarchy_change_channel_reroute_swaps_layers() -> None:
 
 def test_latent_sample_queue_enqueue_grows_len() -> None:
     """enqueue appends to the FIFO; len() tracks the depth."""
-    from kiki_oniric.dream.channels.latent_sample_queue import (
+    from kiki_oniric.dream.channels.latent_sample import (
         LatentSampleQueue,
     )
 
@@ -237,7 +237,7 @@ def test_latent_sample_queue_enqueue_grows_len() -> None:
 
 def test_latent_sample_queue_dequeue_returns_dict_fields() -> None:
     """dequeue returns a dict with species / latent_vector / provenance."""
-    from kiki_oniric.dream.channels.latent_sample_queue import (
+    from kiki_oniric.dream.channels.latent_sample import (
         LatentSampleQueue,
     )
 
@@ -255,7 +255,7 @@ def test_latent_sample_queue_dequeue_returns_dict_fields() -> None:
 
 def test_latent_sample_queue_capacity_drops_oldest() -> None:
     """maxlen capacity: oldest item is dropped when the queue is full."""
-    from kiki_oniric.dream.channels.latent_sample_queue import (
+    from kiki_oniric.dream.channels.latent_sample import (
         LatentSampleQueue,
     )
 
@@ -272,7 +272,7 @@ def test_latent_sample_queue_capacity_drops_oldest() -> None:
 
 def test_latent_sample_queue_dequeue_empty_returns_none() -> None:
     """dequeue on an empty queue returns None (I3 no-latent-buffer)."""
-    from kiki_oniric.dream.channels.latent_sample_queue import (
+    from kiki_oniric.dream.channels.latent_sample import (
         LatentSampleQueue,
     )
 
