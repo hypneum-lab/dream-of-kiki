@@ -679,6 +679,65 @@ see `docs/specs/2026-04-17-dreamofkiki-framework-C-design.md` §12).
 
 ---
 
+## [C-v0.20.0+PARTIAL] — 2026-05-20 — channel apply closes the loop (B5)
+
+### Formal axis (FC) — MINOR (v0.19.0 → v0.20.0)
+
+- **Three new concrete channels** in `kiki_oniric/dream/channels/`:
+  - `LoRAWeightDeltaChannel` (`weight_delta.py`) — additively
+    applies a `lora_delta` dict onto a `LoRAModel` target. Per-key
+    `"S1:"` parsing rejects unknown layer indices and bad attrs;
+    `"S2:"` finite guard rejects NaN/Inf on the new tensor.
+    `fisher_bump=None` accepted to match the `WeightDeltaChannel`
+    Protocol; ignored in B5 (Fisher is future work).
+  - `LoRAHierarchyChangeChannel` (`hierarchy_change.py`) — replays
+    every `TopologyDiff` entry via the new module-level
+    `_apply_topology_op(model, op, payload)` helper. `add` payloads
+    carry `seed`, which the channel passes to `mx.random.key` so
+    the reconstructed `LoRALinear` matches the dream-side bit-
+    exactly (R1).
+  - `LatentSampleQueue` (`latent_sample.py`) — substrate-agnostic
+    FIFO `collections.deque` with optional capacity. `S2:` finite
+    check on enqueue.
+- **`AttentionPriorChannel.set_prior`** — thin alias of `emit` so
+  the cycle-2 class matches the `AttentionPriorChannel` Protocol
+  vocabulary used by `apply_channel_outputs`.
+- **`apply_channel_outputs`** in `kiki_oniric/consolidate.py` — a
+  free function that walks `EpisodeLogEntry.channel_outputs`,
+  skips `None`, and dispatches by `isinstance` to the matching
+  channel. Returns the number of outputs dispatched. Raises
+  `TypeError` on an unknown `ChannelOutput` type; raises
+  `ValueError` if an `AttentionPrior` is encountered but
+  `attention_channel is None`. `consolidate()`'s nerve-wml-facing
+  signature is untouched.
+- Sub-project B5 of issue #15 — closes the awake↔dream loop. Tests
+  use a dream/awake `LoRAModel` clone pair (same `seed`); after
+  running an emitting handler on the dream side and
+  `apply_channel_outputs` on the awake side, the two models match
+  bit-for-bit (R1).
+
+### Empirical axis (EC) — UNCHANGED (PARTIAL)
+
+- No new substrate, axiom, or empirical claim. EC stays
+  `+PARTIAL`.
+
+### Packaging
+
+- `pyproject.toml` version bumped `0.17.0 → 0.18.0`.
+
+### Deferred
+
+- Profile wiring (`p_min` / `p_equ` / `p_max` continue to use
+  their cycle-3 channel wiring). A future **B6** sub-project
+  integrates `apply_channel_outputs` into the profile-driven
+  consolidation flow.
+- Refactoring `restructure_lora_handler` to delegate to
+  `_apply_topology_op`. The helper is intentionally module-level
+  so B3 can delegate later, but B5 does not change B3.
+- Fisher bump handling on `WeightDeltaChannel.apply`.
+
+---
+
 ## [C-v0.19.0+PARTIAL] — 2026-05-20 — recombine emits LatentSample (B4)
 
 ### Formal axis (FC) — MINOR (v0.18.0 → v0.19.0)

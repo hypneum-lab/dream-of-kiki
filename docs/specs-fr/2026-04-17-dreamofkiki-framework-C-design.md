@@ -193,6 +193,16 @@ sortie de canal typée, capturée dans
 opérations renvoient `None` jusqu'à ce que les sous-projets B1-B4
 peuplent des valeurs réelles.
 
+Depuis B5 (issue #15), les quatre Protocols de canaux ont des
+implémentations concrètes ciblant le substrat LoRA :
+`LoRAWeightDeltaChannel`, `LoRAHierarchyChangeChannel`,
+`LatentSampleQueue` et l'`AttentionPriorChannel` existant (avec
+un nouvel alias `set_prior` de `emit`). La fonction libre
+`kiki_oniric.consolidate.apply_channel_outputs(log, …)` parcourt
+le journal du runtime et répartit chaque `ChannelOutput` vers le
+canal correspondant — fermant la boucle éveil↔rêve. Le câblage
+au niveau des profils est différé à **B6**.
+
 ### 4.2 Opérations
 
 Quatre opérations canoniques, typées `Op : State × Budget → State × Output` :

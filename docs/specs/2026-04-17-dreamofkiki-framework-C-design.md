@@ -191,6 +191,16 @@ value, captured in `EpisodeLogEntry.channel_outputs`:
 operations return `None` until sub-projects B1-B4 populate real
 values.
 
+As of B5 (issue #15), the four channel Protocols have concrete
+LoRA-target implementations: `LoRAWeightDeltaChannel`,
+`LoRAHierarchyChangeChannel`, `LatentSampleQueue` and the
+existing `AttentionPriorChannel` (with a new `set_prior` alias
+of `emit`). The free function
+`kiki_oniric.consolidate.apply_channel_outputs(log, …)` walks
+the runtime log and dispatches each `ChannelOutput` to the
+matching channel — closing the awake↔dream loop. Profile-level
+wiring is deferred to **B6**.
+
 ### 4.2 Operations
 
 Four canonical operations, typed `Op : State × Budget → State × Output`:
