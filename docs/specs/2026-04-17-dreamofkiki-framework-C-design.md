@@ -147,6 +147,18 @@ P_equ = { primitives_in: {β, δ},  primitives_out: {1,3,4}, ops: {replay, downs
 P_max = { primitives_in: {α,β,δ}, primitives_out: {1,2,3,4}, ops: {replay, downscale, restructure, recombine_full} }
 ```
 
+As of B6a (issue #15), P_min has a LoRA-substrate variant
+`PMinLoRAProfile` (in `kiki_oniric/profiles/p_min_lora.py`)
+that wires the B-series LoRA-emitting handlers
+(`replay_lora_handler`, `downscale_lora_handler`) onto a dream
+/ awake `LoRAModel` pair. The variant exposes
+`consolidate_log()` that applies the runtime's accumulated
+`WeightUpdate` outputs onto the awake model via a
+`LoRAWeightDeltaChannel`. The cycle-3 `PMinProfile` (skeleton
+handlers, no emission) remains the canonical DR-4 chain-
+inclusion reference. B6b and B6c will introduce
+`PEquLoRAProfile` and `PMaxLoRAProfile` analogously.
+
 ### 3.2 Inclusion chain (Axiom DR-4 setup)
 
 ```

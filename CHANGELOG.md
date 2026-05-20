@@ -679,6 +679,51 @@ see `docs/specs/2026-04-17-dreamofkiki-framework-C-design.md` §12).
 
 ---
 
+## [C-v0.21.0+PARTIAL] — 2026-05-20 — PMinLoRAProfile wires P_min to channels (B6a)
+
+### Formal axis (FC) — MINOR (v0.20.0 → v0.21.0)
+
+- **New subclass** `kiki_oniric/profiles/p_min_lora.py`:
+  `PMinLoRAProfile(PMinProfile)` with kw-only `dream_model` and
+  `awake_model` LoRAModel kwargs. Registers
+  `replay_lora_handler` and `downscale_lora_handler` on its
+  runtime against `dream_model`, builds a
+  `LoRAWeightDeltaChannel(awake_model)`, and exposes
+  `consolidate_log() -> int` that calls `apply_channel_outputs`
+  then clears the log so a second call without further episodes
+  is a no-op. State field types are widened from
+  `ReplayOpState` / `DownscaleOpState` to `ReplayRealState` /
+  `DownscaleRealState` to match the LoRA handler contract.
+- **Refactor** `kiki_oniric/consolidate.py`: the three non-
+  attention channel kwargs of `apply_channel_outputs`
+  (`weight_channel`, `hierarchy_channel`, `latent_channel`) are
+  now `Optional[…] = None`. Each raises a per-type `ValueError`
+  if a matching `ChannelOutput` appears in the log without the
+  channel set. Backwards compatible (existing 4-kwarg call
+  sites still work). Lets profiles that emit only ch1 (PMin)
+  omit the unused channel kwargs.
+- **New runtime helper** `kiki_oniric/dream/runtime.py`:
+  `DreamRuntime.reset_log()` clears the accountability log
+  without touching handler registrations. Used by
+  `PMinLoRAProfile.consolidate_log()`.
+- Sub-project B6a of issue #15 (B6 decomposes into B6a / B6b /
+  B6c by profile). Cycle-3 `PMinProfile` stays intact: legacy
+  tests + DR-4 inclusion checks unaffected. B6b
+  (`PEquLoRAProfile`, channels `{1, 3, 4}`) and B6c
+  (`PMaxLoRAProfile`, channels `{1, 2, 3, 4}` + encoder/decoder
+  for `recombine_full`) are future work.
+
+### Empirical axis (EC) — UNCHANGED (PARTIAL)
+
+- No new substrate, axiom, or empirical claim. EC stays
+  `+PARTIAL`.
+
+### Packaging
+
+- `pyproject.toml` version bumped `0.18.0 → 0.19.0`.
+
+---
+
 ## [C-v0.20.0+PARTIAL] — 2026-05-20 — channel apply closes the loop (B5)
 
 ### Formal axis (FC) — MINOR (v0.19.0 → v0.20.0)
