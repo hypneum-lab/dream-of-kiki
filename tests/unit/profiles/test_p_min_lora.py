@@ -91,3 +91,129 @@ def test_dream_runtime_reset_log_clears() -> None:
     assert len(runtime.log) == 2
     runtime.reset_log()
     assert len(runtime.log) == 0
+
+
+# B6a T3
+
+
+def test_pmin_lora_construction_happy_path() -> None:
+    from kiki_oniric.dream.channels.weight_delta import (
+        LoRAWeightDeltaChannel,
+    )
+    from kiki_oniric.profiles.p_min_lora import PMinLoRAProfile
+
+    dream, awake = _clones(seed=0)
+    profile = PMinLoRAProfile(dream_model=dream, awake_model=awake)
+    assert isinstance(profile.weight_channel, LoRAWeightDeltaChannel)
+    # Both LoRA handlers must be registered on the runtime.
+    assert Operation.REPLAY in profile.runtime._handlers
+    assert Operation.DOWNSCALE in profile.runtime._handlers
+
+
+def test_pmin_lora_construction_missing_dream_raises() -> None:
+    from kiki_oniric.profiles.p_min_lora import PMinLoRAProfile
+
+    _, awake = _clones(seed=0)
+    with pytest.raises(TypeError):
+        PMinLoRAProfile(awake_model=awake)  # type: ignore[call-arg]
+
+
+def test_pmin_lora_construction_missing_awake_raises() -> None:
+    from kiki_oniric.profiles.p_min_lora import PMinLoRAProfile
+
+    dream, _ = _clones(seed=0)
+    with pytest.raises(TypeError):
+        PMinLoRAProfile(dream_model=dream)  # type: ignore[call-arg]
+
+
+def test_pmin_lora_replay_emits_weight_update_in_log() -> None:
+    from kiki_oniric.dream.channels import WeightUpdate
+    from kiki_oniric.profiles.p_min_lora import PMinLoRAProfile
+
+    dream, awake = _clones(seed=0)
+    profile = PMinLoRAProfile(dream_model=dream, awake_model=awake)
+    profile.runtime.execute(_replay_episode())
+    out = profile.runtime.log[-1].channel_outputs[0]
+    assert isinstance(out, WeightUpdate)
+
+
+def test_pmin_lora_downscale_emits_weight_update_in_log() -> None:
+    from kiki_oniric.dream.channels import WeightUpdate
+    from kiki_oniric.profiles.p_min_lora import PMinLoRAProfile
+
+    dream, awake = _clones(seed=0)
+    profile = PMinLoRAProfile(dream_model=dream, awake_model=awake)
+    profile.runtime.execute(_downscale_episode(factor=0.5))
+    out = profile.runtime.log[-1].channel_outputs[0]
+    assert isinstance(out, WeightUpdate)
+
+
+def test_pmin_lora_consolidate_log_applies_to_awake_bit_equal() -> None:
+    from kiki_oniric.profiles.p_min_lora import PMinLoRAProfile
+
+    dream, awake = _clones(seed=0)
+    profile = PMinLoRAProfile(dream_model=dream, awake_model=awake)
+    profile.runtime.execute(_replay_episode())
+
+    # Sanity: dream mutated, awake untouched yet.
+    assert not np.array_equal(
+        np.asarray(dream.layers[0].lora_b),
+        np.asarray(awake.layers[0].lora_b),
+    )
+    profile.consolidate_log()
+    _assert_lora_models_equal(dream, awake)
+
+
+def test_pmin_lora_consolidate_log_clears_log() -> None:
+    from kiki_oniric.profiles.p_min_lora import PMinLoRAProfile
+
+    dream, awake = _clones(seed=0)
+    profile = PMinLoRAProfile(dream_model=dream, awake_model=awake)
+    profile.runtime.execute(_replay_episode())
+    assert len(profile.runtime.log) == 1
+    profile.consolidate_log()
+    assert len(profile.runtime.log) == 0
+
+
+def test_pmin_lora_consolidate_log_returns_dispatch_count() -> None:
+    from kiki_oniric.profiles.p_min_lora import PMinLoRAProfile
+
+    dream, awake = _clones(seed=0)
+    profile = PMinLoRAProfile(dream_model=dream, awake_model=awake)
+    profile.runtime.execute(_replay_episode())
+    profile.runtime.execute(_downscale_episode(factor=0.5))
+    profile.runtime.execute(_replay_episode())
+    # Each episode emits exactly one WeightUpdate → 3 outputs.
+    assert profile.consolidate_log() == 3
+
+
+def test_pmin_lora_consolidate_log_idempotent_on_empty() -> None:
+    from kiki_oniric.profiles.p_min_lora import PMinLoRAProfile
+
+    dream, awake = _clones(seed=0)
+    profile = PMinLoRAProfile(dream_model=dream, awake_model=awake)
+    assert profile.consolidate_log() == 0
+    assert profile.consolidate_log() == 0
+    _assert_lora_models_equal(dream, awake)
+
+
+def test_pmin_lora_no_topology_no_latent_in_log() -> None:
+    """PMin's spec channel set is {WEIGHT_DELTA} only."""
+    from kiki_oniric.dream.channels import (
+        LatentSample,
+        TopologyDiff,
+        WeightUpdate,
+    )
+    from kiki_oniric.profiles.p_min_lora import PMinLoRAProfile
+
+    dream, awake = _clones(seed=0)
+    profile = PMinLoRAProfile(dream_model=dream, awake_model=awake)
+    profile.runtime.execute(_replay_episode())
+    profile.runtime.execute(_downscale_episode(factor=0.7))
+    for entry in profile.runtime.log:
+        for output in entry.channel_outputs:
+            if output is None:
+                continue
+            assert isinstance(output, WeightUpdate)
+            assert not isinstance(output, TopologyDiff)
+            assert not isinstance(output, LatentSample)
