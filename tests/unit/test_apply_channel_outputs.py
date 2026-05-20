@@ -82,6 +82,17 @@ def test_lora_weight_delta_channel_rejects_bad_key_format() -> None:
         channel.apply({"oops": np.zeros((2, 4), dtype=np.float32)})
 
 
+def test_lora_weight_delta_channel_rejects_negative_layer_idx() -> None:
+    from kiki_oniric.dream.channels.weight_delta import (
+        LoRAWeightDeltaChannel,
+    )
+
+    _, target = _clones(seed=0)
+    channel = LoRAWeightDeltaChannel(target)
+    with pytest.raises(ValueError, match=r"^S1:"):
+        channel.apply({"layer-1.lora_a": np.zeros((2, 4), dtype=np.float32)})
+
+
 def test_lora_weight_delta_channel_rejects_out_of_range_layer() -> None:
     from kiki_oniric.dream.channels.weight_delta import (
         LoRAWeightDeltaChannel,
@@ -164,6 +175,34 @@ def test_hierarchy_change_channel_add_seed_reproducible() -> None:
     np.testing.assert_array_equal(
         np.asarray(inserted_a.base_weight), np.asarray(reference.base_weight),
     )
+
+
+def test_hierarchy_change_channel_add_rejects_negative_index() -> None:
+    """add with a negative insert index is rejected (S3)."""
+    from kiki_oniric.dream.channels.hierarchy_change import (
+        LoRAHierarchyChangeChannel,
+    )
+
+    _, target = _clones(seed=0)
+    channel = LoRAHierarchyChangeChannel(target)
+    entry = _make_topology_diff_add(seed=42, index=-1)
+    with pytest.raises(ValueError, match=r"^S3:"):
+        channel.apply_diff([entry])
+
+
+def test_hierarchy_change_channel_add_rejects_index_too_large() -> None:
+    """add with index > len(layers) is rejected (S3)."""
+    from kiki_oniric.dream.channels.hierarchy_change import (
+        LoRAHierarchyChangeChannel,
+    )
+
+    _, target = _clones(seed=0)
+    channel = LoRAHierarchyChangeChannel(target)
+    entry = _make_topology_diff_add(
+        seed=42, index=len(target.layers) + 5,
+    )
+    with pytest.raises(ValueError, match=r"^S3:"):
+        channel.apply_diff([entry])
 
 
 def test_hierarchy_change_channel_remove_shrinks_layer() -> None:
