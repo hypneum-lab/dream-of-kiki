@@ -19,9 +19,14 @@ no DR-3 conformance tests live here. Those land under
 """
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import pytest
 
-import mlx.core as mx
+if TYPE_CHECKING:
+    import mlx.core as mx
+else:
+    mx = pytest.importorskip("mlx.core")
 
 from kiki_oniric.substrates._diffusion import (
     Encoder,
