@@ -156,8 +156,22 @@ that wires the B-series LoRA-emitting handlers
 `WeightUpdate` outputs onto the awake model via a
 `LoRAWeightDeltaChannel`. The cycle-3 `PMinProfile` (skeleton
 handlers, no emission) remains the canonical DR-4 chain-
-inclusion reference. B6b and B6c will introduce
-`PEquLoRAProfile` and `PMaxLoRAProfile` analogously.
+inclusion reference. B6c will introduce `PMaxLoRAProfile`.
+
+As of B6b (issue #15), P_equ has a LoRA-substrate variant
+`PEquLoRAProfile` (in `kiki_oniric/profiles/p_equ_lora.py`) that
+wires the B-series LoRA-emitting handlers (`replay_lora_handler`,
+`downscale_lora_handler`, `restructure_lora_handler`) on a
+dream/awake `LoRAModel` pair. The skeleton `recombine_handler`
+is kept for `recombine_light` (no ch2 emission, matching the
+spec's `channels_out` exclusion of channel 2). `consolidate_log()`
+dispatches ch1 (`WeightUpdate`) and ch3 (`TopologyDiff`) onto the
+awake model via `LoRAWeightDeltaChannel` and
+`LoRAHierarchyChangeChannel`. ch4 (`AttentionPrior`) is exposed
+as a state-surface field set externally via
+`profile.attention_prior.set_prior(prior)`. Cycle-3 `PEquProfile`
+remains the canonical DR-4 chain-inclusion reference. B6c will
+introduce `PMaxLoRAProfile`.
 
 ### 3.2 Inclusion chain (Axiom DR-4 setup)
 

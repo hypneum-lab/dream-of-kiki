@@ -679,6 +679,51 @@ see `docs/specs/2026-04-17-dreamofkiki-framework-C-design.md` §12).
 
 ---
 
+## [C-v0.22.0+PARTIAL] — 2026-05-20 — PEquLoRAProfile wires P_equ to channels (B6b)
+
+### Formal axis (FC) — MINOR (v0.21.0 → v0.22.0)
+
+- **New subclass** `kiki_oniric/profiles/p_equ_lora.py`:
+  `PEquLoRAProfile(PEquProfile)` with kw-only `dream_model` and
+  `awake_model` LoRAModel kwargs (plus `lr=0.01`,
+  `max_adds_per_episode=1`, `seed=0`). Registers
+  `replay_lora_handler`, `downscale_lora_handler`,
+  `restructure_lora_handler` on its runtime against
+  `dream_model`, keeps the skeleton `recombine_handler` for
+  `recombine_light` (no ch2 emission). Builds
+  `LoRAWeightDeltaChannel(awake_model)` for ch1 and
+  `LoRAHierarchyChangeChannel(awake_model)` for ch3.
+  `attention_prior` is an `AttentionPriorChannel` state surface
+  populated externally via `profile.attention_prior.set_prior(arr)` ;
+  no op emits `AttentionPrior` into the runtime log.
+- `consolidate_log() -> int` dispatches ch1 + ch3 via
+  `apply_channel_outputs` and clears the log on success. `ch2`
+  (LatentSample) and `ch4` (AttentionPrior) default to `None`
+  channel kwargs — neither reaches the log in P_equ.
+- **State widening** : `replay_state` / `downscale_state` /
+  `restructure_state` widened from cycle-3 skeleton
+  `OpState` types to `_RealState` variants. `recombine_state`
+  kept at `RecombineOpState` because the skeleton handler
+  services `recombine_light` and never emits.
+- Sub-project B6b of issue #15 (B6 decomposed by profile: B6a
+  PMin done, B6b PEqu this entry, B6c PMax future). Cycle-3
+  `PEquProfile` untouched — legacy tests + DR-4 inclusion checks
+  unaffected. The 14 new tests include a DR-4 chain-inclusion
+  check confirming `ops(PMinLoRA) ⊆ ops(PEquLoRA)` and
+  `channels_emitted(PMinLoRA) = {WeightUpdate} ⊆
+  channels_emitted(PEquLoRA) = {WeightUpdate, TopologyDiff}`.
+
+### Empirical axis (EC) — UNCHANGED (PARTIAL)
+
+- No new substrate, axiom, or empirical claim. EC stays
+  `+PARTIAL`.
+
+### Packaging
+
+- `pyproject.toml` version bumped `0.19.0 → 0.20.0`.
+
+---
+
 ## [C-v0.21.0+PARTIAL] — 2026-05-20 — PMinLoRAProfile wires P_min to channels (B6a)
 
 ### Formal axis (FC) — MINOR (v0.20.0 → v0.21.0)

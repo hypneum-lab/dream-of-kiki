@@ -157,9 +157,24 @@ rêve / éveil. La variante expose `consolidate_log()` qui
 applique les `WeightUpdate` accumulés sur le modèle éveil via
 un `LoRAWeightDeltaChannel`. Le `PMinProfile` cycle-3
 (gestionnaires squelettes, aucune émission) reste la référence
-canonique pour la chaîne d'inclusion DR-4. B6b et B6c
-introduiront `PEquLoRAProfile` et `PMaxLoRAProfile` de manière
-analogue.
+canonique pour la chaîne d'inclusion DR-4. B6c introduira
+`PMaxLoRAProfile`.
+
+Depuis B6b (issue #15), P_equ possède une variante de substrat
+LoRA `PEquLoRAProfile` (dans
+`kiki_oniric/profiles/p_equ_lora.py`) qui branche les
+gestionnaires LoRA de la série B (`replay_lora_handler`,
+`downscale_lora_handler`, `restructure_lora_handler`) sur une
+paire de `LoRAModel` rêve / éveil. Le `recombine_handler`
+squelette est conservé pour `recombine_light` (aucune émission
+ch2, conforme à l'exclusion `channels_out` du canal 2 dans la
+spec). `consolidate_log()` répartit ch1 (`WeightUpdate`) et ch3
+(`TopologyDiff`) sur le modèle éveil via `LoRAWeightDeltaChannel`
+et `LoRAHierarchyChangeChannel`. ch4 (`AttentionPrior`) est
+exposé comme champ de surface d'état défini en externe via
+`profile.attention_prior.set_prior(prior)`. Le `PEquProfile`
+cycle-3 reste la référence canonique pour la chaîne d'inclusion
+DR-4. B6c introduira `PMaxLoRAProfile`.
 
 ### 3.2 Chaîne d'inclusion (setup axiome DR-4)
 
