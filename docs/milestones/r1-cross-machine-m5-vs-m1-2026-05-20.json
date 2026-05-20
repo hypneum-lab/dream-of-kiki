@@ -3,73 +3,157 @@
   "date": "2026-05-20",
   "trigger_commit": "0a8ec29f1c21",
   "status": "partial_cross_machine_failure",
+  "upstream_issue": "https://github.com/ml-explore/mlx/issues/3568",
+  "tracking_issue": "https://github.com/hypneum-lab/dream-of-kiki/issues/25",
   "machines": {
     "grosmac": {
       "chip": "Apple M5",
       "ram_gb": 16,
-      "macos": "26.3.1",
+      "macos": "26.5",
+      "python": "3.14.3",
+      "mlx": "0.31.1"
+    },
+    "studio": {
+      "chip": "Apple M3 Ultra",
+      "ram_gb": 512,
+      "macos": "26.4.1",
       "python": "3.14.4",
       "mlx": "0.31.1"
     },
     "macM1": {
-      "chip": "Apple M1",
+      "chip": "Apple M1 Max",
       "ram_gb": 32,
-      "macos": "25.4.0",
+      "macos": "26.4.1",
       "python": "3.14.4",
-      "mlx": "0.31.1"
+      "mlx": "0.31.1",
+      "note": "Initial milestone draft assumed macM1 = Apple M1; sysctl confirms M1 Max. Same machine as the 2026-05-04 STATUS.md baseline."
     }
   },
-  "hash_comparison": {
+  "r1_hash_comparison": {
     "test_r1_downscale": {
-      "grosmac_M5": "81297292f562ba9d9378e068e313071e54e129b50e0a4830ad2a9825813b9e28",
-      "macM1_M1":   "81297292f562ba9d9378e068e313071e54e129b50e0a4830ad2a9825813b9e28",
-      "match": true,
+      "M5":      "81297292f562ba9d9378e068e313071e54e129b50e0a4830ad2a9825813b9e28",
+      "M3Ultra": "81297292f562ba9d9378e068e313071e54e129b50e0a4830ad2a9825813b9e28",
+      "M1Max":   "81297292f562ba9d9378e068e313071e54e129b50e0a4830ad2a9825813b9e28",
+      "all_match": true,
       "uses_mlx_rng": false
     },
     "test_r1_restructure": {
-      "grosmac_M5": "1adfe6b3924fc33af3b1f07db8aaa60b4a2b41b891fee717650e8370d99b6b83",
-      "macM1_M1":   "1adfe6b3924fc33af3b1f07db8aaa60b4a2b41b891fee717650e8370d99b6b83",
-      "match": true,
+      "M5":      "1adfe6b3924fc33af3b1f07db8aaa60b4a2b41b891fee717650e8370d99b6b83",
+      "M3Ultra": "1adfe6b3924fc33af3b1f07db8aaa60b4a2b41b891fee717650e8370d99b6b83",
+      "M1Max":   "1adfe6b3924fc33af3b1f07db8aaa60b4a2b41b891fee717650e8370d99b6b83",
+      "all_match": true,
       "uses_mlx_rng": false
     },
     "test_r1_replay": {
-      "grosmac_M5": "37e1a4b47dfbc40df1b0b2921234ce546ebb5f32e1382a27730b59b9761c02c6",
-      "macM1_M1":   "cd53efd35fe868501726ac79f12d59de2156218bf3ebb3c3552409c1aee66692",
-      "match": false,
+      "M5":      "37e1a4b47dfbc40df1b0b2921234ce546ebb5f32e1382a27730b59b9761c02c6",
+      "M3Ultra": "cd53efd35fe868501726ac79f12d59de2156218bf3ebb3c3552409c1aee66692",
+      "M1Max":   "cd53efd35fe868501726ac79f12d59de2156218bf3ebb3c3552409c1aee66692",
+      "all_match": false,
+      "cluster": "M3Ultra == M1Max != M5",
       "uses_mlx_rng": true,
-      "rng_source": "LoRA model init (mx.random.uniform + mx.random.normal in LoRALinear)"
+      "rng_source": "LoRALinear init: mx.random.normal(lora_a) + mx.random.uniform(base_weight)"
     },
     "test_r1_recombine": {
-      "grosmac_M5": "2f947c43b3abc5da51e3d7d3d6931f6ebbde9a1659e5b05c562d0e82e9b2c3f3",
-      "macM1_M1":   "b5ae6f5e2284a9759790fe6c162a2217573a64a9029364ca9b0b79c46fd4e9d4",
-      "match": false,
+      "M5":      "2f947c43b3abc5da51e3d7d3d6931f6ebbde9a1659e5b05c562d0e82e9b2c3f3",
+      "M3Ultra": "2f947c43b3abc5da51e3d7d3d6931f6ebbde9a1659e5b05c562d0e82e9b2c3f3",
+      "M1Max":   "b5ae6f5e2284a9759790fe6c162a2217573a64a9029364ca9b0b79c46fd4e9d4",
+      "all_match": false,
+      "cluster": "M5 == M3Ultra != M1Max",
       "uses_mlx_rng": true,
-      "rng_source": "VAE reparameterization (mx.random.normal for epsilon)"
+      "rng_source": "VAE reparameterization: mx.random.split + mx.random.normal (epsilon)"
     },
     "test_r1_full_pipeline": {
-      "grosmac_M5": "ba105f1432028d70b74441de8405a7fb50f30586787287626b5d973332c776c3",
-      "macM1_M1":   "3c9e7dbe456fb660668ab457b31fbbd4a5b580eb886e77dd4eab86028b64a86f",
-      "match": false,
+      "M5":      "ba105f1432028d70b74441de8405a7fb50f30586787287626b5d973332c776c3",
+      "M3Ultra": "3c9e7dbe456fb660668ab457b31fbbd4a5b580eb886e77dd4eab86028b64a86f",
+      "M1Max":   "3c9e7dbe456fb660668ab457b31fbbd4a5b580eb886e77dd4eab86028b64a86f",
+      "all_match": false,
+      "cluster": "M3Ultra == M1Max != M5",
       "uses_mlx_rng": true,
       "rng_source": "composes replay + recombine"
     }
   },
+  "mlx_primitive_probe": {
+    "bare_key0": {
+      "M5":      "af5570f5a1810b7af78caf4bc70a660f0df51e42baf91d4de5b2328de0e83dfc",
+      "M3Ultra": "af5570f5a1810b7af78caf4bc70a660f0df51e42baf91d4de5b2328de0e83dfc",
+      "M1Max":   "af5570f5a1810b7af78caf4bc70a660f0df51e42baf91d4de5b2328de0e83dfc",
+      "all_match": true,
+      "call": "mx.random.key(0) materialised"
+    },
+    "split_key7_s1": {
+      "M5":      "1cd6e88d2c390aa350f6b4c3f88a5c5df9c2e56f97b16d46b86ef64e0ca63a70",
+      "M3Ultra": "1cd6e88d2c390aa350f6b4c3f88a5c5df9c2e56f97b16d46b86ef64e0ca63a70",
+      "M1Max":   "1cd6e88d2c390aa350f6b4c3f88a5c5df9c2e56f97b16d46b86ef64e0ca63a70",
+      "all_match": true,
+      "call": "mx.random.split(mx.random.key(7))[0]"
+    },
+    "split_key7_s2": {
+      "M5":      "7b3d5b3a8ae36f34efc13f52d75284aa211ebb059728b9379b3ad44cf7d404cc",
+      "M3Ultra": "7b3d5b3a8ae36f34efc13f52d75284aa211ebb059728b9379b3ad44cf7d404cc",
+      "M1Max":   "7b3d5b3a8ae36f34efc13f52d75284aa211ebb059728b9379b3ad44cf7d404cc",
+      "all_match": true,
+      "call": "mx.random.split(mx.random.key(7))[1]"
+    },
+    "uniform_8_key0_b1": {
+      "M5":      "f8646c5b74ac4c237e50710a2d23ceece8c3a63b8af8b38f9e78770c66fde1a7",
+      "M3Ultra": "f8646c5b74ac4c237e50710a2d23ceece8c3a63b8af8b38f9e78770c66fde1a7",
+      "M1Max":   "f8646c5b74ac4c237e50710a2d23ceece8c3a63b8af8b38f9e78770c66fde1a7",
+      "all_match": true,
+      "call": "mx.random.uniform(low=-1, high=1, shape=(8,), key=mx.random.key(0))"
+    },
+    "split_then_normal_4_key7": {
+      "M5":      "50ac95d99ae721815d81896380d01d75a8542393bc86639e54c59a770d4811e6",
+      "M3Ultra": "50ac95d99ae721815d81896380d01d75a8542393bc86639e54c59a770d4811e6",
+      "M1Max":   "50ac95d99ae721815d81896380d01d75a8542393bc86639e54c59a770d4811e6",
+      "all_match": true,
+      "call": "mx.random.normal(shape=(4,), key=mx.random.split(mx.random.key(7))[1])"
+    },
+    "normal_8_key0": {
+      "M5":      "a662607828c52cafea1f79d98f09bd81855784116acd23364a6130eb037d6a5e",
+      "M3Ultra": "a662607828c52cafea1f79d98f09bd81855784116acd23364a6130eb037d6a5e",
+      "M1Max":   "8a8c5a6737feea9eeee3c7056f4699250e6b8440db8930fd10495ada9117c05a",
+      "all_match": false,
+      "cluster": "M5 == M3Ultra != M1Max",
+      "call": "mx.random.normal(shape=(8,), key=mx.random.key(0))"
+    },
+    "normal_8_key42": {
+      "M5":      "7ef9a0d55131a5b50cb4d5b5ff1fcf8fb93515ca98ece723a97f4612c2673c85",
+      "M3Ultra": "7ef9a0d55131a5b50cb4d5b5ff1fcf8fb93515ca98ece723a97f4612c2673c85",
+      "M1Max":   "46a0c8652eafa5b9a4fe952b09d1ba4c90fa8f0c7c82ad4b0b1377a8a096d28f",
+      "all_match": false,
+      "cluster": "M5 == M3Ultra != M1Max",
+      "call": "mx.random.normal(shape=(8,), key=mx.random.key(42))"
+    },
+    "normal_16x4_key0": {
+      "M5":      "b2b3b19fe3512c1b88f780328a914a8e1b69a2ac7fe5a77b10deb011e01d8a49",
+      "M3Ultra": "b2b3b19fe3512c1b88f780328a914a8e1b69a2ac7fe5a77b10deb011e01d8a49",
+      "M1Max":   "4e136ef9d829cd3f42ea78f202461ca89ac803393ae4a9635a1ae744b583c796",
+      "all_match": false,
+      "cluster": "M5 == M3Ultra != M1Max",
+      "call": "mx.random.normal(shape=(16, 4), key=mx.random.key(0))"
+    }
+  },
   "summary": {
-    "matches": 2,
-    "diverges": 3,
-    "total": 5,
+    "r1_matches": 2,
+    "r1_diverges": 3,
+    "r1_total": 5,
+    "mlx_primitive_matches": 5,
+    "mlx_primitive_diverges": 3,
+    "mlx_primitive_total": 8,
     "within_machine_r1_intact": true,
     "cross_machine_r1_intact": false,
-    "diverging_ops_all_use_mlx_rng": true,
-    "matching_ops_all_skip_mlx_rng": true,
-    "working_hypothesis": "mx.random.normal / mx.random.uniform produce different outputs on Apple M1 vs M5 for the same PRNG key (Metal kernel path differs across hardware generations)"
+    "primary_divergence_op": "mx.random.normal",
+    "primary_divergence_chip": "Apple M1 Max",
+    "primary_divergence_condition": "key produced directly by mx.random.key(seed); split-derived keys match",
+    "secondary_divergence": "the R1-level cluster patterns (M3U==M1Max for replay/full_pipeline, M5==M3U for recombine) involve more than the isolated M1Max-only mx.random.normal divergence — likely additional kernel branches in the seeded LoRA model construction path",
+    "prior_2026_05_04_claim_regression": "the Studio (M3 Ultra) ↔ macM1 (M1 Max) bit-exact claim is now PARTIAL: 4/5 entries still match, but test_r1_recombine diverges post-B4/B5"
   },
   "functional_verdict": {
-    "pytest_passed": {"grosmac_M5": 816, "macM1_M1": 816},
-    "pytest_skipped": {"grosmac_M5": 3, "macM1_M1": 3},
-    "pytest_xfailed": {"grosmac_M5": 12, "macM1_M1": 12},
-    "coverage_pct": {"grosmac_M5": 87.70, "macM1_M1": 87.70},
-    "pytest_wall_s_approx": {"grosmac_M5": 9.5, "macM1_M1": 48.3},
+    "pytest_passed": {"M5": 816, "M3Ultra": 816, "M1Max": 816},
+    "pytest_skipped": {"M5": 3, "M3Ultra": 3, "M1Max": 3},
+    "pytest_xfailed": {"M5": 12, "M3Ultra": 12, "M1Max": 12},
+    "coverage_pct": {"M5": 87.70, "M3Ultra": 87.70, "M1Max": 87.70},
+    "pytest_wall_s_approx": {"M5": 9.5, "M3Ultra": null, "M1Max": 48.3},
     "mypy_pass": true,
     "ruff_pass": true,
     "reproducibility_tests_pass_per_machine": true
