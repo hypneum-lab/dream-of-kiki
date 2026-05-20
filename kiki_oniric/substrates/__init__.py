@@ -35,6 +35,13 @@ from kiki_oniric.substrates.wake_sleep_cl_baseline import (
     WakeSleepCLBaseline,
     wake_sleep_substrate_components,
 )
+from kiki_oniric.substrates.mlx_latent_diffusion import (
+    MLX_LATENT_DIFFUSION_SUBSTRATE_NAME,
+    MLX_LATENT_DIFFUSION_SUBSTRATE_VERSION,
+    MLXLatentDiffusionConfig,
+    MLXLatentDiffusionSubstrate,
+    mlx_latent_diffusion_substrate_components,
+)
 
 __all__ = [
     "MLX_SUBSTRATE_NAME",
@@ -53,4 +60,9 @@ __all__ = [
     "WAKE_SLEEP_BASELINE_VERSION",
     "WakeSleepCLBaseline",
     "wake_sleep_substrate_components",
+    "MLX_LATENT_DIFFUSION_SUBSTRATE_NAME",
+    "MLX_LATENT_DIFFUSION_SUBSTRATE_VERSION",
+    "MLXLatentDiffusionConfig",
+    "MLXLatentDiffusionSubstrate",
+    "mlx_latent_diffusion_substrate_components",
 ]

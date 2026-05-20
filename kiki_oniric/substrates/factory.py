@@ -23,10 +23,16 @@ SUBSTRATE_NAMES: tuple[str, ...] = (
     "mlx_kiki_oniric",
     "esnn_thalamocortical",
     "micro_kiki",
+    "mlx_latent_diffusion",
 )
 
 
-SubstrateName = Literal["mlx_kiki_oniric", "esnn_thalamocortical", "micro_kiki"]
+SubstrateName = Literal[
+    "mlx_kiki_oniric",
+    "esnn_thalamocortical",
+    "micro_kiki",
+    "mlx_latent_diffusion",
+]
 
 
 @dataclass(frozen=True)
@@ -109,3 +115,40 @@ class ESNNAdapter:
     def teardown(self) -> None:
         from kiki_oniric.substrates.esnn_thalamocortical import EsnnSubstrate
         self._substrate = EsnnSubstrate()
+
+
+def build_substrate_adapter(name: SubstrateName) -> SubstrateAdapter:
+    """Return a ``SubstrateAdapter`` instance for the requested substrate.
+
+    Thin dispatcher used by the Wave 3b M2 unit tests and by the
+    M4 ablation_cycle3 integration. Lazy-imports each adapter so
+    importing this module does not pull MLX / numpy / Norse code
+    eagerly. Raises ``ValueError`` for unknown names.
+
+    Currently wires:
+
+    - ``mlx_latent_diffusion`` → ``MLXLatentDiffusionSubstrate`` (M2)
+
+    The other substrates (``mlx_kiki_oniric``, ``esnn_thalamocortical``,
+    ``micro_kiki``) are reachable via their existing adapter
+    classes and are intentionally not re-dispatched here in M2 to
+    keep the change additive. Future milestones may extend the
+    dispatch table without altering the public signature.
+    """
+    if name == "mlx_latent_diffusion":
+        from kiki_oniric.substrates.mlx_latent_diffusion import (
+            MLXLatentDiffusionSubstrate,
+        )
+        return MLXLatentDiffusionSubstrate()
+    if name == "esnn_thalamocortical":
+        return ESNNAdapter()
+    if name in ("mlx_kiki_oniric", "micro_kiki"):
+        raise NotImplementedError(
+            f"build_substrate_adapter({name!r}) is not wired in Wave 3b M2. "
+            "Use the existing adapter classes directly until a future "
+            "milestone extends the dispatcher."
+        )
+    raise ValueError(
+        f"Unknown substrate name: {name!r}. "
+        f"Choose from {SUBSTRATE_NAMES}."
+    )
