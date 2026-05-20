@@ -91,3 +91,125 @@ def test_lora_weight_delta_channel_rejects_out_of_range_layer() -> None:
     channel = LoRAWeightDeltaChannel(target)
     with pytest.raises(ValueError, match=r"^S1:"):
         channel.apply({"layer99.lora_a": np.zeros((2, 4), dtype=np.float32)})
+
+
+# ---------------------------------------------------------------------------
+# B5 T2 — LoRAHierarchyChangeChannel tests
+# ---------------------------------------------------------------------------
+
+
+def _make_topology_diff_add(
+    seed: int,
+    index: int = 1,
+    in_f: int = 4,
+    out_f: int = 8,
+    rank: int = 2,
+    alpha: float = 4.0,
+    sha: str = "a" * 64,
+) -> tuple[str, dict]:
+    return (
+        "add",
+        {
+            "index": index,
+            "in_features": in_f,
+            "out_features": out_f,
+            "rank": rank,
+            "alpha": alpha,
+            "seed": seed,
+            "model_sha256_post": sha,
+        },
+    )
+
+
+def test_hierarchy_change_channel_add_inserts_layer() -> None:
+    """apply_diff with an add entry grows the layer stack by one (S3)."""
+    from kiki_oniric.dream.channels.hierarchy_change import (
+        LoRAHierarchyChangeChannel,
+    )
+
+    _, target = _clones(seed=0)
+    before_len = len(target.layers)
+    channel = LoRAHierarchyChangeChannel(target)
+    entry = _make_topology_diff_add(seed=42, index=0)
+    channel.apply_diff([entry])
+    assert len(target.layers) == before_len + 1
+
+
+def test_hierarchy_change_channel_add_seed_reproducible() -> None:
+    """add with same seed reconstructs bit-identical layer (R1 linchpin)."""
+    from kiki_oniric.dream.channels.hierarchy_change import (
+        LoRAHierarchyChangeChannel,
+    )
+
+    op_seed = 99
+    entry = _make_topology_diff_add(seed=op_seed, index=0)
+
+    # Apply via channel onto first target.
+    _, target_a = _clones(seed=0)
+    LoRAHierarchyChangeChannel(target_a).apply_diff([entry])
+    inserted_a = target_a.layers[0]
+
+    # Reconstruct independently using the same seed.
+    reference = LoRALinear(
+        in_features=4,
+        out_features=8,
+        rank=2,
+        alpha=4.0,
+        key=mx.random.key(op_seed),
+    )
+
+    np.testing.assert_array_equal(
+        np.asarray(inserted_a.lora_a), np.asarray(reference.lora_a),
+    )
+    np.testing.assert_array_equal(
+        np.asarray(inserted_a.base_weight), np.asarray(reference.base_weight),
+    )
+
+
+def test_hierarchy_change_channel_remove_shrinks_layer() -> None:
+    """apply_diff with a remove entry shrinks the layer stack by one (S3)."""
+    from kiki_oniric.dream.channels.hierarchy_change import (
+        LoRAHierarchyChangeChannel,
+    )
+
+    _, target = _clones(seed=0)
+    before_len = len(target.layers)
+    channel = LoRAHierarchyChangeChannel(target)
+    remove_entry = (
+        "remove",
+        {
+            "index": 0,
+            "snapshot": {},
+            "model_sha256_post": "b" * 64,
+        },
+    )
+    channel.apply_diff([remove_entry])
+    assert len(target.layers) == before_len - 1
+
+
+def test_hierarchy_change_channel_reroute_swaps_layers() -> None:
+    """apply_diff with reroute swaps two layers' lora_a arrays (S3)."""
+    from kiki_oniric.dream.channels.hierarchy_change import (
+        LoRAHierarchyChangeChannel,
+    )
+
+    _, target = _clones(seed=0)
+    a_before = np.asarray(target.layers[0].lora_a, dtype=np.float32).copy()
+    b_before = np.asarray(target.layers[1].lora_a, dtype=np.float32).copy()
+
+    channel = LoRAHierarchyChangeChannel(target)
+    reroute_entry = (
+        "reroute",
+        {
+            "swap_indices": (0, 1),
+            "model_sha256_post": "c" * 64,
+        },
+    )
+    channel.apply_diff([reroute_entry])
+
+    np.testing.assert_array_equal(
+        np.asarray(target.layers[0].lora_a, dtype=np.float32), b_before,
+    )
+    np.testing.assert_array_equal(
+        np.asarray(target.layers[1].lora_a, dtype=np.float32), a_before,
+    )
