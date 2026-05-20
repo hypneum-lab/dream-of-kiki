@@ -46,7 +46,7 @@ class LoRAWeightDeltaChannel:
         del fisher_bump  # B5: accepted to match Protocol, ignored
         for key, delta_arr in lora_delta.items():
             layer_idx, attr = self._parse_key(key)
-            if layer_idx >= len(self._target.layers):
+            if layer_idx < 0 or layer_idx >= len(self._target.layers):
                 raise ValueError(
                     f"S1: weight_delta key {key!r} references layer "
                     f"{layer_idx} but target has "

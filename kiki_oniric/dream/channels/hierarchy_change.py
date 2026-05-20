@@ -58,6 +58,11 @@ def _apply_topology_op(
         rank = int(payload["rank"])  # type: ignore[arg-type]
         alpha = float(payload["alpha"])  # type: ignore[arg-type]
         seed = int(payload["seed"])  # type: ignore[arg-type]
+        if not (0 <= index <= len(model.layers)):
+            raise ValueError(
+                f"S3: add index {index} out of bounds for "
+                f"{len(model.layers)} layers"
+            )
         new_layer = LoRALinear(
             in_features=in_features,
             out_features=out_features,
