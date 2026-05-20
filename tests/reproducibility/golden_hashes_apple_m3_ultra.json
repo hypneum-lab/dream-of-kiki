@@ -1,0 +1,37 @@
+{
+  "test_r1_downscale": {
+    "chip_family": "apple_m3_ultra",
+    "commit": "deeb1e8f77cc",
+    "hash": "81297292f562ba9d9378e068e313071e54e129b50e0a4830ad2a9825813b9e28",
+    "mlx_version": "0.31.1",
+    "status": "pending_review"
+  },
+  "test_r1_full_pipeline": {
+    "chip_family": "apple_m3_ultra",
+    "commit": "deeb1e8f77cc",
+    "hash": "3c9e7dbe456fb660668ab457b31fbbd4a5b580eb886e77dd4eab86028b64a86f",
+    "mlx_version": "0.31.1",
+    "status": "pending_review"
+  },
+  "test_r1_recombine": {
+    "chip_family": "apple_m3_ultra",
+    "commit": "deeb1e8f77cc",
+    "hash": "2f947c43b3abc5da51e3d7d3d6931f6ebbde9a1659e5b05c562d0e82e9b2c3f3",
+    "mlx_version": "0.31.1",
+    "status": "pending_review"
+  },
+  "test_r1_replay": {
+    "chip_family": "apple_m3_ultra",
+    "commit": "deeb1e8f77cc",
+    "hash": "cd53efd35fe868501726ac79f12d59de2156218bf3ebb3c3552409c1aee66692",
+    "mlx_version": "0.31.1",
+    "status": "pending_review"
+  },
+  "test_r1_restructure": {
+    "chip_family": "apple_m3_ultra",
+    "commit": "deeb1e8f77cc",
+    "hash": "1adfe6b3924fc33af3b1f07db8aaa60b4a2b41b891fee717650e8370d99b6b83",
+    "mlx_version": "0.31.1",
+    "status": "pending_review"
+  }
+}
