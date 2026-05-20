@@ -18,34 +18,10 @@ from kiki_oniric.dream.episode import (
     Operation,
     OutputChannel,
 )
-from kiki_oniric.substrates.micro_kiki.lora_model import LoRAModel
-
-
-def _clones(seed: int = 0) -> tuple[LoRAModel, LoRAModel]:
-    """Two bit-identical LoRAModels at the same seed.
-
-    Duplicated from tests/unit/profiles/test_p_min_lora.py. A shared
-    helpers file lands with B6c when there are three copies.
-    """
-    return (
-        LoRAModel((4, 8, 2), rank=2, alpha=4.0, seed=seed),
-        LoRAModel((4, 8, 2), rank=2, alpha=4.0, seed=seed),
-    )
-
-
-def _assert_lora_models_equal(a: LoRAModel, b: LoRAModel) -> None:
-    """Assert bit-equality of every layer's base + adapters."""
-    assert len(a.layers) == len(b.layers)
-    for la, lb in zip(a.layers, b.layers):
-        np.testing.assert_array_equal(
-            np.asarray(la.base_weight), np.asarray(lb.base_weight),
-        )
-        np.testing.assert_array_equal(
-            np.asarray(la.lora_a), np.asarray(lb.lora_a),
-        )
-        np.testing.assert_array_equal(
-            np.asarray(la.lora_b), np.asarray(lb.lora_b),
-        )
+from tests.unit.profiles._lora_helpers import (
+    assert_lora_models_equal,
+    lora_clones,
+)
 
 
 def _replay_episode(records: list[dict[str, object]] | None = None) -> DreamEpisode:
@@ -111,7 +87,7 @@ def test_pequ_lora_construction_happy_path() -> None:
     )
     from kiki_oniric.profiles.p_equ_lora import PEquLoRAProfile
 
-    dream, awake = _clones(seed=0)
+    dream, awake = lora_clones(seed=0)
     profile = PEquLoRAProfile(dream_model=dream, awake_model=awake)
     assert isinstance(profile.weight_channel, LoRAWeightDeltaChannel)
     assert isinstance(profile.hierarchy_channel, LoRAHierarchyChangeChannel)
@@ -129,7 +105,7 @@ def test_pequ_lora_construction_happy_path() -> None:
 def test_pequ_lora_construction_missing_dream_raises() -> None:
     from kiki_oniric.profiles.p_equ_lora import PEquLoRAProfile
 
-    _, awake = _clones(seed=0)
+    _, awake = lora_clones(seed=0)
     with pytest.raises(TypeError):
         PEquLoRAProfile(awake_model=awake)  # type: ignore[call-arg]
 
@@ -137,7 +113,7 @@ def test_pequ_lora_construction_missing_dream_raises() -> None:
 def test_pequ_lora_construction_missing_awake_raises() -> None:
     from kiki_oniric.profiles.p_equ_lora import PEquLoRAProfile
 
-    dream, _ = _clones(seed=0)
+    dream, _ = lora_clones(seed=0)
     with pytest.raises(TypeError):
         PEquLoRAProfile(dream_model=dream)  # type: ignore[call-arg]
 
@@ -146,7 +122,7 @@ def test_pequ_lora_replay_emits_weight_update_in_log() -> None:
     from kiki_oniric.dream.channels import WeightUpdate
     from kiki_oniric.profiles.p_equ_lora import PEquLoRAProfile
 
-    dream, awake = _clones(seed=0)
+    dream, awake = lora_clones(seed=0)
     profile = PEquLoRAProfile(dream_model=dream, awake_model=awake)
     profile.runtime.execute(_replay_episode())
     out = profile.runtime.log[-1].channel_outputs[0]
@@ -157,7 +133,7 @@ def test_pequ_lora_downscale_emits_weight_update_in_log() -> None:
     from kiki_oniric.dream.channels import WeightUpdate
     from kiki_oniric.profiles.p_equ_lora import PEquLoRAProfile
 
-    dream, awake = _clones(seed=0)
+    dream, awake = lora_clones(seed=0)
     profile = PEquLoRAProfile(dream_model=dream, awake_model=awake)
     profile.runtime.execute(_downscale_episode(factor=0.5))
     out = profile.runtime.log[-1].channel_outputs[0]
@@ -168,7 +144,7 @@ def test_pequ_lora_restructure_emits_topology_diff_in_log() -> None:
     from kiki_oniric.dream.channels import TopologyDiff
     from kiki_oniric.profiles.p_equ_lora import PEquLoRAProfile
 
-    dream, awake = _clones(seed=0)
+    dream, awake = lora_clones(seed=0)
     profile = PEquLoRAProfile(dream_model=dream, awake_model=awake)
     profile.runtime.execute(
         _restructure_episode([{"op": "reroute", "swap_indices": [0, 1]}]),
@@ -181,7 +157,7 @@ def test_pequ_lora_recombine_light_returns_none_in_log() -> None:
     """Skeleton recombine_handler returns None — no ch2 emission."""
     from kiki_oniric.profiles.p_equ_lora import PEquLoRAProfile
 
-    dream, awake = _clones(seed=0)
+    dream, awake = lora_clones(seed=0)
     profile = PEquLoRAProfile(dream_model=dream, awake_model=awake)
     profile.runtime.execute(_recombine_light_episode())
     out = profile.runtime.log[-1].channel_outputs[0]
@@ -191,7 +167,7 @@ def test_pequ_lora_recombine_light_returns_none_in_log() -> None:
 def test_pequ_lora_consolidate_log_applies_weight_to_awake_bit_equal() -> None:
     from kiki_oniric.profiles.p_equ_lora import PEquLoRAProfile
 
-    dream, awake = _clones(seed=0)
+    dream, awake = lora_clones(seed=0)
     profile = PEquLoRAProfile(dream_model=dream, awake_model=awake)
     profile.runtime.execute(_replay_episode())
     # Sanity: dream mutated, awake untouched yet.
@@ -200,14 +176,14 @@ def test_pequ_lora_consolidate_log_applies_weight_to_awake_bit_equal() -> None:
         np.asarray(awake.layers[0].lora_b),
     )
     profile.consolidate_log()
-    _assert_lora_models_equal(dream, awake)
+    assert_lora_models_equal(dream, awake)
 
 
 def test_pequ_lora_consolidate_log_applies_hierarchy_to_awake() -> None:
     """add via restructure → consolidate → awake gets new layer bit-equal."""
     from kiki_oniric.profiles.p_equ_lora import PEquLoRAProfile
 
-    dream, awake = _clones(seed=0)
+    dream, awake = lora_clones(seed=0)
     profile = PEquLoRAProfile(dream_model=dream, awake_model=awake)
     pre_len = len(dream.layers)
     add_op = {
@@ -224,14 +200,14 @@ def test_pequ_lora_consolidate_log_applies_hierarchy_to_awake() -> None:
     assert len(awake.layers) == pre_len
     profile.consolidate_log()
     # After consolidation, awake matches dream bit-for-bit.
-    _assert_lora_models_equal(dream, awake)
+    assert_lora_models_equal(dream, awake)
 
 
 def test_pequ_lora_consolidate_log_mixed_emits_count() -> None:
     """3 episodes (replay, restructure, downscale) → 3 dispatched outputs."""
     from kiki_oniric.profiles.p_equ_lora import PEquLoRAProfile
 
-    dream, awake = _clones(seed=0)
+    dream, awake = lora_clones(seed=0)
     profile = PEquLoRAProfile(dream_model=dream, awake_model=awake)
     profile.runtime.execute(_replay_episode())
     profile.runtime.execute(
@@ -244,7 +220,7 @@ def test_pequ_lora_consolidate_log_mixed_emits_count() -> None:
 def test_pequ_lora_consolidate_log_clears_and_idempotent() -> None:
     from kiki_oniric.profiles.p_equ_lora import PEquLoRAProfile
 
-    dream, awake = _clones(seed=0)
+    dream, awake = lora_clones(seed=0)
     profile = PEquLoRAProfile(dream_model=dream, awake_model=awake)
     profile.runtime.execute(_replay_episode())
     assert len(profile.runtime.log) == 1
@@ -258,7 +234,7 @@ def test_pequ_lora_attention_prior_settable_and_readable() -> None:
     """ch4 is a state surface: set via .set_prior, read via .get_prior."""
     from kiki_oniric.profiles.p_equ_lora import PEquLoRAProfile
 
-    dream, awake = _clones(seed=0)
+    dream, awake = lora_clones(seed=0)
     profile = PEquLoRAProfile(dream_model=dream, awake_model=awake)
     prior = np.array([0.2, 0.3, 0.4], dtype=np.float32)
     profile.attention_prior.set_prior(prior)
@@ -272,7 +248,7 @@ def test_pequ_lora_no_latent_in_log_after_recombine_light() -> None:
     from kiki_oniric.dream.channels import LatentSample
     from kiki_oniric.profiles.p_equ_lora import PEquLoRAProfile
 
-    dream, awake = _clones(seed=0)
+    dream, awake = lora_clones(seed=0)
     profile = PEquLoRAProfile(dream_model=dream, awake_model=awake)
     profile.runtime.execute(_replay_episode())
     profile.runtime.execute(_recombine_light_episode())
@@ -290,9 +266,9 @@ def test_pequ_lora_dr4_chain_inclusion_with_pmin_lora() -> None:
     from kiki_oniric.profiles.p_equ_lora import PEquLoRAProfile
     from kiki_oniric.profiles.p_min_lora import PMinLoRAProfile
 
-    dream_min, awake_min = _clones(seed=0)
+    dream_min, awake_min = lora_clones(seed=0)
     pmin = PMinLoRAProfile(dream_model=dream_min, awake_model=awake_min)
-    dream_equ, awake_equ = _clones(seed=0)
+    dream_equ, awake_equ = lora_clones(seed=0)
     pequ = PEquLoRAProfile(dream_model=dream_equ, awake_model=awake_equ)
 
     pmin_ops = set(pmin.runtime._handlers.keys())
