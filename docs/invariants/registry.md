@@ -29,6 +29,35 @@ Any code referencing an invariant MUST cite its code and version here.
   Each prior component in [0, 1], sum ≤ budget_attention. Auto-clamp
   with log.
 
+## Family R (Reproducibility)
+
+- **R1 within-machine bit-stable** — **BLOCKING**
+  Every `MetricResult` is bit-identical reproducible on the same
+  machine from `(c_version, profile, seed, run_id, commit_sha,
+  benchmark_version)` for the metrics whose external dependencies
+  are SHA-pinned. Enforced via `tests/reproducibility/` per-chip-
+  family golden hashes (`golden_hashes_<family>.json` selected by
+  `sysctl machdep.cpu.brand_string`).
+- **R1 cross-machine** — **WARN** (conditional)
+  Bit-identical hashes *across* machines additionally requires
+  same MLX version, same chip family, and metric code paths that
+  do not route through MLX kernels known to diverge per hardware
+  family. As of MLX 0.31.1, `mx.random.normal` with a raw
+  `mx.random.key(seed)` input diverges on Apple M1 Max
+  specifically (filed upstream as
+  [ml-explore/mlx#3568](https://github.com/ml-explore/mlx/issues/3568)).
+  Severity is WARN because cross-machine drift is documented as
+  expected ; a divergence triggers a milestone-class probe, not
+  a CI failure. Evidence stub :
+  `docs/proofs/r1-cross-machine.md`.
+- **R3** Artifact addressability — **BLOCKING**
+  All artifacts addressable by SHA-256 checksum stored in
+  `metadata.yaml` ; storage schema per master spec §5.4.
+  Enforced by the run-registry contract test
+  (`tests/reproducibility/test_r1_run_registry_contract.py`).
+  (R2 suppressed per framework-C spec §8.3 — all metrics now
+  deterministic.)
+
 ## Family K (Compute)
 
 - **K1** Dream-episode budget respected — **BLOCKING** (per DE)
