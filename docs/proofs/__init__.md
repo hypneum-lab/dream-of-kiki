@@ -20,6 +20,12 @@ Formal proofs supporting framework spec axioms DR-0..DR-4.
 | K2 (SO×spindle coupling) | `k2-coupling-evidence.md` | Evidence stub for invariant K2 (registry Family K) |
 | R1 (reproducibility) | `r1-cross-machine.md` | **Evidence note v0.1** (2026-05-20) — qualifies R1 within-machine BLOCKING / cross-machine WARN-conditional per the 3-machine M5/M3U/M1Max probe and `ml-explore/mlx#3568` |
 
+## Separation arguments (non-axiom proofs)
+
+| Topic | File | Status |
+|-------|------|--------|
+| Dream2Learn vs DR-3 (architecture-not-substrate, c-alert → (a)) | `dream2learn-dr3-separation.md` | **Draft v0.1** (2026-05-20) |
+
 See also:
 - Framework spec §6 Axioms : `docs/specs/2026-04-17-dreamofkiki-framework-C-design.md`
 - G3 decision log : `g3-decision-log.md` (S8)
