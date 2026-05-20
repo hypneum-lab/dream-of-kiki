@@ -679,6 +679,61 @@ see `docs/specs/2026-04-17-dreamofkiki-framework-C-design.md` §12).
 
 ---
 
+## [C-v0.23.0+PARTIAL] — 2026-05-20 — PMaxLoRAProfile wires P_max to channels (B6c)
+
+### Formal axis (FC) — MINOR (v0.22.0 → v0.23.0)
+
+- **New subclass** `kiki_oniric/profiles/p_max_lora.py`:
+  `PMaxLoRAProfile(PMaxProfile)` with kw-only `dream_model`,
+  `awake_model`, `encoder`, `decoder` kwargs (plus `lr=0.01`,
+  `max_adds_per_episode=1`, `seed=0`,
+  `latent_queue_capacity=1024`). Registers four B-series
+  handlers : `replay_lora_handler`, `downscale_lora_handler`,
+  `restructure_lora_handler` (all bound to `dream_model`) +
+  `recombine_real_handler` (bound to `encoder` / `decoder` /
+  `seed` per the B4 VAE contract). Builds three dispatch
+  channels on the awake side : `LoRAWeightDeltaChannel`,
+  `LoRAHierarchyChangeChannel`, `LatentSampleQueue(capacity=
+  1024)`. Inherits `alpha_stream` (awake → dream input ring
+  buffer) and `attention_prior` (ch4 state surface) fields
+  from cycle-3 `PMaxProfile` — neither is dispatched by
+  `consolidate_log()` (α is input-side ; ch4 has no op
+  emitter).
+- `consolidate_log() -> int` dispatches ch1 + ch2 + ch3 via
+  `apply_channel_outputs` and clears the log on success.
+  Attention defaults to `None` per the B6a refactor.
+- **State widening, 4-of-4** : all four state fields are
+  widened from cycle-3 skeleton `OpState` types to `_RealState`
+  variants (vs B6b which kept `RecombineOpState` skeleton for
+  `recombine_light`).
+- **Test helper extraction** : `tests/unit/profiles/_lora_helpers
+  .py` ships `lora_clones(seed)` and
+  `assert_lora_models_equal(a, b)` previously duplicated in
+  B6a + B6b test files. `test_p_min_lora.py` and
+  `test_p_equ_lora.py` were amended to import from the shared
+  module (zero behaviour change).
+- **DR-4 triple chain inclusion** : Test 17 (in
+  `test_p_max_lora.py`) pins the strict-subset chain on both
+  ops keys (`ops(PMinLoRA) ⊆ ops(PEquLoRA) ⊆ ops(PMaxLoRA)`)
+  and emitted channel types (`{WeightUpdate} ⊆ {WeightUpdate,
+  TopologyDiff} ⊆ {WeightUpdate, TopologyDiff, LatentSample}`).
+  First empirical pin of the full triple LoRA chain.
+- Sub-project B6c of issue #15. **Closes the B6 profile-wiring
+  decomposition** (B6a PMin done, B6b PEqu done, B6c PMax this
+  entry). Cycle-3 `PMaxProfile` untouched — legacy tests +
+  cycle-3 pilots unaffected.
+
+### Empirical axis (EC) — UNCHANGED (PARTIAL)
+
+- No new substrate, axiom, or empirical claim. EC stays
+  `+PARTIAL`.
+
+### Packaging
+
+- `pyproject.toml` version bumped `0.20.0 → 0.21.0`.
+
+---
+
 ## [C-v0.22.0+PARTIAL] — 2026-05-20 — PEquLoRAProfile wires P_equ to channels (B6b)
 
 ### Formal axis (FC) — MINOR (v0.21.0 → v0.22.0)

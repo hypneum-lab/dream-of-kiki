@@ -147,6 +147,22 @@ P_equ = { primitives_in: {β, δ},  primitives_out: {1,3,4}, ops: {replay, downs
 P_max = { primitives_in: {α,β,δ}, primitives_out: {1,2,3,4}, ops: {replay, downscale, restructure, recombine_full} }
 ```
 
+As of B6c (issue #15), P_max has a LoRA-substrate variant
+`PMaxLoRAProfile` (in `kiki_oniric/profiles/p_max_lora.py`)
+that wires the full B-series : LoRA-emitting handlers for
+replay / downscale / restructure on a dream/awake `LoRAModel`
+pair, plus `recombine_real_handler` (B4 VAE) on a required
+encoder + decoder MLX `nn.Module` pair. `consolidate_log()`
+dispatches ch1 (`WeightUpdate`), ch2 (`LatentSample`,
+`LatentSampleQueue(capacity=1024)`), and ch3 (`TopologyDiff`)
+to the awake side. ch4 (`AttentionPrior`) and the α input
+channel are inherited from cycle-3 `PMaxProfile` as state
+surfaces. With B6a, B6b, B6c, all three profile tiers have
+LoRA-substrate variants forming a strict DR-4 subset chain
+(verified empirically). The cycle-3 `PMaxProfile` remains the
+canonical skeleton reference. B6 closes the profile-wiring
+decomposition.
+
 As of B6a (issue #15), P_min has a LoRA-substrate variant
 `PMinLoRAProfile` (in `kiki_oniric/profiles/p_min_lora.py`)
 that wires the B-series LoRA-emitting handlers
