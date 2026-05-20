@@ -41,6 +41,15 @@ from __future__ import annotations
 
 import numpy as np
 from numpy.typing import NDArray
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from kiki_oniric.core.primitives import (
+        AttentionPriorChannel,
+        HierarchyChangeChannel,
+        LatentSampleChannel,
+        WeightDeltaChannel,
+    )
 
 from kiki_oniric.dream.episode import (
     BudgetCap,
@@ -263,13 +272,18 @@ def consolidate(
 def apply_channel_outputs(
     log: list[EpisodeLogEntry],
     *,
-    weight_channel,
-    hierarchy_channel,
-    latent_channel,
-    attention_channel=None,
+    weight_channel: "WeightDeltaChannel | None" = None,
+    hierarchy_channel: "HierarchyChangeChannel | None" = None,
+    latent_channel: "LatentSampleChannel | None" = None,
+    attention_channel: "AttentionPriorChannel | None" = None,
 ) -> int:
     """Dispatch every non-``None`` channel output in ``log`` to the
     matching concrete channel and return the count.
+
+    Every channel kwarg is optional. If a ``ChannelOutput`` of a
+    given type appears in the log but the matching channel kwarg
+    is ``None``, a ``ValueError`` is raised pointing at the
+    missing kwarg.
 
     Parameters
     ----------
@@ -280,13 +294,18 @@ def apply_channel_outputs(
     weight_channel
         A ``WeightDeltaChannel`` implementation (e.g.
         ``LoRAWeightDeltaChannel``) that consumes ``WeightUpdate``
-        outputs.
+        outputs. Optional — required only if the log carries a
+        ``WeightUpdate``; otherwise pass ``None`` or omit.
     hierarchy_channel
         A ``HierarchyChangeChannel`` implementation that consumes
-        ``TopologyDiff`` outputs.
+        ``TopologyDiff`` outputs. Optional — required only if the
+        log carries a ``TopologyDiff``; otherwise pass ``None`` or
+        omit.
     latent_channel
         A ``LatentSampleChannel`` implementation that consumes
-        ``LatentSample`` outputs.
+        ``LatentSample`` outputs. Optional — required only if the
+        log carries a ``LatentSample``; otherwise pass ``None`` or
+        omit.
     attention_channel
         Optional ``AttentionPriorChannel`` — required only if the
         log carries an ``AttentionPrior``; otherwise pass ``None``.
@@ -303,8 +322,8 @@ def apply_channel_outputs(
         On a non-``None`` log entry whose type isn't in the
         ``ChannelOutput`` union.
     ValueError
-        If an ``AttentionPrior`` is encountered but
-        ``attention_channel is None``.
+        If a ``ChannelOutput`` is encountered but its matching
+        channel kwarg is ``None``.
     """
     count = 0
     for entry in log:
@@ -312,12 +331,27 @@ def apply_channel_outputs(
             if output is None:
                 continue
             if isinstance(output, WeightUpdate):
+                if weight_channel is None:
+                    raise ValueError(
+                        "apply_channel_outputs: weight_channel "
+                        "required for WeightUpdate outputs"
+                    )
                 weight_channel.apply(
                     output.lora_delta, output.fisher_bump,
                 )
             elif isinstance(output, TopologyDiff):
+                if hierarchy_channel is None:
+                    raise ValueError(
+                        "apply_channel_outputs: hierarchy_channel "
+                        "required for TopologyDiff outputs"
+                    )
                 hierarchy_channel.apply_diff(list(output.diff))
             elif isinstance(output, LatentSample):
+                if latent_channel is None:
+                    raise ValueError(
+                        "apply_channel_outputs: latent_channel "
+                        "required for LatentSample outputs"
+                    )
                 latent_channel.enqueue(
                     output.species,
                     output.latent_vector,

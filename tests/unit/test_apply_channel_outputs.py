@@ -627,3 +627,105 @@ def test_end_to_end_replay_dream_to_awake_bit_equal() -> None:
 
     # After apply, dream and awake match bit-for-bit.
     _assert_lora_models_equal(dream, awake)
+
+
+# ---------------------------------------------------------------------------
+# B6a T1 — apply_channel_outputs: Optional channel kwargs
+# ---------------------------------------------------------------------------
+
+
+def test_apply_weight_required_when_emitted() -> None:
+    from kiki_oniric.consolidate import apply_channel_outputs
+    from kiki_oniric.dream.channels import WeightUpdate
+    from kiki_oniric.dream.channels.hierarchy_change import (
+        LoRAHierarchyChangeChannel,
+    )
+    from kiki_oniric.dream.channels.latent_sample import (
+        LatentSampleQueue,
+    )
+
+    _, target = _clones(seed=0)
+    delta = np.zeros(
+        np.asarray(target.layers[0].lora_a).shape, dtype=np.float32,
+    )
+    log = _make_log_with_one_output(
+        WeightUpdate(lora_delta={"layer0.lora_a": delta}),
+    )
+    with pytest.raises(ValueError, match="weight_channel"):
+        apply_channel_outputs(
+            log,
+            hierarchy_channel=LoRAHierarchyChangeChannel(target),
+            latent_channel=LatentSampleQueue(),
+        )
+
+
+def test_apply_hierarchy_required_when_emitted() -> None:
+    from kiki_oniric.consolidate import apply_channel_outputs
+    from kiki_oniric.dream.channels import TopologyDiff
+    from kiki_oniric.dream.channels.latent_sample import (
+        LatentSampleQueue,
+    )
+    from kiki_oniric.dream.channels.weight_delta import (
+        LoRAWeightDeltaChannel,
+    )
+
+    _, target = _clones(seed=0)
+    entry: tuple[str, dict[str, object]] = (
+        "reroute",
+        {"swap_indices": (0, 1), "model_sha256_post": "0" * 64},
+    )
+    log = _make_log_with_one_output(TopologyDiff(diff=(entry,)))
+    with pytest.raises(ValueError, match="hierarchy_channel"):
+        apply_channel_outputs(
+            log,
+            weight_channel=LoRAWeightDeltaChannel(target),
+            latent_channel=LatentSampleQueue(),
+        )
+
+
+def test_apply_latent_required_when_emitted() -> None:
+    from kiki_oniric.consolidate import apply_channel_outputs
+    from kiki_oniric.dream.channels import LatentSample
+    from kiki_oniric.dream.channels.hierarchy_change import (
+        LoRAHierarchyChangeChannel,
+    )
+    from kiki_oniric.dream.channels.weight_delta import (
+        LoRAWeightDeltaChannel,
+    )
+
+    _, target = _clones(seed=0)
+    log = _make_log_with_one_output(
+        LatentSample(
+            species="default",
+            latent_vector=np.array([0.1, 0.2], dtype=np.float32),
+            provenance="recombine:de=test:ep=0:seed=0",
+        ),
+    )
+    with pytest.raises(ValueError, match="latent_channel"):
+        apply_channel_outputs(
+            log,
+            weight_channel=LoRAWeightDeltaChannel(target),
+            hierarchy_channel=LoRAHierarchyChangeChannel(target),
+        )
+
+
+def test_apply_weight_only_omits_hierarchy_and_latent() -> None:
+    """A log with WeightUpdate only can omit hierarchy + latent kwargs."""
+    from kiki_oniric.consolidate import apply_channel_outputs
+    from kiki_oniric.dream.channels import WeightUpdate
+    from kiki_oniric.dream.channels.weight_delta import (
+        LoRAWeightDeltaChannel,
+    )
+
+    _, target = _clones(seed=0)
+    delta = np.ones(
+        np.asarray(target.layers[0].lora_a).shape, dtype=np.float32,
+    ) * 0.1
+    log = _make_log_with_one_output(
+        WeightUpdate(lora_delta={"layer0.lora_a": delta}),
+    )
+    count = apply_channel_outputs(
+        log,
+        weight_channel=LoRAWeightDeltaChannel(target),
+    )
+    assert count == 1
