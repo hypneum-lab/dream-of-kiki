@@ -213,3 +213,68 @@ def test_hierarchy_change_channel_reroute_swaps_layers() -> None:
     np.testing.assert_array_equal(
         np.asarray(target.layers[1].lora_a, dtype=np.float32), a_before,
     )
+
+
+# ---------------------------------------------------------------------------
+# B5 T3 — LatentSampleQueue tests
+# ---------------------------------------------------------------------------
+
+
+def test_latent_sample_queue_enqueue_grows_len() -> None:
+    """enqueue appends to the FIFO; len() tracks the depth."""
+    from kiki_oniric.dream.channels.latent_sample_queue import (
+        LatentSampleQueue,
+    )
+
+    queue = LatentSampleQueue()
+    assert len(queue) == 0
+    vec = np.zeros(4, dtype=np.float32)
+    queue.enqueue("default", vec, "recombine:de=ep0:ep=0:seed=0")
+    assert len(queue) == 1
+    queue.enqueue("replay-mix", vec, "recombine:de=ep1:ep=1:seed=1")
+    assert len(queue) == 2
+
+
+def test_latent_sample_queue_dequeue_returns_dict_fields() -> None:
+    """dequeue returns a dict with species / latent_vector / provenance."""
+    from kiki_oniric.dream.channels.latent_sample_queue import (
+        LatentSampleQueue,
+    )
+
+    queue = LatentSampleQueue()
+    vec = np.array([0.1, 0.2, 0.3, 0.4], dtype=np.float32)
+    prov = "recombine:de=test:ep=0:seed=7"
+    queue.enqueue("myspecies", vec, prov)
+    item = queue.dequeue()
+    assert item is not None
+    assert item["species"] == "myspecies"
+    np.testing.assert_array_equal(item["latent_vector"], vec)
+    assert item["provenance"] == prov
+    assert len(queue) == 0
+
+
+def test_latent_sample_queue_capacity_drops_oldest() -> None:
+    """maxlen capacity: oldest item is dropped when the queue is full."""
+    from kiki_oniric.dream.channels.latent_sample_queue import (
+        LatentSampleQueue,
+    )
+
+    queue = LatentSampleQueue(maxlen=2)
+    v = np.zeros(2, dtype=np.float32)
+    queue.enqueue("first", v, "prov:0")
+    queue.enqueue("second", v, "prov:1")
+    queue.enqueue("third", v, "prov:2")  # drops "first"
+    assert len(queue) == 2
+    oldest = queue.dequeue()
+    assert oldest is not None
+    assert oldest["species"] == "second"
+
+
+def test_latent_sample_queue_dequeue_empty_returns_none() -> None:
+    """dequeue on an empty queue returns None (I3 no-latent-buffer)."""
+    from kiki_oniric.dream.channels.latent_sample_queue import (
+        LatentSampleQueue,
+    )
+
+    queue = LatentSampleQueue()
+    assert queue.dequeue() is None
