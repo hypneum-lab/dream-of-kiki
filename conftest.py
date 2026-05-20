@@ -17,6 +17,7 @@ if sys.platform != "darwin":
         "tests/conformance/axioms/test_dr3_*.py",
         "tests/conformance/test_baseline_registration.py",
         "tests/unit/experiments/test_g4_*.py",
+        "tests/unit/experiments/test_g5_*.py",
         "tests/unit/experiments/test_g6_*.py",
         "tests/unit/test_esnn_norse.py",
         "tests/unit/test_g4_quinto_*.py",
