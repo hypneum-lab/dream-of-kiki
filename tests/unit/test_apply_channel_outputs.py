@@ -106,7 +106,7 @@ def _make_topology_diff_add(
     rank: int = 2,
     alpha: float = 4.0,
     sha: str = "a" * 64,
-) -> tuple[str, dict]:
+) -> tuple[str, dict[str, object]]:
     return (
         "add",
         {
