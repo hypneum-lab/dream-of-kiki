@@ -1276,6 +1276,47 @@ meaningful TOST requires cycle-3's divergent-predictor
 replication on the same dataset. The baseline serves as a
 **published-reference anchor**, not a significance test.
 
+## 7.8 Dream2Learn — category-(a) citation-only baseline
+
+Dream2Learn (D2L), Calcagno et al. 2026
+[@calcagno2026dream2learn] (arXiv:2603.01935), is a
+class-incremental continual-learning architecture that
+conditions a **frozen latent diffusion model** through
+**soft-prompt optimisation** to generate novel "dreamed"
+classes, then trains the classifier on those dreamed samples
+to expand its representation space. The 2026-05-19
+deep-research synthesis flagged D2L as a potential
+substrate-agnosticism (DR-3) competitor ; the 2026-05-20
+classification pass reclassified it to **category-(a)
+citation-only baseline** on the basis of a formal separation
+argument, documented in `docs/proofs/dream2learn-dr3-separation.md`
+v0.1-draft.
+
+The argument has two disjoint angles : (i) structurally,
+D2L's externally observable primitives (classifier update,
+soft-prompt inner loop, frozen-diffusion sample-draw) do not
+expose the eight framework-C typed primitives (α, β, γ, δ +
+channels 1–4) — Conformance Criterion condition 1 fails
+ex hypothesi ; (ii) behaviourally, D2L's consolidation
+dynamic (continuous denoising on a fixed latent geometry,
+no role partition between awake and dream worktrees, no
+DE-bounded accountability trace, no hierarchy primitive)
+does not exhibit framework-C's discrete-DE / role-partition
+contract even under counterfactual adapter wrapping. DR-3 is
+therefore **not at risk** : D2L is outside the axiom's
+universe of discourse, not a violation. This treatment
+parallels the §7.7 Wake-Sleep CL baseline pattern : the row
+is a *published-reference anchor*, not a substrate
+candidate. No empirical run, no H-test, no run\_id ; the
+classification rests entirely on the conceptual proof.
+
+A future D2L variant that declares the eight typed
+primitives with a discrete-DE wrapper and a role-partitioned
+wake/dream split would reopen the analysis ; until then the
+category-(a) reclassification holds. See
+`docs/proofs/dream2learn-dr3-separation.md` §5 for the three
+triggers that would force a revisit.
+
 ---
 
 ## Notes for revision
