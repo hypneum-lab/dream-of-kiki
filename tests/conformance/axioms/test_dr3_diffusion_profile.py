@@ -24,7 +24,12 @@ from kiki_oniric.substrates._diffusion.dream_ops_adapter import (
 
 
 def _model_stub() -> Any:
-    return type("Stub", (), {"layers": [], "parameters": lambda self: {}})()
+    # `model` is only used by bind_real_handlers to close over the
+    # handler factories; the handlers are never executed in this
+    # activation-wiring test, so a bare `layers` attribute suffices.
+    # No `parameters` shim: if a future change executes a handler, an
+    # AttributeError should fire loudly rather than silently yield {}.
+    return type("Stub", (), {"layers": []})()
 
 
 def _enc_dec() -> tuple[Encoder, Decoder]:

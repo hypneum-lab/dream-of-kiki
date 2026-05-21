@@ -83,13 +83,21 @@ class MLXLatentDiffusionConfig:
 # Module-level adapter classes (FIX 5: lifted from execute_profile body).
 # ---------------------------------------------------------------------------
 
+_DENOISER_ADAPTER_CLS: "type | None" = None
+
+
 def _make_denoiser_adapter_class() -> type:
-    """Return a fresh nn.Module subclass for _DenoiserSingleArgAdapter.
+    """Return the nn.Module subclass for _DenoiserSingleArgAdapter.
 
     Deferred to a factory function so the ``mlx.nn`` import happens
     at call time rather than at module import time (preserves Linux
-    CI importability where mlx is absent).
+    CI importability where mlx is absent). The class object is built
+    once and cached at module level; repeated ``execute_profile``
+    calls reuse it (only the per-cell instance differs).
     """
+    global _DENOISER_ADAPTER_CLS
+    if _DENOISER_ADAPTER_CLS is not None:
+        return _DENOISER_ADAPTER_CLS
     import mlx.core as mx
     import mlx.nn as _nn_raw
     from typing import Any as _Any, cast as _cast
@@ -151,6 +159,11 @@ def _make_denoiser_adapter_class() -> type:
             is derived from ``_rng_root`` and ``_step_counter``
             so R1 byte-stability holds across re-runs.
             """
+            # NOTE: this split allocates step_counter+2 keys and
+            # indexes the last — O(n) in the episode count. Negligible
+            # for the M7 4-batch workload; a fold-based O(1) derivation
+            # would change the R1 key sequence and require regenerating
+            # the diffusion golden hashes, so it is deferred.
             subkey = mx.random.split(
                 self._rng_root, num=self._step_counter + 2
             )[self._step_counter]
@@ -169,6 +182,7 @@ def _make_denoiser_adapter_class() -> type:
             out: mx.array = self._denoiser(x, t)
             return out
 
+    _DENOISER_ADAPTER_CLS = _Cls
     return _Cls
 
 
