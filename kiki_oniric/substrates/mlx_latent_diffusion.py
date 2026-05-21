@@ -35,8 +35,6 @@ from kiki_oniric.substrates._diffusion import (
     Encoder,
     MLPDenoiser,
     NoiseSchedule,
-    Sampler,
-    Trainer,
 )
 
 if TYPE_CHECKING:
@@ -52,7 +50,7 @@ MLX_LATENT_DIFFUSION_SUBSTRATE_NAME = "mlx_latent_diffusion"
 # M2 → M3 substrate-internal MINOR : C-v0.13.0 → C-v0.14.0 (trainer +
 # sampler + R1 entries shipped). EC stays PARTIAL ; M6 will flip to
 # STABLE iff §12.3 conditions all hold.
-MLX_LATENT_DIFFUSION_SUBSTRATE_VERSION = "C-v0.14.0+PARTIAL"
+MLX_LATENT_DIFFUSION_SUBSTRATE_VERSION = "C-v0.15.0+PARTIAL"
 
 # D2 defaults from the plan (§2.2, blocker D2 resolved at M1).
 _DEFAULT_D_LATENT = 64
@@ -142,66 +140,77 @@ class MLXLatentDiffusionSubstrate:
             beta_min=config.beta_min,
             beta_max=config.beta_max,
         )
+        from kiki_oniric.substrates._diffusion.decoder import Decoder
+        from kiki_oniric.substrates._diffusion.cl_eval_head import (
+            ClEvalHead,
+        )
+        self._diffusion_decoder: Decoder = Decoder(
+            d_latent=config.d_latent, d_out=self._CIFAR_D_IN,
+        )
+        self._cl_head: ClEvalHead = ClEvalHead(
+            d_latent=config.d_latent,
+            n_classes=20,  # CIFAR-100 task-window size
+        )
 
     # ------------------------------------------------------------------
     # SubstrateAdapter Protocol surface (factory.py).
     # ------------------------------------------------------------------
 
     def execute_profile(self, request: "CellRequest | object") -> dict[str, object]:
-        """Run a minimal train + sample cycle for one ablation cell.
+        """Run one ablation cell honouring framework-C §3.1.
 
-        Wave 3b M3 wiring (synthetic-latent driver, M4 will swap in
-        the CIFAR-100 loader). The cycle :
+        M7 wiring: instantiate the profile dataclass, override its
+        skeleton handlers with the diffusion-bound _real.py handlers
+        via dream_ops_adapter.bind_real_handlers, drive one
+        DreamEpisode per loader batch through the profile's runtime,
+        and snapshot the per-op metrics off the profile's *RealState
+        fields.
 
-        1. Seed MLX RNG from ``request.seed`` so the synthetic
-           training latents and the per-step subkey trees are
-           deterministic.
-        2. Build a small synthetic dataset of normal latents.
-        3. Run a short :class:`Trainer.fit` on the denoiser
-           (noise-prediction MSE).
-        4. Draw one reverse-process sample via :class:`Sampler`.
-        5. Return a metrics dict shaped like the sibling
-           substrates (``replay_rate`` / ``downscale_norm`` etc.
-           proxied from the trainer + sampler state) so the
-           ablation_cycle3 row reducer accepts it without a
-           schema branch.
+        Synthetic fallback: when no loader_batches are provided, the
+        method generates deterministic normal latents (same posture as
+        M3) and drives the dream cycle over them — ensuring the
+        existing R1 hashes for the synthetic path remain stable
+        post-regeneration (Task 6).
 
-        The output is intentionally a self-contained smoke trace
-        — the bench-grade objective lands in M5. The
-        ``synthetic`` marker in the returned dict makes that
-        explicit per CLAUDE.md §Working rules item 3.
+        See docs/superpowers/specs/2026-05-21-m7-substrate-dr3-design.md
+        §3 D3 + D7.
         """
         import mlx.core as mx
+        from kiki_oniric.dream.episode import (
+            BudgetCap, DreamEpisode, EpisodeTrigger, Operation,
+        )
+        from kiki_oniric.profiles.p_min import PMinProfile
+        from kiki_oniric.profiles.p_equ import PEquProfile
+        from kiki_oniric.profiles.p_max import PMaxProfile
+        from kiki_oniric.substrates._diffusion.dream_ops_adapter import (
+            bind_real_handlers,
+        )
+        from kiki_oniric.substrates._diffusion.cl_eval_head import (
+            train_head_inplace, eval_head_accuracy,
+        )
 
         seed = int(getattr(request, "seed", 0))
-        # Per the R1 contract : derive the training and sampling
-        # root keys from one split of the seed key. Never consume
-        # a raw mx.random.key(seed) directly with mx.random.normal.
-        root = mx.random.key(seed)
-        train_root, sample_root, data_root = mx.random.split(root, num=3)
-
-        loader_batches = getattr(request, "loader_batches", ())
-        d_latent = self.config.d_latent
-        # Profile-aware intensity ONLY on the prod (loader) path so
-        # existing R1 hashes on the synthetic path stay byte-stable.
-        # This is an EC-axis training-intensity proxy, NOT a DR-3
-        # primitive-activation fix — see issue #36.
         profile_tag = str(getattr(request, "profile", "p_equ"))
+        loader_batches = getattr(request, "loader_batches", ())
+
+        root = mx.random.key(seed)
+        train_root, sample_root, data_root, head_root = mx.random.split(
+            root, num=4,
+        )
+
+        # Build the dataset: encoded latents (one per loader batch),
+        # or a synthetic fallback identical to the M3 skeleton so
+        # existing R1 hashes for the synthetic path stay aligned
+        # (post-regeneration; see plan Task 6).
         if loader_batches:
-            n_epochs = {"p_min": 1, "p_equ": 2, "p_max": 4}.get(profile_tag, 2)
-            n_sample_steps_target = {"p_min": 4, "p_equ": 8, "p_max": 16}.get(
-                profile_tag, 8
-            )
             dataset = [
                 self._encode_features(batch.features)
                 for batch in loader_batches
             ]
+            labels_per_batch = [batch.labels for batch in loader_batches]
             synthetic = False
         else:
-            n_epochs = 1
-            n_sample_steps_target = 8
-            # Tiny synthetic latent dataset : 4 batches × batch_size 8.
-            # Held small so the M3 smoke fits in seconds on M5.
+            d_latent = self.config.d_latent
             n_batches = 4
             batch_size = 8
             data_keys = mx.random.split(data_root, num=n_batches)
@@ -209,43 +218,176 @@ class MLXLatentDiffusionSubstrate:
                 mx.random.normal(shape=(batch_size, d_latent), key=k)
                 for k in data_keys
             ]
+            labels_per_batch = [
+                mx.zeros((batch_size,), dtype=mx.int32)
+                for _ in range(n_batches)
+            ]
             synthetic = True
+
+        # delta_acc baseline: train + eval the head BEFORE dream cycle.
+        # All cells use the first batch as the eval slice for simplicity.
+        baseline_acc = 0.0
+        if dataset:
+            train_head_inplace(
+                self._cl_head, dataset[0], labels_per_batch[0],
+            )
+            baseline_acc = eval_head_accuracy(
+                self._cl_head, dataset[0], labels_per_batch[0],
+            )
+
+        # Instantiate the profile and bind real handlers.
+        # The replay_real_handler calls model(x) with a single arg;
+        # MLPDenoiser requires (z, t). Wrap the denoiser in a thin
+        # nn.Module subclass that injects a zero timestep so the
+        # handler's loss_fn can call model(x) without modification.
+        # We subclass nn.Module (via cast-to-Any alias to avoid mypy
+        # issues with MLX's star-import resolution — mirrors the
+        # pattern used in model.py and decoder.py).
+        from typing import Any as _Any, cast as _cast
+        import mlx.nn as _nn_raw
+        _nn_any: _Any = _cast(_Any, _nn_raw)
+
+        class _DenoiserSingleArgAdapter(_nn_any.Module):  # type: ignore[misc]
+            """Thin nn.Module wrapper: model(x) → denoiser(x, t=0).
+
+            Exposes model.layers so downscale_real / restructure_real
+            can iterate and mutate weights in-place. The underlying
+            denoiser's parameters are addressable via the standard
+            nn.Module API (trainable_parameters, parameters, etc.)
+            because they are stored as a sub-attribute.
+            """
+
+            def __init__(self, denoiser: _Any) -> None:
+                super().__init__()
+                self._denoiser = denoiser
+                # Expose layers as a direct attribute so
+                # downscale_real_handler / restructure_real_handler
+                # can iterate ``model.layers``.
+                self.layers = denoiser.layers
+
+            def __call__(self, x: "mx.array") -> "mx.array":
+                batch = x.shape[0] if x.ndim > 1 else 1
+                t = mx.zeros((batch,), dtype=mx.int32)
+                out: "mx.array" = self._denoiser(x, t)
+                return out
+
+        model_adapter = _DenoiserSingleArgAdapter(self.denoiser)
+
+        # The recombine_real_handler expects a VAEEncoder that returns
+        # (mu, log_var). The delta_latents are already encoded latents
+        # (d_latent-dimensional vectors from _encode_features), not
+        # raw features. Treat the latent directly as mu with zero
+        # log_var so reparameterisation has zero variance — the latent
+        # is deterministic and the VAEEncoder Protocol contract is
+        # satisfied without a re-encoding pass.
+        class _LatentPassthroughVAEEncoder:
+            """Returns (latent_as_mu, zeros_log_var): no re-encoding."""
+
+            def __call__(
+                self, x: "mx.array"
+            ) -> "tuple[mx.array, mx.array]":
+                if x.ndim == 1:
+                    x = x[None, :]
+                log_var: "mx.array" = mx.zeros_like(x)
+                return x, log_var
+
+        vae_encoder = _LatentPassthroughVAEEncoder()
+
+        profile_ctor = {
+            "p_min": PMinProfile,
+            "p_equ": PEquProfile,
+            "p_max": PMaxProfile,
+        }[profile_tag]
+        profile = profile_ctor()
+        activated = bind_real_handlers(
+            profile, model=model_adapter,
+            encoder=vae_encoder,
+            decoder=self._diffusion_decoder, seed=seed,
+        )
 
         t0 = time.perf_counter()
 
-        trainer = Trainer(
-            model=self.denoiser,
-            schedule=self.schedule,
-            optimizer_kwargs={"lr": 1e-3},
+        # Drive one DreamEpisode per loader batch through the
+        # profile's runtime. Episode input_slice carries every key
+        # any handler might need; inactive ops are simply not in
+        # operation_set.
+        op_order = tuple(
+            op for op in (
+                Operation.REPLAY, Operation.DOWNSCALE,
+                Operation.RESTRUCTURE, Operation.RECOMBINE,
+            ) if op in activated
         )
-        history = trainer.fit(
-            dataset=dataset, n_epochs=n_epochs, seed_key=train_root
-        )
-        losses = history["loss"]
+        for batch_idx, latents in enumerate(dataset):
+            # replay_real_handler computes MSE(model(x), y) so x and
+            # y must be compatible with the model output shape. Since
+            # the adapter outputs (batch, d_latent), y must also be
+            # (d_latent). We use the latent itself as the reconstruction
+            # target (self-supervised replay), consistent with the
+            # spec's replay semantics (β-buffer gradient step on the
+            # latent representation). Labels are available in
+            # labels_per_batch but do not match the denoiser's output
+            # shape — they are used for the CL eval head only.
+            records = [
+                {"x": latents[i], "y": latents[i]}
+                for i in range(latents.shape[0])
+            ]
+            episode = DreamEpisode(
+                trigger=EpisodeTrigger.SCHEDULED,
+                input_slice={
+                    "beta_records": records,
+                    "shrink_factor": 0.95,
+                    "topo_op": "reroute",
+                    "swap_indices": (0, min(1, self.config.n_layers - 1)),
+                    "delta_latents": [latents[i] for i in range(latents.shape[0])],
+                    "species": "diffusion",
+                },
+                operation_set=op_order,
+                output_channels=(),
+                budget=BudgetCap(
+                    flops=10 ** 9,
+                    wall_time_s=60.0,
+                    energy_j=1.0,
+                ),
+                episode_id=f"diff/{profile_tag}/seed={seed}/b={batch_idx}",
+            )
+            profile.runtime.execute(episode)
 
-        sampler = Sampler(model=self.denoiser, schedule=self.schedule)
-        sample = sampler.sample(
-            key=sample_root,
-            n_steps=min(n_sample_steps_target, self.schedule.t_steps),
-            shape=(1, d_latent),
-        )
+        # delta_acc post-cycle: same head, eval again after the dream.
+        post_acc = 0.0
+        if dataset:
+            post_acc = eval_head_accuracy(
+                self._cl_head, dataset[0], labels_per_batch[0],
+            )
 
         wall = time.perf_counter() - t0
-        # Convert to plain Python floats so the row reducer can
-        # serialize without an MLX dependency.
-        loss_first = float(losses[0]) if losses else 0.0
-        loss_last = float(losses[-1]) if losses else 0.0
-        sample_norm = float(mx.sqrt(mx.sum(sample * sample)).item())
+
+        # Read metrics off the profile's state fields. Inactive ops
+        # return field defaults (legitimate zeros — that is the no-op
+        # semantic per framework-C §3.1).
+        replay_rate = float(profile.replay_state.last_loss or 0.0) \
+            if hasattr(profile, "replay_state") else 0.0
+        downscale_norm = float(profile.downscale_state.compound_factor) \
+            if hasattr(profile, "downscale_state") else 1.0
+        restructure_sum = int(profile.restructure_state.total_reroutes) \
+            if hasattr(profile, "restructure_state") else 0
+        recombine_rate = int(profile.recombine_state._episode_count) \
+            if hasattr(profile, "recombine_state") else 0
+        op_flops_total = sum(
+            getattr(getattr(profile, f"{name}_state"), "last_compute_flops", 0)
+            for name in ("replay", "downscale", "restructure", "recombine")
+            if hasattr(profile, f"{name}_state")
+        )
 
         return {
-            "replay_rate": loss_last,       # proxy : trained denoiser loss
-            "downscale_norm": sample_norm,  # proxy : sample magnitude
-            "restructure_sum": 0.0,         # canal 3 inactive in smoke
-            "recombine_rate": float(len(losses)),
-            "delta_acc": loss_first - loss_last,
+            "replay_rate": replay_rate,
+            "downscale_norm": downscale_norm,
+            "restructure_sum": restructure_sum,
+            "recombine_rate": recombine_rate,
+            "delta_acc": post_acc - baseline_acc,
+            "op_flops_total": int(op_flops_total),
             "wall_time_s": wall,
             "synthetic": synthetic,
-            "profile": getattr(request, "profile", "unknown"),
+            "profile": profile_tag,
             "seed": seed,
             "substrate": MLX_LATENT_DIFFUSION_SUBSTRATE_NAME,
             "substrate_version": MLX_LATENT_DIFFUSION_SUBSTRATE_VERSION,
