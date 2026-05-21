@@ -167,6 +167,74 @@ def _smoke_batches(
         )
 
 
+def _prod_batches(
+    *,
+    task_idx: int,
+    seed: int,
+    batch_size: int,
+    split: str,
+) -> Iterable["SplitCifar100Batch"]:
+    """Real Split-CIFAR-100 batches for one task window.
+
+    Loads ``uoft-cs/cifar100`` from the HuggingFace cache, keeps only
+    the 20 fine-label classes of ``task_idx`` (via ``task_classes``),
+    remaps labels into the task-local 0..19 range, and yields
+    fixed-size batches in a seed-deterministic order.
+    """
+    import mlx.core as mx
+    import numpy as np
+
+    try:
+        from datasets import load_dataset
+    except ImportError as exc:  # pragma: no cover - env guard
+        raise FileNotFoundError(
+            "The 'datasets' package is required for the M5 prod "
+            "loader. Install with: uv sync --all-extras"
+        ) from exc
+
+    hf_split = "train" if split == "train" else "test"
+    try:
+        dataset = load_dataset("uoft-cs/cifar100", split=hf_split)
+    except (FileNotFoundError, ConnectionError, OSError) as exc:
+        raise FileNotFoundError(
+            "Split-CIFAR-100 prod data not in the HuggingFace cache. "
+            "Run: huggingface-cli download uoft-cs/cifar100 "
+            "--repo-type dataset"
+        ) from exc
+
+    keep_classes = list(task_classes(task_idx))
+    class_to_local = {c: i for i, c in enumerate(keep_classes)}
+
+    fine = np.asarray(dataset["fine_label"], dtype=np.int64)
+    mask = np.isin(fine, keep_classes)
+    rows = np.nonzero(mask)[0]
+
+    cap = PROD_N_TRAIN_PER_TASK if split == "train" else PROD_N_VAL_PER_TASK
+
+    images = dataset.with_format("numpy")["img"]
+    feats = np.stack([np.asarray(images[i], dtype=np.uint8) for i in rows])
+    feats = feats.reshape(len(rows), RAW_FEATURE_DIM).astype(np.float32) / 255.0
+    labels = np.array(
+        [class_to_local[int(fine[i])] for i in rows], dtype=np.int32
+    )
+
+    feature_key, _ = _derive_task_keys(task_idx, seed)
+    perm_key = mx.random.split(feature_key, num=2)[1]
+    order = np.asarray(mx.random.permutation(len(rows), key=perm_key))
+    order = order[:cap]
+
+    feats = feats[order]
+    labels = labels[order]
+
+    for start in range(0, len(order), batch_size):
+        stop = start + batch_size
+        yield SplitCifar100Batch(
+            features=mx.array(feats[start:stop]),
+            labels=mx.array(labels[start:stop]),
+            task_idx=task_idx,
+        )
+
+
 def load_split_cifar100(
     task_idx: int,
     batch_size: int = 32,
@@ -241,12 +309,11 @@ def load_split_cifar100(
             feature_dim=SMOKE_FEATURE_DIM,
         )
 
-    # Prod path (M5) — intentionally not implemented in M4. The
-    # plan §4 M4 acceptance is "smoke run on M5 ≤ 15 min" ; M5
-    # adds the CIFAR-100 cache materialisation + the HF / fixture
-    # readers behind this branch.
-    raise FileNotFoundError(
-        "Split-CIFAR-100 prod loader is not implemented in M4 "
-        "(plan §4 M5 deliverable). Pass smoke=True for the "
-        "M4 smoke path."
+    # Prod path (M5) — real CIFAR-100 from the HuggingFace cache.
+    split_seed = seed if split == "train" else seed + 10_007
+    return _prod_batches(
+        task_idx=task_idx,
+        seed=split_seed,
+        batch_size=batch_size,
+        split=split,
     )
