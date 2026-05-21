@@ -2,8 +2,10 @@
 
 > **Parent plan** : `docs/plans/2026-05-20-wave3b-mlx-diffusion-substrate-plan.md` §4 M5.
 > **OSF amendment** : Q6JYN-W3B (draft `docs/osf-amendment-wave3b.md`, not yet filed).
-> **Status** : spec written 2026-05-21, awaiting user review. Plan + launch in
-> future session. **No code today.**
+> **Status** : spec written 2026-05-21 ; **revised 2026-05-21 post
+> codebase audit** (see §9 — corrects RunRegistry API, canonical-hash
+> precedent, `execute_profile` signature, CLI parser, version bump).
+> Plan + launch in future session. **No code today.**
 
 ## 1. Goal
 
@@ -76,22 +78,35 @@ Plus one *minor reconciliation* :
 
 ### D3 — Runner prod execution branch
 
-- Drop the `[plan-only]` early-exit. Per-cell execution path :
+- Drop the `[plan-only]` early-exit (lines 364-378). Per-cell
+  execution path, using the **actual** APIs (see §9 audit) :
 
   1. `loader = load_split_cifar100(task_idx, batch_size=…, seed=seed,
-     smoke=False)` (prod path from D2).
-  2. `cell_request = _CellRequest(profile, seed, task_idx, …)`.
-  3. `output = substrate.execute_profile(profile, loader, seed=seed,
-     task_idx=task_idx)`.
-  4. `output_hash = sha256(canonical_bytes(output))` — canonical
-     bytes follow the `mlx_kiki_oniric` precedent
-     (`ablation_cycle2.py` `_canonicalize_output`).
-  5. `RunRegistry.register_run(run_id, …, output_hash=output_hash,
-     metrics=output.metrics)`.
-- **Resume support** : `--resume` flag (already partially scaffolded
-  in `RunRegistry`). On startup, skip any `(c_version, profile, seed,
-  commit_sha)` already present in the registry with non-null
-  `output_hash`. Crash-safe over 6-8 h wall.
+     smoke=False)` (prod path from D2) — returns a single-use
+     iterable of `SplitCifar100Batch`.
+  2. Extend `_CellRequest` with a `loader_batches` field
+     (materialised `tuple[SplitCifar100Batch, ...]`) so the substrate
+     can consume it. `_CellRequest` stays a plain `@dataclass`.
+  3. `metrics = substrate.execute_profile(cell_request)` — the
+     existing signature is `execute_profile(self, request)`. M5 work
+     (§4 touch map) makes the substrate **consume** `request.
+     loader_batches` instead of building its own synthetic latents.
+  4. `output_hash = _r1_hash_metrics(metrics)` — reuse the existing
+     canonical-bytes helper in `ablation_cycle3_diffusion.py`
+     (`json.dumps(..., sort_keys=True, default=repr)` + sha256,
+     `wall_time_s` excluded). There is **no** `_canonicalize_output`
+     in `ablation_cycle2.py`.
+  5. `run_id = registry.register(c_version, profile, seed,
+     commit_sha)` then `registry.register_output_hash(run_id,
+     output_hash)`. `RunRegistry` has **no** `register_run` /
+     `query` method ; `register` is `INSERT OR IGNORE` (idempotent)
+     and returns the run_id.
+- **Resume support** : `--resume` is currently parsed by `_parse_cli`
+  but **never consumed** (dead flag). M5 wires it : before executing
+  a cell, compute `run_id` via the registry's `_compute_run_id`
+  tuple, call `registry.get_output_hash(run_id)` and **skip the cell
+  on success** ; a `KeyError` means not-yet-done → execute. Crash-safe
+  over 6-8 h wall.
 - **Memory cap** : each cell drops the loader iterable + the
   substrate's per-cell tensors before moving to the next cell. Peak
   RSS budget per cell ≤ 1 GB (target ≤ 600 MB ; see §5 wall-clock
@@ -123,32 +138,47 @@ Plus one *minor reconciliation* :
 
 ### D6 — What to dump per cell
 
-Per-cell record (one row per cell in the RunRegistry, plus
-aggregated in the JSON milestone) :
+**Two-level dump.** Per-cell records carry the *raw substrate
+metrics* ; H1 / H2 / H4 are *aggregate stat-test verdicts* computed
+at the milestone step over the 150 cells/profile — they are **not**
+per-cell floats (the `ablation_cycle2.py` H1-H4 are
+`welch`/`tost`/`threshold` verdicts run once over accuracy arrays).
+
+Per-cell record — `run_id` + `output_hash` in `RunRegistry`, the
+full row appended to a per-cell JSONL sidecar
+(`docs/milestones/wave3b-bench-2026-MM-DD.cells.jsonl`) :
 
 | Field | Type | Source |
 |---|---|---|
-| `run_id` | str (32-hex) | `sha256(c_version|profile|seed|commit_sha)[:32]` |
+| `run_id` | str (32-hex) | `sha256(c_version\|profile\|seed\|commit_sha)[:32]` |
 | `c_version` | str | `"C-v0.14.0+PARTIAL"` (substrate-internal) |
-| `profile` | str | `"P_min" | "P_equ" | "P_max"` |
+| `profile` | str | `"p_min" \| "p_equ" \| "p_max"` (registry tag form) |
 | `seed` | int | 0..29 |
 | `task_idx` | int | 0..4 |
-| `output_hash` | str (sha256) | canonical-bytes(output) |
-| `H1_replay_distinctness` | float | per ablation_cycle2 pattern |
-| `H2_downscale_rank_decay` | float | per ablation_cycle2 pattern |
-| `H4_recombine_novelty` | float | per ablation_cycle2 pattern |
+| `output_hash` | str (sha256) | `_r1_hash_metrics(metrics)` |
+| `replay_rate` | float | substrate `metrics["replay_rate"]` |
+| `downscale_norm` | float | substrate `metrics["downscale_norm"]` |
+| `restructure_sum` | float | substrate `metrics["restructure_sum"]` |
+| `recombine_rate` | float | substrate `metrics["recombine_rate"]` |
+| `delta_acc` | float | substrate `metrics["delta_acc"]` |
 | `wall_s` | float | per-cell wall time |
-| `peak_rss_mb` | int | resource.getrusage |
-| `slow_cell` | bool | wall_s > 120 |
-| `n_dispatch` | int | runtime.log size before reset |
+| `peak_rss_mb` | int | `resource.getrusage` |
+| `slow_cell` | bool | `wall_s > 120` |
 
 Aggregated milestone JSON (`docs/milestones/wave3b-bench-2026-MM-DD.json`) :
 
-- Per-profile H1 / H2 / H4 summary statistics (mean, std, 95 % CI
-  bootstrap over the 30 × 5 = 150 cells / profile).
+- Per-profile descriptive stats (mean, std, 95 % CI bootstrap) on
+  each raw metric over the 30 × 5 = 150 cells / profile.
+- H1 / H2 / H4 verdicts per profile : reuse the `welch_one_sided` /
+  `tost_equivalence` / `one_sample_threshold` primitives from
+  `kiki_oniric.eval.statistics` (Bonferroni α = 0.0125), fed the
+  real per-cell metric arrays — replacing the synthetic stand-ins
+  (`p_max_smoke`, hard-coded `energy_ratios`) used in
+  `ablation_cycle2._run_h1_h4`.
 - Cross-substrate consistency table : `mlx_latent_diffusion` vs
-  `mlx_kiki_oniric` per H1 / H2 / H4 (registered runs reused from
-  the `ablation_cycle2.py` artefacts). Delta + sign per profile.
+  `mlx_kiki_oniric` per H1 / H2 / H4, following the
+  `ablation_cycle2._cross_substrate_consistency` verdict-agreement
+  pattern (`agree = len(set(verdicts)) == 1`).
 - Underperforming-baseline rule check (Paper 2 §6) : if any profile
   loses to `mlx_kiki_oniric` by > δ on H1 *and* H2, that profile's
   150 cells are *excluded* from the bench and the JSON records the
@@ -156,9 +186,11 @@ Aggregated milestone JSON (`docs/milestones/wave3b-bench-2026-MM-DD.json`) :
 
 ### D7 — Acceptance criteria (machine-checkable)
 
-1. **Cell count** : `len(RunRegistry.query(c_version="C-v0.14.0+PARTIAL",
-   substrate="mlx_latent_diffusion")) == 450` OR == 300 if one
-   profile is excluded under §6 rule.
+1. **Cell count** : iterating the 450-cell grid and calling
+   `registry.get_output_hash(run_id)` returns a non-`KeyError` hash
+   for all 450 cells (OR 300 if one profile is excluded under the
+   §6 rule). `RunRegistry` has no `query` method — the count is the
+   number of grid cells whose `run_id` resolves to a stored hash.
 2. **Hash completeness** : every selected run has a non-null
    `output_hash`.
 3. **R1 nightly check** : same `(profile, seed=0, task_idx=0)` cell
@@ -179,20 +211,56 @@ deliverable. For this spec, the touch map is :
 
 | File | Action | LOC est. |
 |---|---|---|
-| `harness/diffusion_eval/cifar100_split_loader.py` | Add prod branch (lines 244-252 currently raise) | +120 |
-| `harness/diffusion_eval/__init__.py` | Re-export prod loader if not already | +1 |
-| `scripts/ablation_cycle3_diffusion.py` | Drop early-exit lines 364-378, add execute loop, `--resume`, `--output` | +90 −15 |
-| `scripts/ablation_cycle3_diffusion.py` | Patch `DEFAULT_SEEDS` to `range(30)` per D1 | ±1 |
-| `harness/storage/run_registry.py` | Confirm `output_hash` column + `--resume` query (likely already there) | +0..20 |
-| `kiki_oniric/substrates/mlx_latent_diffusion/` | Wire `execute_profile(loader, …)` if not already | +20..40 |
-| `tests/unit/diffusion_eval/test_cifar100_prod_loader.py` | New : 1 happy + 1 fallback + 1 determinism test | +120 |
-| `tests/unit/scripts/test_ablation_cycle3_resume.py` | New : 1 resume test | +60 |
-| `docs/milestones/wave3b-bench-2026-MM-DD.{json,md}` | Generated by the run | (output) |
+| `harness/diffusion_eval/cifar100_split_loader.py` | Replace the prod-path `FileNotFoundError` (lines 244-252) with the HF `datasets` materialisation + per-task partition + batch-perm | +120 |
+| `scripts/ablation_cycle3_diffusion.py` | Patch `DEFAULT_SEEDS` to `tuple(range(30))` per D1 | ±1 |
+| `scripts/ablation_cycle3_diffusion.py` | Extend `_parse_cli` with `--num-seeds`, `--output`, `--task-idx` (currently only `--smoke/--resume/--dry-run/--max-runs`) | +25 |
+| `scripts/ablation_cycle3_diffusion.py` | Extend `_CellRequest` with a `loader_batches` field | +3 |
+| `scripts/ablation_cycle3_diffusion.py` | Replace the `[plan-only]` block (lines 364-378) with the prod execute loop : materialise loader → `execute_profile` → `_r1_hash_metrics` → `register` + `register_output_hash` → JSONL sidecar append ; wire `--resume` skip via `get_output_hash` | +90 −15 |
+| `kiki_oniric/substrates/mlx_latent_diffusion.py` | `execute_profile` consumes `request.loader_batches` instead of building synthetic latents (single file, **not** a package dir) | +20..40 |
+| `harness/storage/run_registry.py` | No change — `register` + `register_output_hash` + `get_output_hash` already cover the M5 needs | 0 |
+| `tests/unit/diffusion_eval/__init__.py` | New (directory does not exist yet) | +0 |
+| `tests/unit/diffusion_eval/test_cifar100_prod_loader.py` | New : 1 happy + 1 offline-fallback + 1 determinism test | +120 |
+| `tests/unit/scripts/test_ablation_cycle3_resume.py` | New : 1 resume-skip test (`tests/unit/scripts/` already exists) | +60 |
+| `docs/milestones/wave3b-bench-2026-MM-DD.{json,md,cells.jsonl}` | Generated by the run | (output) |
 | `CHANGELOG.md` | `[Unreleased]` Empirical bullet | +3 |
-| `pyproject.toml` | SemVer bump 0.22.0 → 0.22.1 (no FC bump, EC bench only) | ±1 |
+| `pyproject.toml` | SemVer bump **0.22.1 → 0.22.2** (disk is already at 0.22.1 ; no FC bump, EC bench only) | ±1 |
 
 No framework-C spec change (`docs/specs/2026-04-17-…`) — M5 is
-purely empirical-axis, no axiom touched.
+purely empirical-axis, no axiom touched. The MLX-only test paths
+(`tests/unit/diffusion_eval/`) must be added to the root
+`conftest.py` `collect_ignore_glob` so Linux CI skips them
+(per CLAUDE.md PR #28 convention).
+
+## 9. Audit corrections (2026-05-21, post codebase read)
+
+The first draft of this spec assumed APIs that do not exist. The
+following were corrected against the disk state :
+
+1. **`RunRegistry`** has no `query` / `register_run`. The real API
+   is `register(c_version, profile, seed, commit_sha) -> run_id`
+   (idempotent `INSERT OR IGNORE`), `register_output_hash`,
+   `get_output_hash` (raises `KeyError` if absent). Resume + cell
+   count are built on the `KeyError` existence check. D3, D7 fixed.
+2. **Canonical hashing** : there is no `_canonicalize_output` in
+   `ablation_cycle2.py` (that file does no output hashing). The
+   precedent is `_r1_hash_metrics` already in
+   `ablation_cycle3_diffusion.py`. D3, D6 fixed.
+3. **`execute_profile`** signature is `execute_profile(self,
+   request)` and is synthetic-driven — it ignores any loader. M5
+   couples it via a new `_CellRequest.loader_batches` field. D3,
+   §4 fixed.
+4. **CLI** : the runner uses a hand-rolled `_parse_cli`, not
+   argparse. `--num-seeds`, `--output`, `--task-idx` do not exist
+   and must be added ; `--resume` is parsed but never consumed.
+   D1, D3, D4, §4 fixed.
+5. **`pyproject.toml`** is already at `0.22.1` on disk (CLAUDE.md
+   text is stale). M5 bumps to `0.22.2`. §4 fixed.
+6. **`mlx_latent_diffusion`** is a single module file, not a
+   package directory. §4 fixed.
+7. **H1 / H2 / H4** in `ablation_cycle2._run_h1_h4` are aggregate
+   stat-test verdicts over accuracy arrays (with synthetic
+   stand-ins for H2/H4), not per-cell floats. D6 split into a
+   per-cell raw-metric record + an aggregate verdict step.
 
 ## 5. Pre-flight checklist (Studio M3 Ultra)
 

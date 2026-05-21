@@ -44,6 +44,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import resource
 import subprocess
 import sys
 import time
@@ -60,6 +61,7 @@ from harness.diffusion_eval.cifar100_split_loader import (  # noqa: E402
     SplitCifar100Batch,
     load_split_cifar100,
 )
+from harness.diffusion_eval.milestone import write_milestone  # noqa: E402
 from harness.storage.run_registry import RunRegistry  # noqa: E402
 from kiki_oniric.substrates.mlx_latent_diffusion import (  # noqa: E402
     MLX_LATENT_DIFFUSION_SUBSTRATE_NAME,
@@ -75,9 +77,9 @@ HARNESS_VERSION = MLX_LATENT_DIFFUSION_SUBSTRATE_VERSION
 TASKS: tuple[int, ...] = tuple(range(N_TASKS))
 PROFILES: tuple[str, ...] = ("p_min", "p_equ", "p_max")
 SUBSTRATES: tuple[str, ...] = (MLX_LATENT_DIFFUSION_SUBSTRATE_NAME,)
-# Default seed grid mirrors ``ablation_cycle3.py`` (0..59) ; the
-# smoke run pins seed=0 only.
-DEFAULT_SEEDS: tuple[int, ...] = tuple(range(60))
+# N=30 per Wave 3b plan §4 M5 acceptance criterion (authoritative).
+# Spec docs/superpowers/specs/2026-05-21-wave3b-m5-bench-design.md D1.
+DEFAULT_SEEDS: tuple[int, ...] = tuple(range(30))
 
 
 def _resolve_commit_sha() -> str:
@@ -183,6 +185,29 @@ class _CellRequest:
     seed: int
     profile: str
     task_idx: int
+    loader_batches: tuple = ()
+
+
+def _build_substrate() -> "MLXLatentDiffusionSubstrate":
+    """Instantiate a fresh substrate with a seeded MLX RNG.
+
+    Extracted from ``run_one_cell`` so both the smoke path and the
+    prod grid share the same construction — avoids duplicating the
+    ``mx.random.seed`` + constructor pattern.
+
+    Note: the caller is responsible for seeding ``mx.random`` with
+    the per-cell seed before calling ``execute_profile``; this
+    helper merely constructs the object so its weight inits use
+    whatever RNG state is current at call time.  In the smoke path
+    ``run_one_cell`` seeds before instantiating; in
+    ``_run_prod_grid`` the substrate is constructed ONCE and
+    ``mx.random.seed`` is called per-cell before ``execute_profile``
+    (not before substrate construction — matches R1).
+    """
+    import mlx.core as mx  # noqa: PLC0415 — deferred (smoke-path safety)
+
+    _ = mx  # ensure Metal runtime is initialized
+    return MLXLatentDiffusionSubstrate()
 
 
 def run_one_cell(
@@ -235,7 +260,7 @@ def run_one_cell(
     import mlx.core as mx
 
     mx.random.seed(cfg.seed)
-    substrate = MLXLatentDiffusionSubstrate()
+    substrate = _build_substrate()
     request = _CellRequest(
         seed=cfg.seed, profile=cfg.profile, task_idx=cfg.task_idx
     )
@@ -272,6 +297,101 @@ def _r1_hash_metrics(metrics: dict[str, object]) -> str:
     return hashlib.sha256(payload).hexdigest()
 
 
+def _resume_skip(registry: RunRegistry, run_id: str) -> bool:
+    """True if this cell already has a registered output hash."""
+    try:
+        registry.get_output_hash(run_id)
+    except KeyError:
+        return False
+    return True
+
+
+def _append_cell_row(
+    jsonl_path: Path, row: dict[str, object]
+) -> None:
+    with jsonl_path.open("a", encoding="utf-8") as fh:
+        fh.write(json.dumps(row, sort_keys=True) + "\n")
+
+
+def _run_prod_grid(
+    configs: "list[AblationConfig]",
+    registry: RunRegistry,
+    commit_sha: str,
+    *,
+    resume: bool,
+    output_path: Path,
+) -> int:
+    """Execute every prod cell: load, run, hash, register, dump."""
+    cells_path = output_path.with_suffix(".cells.jsonl")
+    done = 0
+    for cfg in configs:
+        profile_tag = _registry_profile_tag(cfg)
+        run_id = compute_run_id(cfg, commit_sha)
+        if resume and _resume_skip(registry, run_id):
+            done += 1
+            continue
+
+        # Seed the MLX global RNG before constructing the substrate
+        # so denoiser/encoder weight inits are deterministic per cell
+        # and do not leak across cells (R1 order-independence).
+        import mlx.core as mx  # noqa: PLC0415 — deferred Metal import
+        mx.random.seed(cfg.seed)
+        substrate = _build_substrate()
+
+        batches = tuple(
+            load_split_cifar100(
+                cfg.task_idx,
+                batch_size=32,
+                seed=cfg.seed,
+                smoke=False,
+                split="train",
+            )
+        )
+        cell = _CellRequest(
+            seed=cfg.seed,
+            profile=cfg.profile,
+            task_idx=cfg.task_idx,
+            loader_batches=batches,
+        )
+        wall_start = time.monotonic()
+        metrics = substrate.execute_profile(cell)
+        wall_s = time.monotonic() - wall_start
+
+        output_hash = _r1_hash_metrics(metrics)
+        registry.register(
+            HARNESS_VERSION, profile_tag, cfg.seed, commit_sha
+        )
+        registry.register_output_hash(run_id, output_hash)
+
+        # macOS reports ru_maxrss in bytes; Linux in kilobytes.
+        # The bench target is Studio M3 Ultra (macOS) — use byte form.
+        peak_rss = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+        peak_rss_mb = int(peak_rss / (1024 * 1024))
+        _append_cell_row(cells_path, {
+            "run_id": run_id,
+            "c_version": HARNESS_VERSION,
+            "profile": cfg.profile,
+            "seed": cfg.seed,
+            "task_idx": cfg.task_idx,
+            "output_hash": output_hash,
+            "replay_rate": metrics["replay_rate"],
+            "downscale_norm": metrics["downscale_norm"],
+            "restructure_sum": metrics["restructure_sum"],
+            "recombine_rate": metrics["recombine_rate"],
+            "delta_acc": metrics["delta_acc"],
+            "wall_s": wall_s,
+            "peak_rss_mb": peak_rss_mb,
+            "slow_cell": wall_s > 120.0,
+        })
+        done += 1
+        print(
+            f"[m5] {done}/{len(configs)} "
+            f"{cfg.profile} seed={cfg.seed} task={cfg.task_idx} "
+            f"wall={wall_s:.1f}s hash={output_hash[:12]}"
+        )
+    return done
+
+
 def _parse_cli(argv: list[str]) -> dict[str, object]:
     """Minimal argv parser ; mirrors ``ablation_cycle3._parse_cli``."""
     opts: dict[str, object] = {
@@ -279,6 +399,9 @@ def _parse_cli(argv: list[str]) -> dict[str, object]:
         "resume": False,
         "dry_run": False,
         "max_runs": None,
+        "num_seeds": None,
+        "task_idx": None,
+        "output": None,
     }
 
     def _next_value(flag: str) -> str:
@@ -308,6 +431,32 @@ def _parse_cli(argv: list[str]) -> dict[str, object]:
                     f"--max-runs must be > 0, got {value}"
                 )
             opts["max_runs"] = value
+        elif token == "--num-seeds":
+            raw = _next_value("--num-seeds")
+            try:
+                value = int(raw)
+            except ValueError:
+                raise SystemExit(
+                    f"--num-seeds expects an integer, got {raw!r}"
+                ) from None
+            if not 0 < value <= 30:
+                raise SystemExit("--num-seeds must be in 1..30")
+            opts["num_seeds"] = value
+        elif token == "--task-idx":
+            raw = _next_value("--task-idx")
+            try:
+                value = int(raw)
+            except ValueError:
+                raise SystemExit(
+                    f"--task-idx expects an integer, got {raw!r}"
+                ) from None
+            if not 0 <= value < N_TASKS:
+                raise SystemExit(
+                    f"--task-idx must be in 0..{N_TASKS - 1}"
+                )
+            opts["task_idx"] = value
+        elif token == "--output":
+            opts["output"] = _next_value("--output")
     return opts
 
 
@@ -330,7 +479,14 @@ def main(argv: list[str] | None = None) -> int:
             )
         ]
     else:
-        configs = list(enumerate_configs())
+        seed_range: Iterable[int] | None = None
+        if opts["num_seeds"] is not None:
+            seed_range = tuple(range(int(opts["num_seeds"])))  # type: ignore[arg-type]
+        configs = list(enumerate_configs(seeds=seed_range))
+        if opts["task_idx"] is not None:
+            configs = [
+                c for c in configs if c.task_idx == opts["task_idx"]
+            ]
 
     max_runs = opts["max_runs"]
     if isinstance(max_runs, int):
@@ -362,8 +518,6 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     if not opts["smoke"]:
-        # Prod-grid execution is M5 scope per plan §4. Register the
-        # envelope only (mirrors ``ablation_cycle3.main`` line 369-372).
         for cfg in configs:
             registry.register(
                 c_version=HARNESS_VERSION,
@@ -371,10 +525,20 @@ def main(argv: list[str] | None = None) -> int:
                 seed=cfg.seed,
                 commit_sha=commit_sha,
             )
-        print(
-            "[plan-only] per-cell execution deferred to M5 ; "
-            f"registered {len(configs)} cells in the envelope."
+        output_path = Path(
+            opts["output"]
+            or REPO_ROOT / "docs" / "milestones"
+            / "wave3b-bench-pending.json"
         )
+        done = _run_prod_grid(
+            configs,
+            registry,
+            commit_sha,
+            resume=bool(opts["resume"]),
+            output_path=output_path,
+        )
+        write_milestone(output_path, registry, commit_sha)
+        print(f"[m5] complete: {done}/{len(configs)} cells")
         return 0
 
     # Smoke execution path.

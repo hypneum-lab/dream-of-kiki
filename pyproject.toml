@@ -1,6 +1,6 @@
 [project]
 name = "dreamofkiki"
-version = "0.22.1"
+version = "0.22.2"
 description = "Substrate-agnostic formal framework for dream-based knowledge consolidation"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -40,6 +40,9 @@ fmri = [
 teacher = [
     "llama-cpp-python>=0.2.80",
 ]
+bench = [
+    "datasets>=2.20",       # Wave 3b M5: CIFAR-100 prod loader source
+]
 
 [project.scripts]
 dream-harness = "harness.cli.dream_harness:cli"
@@ -72,7 +75,8 @@ follow_imports = "silent"
 
 [[tool.mypy.overrides]]
 # Third-party packages that ship no type stubs.
-module = ["mlx_lm", "mlx_lm.*", "scipy", "scipy.*", "pandas", "pandas.*"]
+module = ["mlx_lm", "mlx_lm.*", "scipy", "scipy.*", "pandas", "pandas.*",
+          "datasets", "datasets.*"]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]
