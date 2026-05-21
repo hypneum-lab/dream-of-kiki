@@ -10,35 +10,6 @@ see `docs/specs/2026-04-17-dreamofkiki-framework-C-design.md` §12).
 
 ---
 
-## [C-v0.15.0+PARTIAL] — 2026-05-21
-
-### Changed
-- M7 substrate DR-3 conformance fix. `mlx_latent_diffusion.execute_profile`
-  now honours framework-C §3.1 normative activation per profile :
-  p_min activates {replay, downscale}, p_equ + p_max activate all
-  four ops. Skeleton handlers in `__post_init__` are overridden by
-  the `_real.py` factories bound to the diffusion denoiser via
-  `_diffusion.dream_ops_adapter.bind_real_handlers`. The recombine
-  contract is satisfied via a new random-init `Decoder` MLP
-  (`_diffusion.decoder`). `delta_acc` is now a real CL head
-  measurement (`_diffusion.cl_eval_head`). Closes issue #36.
-
-### Added
-- `kiki_oniric/substrates/_diffusion/decoder.py` (Decoder MLP).
-- `kiki_oniric/substrates/_diffusion/cl_eval_head.py` (ClEvalHead +
-  train/eval helpers).
-- `kiki_oniric/substrates/_diffusion/dream_ops_adapter.py`
-  (`bind_real_handlers`).
-- `tests/conformance/axioms/test_dr3_diffusion_profile.py`.
-
-### DualVer
-- FC MINOR `C-v0.14.0 → C-v0.15.0`. EC stays `+PARTIAL` ; M6
-  ship-critic decides STABLE / PARTIAL.
-- 3 R1 entries regenerated ; see
-  `tests/reproducibility/REBASELINE_NOTE.md`.
-
----
-
 ## [Unreleased]
 
 ### Refactored (B3 delegate to topology kernel, 2026-05-21)
@@ -830,6 +801,37 @@ see `docs/specs/2026-04-17-dreamofkiki-framework-C-design.md` §12).
   change. FC stays at v0.10.0; EC stays PARTIAL. Per framework-C
   spec §12 (only spec/proof changes trigger FC; only gate results
   trigger EC).
+
+---
+
+## [C-v0.25.0+PARTIAL] — 2026-05-21 — Wave 3b M7 diffusion substrate DR-3 conformance (Track S)
+
+### Changed
+- M7 substrate DR-3 conformance fix. `mlx_latent_diffusion.execute_profile`
+  now honours framework-C §3.1 normative activation per profile :
+  p_min activates {replay, downscale}, p_equ + p_max activate all
+  four ops. Skeleton handlers in `__post_init__` are overridden by
+  the `_real.py` factories bound to the diffusion denoiser via
+  `_diffusion.dream_ops_adapter.bind_real_handlers`. The recombine
+  contract is satisfied via a new random-init `Decoder` MLP
+  (`_diffusion.decoder`). `delta_acc` is now a real CL head
+  measurement (`_diffusion.cl_eval_head`). Closes issue #36.
+
+### Added
+- `kiki_oniric/substrates/_diffusion/decoder.py` (Decoder MLP).
+- `kiki_oniric/substrates/_diffusion/cl_eval_head.py` (ClEvalHead +
+  train/eval helpers).
+- `kiki_oniric/substrates/_diffusion/dream_ops_adapter.py`
+  (`bind_real_handlers`).
+- `tests/conformance/axioms/test_dr3_diffusion_profile.py`.
+
+### DualVer
+- Project FC MINOR `C-v0.24.0 → C-v0.25.0`. EC stays `+PARTIAL` ;
+  M6 ship-critic decides STABLE / PARTIAL.
+- Substrate-internal axis : `mlx_latent_diffusion` C-v0.14.0 →
+  C-v0.15.0 (`MLX_LATENT_DIFFUSION_SUBSTRATE_VERSION`).
+- 3 R1 entries regenerated ; see
+  `tests/reproducibility/REBASELINE_NOTE.md`.
 
 ---
 
