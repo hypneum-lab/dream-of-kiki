@@ -23,6 +23,7 @@ if sys.platform != "darwin":
         "tests/unit/test_denoiser_weight_channel.py",
         "tests/unit/test_diffusion_*.py",
         "tests/unit/test_dream_ops_adapter.py",
+        "tests/unit/test_lora_topology_ops_reexport.py",
         "tests/unit/experiments/test_g4_*.py",
         "tests/unit/experiments/test_g5_*.py",
         "tests/unit/experiments/test_g6_*.py",
