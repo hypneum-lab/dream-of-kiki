@@ -790,6 +790,10 @@ see `docs/specs/2026-04-17-dreamofkiki-framework-C-design.md` §12).
 - `tests/unit/profiles/test_p_min_sharon_calibration.py` (13 tests):
   default values, proxy reader, monotonicity P_max ≥ P_equ ≥ P_min,
   seed-independence, DR-4 chain coexistence guard.
+- Wave 3b M5: production CIFAR-100 split loader and the
+  `ablation_cycle3_diffusion.py` prod execute loop (450-cell grid,
+  `--resume`, R1 output hashing, milestone aggregation). EC bench
+  only — no framework-C axiom touched.
 
 ### Versioning
 - **No DualVer bump.** Calibration is profile metadata, not an axiom
