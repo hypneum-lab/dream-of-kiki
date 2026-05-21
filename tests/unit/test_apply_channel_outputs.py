@@ -104,6 +104,69 @@ def test_lora_weight_delta_channel_rejects_out_of_range_layer() -> None:
         channel.apply({"layer99.lora_a": np.zeros((2, 4), dtype=np.float32)})
 
 
+def test_lora_weight_delta_channel_fisher_bump_scales_delta() -> None:
+    """fisher_bump per-element weights the delta application."""
+    from kiki_oniric.dream.channels.weight_delta import (
+        LoRAWeightDeltaChannel,
+    )
+
+    _, target = _clones(seed=0)
+    before_a = np.asarray(target.layers[0].lora_a, dtype=np.float32).copy()
+    delta_a = np.ones_like(before_a)  # uniform +1.0 delta
+    fisher_a = np.full_like(delta_a, 0.5)  # halve every element
+    channel = LoRAWeightDeltaChannel(target)
+    channel.apply(
+        {"layer0.lora_a": delta_a},
+        fisher_bump={"layer0.lora_a": fisher_a},
+    )
+    after_a = np.asarray(target.layers[0].lora_a, dtype=np.float32)
+    # Expected: before + delta * fisher = before + 1.0 * 0.5 = before + 0.5
+    np.testing.assert_allclose(after_a, before_a + 0.5, rtol=1e-6)
+
+
+def test_lora_weight_delta_channel_fisher_bump_shape_mismatch() -> None:
+    """Mismatched fisher_bump shape raises S1."""
+    from kiki_oniric.dream.channels.weight_delta import (
+        LoRAWeightDeltaChannel,
+    )
+
+    _, target = _clones(seed=0)
+    delta_shape = np.asarray(target.layers[0].lora_a).shape
+    delta_a = np.ones(delta_shape, dtype=np.float32)
+    bad_fisher = np.ones((delta_shape[0] + 1, delta_shape[1]), dtype=np.float32)
+    channel = LoRAWeightDeltaChannel(target)
+    with pytest.raises(ValueError, match=r"^S1: fisher_bump"):
+        channel.apply(
+            {"layer0.lora_a": delta_a},
+            fisher_bump={"layer0.lora_a": bad_fisher},
+        )
+
+
+def test_lora_weight_delta_channel_fisher_bump_missing_key_passes_through() -> None:
+    """fisher_bump missing a key applies that delta with weight 1.0."""
+    from kiki_oniric.dream.channels.weight_delta import (
+        LoRAWeightDeltaChannel,
+    )
+
+    _, target = _clones(seed=0)
+    before_a = np.asarray(target.layers[0].lora_a, dtype=np.float32).copy()
+    before_b = np.asarray(target.layers[0].lora_b, dtype=np.float32).copy()
+    delta_a = np.ones_like(before_a) * 0.3
+    delta_b = np.ones_like(before_b) * 0.7
+    fisher_a = np.full_like(delta_a, 2.0)  # double the a delta
+    # fisher_bump has only the lora_a key, not lora_b
+    channel = LoRAWeightDeltaChannel(target)
+    channel.apply(
+        {"layer0.lora_a": delta_a, "layer0.lora_b": delta_b},
+        fisher_bump={"layer0.lora_a": fisher_a},
+    )
+    after_a = np.asarray(target.layers[0].lora_a, dtype=np.float32)
+    after_b = np.asarray(target.layers[0].lora_b, dtype=np.float32)
+    # a was weighted (delta * 2), b was not (delta * 1)
+    np.testing.assert_allclose(after_a, before_a + 0.6, rtol=1e-6)
+    np.testing.assert_allclose(after_b, before_b + 0.7, rtol=1e-6)
+
+
 # ---------------------------------------------------------------------------
 # B5 T2 — LoRAHierarchyChangeChannel tests
 # ---------------------------------------------------------------------------

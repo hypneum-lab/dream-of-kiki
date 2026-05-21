@@ -43,7 +43,20 @@ class LoRAWeightDeltaChannel:
         lora_delta: dict[str, NDArray[np.float32]],
         fisher_bump: dict[str, NDArray[np.float32]] | None = None,
     ) -> None:
-        del fisher_bump  # B5: accepted to match Protocol, ignored
+        """Apply ``lora_delta`` (per-layer adapter delta) to the target.
+
+        If ``fisher_bump`` is provided, each layer's delta is
+        multiplied element-wise by ``fisher_bump[key]`` before being
+        added to the target — i.e. ``new = current + delta * fisher``
+        — implementing an EWC-style per-element importance weighting
+        (Kirkpatrick 2017). Keys missing from ``fisher_bump`` are
+        applied with weight ``1.0`` (pass-through). Per-key shape
+        must match the corresponding ``lora_delta`` entry.
+
+        Raises ``ValueError`` (S1 / S2) on malformed keys, out-of-range
+        layer indices, mismatched fisher shapes, or non-finite
+        results.
+        """
         for key, delta_arr in lora_delta.items():
             layer_idx, attr = self._parse_key(key)
             if layer_idx < 0 or layer_idx >= len(self._target.layers):
@@ -54,7 +67,17 @@ class LoRAWeightDeltaChannel:
                 )
             layer = self._target.layers[layer_idx]
             current = getattr(layer, attr)
-            new = current + mx.array(delta_arr)
+            weighted = mx.array(delta_arr)
+            if fisher_bump is not None and key in fisher_bump:
+                fisher_arr = fisher_bump[key]
+                if fisher_arr.shape != delta_arr.shape:
+                    raise ValueError(
+                        f"S1: fisher_bump[{key!r}] shape "
+                        f"{fisher_arr.shape} != lora_delta shape "
+                        f"{delta_arr.shape}"
+                    )
+                weighted = weighted * mx.array(fisher_arr)
+            new = current + weighted
             if not bool(mx.all(mx.isfinite(new)).item()):
                 raise ValueError(
                     f"S2: weight_delta apply non-finite on {key!r}"
