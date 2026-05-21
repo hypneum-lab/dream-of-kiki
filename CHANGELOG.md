@@ -679,6 +679,92 @@ see `docs/specs/2026-04-17-dreamofkiki-framework-C-design.md` §12).
 
 ---
 
+## [C-v0.24.0+PARTIAL] — 2026-05-21 — Wave 3b M3 diffusion train + sample + R1 (Track S)
+
+### Formal axis (FC) — MINOR (v0.23.0 → v0.24.0)
+
+- **Substrate-internal bump** `mlx_latent_diffusion` from
+  `C-v0.13.0+PARTIAL` (Wave 3b M2 skeleton) to
+  `C-v0.14.0+PARTIAL` (Wave 3b M3 — trainer + sampler + R1
+  entries shipped). EC stays `+PARTIAL` ; M6 will conditionally
+  flip to `+STABLE` per framework-C §12.3 STABLE conditions, not
+  this PR.
+- **New module** `kiki_oniric/substrates/_diffusion/sampler.py`
+  (~155 LoC) : DDPM reverse-process sampler with the R1-clean
+  per-step subkey tree (plan §2.3 D3). Documents the key
+  derivation contract `mx.random.split(root_key, num=n_steps+1)`
+  with the index-0 reservation pattern.
+- **New module** `kiki_oniric/substrates/_diffusion/trainer.py`
+  (~150 LoC) : noise-prediction SGD `Trainer.fit` and
+  `train_step`, R1-clean per-step subkey tree
+  (`split(seed_key, num=n_total+1)`). Deterministic given
+  (dataset, n_epochs, seed_key, MLX version, chip family).
+- **Model upgrade** `kiki_oniric/substrates/_diffusion/model.py` :
+  `Encoder` and `MLPDenoiser` now `nn.Module` with learnable
+  parameters and a working `train_step` (MSE reconstruction /
+  noise-prediction respectively). The M2 NotImplementedError
+  surface on `train_step` is removed ; the public `__call__`
+  shape contract is preserved.
+- **Adapter wiring**
+  `kiki_oniric/substrates/mlx_latent_diffusion.py` :
+  `execute_profile` now runs a deterministic synthetic-latent
+  smoke cycle (Trainer.fit + Sampler.sample) and returns a
+  sibling-shaped metrics dict with a `"synthetic": True` honesty
+  marker per CLAUDE.md §Working rules item 3. The
+  ablation_cycle3 wiring lands in M4.
+
+### Empirical axis (EC) — UNCHANGED (PARTIAL)
+
+- No new empirical claim. Three new R1 entries
+  (`test_r1_diffusion_train`, `test_r1_diffusion_sample`,
+  `test_r1_diffusion_full_pipeline`) captured on M5 GrosMac
+  with `status: "pending_review"` per the 2026-05-10 N2
+  rebaseline discipline. M1 Max entries placeholder with
+  `status: "pending_remote_validation"` (bootstrap on the next
+  macM1 run via `compare_or_bootstrap` unknown-status path).
+
+### Tests (Track S — DR-3 full conformance)
+
+- `tests/unit/test_diffusion_sampler_keys.py` (5 tests) —
+  R1 key-derivation contract probe.
+- `tests/conformance/axioms/test_dr3_diffusion_substrate.py`
+  (8 tests) — 3 DR-3 conditions exercised against the wired
+  substrate (7/8 typed primitives + Canal 4 documented no-op).
+- `tests/conformance/axioms/test_dr0_diffusion_de_budget.py`
+  (4 tests) — DR-0 accountability via Hypothesis on the
+  trainer loss-history length contract.
+- `tests/conformance/axioms/test_dr1_diffusion_finite.py`
+  (4 tests) — DR-1 finiteness : training + sampler terminate
+  in bounded steps, all losses finite.
+- `tests/reproducibility/test_r1_diffusion.py` (3 R1 entries).
+- `tests/unit/test_mlx_latent_diffusion_adapter.py` extended :
+  the M2 NotImplementedError-deferral test is replaced by
+  positive train + smoke-cycle tests.
+- Root `conftest.py` extended : the new diffusion conformance,
+  unit, and R1 tests are added to the libmlx-less Linux skip
+  list (collect_ignore_glob).
+
+### Packaging
+
+- `pyproject.toml` version bumped `0.21.0 → 0.22.0`.
+
+### Notes
+
+- Track S/B M2 review gate (plan §4 M2 acceptance) : **Track S
+  selected** at M2 review ; this PR ships the full DR-3
+  conformance test family (3 conditions) + the 3 R1 entries.
+- DualVer atomic bump : all updated C-v references in code
+  (substrate-internal `C-v0.13.0` → `C-v0.14.0` in
+  `mlx_latent_diffusion.py`) and the framework C-v entry above
+  (`C-v0.23.0` → `C-v0.24.0`) flip in this single PR. Dated
+  immutables (`docs/plans/2026-05-20-...`,
+  `docs/osf-amendment-wave3b.md`) are deliberately untouched
+  per `docs/CLAUDE.md` (append-only rule).
+- M4 (ablation_cycle3 integration + smoke) is the next
+  milestone ; this PR is the M3 substrate-internal closure.
+
+---
+
 ## [C-v0.23.0+PARTIAL] — 2026-05-20 — PMaxLoRAProfile wires P_max to channels (B6c)
 
 ### Formal axis (FC) — MINOR (v0.22.0 → v0.23.0)

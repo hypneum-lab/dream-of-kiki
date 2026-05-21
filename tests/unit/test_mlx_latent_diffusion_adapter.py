@@ -209,28 +209,62 @@ def test_forward_passes_return_correct_shapes() -> None:
 # ----------------------------------------------------------------------
 
 
-def test_skeleton_methods_raise_not_implemented_where_deferred() -> None:
-    """Documented M3+ deferrals surface as ``NotImplementedError``.
+def test_execute_profile_runs_minimal_smoke_cycle() -> None:
+    """Wave 3b M3 wires a minimal train + sample driver.
 
-    This pins the public contract: callers must not silently get
-    placeholder numbers from training or from
-    ``execute_profile`` until the M3 trainer and ablation_cycle3
-    wiring land.
+    The smoke cycle returns the standard metrics-dict shape used
+    by the sibling substrates and carries a ``"synthetic": True``
+    flag per CLAUDE.md §Working rules item 3 (no synthetic
+    placeholder may be reported as an empirical claim).
     """
-    adapter = MLXLatentDiffusionSubstrate()
+    from dataclasses import dataclass
 
-    with pytest.raises(NotImplementedError, match="Wave 3b M3"):
-        adapter.execute_profile(request=None)
+    @dataclass
+    class _StubRequest:
+        seed: int = 7
+        profile: str = "p_min"
+
+    adapter = MLXLatentDiffusionSubstrate()
+    out = adapter.execute_profile(_StubRequest())
+
+    # Standard sibling-substrate keys.
+    for key in (
+        "replay_rate", "downscale_norm", "restructure_sum",
+        "recombine_rate", "delta_acc", "wall_time_s",
+    ):
+        assert key in out, f"missing metric key {key!r}"
+        assert isinstance(out[key], float), f"{key!r} must be float"
+
+    # M3-specific provenance keys (honesty marker + identity).
+    assert out["synthetic"] is True
+    assert out["profile"] == "p_min"
+    assert out["seed"] == 7
+    assert out["substrate"] == "mlx_latent_diffusion"
+    assert isinstance(out["substrate_version"], str)
+    assert out["substrate_version"].startswith("C-v")
+    assert out["substrate_version"].endswith("+PARTIAL")
+
+    # teardown is a real no-op : it must be callable without raising.
+    adapter.teardown()
+
+
+def test_encoder_and_denoiser_train_step_smoke() -> None:
+    """``train_step`` runs without raising and returns a finite loss."""
+    import math
 
     enc = Encoder(d_in=4, d_latent=2)
-    with pytest.raises(NotImplementedError, match="Wave 3b M3"):
-        enc.train_step()
+    x = mx.zeros((3, 4), dtype=mx.float32)
+    loss = enc.train_step(x, lr=1e-3)
+    assert isinstance(loss, float)
+    assert math.isfinite(loss)
+    assert loss >= 0.0
 
+    schedule = NoiseSchedule(t_steps=10, beta_min=1e-4, beta_max=2e-2)
     denoiser = MLPDenoiser(d_latent=2, d_hidden=4, n_layers=1)
-    with pytest.raises(NotImplementedError, match="Wave 3b M3"):
-        denoiser.train_step()
-
-    # teardown is a real no-op in M2 (not deferred): it must be callable
-    # without raising. The return annotation is ``-> None`` so we just
-    # invoke it; mypy disallows asserting on a None-returning callable.
-    adapter.teardown()
+    z = mx.zeros((3, 2), dtype=mx.float32)
+    t = mx.array([0, 1, 2], dtype=mx.int32)
+    noise = mx.zeros((3, 2), dtype=mx.float32)
+    loss_d = denoiser.train_step(z, t, noise, schedule, lr=1e-3)
+    assert isinstance(loss_d, float)
+    assert math.isfinite(loss_d)
+    assert loss_d >= 0.0
