@@ -19,6 +19,9 @@ from typing import TYPE_CHECKING, Callable
 import numpy as np
 
 from kiki_oniric.dream.episode import DreamEpisode
+from kiki_oniric.substrates.micro_kiki.lora_topology_ops import (
+    _apply_topology_op,
+)
 
 if TYPE_CHECKING:
     from kiki_oniric.dream.channels import TopologyDiff
@@ -220,10 +223,7 @@ def restructure_lora_handler(
     Reference:
       docs/specs/2026-04-17-dreamofkiki-framework-C-design.md §4.2
     """
-    import mlx.core as mx
-
     from kiki_oniric.dream.channels import TopologyDiff
-    from kiki_oniric.substrates.micro_kiki.lora_model import LoRALinear
 
     def handler(episode: DreamEpisode) -> "TopologyDiff | None":
         ops = episode.input_slice.get("topo_ops", [])
@@ -250,33 +250,27 @@ def restructure_lora_handler(
                 if state.adds_this_episode >= max_adds_per_episode:
                     # INSS soft cap: silently skip — no entry, no mutation.
                     continue
+                op_seed = _derive_op_seed(seed, episode.episode_id, idx)
+                insert_at = int(op_dict["index"])
                 in_features = int(op_dict["in_features"])
                 out_features = int(op_dict["out_features"])
                 rank = int(op_dict["rank"])
                 alpha = float(op_dict["alpha"])
-                op_seed = _derive_op_seed(seed, episode.episode_id, idx)
-                new_layer = LoRALinear(
-                    in_features=in_features,
-                    out_features=out_features,
-                    rank=rank,
-                    alpha=alpha,
-                    key=mx.random.key(op_seed),
-                )
-                insert_at = int(op_dict["index"])
-                model.layers.insert(insert_at, new_layer)
-                state.adds_this_episode += 1
-                state.total_adds += 1
-                state.diff_history.append("add")
-                payload: dict[str, object] = {
+                add_payload: dict[str, object] = {
                     "index": insert_at,
                     "in_features": in_features,
                     "out_features": out_features,
                     "rank": rank,
                     "alpha": alpha,
                     "seed": op_seed,
-                    "model_sha256_post": _model_sha256(model),
+                    "model_sha256_post": "",
                 }
-                applied.append(("add", payload))
+                _apply_topology_op(model, "add", add_payload)
+                add_payload["model_sha256_post"] = _model_sha256(model)
+                state.adds_this_episode += 1
+                state.total_adds += 1
+                state.diff_history.append("add")
+                applied.append(("add", add_payload))
 
             elif op == "remove":
                 rm_at = int(op_dict["index"])
@@ -304,39 +298,29 @@ def restructure_lora_handler(
                     "rank": int(layer.rank),
                     "alpha": float(layer.alpha),
                 }
-                model.layers.pop(rm_at)
+                remove_payload: dict[str, object] = {
+                    "index": rm_at,
+                    "snapshot": snapshot,
+                    "model_sha256_post": "",
+                }
+                _apply_topology_op(model, "remove", remove_payload)
+                remove_payload["model_sha256_post"] = _model_sha256(model)
                 state.total_removes += 1
                 state.diff_history.append("remove")
-                applied.append(
-                    (
-                        "remove",
-                        {
-                            "index": rm_at,
-                            "snapshot": snapshot,
-                            "model_sha256_post": _model_sha256(model),
-                        },
-                    )
-                )
+                applied.append(("remove", remove_payload))
 
             else:  # reroute
-                i, j = int(op_dict["swap_indices"][0]), int(  # type: ignore[index]
-                    op_dict["swap_indices"][1]  # type: ignore[index]
-                )
-                model.layers[i], model.layers[j] = (
-                    model.layers[j],
-                    model.layers[i],
-                )
+                i = int(op_dict["swap_indices"][0])  # type: ignore[index]
+                j = int(op_dict["swap_indices"][1])  # type: ignore[index]
+                reroute_payload: dict[str, object] = {
+                    "swap_indices": (i, j),
+                    "model_sha256_post": "",
+                }
+                _apply_topology_op(model, "reroute", reroute_payload)
+                reroute_payload["model_sha256_post"] = _model_sha256(model)
                 state.total_reroutes += 1
                 state.diff_history.append("reroute")
-                applied.append(
-                    (
-                        "reroute",
-                        {
-                            "swap_indices": (i, j),
-                            "model_sha256_post": _model_sha256(model),
-                        },
-                    )
-                )
+                applied.append(("reroute", reroute_payload))
 
         if not applied:
             # Every requested op was an add that hit the INSS cap.
