@@ -1,4 +1,25 @@
 {
+  "test_r1_diffusion_full_pipeline": {
+    "chip_family": "apple_m3_ultra",
+    "commit": "pending",
+    "hash": "pending",
+    "mlx_version": "pending",
+    "status": "pending_review"
+  },
+  "test_r1_diffusion_sample": {
+    "chip_family": "apple_m3_ultra",
+    "commit": "pending",
+    "hash": "pending",
+    "mlx_version": "pending",
+    "status": "pending_review"
+  },
+  "test_r1_diffusion_train": {
+    "chip_family": "apple_m3_ultra",
+    "commit": "pending",
+    "hash": "pending",
+    "mlx_version": "pending",
+    "status": "pending_review"
+  },
   "test_r1_downscale": {
     "chip_family": "apple_m3_ultra",
     "commit": "deeb1e8f77cc",
