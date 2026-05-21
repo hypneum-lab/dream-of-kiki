@@ -1,0 +1,181 @@
+{
+  "c_version": "C-v0.14.0+PARTIAL",
+  "commit_sha": "6de09f16fa6a51d737eb3030f435d86097206650",
+  "hypotheses": {
+    "p_equ": {
+      "H1_replay": {
+        "p": 0.5,
+        "reject_h0": false,
+        "test": "Welch's t-test (one-sided)"
+      },
+      "H2_downscale": {
+        "p": 0.21827198961689653,
+        "reject_h0": false,
+        "test": "TOST equivalence"
+      },
+      "H4_recombine": {
+        "p": 1.0,
+        "reject_h0": false,
+        "test": "one-sample t-test (upper bound)"
+      }
+    },
+    "p_max": {
+      "H1_replay": {
+        "p": 0.5,
+        "reject_h0": false,
+        "test": "Welch's t-test (one-sided)"
+      },
+      "H2_downscale": {
+        "p": 0.21827198961689653,
+        "reject_h0": false,
+        "test": "TOST equivalence"
+      },
+      "H4_recombine": {
+        "p": 1.0,
+        "reject_h0": false,
+        "test": "one-sample t-test (upper bound)"
+      }
+    },
+    "p_min": {
+      "H1_replay": {
+        "p": 0.5,
+        "reject_h0": false,
+        "test": "Welch's t-test (one-sided)"
+      },
+      "H2_downscale": {
+        "p": 0.21827198961689653,
+        "reject_h0": false,
+        "test": "TOST equivalence"
+      },
+      "H4_recombine": {
+        "p": 1.0,
+        "reject_h0": false,
+        "test": "one-sample t-test (upper bound)"
+      }
+    }
+  },
+  "profiles": {
+    "p_equ": {
+      "n_cells": 150,
+      "stats": {
+        "delta_acc": {
+          "max": 12.513970732688904,
+          "mean": 7.9401139159997305,
+          "min": 3.2997960448265076,
+          "n": 150,
+          "std": 2.4077913276915464
+        },
+        "downscale_norm": {
+          "max": 9.120919227600098,
+          "mean": 8.035783710479736,
+          "min": 6.709298133850098,
+          "n": 150,
+          "std": 0.5539360112393777
+        },
+        "recombine_rate": {
+          "max": 157.0,
+          "mean": 157.0,
+          "min": 157.0,
+          "n": 150,
+          "std": 0.0
+        },
+        "replay_rate": {
+          "max": 1.1663497686386108,
+          "mean": 0.9960353823502859,
+          "min": 0.8905993700027466,
+          "n": 150,
+          "std": 0.06311118685550053
+        },
+        "restructure_sum": {
+          "max": 0.0,
+          "mean": 0.0,
+          "min": 0.0,
+          "n": 150,
+          "std": 0.0
+        }
+      }
+    },
+    "p_max": {
+      "n_cells": 150,
+      "stats": {
+        "delta_acc": {
+          "max": 12.513970732688904,
+          "mean": 7.9401139159997305,
+          "min": 3.2997960448265076,
+          "n": 150,
+          "std": 2.4077913276915464
+        },
+        "downscale_norm": {
+          "max": 9.120919227600098,
+          "mean": 8.035783710479736,
+          "min": 6.709298133850098,
+          "n": 150,
+          "std": 0.5539360112393777
+        },
+        "recombine_rate": {
+          "max": 157.0,
+          "mean": 157.0,
+          "min": 157.0,
+          "n": 150,
+          "std": 0.0
+        },
+        "replay_rate": {
+          "max": 1.1663497686386108,
+          "mean": 0.9960353823502859,
+          "min": 0.8905993700027466,
+          "n": 150,
+          "std": 0.06311118685550053
+        },
+        "restructure_sum": {
+          "max": 0.0,
+          "mean": 0.0,
+          "min": 0.0,
+          "n": 150,
+          "std": 0.0
+        }
+      }
+    },
+    "p_min": {
+      "n_cells": 150,
+      "stats": {
+        "delta_acc": {
+          "max": 12.513970732688904,
+          "mean": 7.9401139159997305,
+          "min": 3.2997960448265076,
+          "n": 150,
+          "std": 2.4077913276915464
+        },
+        "downscale_norm": {
+          "max": 9.120919227600098,
+          "mean": 8.035783710479736,
+          "min": 6.709298133850098,
+          "n": 150,
+          "std": 0.5539360112393777
+        },
+        "recombine_rate": {
+          "max": 157.0,
+          "mean": 157.0,
+          "min": 157.0,
+          "n": 150,
+          "std": 0.0
+        },
+        "replay_rate": {
+          "max": 1.1663497686386108,
+          "mean": 0.9960353823502859,
+          "min": 0.8905993700027466,
+          "n": 150,
+          "std": 0.06311118685550053
+        },
+        "restructure_sum": {
+          "max": 0.0,
+          "mean": 0.0,
+          "min": 0.0,
+          "n": 150,
+          "std": 0.0
+        }
+      }
+    }
+  },
+  "substrate": "mlx_latent_diffusion",
+  "total_cells": 450
+}
