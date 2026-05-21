@@ -19,6 +19,7 @@ if sys.platform != "darwin":
         "tests/conformance/axioms/test_dr1_diffusion_*.py",
         "tests/conformance/test_baseline_registration.py",
         "tests/reproducibility/test_r1_diffusion.py",
+        "tests/unit/test_denoiser_weight_channel.py",
         "tests/unit/test_diffusion_*.py",
         "tests/unit/experiments/test_g4_*.py",
         "tests/unit/experiments/test_g5_*.py",
