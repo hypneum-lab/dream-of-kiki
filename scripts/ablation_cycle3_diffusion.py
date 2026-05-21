@@ -75,9 +75,9 @@ HARNESS_VERSION = MLX_LATENT_DIFFUSION_SUBSTRATE_VERSION
 TASKS: tuple[int, ...] = tuple(range(N_TASKS))
 PROFILES: tuple[str, ...] = ("p_min", "p_equ", "p_max")
 SUBSTRATES: tuple[str, ...] = (MLX_LATENT_DIFFUSION_SUBSTRATE_NAME,)
-# Default seed grid mirrors ``ablation_cycle3.py`` (0..59) ; the
-# smoke run pins seed=0 only.
-DEFAULT_SEEDS: tuple[int, ...] = tuple(range(60))
+# N=30 per Wave 3b plan §4 M5 acceptance criterion (authoritative).
+# Spec docs/superpowers/specs/2026-05-21-wave3b-m5-bench-design.md D1.
+DEFAULT_SEEDS: tuple[int, ...] = tuple(range(30))
 
 
 def _resolve_commit_sha() -> str:
@@ -279,6 +279,9 @@ def _parse_cli(argv: list[str]) -> dict[str, object]:
         "resume": False,
         "dry_run": False,
         "max_runs": None,
+        "num_seeds": None,
+        "task_idx": None,
+        "output": None,
     }
 
     def _next_value(flag: str) -> str:
@@ -308,6 +311,32 @@ def _parse_cli(argv: list[str]) -> dict[str, object]:
                     f"--max-runs must be > 0, got {value}"
                 )
             opts["max_runs"] = value
+        elif token == "--num-seeds":
+            raw = _next_value("--num-seeds")
+            try:
+                value = int(raw)
+            except ValueError:
+                raise SystemExit(
+                    f"--num-seeds expects an integer, got {raw!r}"
+                ) from None
+            if not 0 < value <= 30:
+                raise SystemExit("--num-seeds must be in 1..30")
+            opts["num_seeds"] = value
+        elif token == "--task-idx":
+            raw = _next_value("--task-idx")
+            try:
+                value = int(raw)
+            except ValueError:
+                raise SystemExit(
+                    f"--task-idx expects an integer, got {raw!r}"
+                ) from None
+            if not 0 <= value < N_TASKS:
+                raise SystemExit(
+                    f"--task-idx must be in 0..{N_TASKS - 1}"
+                )
+            opts["task_idx"] = value
+        elif token == "--output":
+            opts["output"] = _next_value("--output")
     return opts
 
 
