@@ -3,11 +3,12 @@
 from __future__ import annotations
 
 import json
+from typing import Any
 
 from harness.diffusion_eval.milestone import aggregate_cells
 
 
-def _fake_cells() -> list[dict]:
+def _fake_cells() -> list[dict[str, Any]]:
     cells = []
     for profile in ("p_min", "p_equ", "p_max"):
         for seed in range(30):

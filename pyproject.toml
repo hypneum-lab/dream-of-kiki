@@ -1,6 +1,6 @@
 [project]
 name = "dreamofkiki"
-version = "0.22.1"
+version = "0.22.2"
 description = "Substrate-agnostic formal framework for dream-based knowledge consolidation"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -75,7 +75,8 @@ follow_imports = "silent"
 
 [[tool.mypy.overrides]]
 # Third-party packages that ship no type stubs.
-module = ["mlx_lm", "mlx_lm.*", "scipy", "scipy.*", "pandas", "pandas.*"]
+module = ["mlx_lm", "mlx_lm.*", "scipy", "scipy.*", "pandas", "pandas.*",
+          "datasets", "datasets.*"]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]

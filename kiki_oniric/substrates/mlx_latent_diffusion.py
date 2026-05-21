@@ -40,6 +40,8 @@ from kiki_oniric.substrates._diffusion import (
 )
 
 if TYPE_CHECKING:
+    import mlx.core as mx  # noqa: F401 — used in string annotations below
+
     from kiki_oniric.substrates.factory import CellRequest
 
 

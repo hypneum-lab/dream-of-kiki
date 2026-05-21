@@ -132,12 +132,12 @@ def test_smoke_r1_hash_deterministic(
 
 
 def test_enumerate_configs_full_grid() -> None:
-    """plan §4 M4 — full grid = 5 tasks × 3 profiles × 1 sub × 60 seeds."""
+    """plan §4 M5 — full grid = 5 tasks × 3 profiles × 1 sub × 30 seeds."""
     configs = list(driver.enumerate_configs())
-    assert len(configs) == 5 * 3 * 1 * 60
+    assert len(configs) == 5 * 3 * 1 * 30
     # Outer-to-inner order : task → profile → substrate → seed.
     assert configs[0].task_idx == 0 and configs[0].seed == 0
-    assert configs[-1].task_idx == 4 and configs[-1].seed == 59
+    assert configs[-1].task_idx == 4 and configs[-1].seed == 29
 
 
 def test_compute_run_id_deterministic() -> None:
@@ -203,13 +203,34 @@ def test_main_envelope_mode_registers_cells(
     assert n == 5
 
 
-def test_loader_prod_mode_not_implemented() -> None:
-    """plan §4 M4 acceptance — prod loader is M5 scope, raises."""
+def test_loader_prod_mode_implemented() -> None:
+    """plan §4 M5 acceptance — prod loader is implemented in M5.
+
+    smoke=False now routes to the real _prod_batches path. When the
+    HuggingFace cache is present, at least one batch is yielded.
+    If the cache is absent the call raises FileNotFoundError with
+    a hint to run huggingface-cli download.
+    """
     from harness.diffusion_eval.cifar100_split_loader import (
+        SplitCifar100Batch,
         load_split_cifar100,
     )
-    with pytest.raises(FileNotFoundError, match="M4"):
-        list(load_split_cifar100(task_idx=0, smoke=False))
+
+    try:
+        batches = list(
+            load_split_cifar100(
+                task_idx=0, batch_size=64, seed=0,
+                smoke=False, split="val",
+            )
+        )
+        assert batches, "prod loader yielded no batches"
+        assert isinstance(batches[0], SplitCifar100Batch)
+    except FileNotFoundError as exc:
+        # Cache absent on this machine — acceptable; just confirm the
+        # error message is the M5 hint (not the old M4 stub message).
+        assert "huggingface-cli" in str(exc), (
+            f"unexpected FileNotFoundError: {exc}"
+        )
 
 
 def test_loader_rejects_bad_args() -> None:

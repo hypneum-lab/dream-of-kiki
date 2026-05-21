@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 import pytest
 
 from harness.diffusion_eval.cifar100_split_loader import (
@@ -44,17 +46,22 @@ def test_prod_loader_happy_path() -> None:
     assert isinstance(first, SplitCifar100Batch)
     assert first.task_idx == 0
     assert first.features.shape[1] == RAW_FEATURE_DIM
-    labels = [int(lbl) for b in batches for lbl in b.labels.tolist()]
+    from typing import cast
+    labels = [
+        int(lbl)
+        for b in batches
+        for lbl in cast(list[int], b.labels.tolist())
+    ]
     assert min(labels) >= 0
     assert max(labels) < N_CLASSES_PER_TASK
 
 
 @requires_cache
 def test_prod_loader_is_seed_deterministic() -> None:
-    def _hashes(seed: int) -> list[tuple]:
+    def _hashes(seed: int) -> list[tuple[Any, ...]]:
         return [
-            (tuple(b.features.reshape(-1)[:8].tolist()),
-             tuple(b.labels.tolist()))
+            (tuple(b.features.reshape(-1)[:8].tolist()),  # type: ignore[arg-type]
+             tuple(b.labels.tolist()))  # type: ignore[arg-type]
             for b in load_split_cifar100(
                 task_idx=1, batch_size=32, seed=seed,
                 smoke=False, split="val")
@@ -64,10 +71,10 @@ def test_prod_loader_is_seed_deterministic() -> None:
     assert _hashes(0) != _hashes(1)
 
 
-def test_prod_loader_offline_raises_with_hint(monkeypatch) -> None:
+def test_prod_loader_offline_raises_with_hint(monkeypatch: pytest.MonkeyPatch) -> None:
     import datasets
 
-    def _raise(*_args, **_kwargs):
+    def _raise(*_args: Any, **_kwargs: Any) -> None:
         raise ConnectionError("simulated offline cache miss")
 
     monkeypatch.setattr(datasets, "load_dataset", _raise)

@@ -212,8 +212,12 @@ def _prod_batches(
     cap = PROD_N_TRAIN_PER_TASK if split == "train" else PROD_N_VAL_PER_TASK
 
     images = dataset.with_format("numpy")["img"]
-    feats = np.stack([np.asarray(images[i], dtype=np.uint8) for i in rows])
-    feats = feats.reshape(len(rows), RAW_FEATURE_DIM).astype(np.float32) / 255.0
+    raw: np.ndarray[tuple[int, ...], np.dtype[np.uint8]] = np.stack(
+        [np.asarray(images[i], dtype=np.uint8) for i in rows]
+    )
+    feats: np.ndarray[tuple[int, ...], np.dtype[np.float32]] = (
+        raw.reshape(len(rows), RAW_FEATURE_DIM).astype(np.float32) / 255.0
+    )
     labels = np.array(
         [class_to_local[int(fine[i])] for i in rows], dtype=np.int32
     )
