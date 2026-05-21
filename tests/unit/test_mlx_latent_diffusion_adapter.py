@@ -352,3 +352,37 @@ def test_execute_profile_p_max_activates_all_four() -> None:
     # All 4 ops active -> recombine ran at least once
     recombine_rate = metrics["recombine_rate"]
     assert isinstance(recombine_rate, int) and recombine_rate >= 1
+
+
+def test_execute_profile_delta_acc_is_order_independent() -> None:
+    """R1 regression guard: delta_acc must not leak across cells.
+
+    The ClEvalHead is built fresh per execute_profile call and is
+    never stored on self (see MLXLatentDiffusionSubstrate.__init__
+    NOTE), so delta_acc depends only on (seed, profile) and never on
+    the order in which cells run. A shared head would contaminate
+    delta_acc — the same M5-class state-bleed bug this guards against.
+    """
+    from dataclasses import dataclass
+
+    @dataclass
+    class _Req:
+        seed: int
+        profile: str
+
+    # Cell A run on a pristine substrate.
+    acc_a_solo = MLXLatentDiffusionSubstrate().execute_profile(
+        _Req(seed=1, profile="p_min")
+    )["delta_acc"]
+
+    # Cell A run on the same substrate *after* an unrelated cell B.
+    shared = MLXLatentDiffusionSubstrate()
+    shared.execute_profile(_Req(seed=2, profile="p_max"))
+    acc_a_after_b = shared.execute_profile(
+        _Req(seed=1, profile="p_min")
+    )["delta_acc"]
+
+    assert acc_a_after_b == acc_a_solo, (
+        "delta_acc changed when cell A ran after cell B — the eval "
+        "head is leaking state across execute_profile calls"
+    )
