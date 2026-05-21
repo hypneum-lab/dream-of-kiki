@@ -182,13 +182,24 @@ class MLXLatentDiffusionSubstrate:
 
         loader_batches = getattr(request, "loader_batches", ())
         d_latent = self.config.d_latent
+        # Profile-aware intensity ONLY on the prod (loader) path so
+        # existing R1 hashes on the synthetic path stay byte-stable.
+        # This is an EC-axis training-intensity proxy, NOT a DR-3
+        # primitive-activation fix — see issue #36.
+        profile_tag = str(getattr(request, "profile", "p_equ"))
         if loader_batches:
+            n_epochs = {"p_min": 1, "p_equ": 2, "p_max": 4}.get(profile_tag, 2)
+            n_sample_steps_target = {"p_min": 4, "p_equ": 8, "p_max": 16}.get(
+                profile_tag, 8
+            )
             dataset = [
                 self._encode_features(batch.features)
                 for batch in loader_batches
             ]
             synthetic = False
         else:
+            n_epochs = 1
+            n_sample_steps_target = 8
             # Tiny synthetic latent dataset : 4 batches × batch_size 8.
             # Held small so the M3 smoke fits in seconds on M5.
             n_batches = 4
@@ -208,14 +219,14 @@ class MLXLatentDiffusionSubstrate:
             optimizer_kwargs={"lr": 1e-3},
         )
         history = trainer.fit(
-            dataset=dataset, n_epochs=1, seed_key=train_root
+            dataset=dataset, n_epochs=n_epochs, seed_key=train_root
         )
         losses = history["loss"]
 
         sampler = Sampler(model=self.denoiser, schedule=self.schedule)
         sample = sampler.sample(
             key=sample_root,
-            n_steps=min(8, self.schedule.t_steps),
+            n_steps=min(n_sample_steps_target, self.schedule.t_steps),
             shape=(1, d_latent),
         )
 
