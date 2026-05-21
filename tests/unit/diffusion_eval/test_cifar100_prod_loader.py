@@ -65,8 +65,12 @@ def test_prod_loader_is_seed_deterministic() -> None:
 
 
 def test_prod_loader_offline_raises_with_hint(monkeypatch) -> None:
-    monkeypatch.setenv("HF_HUB_OFFLINE", "1")
-    monkeypatch.setenv("HF_HOME", "/tmp/dreamofkiki-m5-empty-cache")
+    import datasets
+
+    def _raise(*_args, **_kwargs):
+        raise ConnectionError("simulated offline cache miss")
+
+    monkeypatch.setattr(datasets, "load_dataset", _raise)
     with pytest.raises(FileNotFoundError, match="huggingface-cli download"):
         list(
             load_split_cifar100(task_idx=0, batch_size=32, seed=0,

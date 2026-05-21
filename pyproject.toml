@@ -40,6 +40,9 @@ fmri = [
 teacher = [
     "llama-cpp-python>=0.2.80",
 ]
+bench = [
+    "datasets>=2.20",       # Wave 3b M5: CIFAR-100 prod loader source
+]
 
 [project.scripts]
 dream-harness = "harness.cli.dream_harness:cli"
