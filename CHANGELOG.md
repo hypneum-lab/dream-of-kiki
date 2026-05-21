@@ -12,6 +12,79 @@ see `docs/specs/2026-04-17-dreamofkiki-framework-C-design.md` §12).
 
 ## [Unreleased]
 
+### Operational (Wave 3b M4 ablation_cycle3 diffusion + CI fix, 2026-05-21)
+
+- **Direct ship** `e17c17e feat(harness): wave3b M4 ablation
+  diffusion` — new driver `scripts/ablation_cycle3_diffusion.py`
+  exercising the wired `mlx_latent_diffusion` substrate end-to-end
+  plus harness eval helpers
+  `harness/diffusion_eval/cifar100_split_loader.py` and
+  `harness/diffusion_eval/diffusion_metrics.py`. +15 integration
+  tests (total 914, coverage 89 %, smoke 1.3 s, R1 deterministic).
+  PR #32 closed as superseded by direct ship. M4 acceptance (plan
+  §4) reached ; M5 ablation cycle is the next milestone (5
+  pending blockers tracked separately).
+- **Direct ship** `5e5582e fix(ci): drop unused type ignore in
+  wave3b M4 test` — follow-up CI fix on the M4 integration tests.
+- No FC / EC bump — M4 closes the substrate-internal wiring and
+  evaluation harness ; the empirical claim stays deferred until
+  M5 pilot + M6 paper integration.
+
+### Substrate (Wave 3b M2 — MLX latent-diffusion skeleton, 2026-05-20, PR #30)
+
+- `05f737f feat(substrate): Wave 3b M2 — MLX latent-diffusion
+  skeleton` — `kiki_oniric/substrates/mlx_latent_diffusion.py`
+  + `kiki_oniric/substrates/_diffusion/{model,sampler,trainer}.py`
+  ship E / U / σ class signatures only (NotImplementedError on
+  `train_step` + sampler bodies). Factory wired ; 8 tests, 98 %
+  coverage on the new package. **Track S chosen at M2 review**
+  (vs Track B legacy diffusion). Substrate-internal version stamped
+  `C-v0.13.0+PARTIAL`. M3 / M4 build on this skeleton.
+
+### Docs (Wave 3b M1 — plan + DR-3 evidence skeleton + OSF amendment, 2026-05-20, PR #29)
+
+- `92afef9 docs(wave3b): M1 — plan + DR-3 evidence skeleton + OSF
+  amendment draft` adds three append-only docs:
+  - `docs/plans/2026-05-20-wave3b-mlx-diffusion-substrate-plan.md`
+    (525 L, 7 sections, 6 milestones M1-M6, adopted D1-D5
+    decisions).
+  - `docs/proofs/dr3-diffusion-substrate-evidence.md` v0.1 (281 L,
+    7/8 typed primitives + Canal 4 documented no-op).
+  - `docs/osf-amendment-wave3b.md` (239 L, OSF Q6JYN amendment
+    draft).
+- M1 acceptance reached ; M2-M4 now shipped (see entries above
+  + the `C-v0.24.0+PARTIAL` Wave 3b M3 entry below).
+
+### CI (skip MLX-only tests on Linux runners, 2026-05-20, PR #28)
+
+- `2013176 chore(ci): skip MLX-only tests on Linux runners` —
+  root `conftest.py` `collect_ignore_glob` + lazy import in
+  `kiki_oniric/substrates/micro_kiki/__init__.py` + Linux
+  coverage gate dropped to **30 %** (macOS Apple-Silicon nightly
+  preserves the **90 %** gate via `r1-nightly.yml`). First green
+  master CI run since 2026-05-03. The libmlx skip pattern is
+  extended in C-v0.24.0+PARTIAL to cover the new diffusion
+  conformance / unit / R1 tests.
+
+### Paper 2 (Dream2Learn DR-3 separation proof — c-alert resolution, 2026-05-20, PR #27)
+
+- `a55f3bc docs(paper2): Dream2Learn DR-3 separation proof —
+  c-alert resolution` ships `docs/proofs/dream2learn-dr3-
+  separation.md` — formal proof that Dream2Learn does **not**
+  satisfy the DR-3 Conformance Criterion (CC condition 1 typed-
+  interface failure ; DE / role-partition mismatch). The
+  2026-05-19 c-alert is **resolved** : Dream2Learn is reclassified
+  from c-alert → category (a) baseline. §7.8 EN + FR updated ;
+  bibliography entry `calcagno2026` added ; glossary entry for
+  "Dream2Learn" registered.
+
+### Substrate (B5 bounds-check on add + weight-delta, 2026-05-19, PR #26)
+
+- `38fcefa fix(channels): B5 bounds-check add+weight-delta`
+  guards `hierarchy_change.add` against negative / oversized
+  layer indices and rejects `weight_delta` with `layer_idx < 0`.
+  +3 unit tests. Closes #24.
+
 ### Operational (B6 LoRA smoke pilot first-run, 2026-05-21)
 
 - First run of `scripts/pilot_b6_lora_smoke.py` on `main`
