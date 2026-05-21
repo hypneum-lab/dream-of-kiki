@@ -17,6 +17,11 @@ Full DR-3 conformance wiring lands via the public
 """
 from __future__ import annotations
 
+from kiki_oniric.substrates._diffusion.cl_eval_head import (
+    ClEvalHead,
+    eval_head_accuracy,
+    train_head_inplace,
+)
 from kiki_oniric.substrates._diffusion.decoder import Decoder
 from kiki_oniric.substrates._diffusion.model import (
     Encoder,
@@ -27,10 +32,13 @@ from kiki_oniric.substrates._diffusion.sampler import Sampler
 from kiki_oniric.substrates._diffusion.trainer import Trainer
 
 __all__ = [
+    "ClEvalHead",
     "Decoder",
     "Encoder",
     "MLPDenoiser",
     "NoiseSchedule",
     "Sampler",
     "Trainer",
+    "eval_head_accuracy",
+    "train_head_inplace",
 ]
