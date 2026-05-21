@@ -23,11 +23,14 @@ def test_cell_request_fields() -> None:
     assert req.substrate in SUBSTRATE_NAMES
 
 
-def test_substrate_names_is_3_tuple() -> None:
+def test_substrate_names_is_4_tuple() -> None:
+    # Wave 3b M2 added "mlx_latent_diffusion" as the 4th member
+    # (skeleton substrate, Track S/B decision deferred to PR review).
     assert SUBSTRATE_NAMES == (
         "mlx_kiki_oniric",
         "esnn_thalamocortical",
         "micro_kiki",
+        "mlx_latent_diffusion",
     )
 
 
