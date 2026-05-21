@@ -1,24 +1,24 @@
 {
   "test_r1_diffusion_full_pipeline": {
     "chip_family": "apple_m5",
-    "commit": "26d5fb5d0f1e",
+    "commit": "4edea560f8ee",
     "hash": "b4716f4083e1cbd993594a787d3b4e50879660419e7805aabcdc4f9787c92e78",
     "mlx_version": "0.31.1",
-    "status": "accepted"
+    "status": "pending_review"
   },
   "test_r1_diffusion_sample": {
     "chip_family": "apple_m5",
-    "commit": "26d5fb5d0f1e",
+    "commit": "4edea560f8ee",
     "hash": "6f3fef19e4f0cd81bbc4eef567187c56946a3302eb307c6333e326d6786e6421",
     "mlx_version": "0.31.1",
-    "status": "accepted"
+    "status": "pending_review"
   },
   "test_r1_diffusion_train": {
     "chip_family": "apple_m5",
-    "commit": "26d5fb5d0f1e",
+    "commit": "4edea560f8ee",
     "hash": "2399d97f07fa92d6f8a9bc079f022b6da8229bf68a2176939b8946e5e3cc74dc",
     "mlx_version": "0.31.1",
-    "status": "accepted"
+    "status": "pending_review"
   },
   "test_r1_downscale": {
     "chip_family": "apple_m5",

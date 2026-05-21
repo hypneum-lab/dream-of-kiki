@@ -1,3 +1,14 @@
+## 2026-05-21 — M7 delta_acc consolidation→eval wiring
+
+The three diffusion R1 entries (`test_r1_diffusion_*`) are
+regenerated under `C-v0.15.0+PARTIAL` after `execute_profile` now
+applies `apply_channel_outputs` to the denoiser and the CL head
+probes `denoiser(z, t_fixed)` instead of raw encoder latents. The
+hash drift is expected; entries stay `pending_review` pending
+cross-machine confirmation on m3_ultra and m1_max.
+
+---
+
 ## 2026-05-21 — M7 substrate DR-3 conformance fix
 
 FC MINOR `C-v0.14.0 → C-v0.15.0+PARTIAL`. The
