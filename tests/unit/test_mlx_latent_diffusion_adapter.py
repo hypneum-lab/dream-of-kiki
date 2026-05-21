@@ -350,4 +350,5 @@ def test_execute_profile_p_max_activates_all_four() -> None:
 
     metrics = MLXLatentDiffusionSubstrate().execute_profile(_Req())
     # All 4 ops active -> recombine ran at least once
-    assert metrics["recombine_rate"] >= 1
+    recombine_rate = metrics["recombine_rate"]
+    assert isinstance(recombine_rate, int) and recombine_rate >= 1
