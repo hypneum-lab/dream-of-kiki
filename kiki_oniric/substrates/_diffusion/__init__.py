@@ -23,6 +23,9 @@ from kiki_oniric.substrates._diffusion.cl_eval_head import (
     train_head_inplace,
 )
 from kiki_oniric.substrates._diffusion.decoder import Decoder
+from kiki_oniric.substrates._diffusion.dream_ops_adapter import (
+    bind_real_handlers,
+)
 from kiki_oniric.substrates._diffusion.model import (
     Encoder,
     MLPDenoiser,
@@ -39,6 +42,7 @@ __all__ = [
     "NoiseSchedule",
     "Sampler",
     "Trainer",
+    "bind_real_handlers",
     "eval_head_accuracy",
     "train_head_inplace",
 ]
