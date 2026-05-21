@@ -69,6 +69,10 @@ def _hypothesis_verdicts(cells: list[dict[str, Any]]) -> dict[str, Any]:
 
     alpha = 0.0125
     verdicts: dict[str, Any] = {}
+    # Note: when profile == "p_min", H1 compares p_min vs p_min
+    # (treatment == control), and when profile == "p_equ", H2 compares
+    # p_equ vs p_equ. This self-comparison is an intentional sanity
+    # check: it is expected to fail to reject H0 (p ≈ 0.5).
     for profile in sorted({c["profile"] for c in cells}):
         h1 = welch_one_sided(
             treatment=_col(profile, "replay_rate"),

@@ -50,6 +50,16 @@ if TYPE_CHECKING:
 # enumeration / smoke-shape contract tests.
 
 
+# Per-channel CIFAR-100 normalisation constants (mean/std over the
+# full 50 000-sample training set, channel order R/G/B).
+# Source: standard values used across the CL benchmark literature
+# (GEM, A-GEM, CLEAR-100 baselines). Keeps prod features roughly
+# zero-mean / unit-variance — matching the smoke path (mx.random.normal).
+import numpy as np
+
+_CIFAR100_MEAN = np.array([0.5071, 0.4865, 0.4409], dtype=np.float32)
+_CIFAR100_STD = np.array([0.2673, 0.2564, 0.2762], dtype=np.float32)
+
 # Public constants — used by smoke test + by the M5 driver.
 N_CIFAR100_CLASSES = 100
 N_TASKS = 5
@@ -182,7 +192,6 @@ def _prod_batches(
     fixed-size batches in a seed-deterministic order.
     """
     import mlx.core as mx
-    import numpy as np
 
     try:
         from datasets import load_dataset
@@ -215,8 +224,13 @@ def _prod_batches(
     raw: np.ndarray[tuple[int, ...], np.dtype[np.uint8]] = np.stack(
         [np.asarray(images[i], dtype=np.uint8) for i in rows]
     )
+    # raw shape: (N, 32, 32, 3) uint8 — normalise per-channel before
+    # flattening so features are zero-mean / unit-variance, matching
+    # the smoke path (mx.random.normal). _CIFAR100_MEAN/STD broadcast
+    # over (N, H, W) via the trailing channel axis.
+    norm = (raw.astype(np.float32) / 255.0 - _CIFAR100_MEAN) / _CIFAR100_STD
     feats: np.ndarray[tuple[int, ...], np.dtype[np.float32]] = (
-        raw.reshape(len(rows), RAW_FEATURE_DIM).astype(np.float32) / 255.0
+        norm.reshape(len(rows), RAW_FEATURE_DIM).astype(np.float32)
     )
     labels = np.array(
         [class_to_local[int(fine[i])] for i in rows], dtype=np.int32

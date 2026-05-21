@@ -322,19 +322,21 @@ def _run_prod_grid(
     output_path: Path,
 ) -> int:
     """Execute every prod cell: load, run, hash, register, dump."""
-    import mlx.core as mx  # noqa: PLC0415 — deferred Metal import
-
-    substrate = _build_substrate()
     cells_path = output_path.with_suffix(".cells.jsonl")
     done = 0
     for cfg in configs:
         profile_tag = _registry_profile_tag(cfg)
-        run_id = registry._compute_run_id(
-            HARNESS_VERSION, profile_tag, cfg.seed, commit_sha
-        )
+        run_id = compute_run_id(cfg, commit_sha)
         if resume and _resume_skip(registry, run_id):
             done += 1
             continue
+
+        # Seed the MLX global RNG before constructing the substrate
+        # so denoiser/encoder weight inits are deterministic per cell
+        # and do not leak across cells (R1 order-independence).
+        import mlx.core as mx  # noqa: PLC0415 — deferred Metal import
+        mx.random.seed(cfg.seed)
+        substrate = _build_substrate()
 
         batches = tuple(
             load_split_cifar100(
@@ -351,7 +353,6 @@ def _run_prod_grid(
             task_idx=cfg.task_idx,
             loader_batches=batches,
         )
-        mx.random.seed(cfg.seed)
         wall_start = time.monotonic()
         metrics = substrate.execute_profile(cell)
         wall_s = time.monotonic() - wall_start
