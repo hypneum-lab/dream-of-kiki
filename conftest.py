@@ -31,4 +31,5 @@ if sys.platform != "darwin":
         "tests/unit/test_real_eval.py",
         "tests/unit/test_substrate_*.py",
         "tests/unit/test_wake_sleep_baseline_adapter.py",
+        "tests/unit/diffusion_eval/*",
     ]
