@@ -814,8 +814,15 @@ see `docs/specs/2026-04-17-dreamofkiki-framework-C-design.md` §12).
   the `_real.py` factories bound to the diffusion denoiser via
   `_diffusion.dream_ops_adapter.bind_real_handlers`. The recombine
   contract is satisfied via a new random-init `Decoder` MLP
-  (`_diffusion.decoder`). `delta_acc` is now a real CL head
-  measurement (`_diffusion.cl_eval_head`). Closes issue #36.
+  (`_diffusion.decoder`). `delta_acc` is a real CL head measurement
+  wired via the B5 awake/dream loop: replay + downscale emit
+  `WeightUpdate`s (compute-only handlers via SGD-then-rollback for
+  replay and pure arithmetic for downscale), `apply_channel_outputs`
+  applies them to a per-call deepcopy of the denoiser through
+  `DenoiserWeightDeltaChannel`, and the head probes
+  `denoiser(z, t_fixed)` before and after — so `delta_acc` reflects
+  the consolidation's effect on the denoiser feature (bounded in
+  `[-1, 1]` by construction). Closes issue #36.
 
 ### Added
 - `kiki_oniric/substrates/_diffusion/decoder.py` (Decoder MLP).
@@ -824,6 +831,14 @@ see `docs/specs/2026-04-17-dreamofkiki-framework-C-design.md` §12).
 - `kiki_oniric/substrates/_diffusion/dream_ops_adapter.py`
   (`bind_real_handlers`).
 - `tests/conformance/axioms/test_dr3_diffusion_profile.py`.
+- `kiki_oniric/substrates/_diffusion/denoiser_weight_channel.py`
+  (`DenoiserWeightDeltaChannel`).
+- `kiki_oniric/substrates/_diffusion/handlers_emit.py`
+  (`replay_diffusion_handler`, `downscale_diffusion_handler` —
+  compute-only emitters).
+- `denoiser_feature` helper in `_diffusion.cl_eval_head`.
+- `tests/unit/test_denoiser_weight_channel.py`,
+  `tests/unit/test_diffusion_handlers_emit.py`.
 
 ### DualVer
 - Project FC MINOR `C-v0.24.0 → C-v0.25.0`. EC stays `+PARTIAL` ;
