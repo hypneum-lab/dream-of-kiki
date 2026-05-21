@@ -362,6 +362,12 @@ def test_execute_profile_delta_acc_is_order_independent() -> None:
     NOTE), so delta_acc depends only on (seed, profile) and never on
     the order in which cells run. A shared head would contaminate
     delta_acc — the same M5-class state-bleed bug this guards against.
+
+    The comparison uses a single substrate instance: cell A (p_min/
+    seed=1) must return the same delta_acc whether it runs first or
+    after cell B (p_max/seed=2).  Both runs start from the same
+    self.denoiser (copy.deepcopy per execute_profile), so any
+    deviation signals state leakage between calls on the same substrate.
     """
     from dataclasses import dataclass
 
@@ -370,14 +376,19 @@ def test_execute_profile_delta_acc_is_order_independent() -> None:
         seed: int
         profile: str
 
-    # Cell A run on a pristine substrate.
-    acc_a_solo = MLXLatentDiffusionSubstrate().execute_profile(
+    # Use the same substrate instance for both measurements so
+    # self.denoiser initial weights are identical in both calls.
+    shared = MLXLatentDiffusionSubstrate()
+
+    # Cell A on the shared substrate — no prior contamination.
+    acc_a_solo = shared.execute_profile(
         _Req(seed=1, profile="p_min")
     )["delta_acc"]
 
-    # Cell A run on the same substrate *after* an unrelated cell B.
-    shared = MLXLatentDiffusionSubstrate()
+    # Cell B runs between the two cell-A measurements.
     shared.execute_profile(_Req(seed=2, profile="p_max"))
+
+    # Cell A again on the same substrate — must match the first run.
     acc_a_after_b = shared.execute_profile(
         _Req(seed=1, profile="p_min")
     )["delta_acc"]

@@ -29,7 +29,7 @@ from __future__ import annotations
 
 import time
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from kiki_oniric.substrates._diffusion import (
     Encoder,
@@ -346,7 +346,6 @@ class MLXLatentDiffusionSubstrate:
             DenoiserWeightDeltaChannel,
         )
         from kiki_oniric.consolidate import apply_channel_outputs
-        from kiki_oniric.dream.runtime import EpisodeLogEntry
         import copy
 
         seed = int(getattr(request, "seed", 0))
@@ -520,34 +519,92 @@ class MLXLatentDiffusionSubstrate:
                     f"diff/{profile_tag}/seed={seed}/b={batch_idx}"
                 ),
             )
+            # Capture the adapter's layer ordering BEFORE the episode
+            # runs so we have the pre-restructure-swap index mapping.
+            # Within a single episode the op order is:
+            #   REPLAY → DOWNSCALE → RESTRUCTURE → RECOMBINE
+            # so replay/downscale emit deltas indexed against this
+            # pre-swap ordering; restructure then shifts model_adapter
+            # .layers.  We save the pre-snapshot so we can remap the
+            # delta keys from adapter-pre-swap indices to
+            # _local_denoiser's canonical (fixed) indices.
+            _pre_adapter_layers = list(model_adapter.layers)
+            # Build adapter-pre-swap index → denoiser canonical index map.
+            # Since both lists contain the same layer objects (by CPython
+            # id), object-identity lookup gives us the remap table.
+            _denoiser_idx_by_id = {
+                id(layer): i
+                for i, layer in enumerate(_local_denoiser.layers)
+            }
+
             profile.runtime.execute(episode)
 
-        # B5 awake/dream apply — call apply_channel_outputs to honour the
-        # B5 channel-apply contract. The replay_diffusion_handler and
-        # downscale_diffusion_handler already applied the weight deltas
-        # in-place to the adapter during the dream loop (via
-        # optimizer.update + downscale assignment). Re-applying them here
-        # would double-apply and, when restructure is active, cause
-        # shape mismatches (because model.layers order shifts each
-        # episode via the reroute swap).
-        #
-        # We therefore flush the log before the call (making it a
-        # structural no-op while preserving the B5 call site), then
-        # re-bind self.denoiser.layers to the adapter's post-dream
-        # layer list so denoiser_feature (post) reads the consolidated
-        # weights through the correct (possibly reordered) layers.
-        #
-        # LatentSamples emitted by recombine_real_handler (p_equ/p_max)
-        # are discarded via _NullLatentChannel — only WeightUpdate
-        # is in scope (M7 delta_acc WeightUpdate-only design).
-        _flushed_log: list[EpisodeLogEntry] = []
-        _discard_latent = _NullLatentChannel()
-        apply_channel_outputs(
-            _flushed_log,
-            weight_channel=DenoiserWeightDeltaChannel(_local_denoiser),
-            latent_channel=_discard_latent,
-        )
-        profile.runtime.reset_log()
+            # B5 awake/dream apply — apply_channel_outputs is the SOLE
+            # applier of weight deltas (B5 contract). Applied per episode.
+            #
+            # The delta keys use adapter-pre-swap positional indices (set
+            # at the time replay/downscale ran). We remap them to
+            # _local_denoiser's canonical indices via the id-based map
+            # built above, then apply to _local_denoiser directly. This
+            # keeps the denoiser's layer list in canonical (MLP-valid)
+            # order while still accumulating all SGD / shrink deltas.
+            #
+            # LatentSamples emitted by recombine_real_handler (p_equ/
+            # p_max) are discarded via _NullLatentChannel — only
+            # WeightUpdate is in scope (M7 delta_acc design).
+            from kiki_oniric.dream.channels import WeightUpdate as _WU
+            from kiki_oniric.dream.runtime import EpisodeLogEntry as _ELE
+
+            def _remap_entry(entry: _ELE) -> _ELE:
+                """Remap adapter-pre-swap layer indices → denoiser indices."""
+                new_outputs: list[Any] = []
+                changed = False
+                for out in entry.channel_outputs:
+                    if not isinstance(out, _WU):
+                        new_outputs.append(out)
+                        continue
+                    remapped: dict[str, Any] = {}
+                    for key, val in out.lora_delta.items():
+                        parts = key.split("_", 2)
+                        if (
+                            len(parts) == 3
+                            and parts[0] == "layer"
+                            and parts[1].isdigit()
+                        ):
+                            adapter_idx = int(parts[1])
+                            attr = parts[2]
+                            if adapter_idx < len(_pre_adapter_layers):
+                                layer_obj = _pre_adapter_layers[adapter_idx]
+                                canon_idx = _denoiser_idx_by_id.get(
+                                    id(layer_obj), adapter_idx
+                                )
+                                remapped[f"layer_{canon_idx}_{attr}"] = val
+                                changed = True
+                            else:
+                                remapped[key] = val
+                        else:
+                            remapped[key] = val
+                    new_outputs.append(
+                        _WU(lora_delta=remapped, fisher_bump=out.fisher_bump)
+                    )
+                if not changed:
+                    return entry
+                return _ELE(
+                    episode_id=entry.episode_id,
+                    operations_executed=entry.operations_executed,
+                    completed=entry.completed,
+                    error=entry.error,
+                    channel_outputs=tuple(new_outputs),
+                )
+
+            _remapped_log = [_remap_entry(e) for e in profile.runtime.log]
+            _discard_latent = _NullLatentChannel()
+            apply_channel_outputs(
+                _remapped_log,
+                weight_channel=DenoiserWeightDeltaChannel(_local_denoiser),
+                latent_channel=_discard_latent,
+            )
+            profile.runtime.reset_log()
 
         # delta_acc post-cycle: same head, recompute the denoiser probe
         # feature against the now-consolidated denoiser, eval again.

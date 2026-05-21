@@ -51,6 +51,29 @@ def _diff(
     }
 
 
+def _restore_layers(layers: list[Any], snap: dict[str, np.ndarray]) -> None:
+    """Restore each layer.weight / layer.bias from a snapshot.
+
+    Used by ``replay_diffusion_handler`` to roll back the in-place
+    SGD step after capturing the delta — the handler is then
+    purely compute-only, and ``apply_channel_outputs`` is the sole
+    applier (B5 contract).
+    """
+    for i, layer in enumerate(layers):
+        for attr in ("weight", "bias"):
+            key = f"layer_{i}_{attr}"
+            if key in snap:
+                setattr(layer, attr, mx.array(snap[key]))
+    tensors: list[Any] = []
+    for layer in layers:
+        for attr in ("weight", "bias"):
+            t = getattr(layer, attr, None)
+            if t is not None:
+                tensors.append(t)
+    if tensors:
+        mx.eval(*tensors)
+
+
 def replay_diffusion_handler(
     state: ReplayRealState,
     *,
@@ -96,6 +119,11 @@ def replay_diffusion_handler(
         post = _snapshot_layers(model.layers)
         delta = _diff(pre, post)
 
+        # ROLLBACK: restore the pre-update params so the handler is
+        # compute-only. apply_channel_outputs(weight_channel=...) is
+        # the sole applier (B5 awake/dream loop).
+        _restore_layers(model.layers, pre)
+
         state.total_records_consumed += len(records)
         state.last_loss = float(loss.item())
         # K1 tag: a crude record-count proxy is enough for non-LoRA.
@@ -127,32 +155,22 @@ def downscale_diffusion_handler(
                 f"shrink_factor must be in (0, 1], got {factor}"
             )
 
-        pre = _snapshot_layers(model.layers)
-
-        for layer in model.layers:
-            w = getattr(layer, "weight", None)
-            b = getattr(layer, "bias", None)
-            if w is not None:
-                layer.weight = w * factor
-            if b is not None:
-                layer.bias = b * factor
-
-        tensors_to_eval: list[Any] = []
-        for layer in model.layers:
+        # Delta = (factor - 1) * W for each layer's weight + bias.
+        # Pure arithmetic from the current params — no in-place mutation.
+        delta: dict[str, np.ndarray] = {}
+        param_count = 0
+        for i, layer in enumerate(model.layers):
             for attr in ("weight", "bias"):
                 t = getattr(layer, attr, None)
                 if t is not None:
-                    tensors_to_eval.append(t)
-        if tensors_to_eval:
-            mx.eval(*tensors_to_eval)
-
-        post = _snapshot_layers(model.layers)
-        delta = _diff(pre, post)
+                    arr = np.asarray(t)
+                    delta[f"layer_{i}_{attr}"] = (
+                        ((factor - 1.0) * arr).astype(np.float32, copy=False)
+                    )
+                    param_count += arr.size
 
         state.compound_factor *= factor
-        state.last_compute_flops = max(
-            sum(arr.size for arr in pre.values()), 1
-        )
+        state.last_compute_flops = max(param_count, 1)
 
         return WeightUpdate(lora_delta=delta, fisher_bump=None)
 
