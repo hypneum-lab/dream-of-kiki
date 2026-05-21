@@ -12,6 +12,25 @@ see `docs/specs/2026-04-17-dreamofkiki-framework-C-design.md` §12).
 
 ## [Unreleased]
 
+### Operational (B6 LoRA smoke pilot first-run, 2026-05-21)
+
+- First run of `scripts/pilot_b6_lora_smoke.py` on `main`
+  (post-B6c). Synthetic workload at seed=42 across the three
+  LoRA profile tiers (PMinLoRA / PEquLoRA / PMaxLoRA) exercising
+  the closed awake↔dream loop via `apply_channel_outputs`.
+  Verdict + per-tier metrics captured in
+  `docs/milestones/b6-lora-smoke-2026-05-21.{json,md}` (Apple M5
+  first-run : 3/3 bit_equal, dispatch counts 3/4/5, DR-4 chain
+  inclusion strict subset on both `_active_ops` and
+  `emitted_types`, overall verdict PASS). Chip family + commit
+  recorded for the audit trail. Future Studio/M1Max reruns will
+  produce distinct artifacts capturing per-chip-family
+  behaviour (relevant given the 2026-05-20 MLX cross-machine
+  divergence on M1 Max documented in
+  `docs/proofs/r1-cross-machine.md`). No FC / EC bump — pilot
+  is infra-validation, no empirical claim and no substrate
+  change.
+
 ### Operational (G6 family compute closeout, 2026-05-04 17:30)
 
 - User-requested termination of all dreamOfkiki compute on
