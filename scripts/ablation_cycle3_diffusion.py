@@ -183,6 +183,7 @@ class _CellRequest:
     seed: int
     profile: str
     task_idx: int
+    loader_batches: tuple = ()
 
 
 def run_one_cell(
