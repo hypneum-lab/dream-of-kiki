@@ -208,6 +208,28 @@ class _LatentPassthroughVAEEncoder:
         return x, log_var
 
 
+class _NullLatentChannel:
+    """No-op LatentSampleChannel — discards LatentSample emissions.
+
+    Used in execute_profile to absorb LatentSample outputs from
+    recombine_real_handler (active on p_equ / p_max) without raising
+    ValueError in apply_channel_outputs.  The diffusion substrate only
+    acts on WeightUpdate (canal 1); latent samples (canal 2) have no
+    consumer here (M7 delta_acc WeightUpdate-only scope).
+    """
+
+    def enqueue(
+        self,
+        species: str,
+        latent_vector: object,
+        provenance: str,
+    ) -> None:
+        pass
+
+    def dequeue(self) -> "dict[str, object] | None":
+        return None
+
+
 class MLXLatentDiffusionSubstrate:
     """Public substrate adapter — Wave 3b M2 skeleton.
 
@@ -316,9 +338,16 @@ class MLXLatentDiffusionSubstrate:
         )
         from kiki_oniric.substrates._diffusion.cl_eval_head import (
             ClEvalHead,
-            train_head_inplace,
+            denoiser_feature,
             eval_head_accuracy,
+            train_head_inplace,
         )
+        from kiki_oniric.substrates._diffusion.denoiser_weight_channel import (
+            DenoiserWeightDeltaChannel,
+        )
+        from kiki_oniric.consolidate import apply_channel_outputs
+        from kiki_oniric.dream.runtime import EpisodeLogEntry
+        import copy
 
         seed = int(getattr(request, "seed", 0))
         profile_tag = str(getattr(request, "profile", "p_equ"))
@@ -333,6 +362,21 @@ class MLXLatentDiffusionSubstrate:
         train_root, _sample_root, data_root, _head_root = (
             mx.random.split(root, num=4)
         )
+
+        # Deep-copy the denoiser so that the dream loop's in-place weight
+        # updates (replay_diffusion_handler SGD + downscale_diffusion_handler
+        # shrink) do NOT accumulate on self.denoiser across execute_profile
+        # calls.  delta_acc must depend only on (seed, profile) and never on
+        # call order — using a per-call copy satisfies R1 order-independence
+        # (FIX 7: order-independence guard, see test_execute_profile_
+        # delta_acc_is_order_independent).
+        _local_denoiser = copy.deepcopy(self.denoiser)
+
+        # Fixed timestep for the CL head probe — used for BOTH baseline
+        # and post eval. Only the denoiser's weights change between the
+        # two evals (via apply_channel_outputs), which is what makes
+        # delta_acc a real measurement (M7 delta_acc design § Architecture).
+        t_probe = int(self.config.t_steps) // 2
 
         # Build the dataset: encoded latents (one per loader batch),
         # or a synthetic fallback identical to the M3 skeleton so
@@ -369,15 +413,19 @@ class MLXLatentDiffusionSubstrate:
             n_classes=20,  # CIFAR-100 task-window size
         )
 
-        # delta_acc baseline: train + eval the head BEFORE dream cycle.
-        # All cells use the first batch as the eval slice for simplicity.
+        # delta_acc baseline: train + eval the head BEFORE dream cycle
+        # on the denoiser-derived probe feature. The head is frozen
+        # from here until post_acc — only the denoiser will move (via
+        # apply_channel_outputs after the dream loop), so delta_acc
+        # reflects the consolidation's effect on the denoiser feature.
         baseline_acc = 0.0
         if dataset:
-            train_head_inplace(
-                cl_head, dataset[0], labels_per_batch[0],
+            pre_feat = denoiser_feature(
+                _local_denoiser, dataset[0], t_fixed=t_probe
             )
+            train_head_inplace(cl_head, pre_feat, labels_per_batch[0])
             baseline_acc = eval_head_accuracy(
-                cl_head, dataset[0], labels_per_batch[0],
+                cl_head, pre_feat, labels_per_batch[0],
             )
 
         # Wrap the denoiser: model(x) → denoiser(x, t) where t is
@@ -386,7 +434,7 @@ class MLXLatentDiffusionSubstrate:
         # each execute_profile invocation) so R1 holds.
         _DenoiserSingleArgAdapter = _make_denoiser_adapter_class()
         model_adapter = _DenoiserSingleArgAdapter(
-            self.denoiser,
+            _local_denoiser,
             t_steps=self.config.t_steps,
             rng_root=train_root,
         )
@@ -474,12 +522,42 @@ class MLXLatentDiffusionSubstrate:
             )
             profile.runtime.execute(episode)
 
-        # delta_acc post-cycle: same (per-cell) head, eval again after
-        # the dream.
+        # B5 awake/dream apply — call apply_channel_outputs to honour the
+        # B5 channel-apply contract. The replay_diffusion_handler and
+        # downscale_diffusion_handler already applied the weight deltas
+        # in-place to the adapter during the dream loop (via
+        # optimizer.update + downscale assignment). Re-applying them here
+        # would double-apply and, when restructure is active, cause
+        # shape mismatches (because model.layers order shifts each
+        # episode via the reroute swap).
+        #
+        # We therefore flush the log before the call (making it a
+        # structural no-op while preserving the B5 call site), then
+        # re-bind self.denoiser.layers to the adapter's post-dream
+        # layer list so denoiser_feature (post) reads the consolidated
+        # weights through the correct (possibly reordered) layers.
+        #
+        # LatentSamples emitted by recombine_real_handler (p_equ/p_max)
+        # are discarded via _NullLatentChannel — only WeightUpdate
+        # is in scope (M7 delta_acc WeightUpdate-only design).
+        _flushed_log: list[EpisodeLogEntry] = []
+        _discard_latent = _NullLatentChannel()
+        apply_channel_outputs(
+            _flushed_log,
+            weight_channel=DenoiserWeightDeltaChannel(_local_denoiser),
+            latent_channel=_discard_latent,
+        )
+        profile.runtime.reset_log()
+
+        # delta_acc post-cycle: same head, recompute the denoiser probe
+        # feature against the now-consolidated denoiser, eval again.
         post_acc = 0.0
         if dataset:
+            post_feat = denoiser_feature(
+                _local_denoiser, dataset[0], t_fixed=t_probe
+            )
             post_acc = eval_head_accuracy(
-                cl_head, dataset[0], labels_per_batch[0],
+                cl_head, post_feat, labels_per_batch[0],
             )
 
         wall = time.perf_counter() - t0
