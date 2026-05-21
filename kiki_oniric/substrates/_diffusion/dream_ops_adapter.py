@@ -20,15 +20,15 @@ from typing import Any
 from kiki_oniric.dream.episode import Operation
 from kiki_oniric.dream.operations.downscale_real import (
     DownscaleRealState,
-    downscale_real_handler,
 )
 from kiki_oniric.dream.operations.recombine_real import (
     RecombineRealState,
     recombine_real_handler,
 )
-from kiki_oniric.dream.operations.replay_real import (
-    ReplayRealState,
-    replay_real_handler,
+from kiki_oniric.dream.operations.replay_real import ReplayRealState
+from kiki_oniric.substrates._diffusion.handlers_emit import (
+    downscale_diffusion_handler,
+    replay_diffusion_handler,
 )
 from kiki_oniric.dream.operations.restructure_real import (
     RestructureRealState,
@@ -62,7 +62,7 @@ def bind_real_handlers(
         profile.replay_state = ReplayRealState()
         profile.runtime.register_handler(
             Operation.REPLAY,
-            replay_real_handler(profile.replay_state, model=model),
+            replay_diffusion_handler(profile.replay_state, model=model),
         )
         overridden.add(Operation.REPLAY)
 
@@ -70,7 +70,7 @@ def bind_real_handlers(
         profile.downscale_state = DownscaleRealState()
         profile.runtime.register_handler(
             Operation.DOWNSCALE,
-            downscale_real_handler(profile.downscale_state, model=model),
+            downscale_diffusion_handler(profile.downscale_state, model=model),
         )
         overridden.add(Operation.DOWNSCALE)
 
