@@ -12,6 +12,35 @@ see `docs/specs/2026-04-17-dreamofkiki-framework-C-design.md` §12).
 
 ## [Unreleased]
 
+### Refactored (B3 delegate to topology kernel, 2026-05-21)
+
+- `_apply_topology_op(model, op, payload)` — the LoRA topology
+  mutation kernel — moved from
+  `kiki_oniric/dream/channels/hierarchy_change.py` to a new
+  substrate utility
+  `kiki_oniric/substrates/micro_kiki/lora_topology_ops.py`.
+  Both `LoRAHierarchyChangeChannel.apply_diff` (B5, awake-side
+  replay of a `TopologyDiff`) and `restructure_lora_handler`
+  (B3, dream-side mutation + diff emission) now delegate to
+  the substrate-level kernel. The dream-side handler keeps its
+  responsibilities (seed derivation via `_derive_op_seed`,
+  snapshot capture before `remove`, `model_sha256_post` after
+  each op, state counters) ; only the three `model.layers`
+  mutation primitives are delegated.
+- `hierarchy_change.py` re-exports `_apply_topology_op` through
+  its `__all__` so B5's published symbol is unchanged.
+- Zero behaviour change. The 14 existing B3 tests
+  (`tests/unit/test_restructure_lora.py`) + B5 tests
+  (`tests/unit/test_apply_channel_outputs.py`) all pass
+  unchanged. One new test
+  (`tests/unit/test_lora_topology_ops_reexport.py`) pins the
+  re-export identity.
+- DualVer FC-PATCH (`C-v0.24.0 → C-v0.24.1`). `pyproject.toml`
+  version `0.22.0 → 0.22.1`. No new versioned
+  `[C-v0.24.1+PARTIAL]` section per dreamOfkiki PATCH
+  convention (matches the 2026-04-21 DR-2 PATCH precedent —
+  change-tracked via this `[Unreleased]` bullet + spec).
+
 ### Operational (Wave 3b M4 ablation_cycle3 diffusion + CI fix, 2026-05-21)
 
 - **Direct ship** `e17c17e feat(harness): wave3b M4 ablation

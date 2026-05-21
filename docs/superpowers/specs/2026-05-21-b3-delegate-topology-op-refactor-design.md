@@ -299,9 +299,9 @@ This is **included** in the refactor scope (1 test, ~10 lines).
 - Modify `kiki_oniric/dream/operations/restructure_real.py`
   to delegate the 3 per-op mutations.
 - Add `tests/unit/test_lora_topology_ops_reexport.py` (1 test).
-- `pyproject.toml` version `0.21.0 → 0.21.1`.
+- `pyproject.toml` version `0.22.0 → 0.22.1`.
 - CHANGELOG bullet under `[Unreleased]` flagging the refactor
-  (no `[C-v0.23.1]` section since FC-PATCH bumps don't get
+  (no `[C-v0.24.1]` section since FC-PATCH bumps don't get
   their own changelog block per dreamOfkiki convention — see
   the prior FC-PATCH amendment of DR-2 in 2026-04-21 which was
   documented via an amendment file, not a CHANGELOG block).
@@ -329,7 +329,7 @@ This is **included** in the refactor scope (1 test, ~10 lines).
 
 ## DualVer
 
-FC-**PATCH** (`C-v0.23.0 → C-v0.23.1`) :
+FC-**PATCH** (`C-v0.24.0 → C-v0.24.1`) :
 
 - Internal refactor, zero behaviour change.
 - No axiom, no Protocol, no primitive signature change, no
@@ -337,7 +337,7 @@ FC-**PATCH** (`C-v0.23.0 → C-v0.23.1`) :
 - 14 existing tests + 1 new re-export identity test all pass.
 
 EC unchanged `+PARTIAL`. `pyproject.toml` version `0.21.0 →
-0.21.1`. No new `[C-v0.23.1+PARTIAL]` CHANGELOG section
+0.21.1`. No new `[C-v0.24.1+PARTIAL]` CHANGELOG section
 (per FC-PATCH convention) ; one Refactored bullet under
 `[Unreleased]` instead.
 
@@ -362,6 +362,6 @@ EC unchanged `+PARTIAL`. `pyproject.toml` version `0.21.0 →
    `tests/unit/test_apply_channel_outputs.py` pass unchanged.
 6. Full pytest suite green ; `uv run mypy harness tests` clean
    ; `uv run ruff check .` clean.
-7. `pyproject.toml` bumped `0.21.0 → 0.21.1`. One Refactored
+7. `pyproject.toml` bumped `0.22.0 → 0.22.1`. One Refactored
    bullet under `[Unreleased]` in `CHANGELOG.md`. No new
-   versioned `[C-v0.23.1+PARTIAL]` section.
+   versioned `[C-v0.24.1+PARTIAL]` section.
