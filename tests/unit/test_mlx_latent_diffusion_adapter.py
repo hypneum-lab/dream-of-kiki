@@ -382,16 +382,20 @@ def test_execute_profile_delta_acc_is_real_and_order_independent() -> None:
     # (seed, profile) under the per-call deepcopy contract).
     shared = MLXLatentDiffusionSubstrate()
 
-    acc_a_solo = shared.execute_profile(
+    raw_solo = shared.execute_profile(
         _Req(seed=1, profile="p_equ")
     )["delta_acc"]
+    assert isinstance(raw_solo, float)
+    acc_a_solo: float = raw_solo
 
     # Cell B runs between the two cell-A measurements.
     shared.execute_profile(_Req(seed=2, profile="p_min"))
 
-    acc_a_after_b = shared.execute_profile(
+    raw_after = shared.execute_profile(
         _Req(seed=1, profile="p_equ")
     )["delta_acc"]
+    assert isinstance(raw_after, float)
+    acc_a_after_b: float = raw_after
 
     # Order-independence (the original guard).
     assert acc_a_after_b == acc_a_solo, (
