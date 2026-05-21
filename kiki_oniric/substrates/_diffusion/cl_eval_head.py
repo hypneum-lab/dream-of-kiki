@@ -93,3 +93,26 @@ def eval_head_accuracy(
     eq: mx.array = cast(mx.array, preds == labels)
     correct = eq.astype(mx.float32)
     return float(mx.mean(correct).item())
+
+
+def denoiser_feature(
+    denoiser: Any, z: mx.array, *, t_fixed: int = -1
+) -> mx.array:
+    """Probe feature: ``denoiser(z, t_fixed)`` for the CL head.
+
+    ``t_fixed`` is a deterministic scalar timestep used for both the
+    baseline (pre-dream) and post (post-dream) eval, so the only
+    thing moving between the two evals is the denoiser's weights —
+    which is exactly what the B5 apply mutates. The default
+    ``t_fixed=-1`` is replaced by ``denoiser.config-equivalent /
+    2`` resolution at the substrate call site; pass an explicit
+    non-negative ``t_fixed`` here.
+
+    Returns an MLX array of shape ``(batch, d_latent)``.
+    """
+    if t_fixed < 0:
+        raise ValueError(
+            f"t_fixed must be non-negative, got {t_fixed}"
+        )
+    t = mx.array([t_fixed], dtype=mx.int32)
+    return denoiser(z, t)
