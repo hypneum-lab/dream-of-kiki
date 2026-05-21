@@ -24,7 +24,7 @@ Reference: docs/specs/2026-04-17-dreamofkiki-framework-C-design.md §3.1
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from kiki_oniric.dream.channels.hierarchy_change import (
     LoRAHierarchyChangeChannel,
@@ -40,6 +40,8 @@ from kiki_oniric.dream.operations.downscale_real import (
 )
 from kiki_oniric.dream.operations.recombine_real import (
     RecombineRealState,
+    VAEDecoder,
+    VAEEncoder,
     recombine_real_handler,
 )
 from kiki_oniric.dream.operations.replay_real import (
@@ -89,8 +91,8 @@ class PMaxLoRAProfile(PMaxProfile):
 
     dream_model: "LoRAModel"
     awake_model: "LoRAModel"
-    encoder: Any
-    decoder: Any
+    encoder: VAEEncoder
+    decoder: VAEDecoder
     lr: float = 0.01
     max_adds_per_episode: int = 1
     seed: int = 0

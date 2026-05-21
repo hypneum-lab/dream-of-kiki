@@ -198,3 +198,22 @@ def test_recombine_state_last_sample_preserved() -> None:
     assert all(isinstance(v, float) for v in state.last_sample)
     assert state._episode_count == 1
     assert state.last_compute_flops > 0
+
+
+def test_tiny_encoder_satisfies_vae_encoder_protocol() -> None:
+    """_TinyEncoder structurally satisfies the VAEEncoder Protocol.
+
+    runtime_checkable Protocols only verify method names at runtime,
+    not signatures — this test pins that name-level conformance for
+    a regression-safety net. Signature compliance is enforced by
+    mypy at static-check time.
+    """
+    from kiki_oniric.dream.operations.recombine_real import (
+        VAEDecoder,
+        VAEEncoder,
+    )
+
+    encoder = _TinyEncoder()
+    decoder = _TinyDecoder()
+    assert isinstance(encoder, VAEEncoder)
+    assert isinstance(decoder, VAEDecoder)

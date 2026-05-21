@@ -35,13 +35,44 @@ Reference :
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Callable
+from typing import TYPE_CHECKING, Callable, Protocol, runtime_checkable
 
 import numpy as np
 
 if TYPE_CHECKING:
+    import mlx.core as mx
+
     from kiki_oniric.dream.channels import LatentSample
     from kiki_oniric.dream.episode import DreamEpisode
+
+
+@runtime_checkable
+class VAEEncoder(Protocol):
+    """Callable interface for a VAE encoder used by ``recombine_real_handler``.
+
+    The encoder takes an input tensor and returns a ``(mu, log_var)``
+    pair. MLX ``nn.Module`` subclasses with the matching ``__call__``
+    signature satisfy this Protocol structurally. The Protocol is
+    ``runtime_checkable`` for ad-hoc validation, but note that runtime
+    ``isinstance`` checks on Protocols only verify method names, not
+    signatures — mypy / pyright will catch signature mismatches at
+    static-check time.
+    """
+
+    def __call__(
+        self, x: "mx.array",
+    ) -> "tuple[mx.array, mx.array]": ...
+
+
+@runtime_checkable
+class VAEDecoder(Protocol):
+    """Callable interface for a VAE decoder used by ``recombine_real_handler``.
+
+    The decoder takes a latent sample ``z`` and returns a
+    reconstruction tensor. See ``VAEEncoder`` for Protocol caveats.
+    """
+
+    def __call__(self, z: "mx.array") -> "mx.array": ...
 
 
 @dataclass
@@ -62,8 +93,8 @@ class RecombineRealState:
 def recombine_real_handler(
     state: RecombineRealState,
     *,
-    encoder,
-    decoder,
+    encoder: "VAEEncoder",
+    decoder: "VAEDecoder",
     seed: int,
 ) -> Callable[["DreamEpisode"], "LatentSample | None"]:
     """Build a real-weight recombine handler bound to ``state``.
@@ -141,5 +172,7 @@ def recombine_real_handler(
 
 __all__ = [
     "RecombineRealState",
+    "VAEDecoder",
+    "VAEEncoder",
     "recombine_real_handler",
 ]
