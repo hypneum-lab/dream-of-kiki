@@ -354,20 +354,21 @@ def test_execute_profile_p_max_activates_all_four() -> None:
     assert isinstance(recombine_rate, int) and recombine_rate >= 1
 
 
-def test_execute_profile_delta_acc_is_order_independent() -> None:
-    """R1 regression guard: delta_acc must not leak across cells.
+def test_execute_profile_delta_acc_is_real_and_order_independent() -> None:
+    """delta_acc must be (a) bounded in [-1, 1], (b) non-zero on a
+    profile that actually exercises the consolidation, and (c)
+    order-independent across calls on the same substrate.
 
-    The ClEvalHead is built fresh per execute_profile call and is
-    never stored on self (see MLXLatentDiffusionSubstrate.__init__
-    NOTE), so delta_acc depends only on (seed, profile) and never on
-    the order in which cells run. A shared head would contaminate
-    delta_acc — the same M5-class state-bleed bug this guards against.
+    M7 delta_acc design: the CL head probes denoiser(z, t_fixed) on
+    a fixed feature; replay + downscale emit WeightUpdates that
+    apply_channel_outputs applies to a per-call deepcopy of the
+    denoiser between baseline and post. delta_acc therefore reflects
+    the consolidation's effect on the denoiser feature.
 
-    The comparison uses a single substrate instance: cell A (p_min/
-    seed=1) must return the same delta_acc whether it runs first or
-    after cell B (p_max/seed=2).  Both runs start from the same
-    self.denoiser (copy.deepcopy per execute_profile), so any
-    deviation signals state leakage between calls on the same substrate.
+    Cell A uses p_equ (all four ops active) so the SGD-driven replay
+    update produces a non-trivial delta — guarding against a
+    regression to the pre-fix structural zero. Cell B (p_min) runs
+    between the two cell-A measurements to expose any state leakage.
     """
     from dataclasses import dataclass
 
@@ -376,24 +377,36 @@ def test_execute_profile_delta_acc_is_order_independent() -> None:
         seed: int
         profile: str
 
-    # Use the same substrate instance for both measurements so
-    # self.denoiser initial weights are identical in both calls.
+    # Single substrate instance so self.denoiser initial weights are
+    # identical across all three calls (delta_acc depends only on
+    # (seed, profile) under the per-call deepcopy contract).
     shared = MLXLatentDiffusionSubstrate()
 
-    # Cell A on the shared substrate — no prior contamination.
     acc_a_solo = shared.execute_profile(
-        _Req(seed=1, profile="p_min")
+        _Req(seed=1, profile="p_equ")
     )["delta_acc"]
 
     # Cell B runs between the two cell-A measurements.
-    shared.execute_profile(_Req(seed=2, profile="p_max"))
+    shared.execute_profile(_Req(seed=2, profile="p_min"))
 
-    # Cell A again on the same substrate — must match the first run.
     acc_a_after_b = shared.execute_profile(
-        _Req(seed=1, profile="p_min")
+        _Req(seed=1, profile="p_equ")
     )["delta_acc"]
 
+    # Order-independence (the original guard).
     assert acc_a_after_b == acc_a_solo, (
-        "delta_acc changed when cell A ran after cell B — the eval "
-        "head is leaking state across execute_profile calls"
+        "delta_acc changed when cell A ran after cell B — state "
+        "leakage between execute_profile calls on the same substrate"
+    )
+    # Bounded by construction (head frozen, both accs in [0, 1]).
+    assert -1.0 <= acc_a_solo <= 1.0, (
+        f"delta_acc out of [-1, 1]: {acc_a_solo}"
+    )
+    # Real measurement — non-zero. A regression to the pre-M7
+    # structural zero (head decoupled from the consolidation target)
+    # would re-introduce delta_acc == 0 here.
+    assert acc_a_solo != 0.0, (
+        "delta_acc is exactly zero on p_equ — the consolidation→eval "
+        "wiring (denoiser_feature probe + apply_channel_outputs) is "
+        "not connected (regression to pre-fix M7 state)"
     )
