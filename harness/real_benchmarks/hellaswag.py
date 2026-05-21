@@ -355,7 +355,7 @@ def _load_hellaswag_records(
     try:  # pragma: no cover - optional cache path
         import os
 
-        from datasets import load_dataset  # type: ignore[import-not-found]
+        from datasets import load_dataset
 
         os.environ.setdefault("HF_DATASETS_OFFLINE", "1")
         ds = load_dataset("Rowan/hellaswag", split="validation")
