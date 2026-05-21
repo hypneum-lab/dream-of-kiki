@@ -17,6 +17,7 @@ Full DR-3 conformance wiring lands via the public
 """
 from __future__ import annotations
 
+from kiki_oniric.substrates._diffusion.decoder import Decoder
 from kiki_oniric.substrates._diffusion.model import (
     Encoder,
     MLPDenoiser,
@@ -26,6 +27,7 @@ from kiki_oniric.substrates._diffusion.sampler import Sampler
 from kiki_oniric.substrates._diffusion.trainer import Trainer
 
 __all__ = [
+    "Decoder",
     "Encoder",
     "MLPDenoiser",
     "NoiseSchedule",
