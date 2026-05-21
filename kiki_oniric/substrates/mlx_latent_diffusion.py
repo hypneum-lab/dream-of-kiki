@@ -104,6 +104,9 @@ class MLXLatentDiffusionSubstrate:
             hyper-parameter set in one shot.
     """
 
+    # Raw CIFAR-100 input dimensionality: 32 × 32 × 3 = 3072.
+    _CIFAR_D_IN: int = 3072
+
     def __init__(
         self,
         d_latent: int = _DEFAULT_D_LATENT,
@@ -119,6 +122,12 @@ class MLXLatentDiffusionSubstrate:
         self.config: MLXLatentDiffusionConfig = config
         self.encoder: Encoder = Encoder(
             d_in=config.d_in,
+            d_latent=config.d_latent,
+        )
+        # Separate encoder for raw CIFAR-100 features (3072 → d_latent).
+        # Used by _encode_features when loader_batches are present.
+        self._cifar_encoder: Encoder = Encoder(
+            d_in=self._CIFAR_D_IN,
             d_latent=config.d_latent,
         )
         self.denoiser: MLPDenoiser = MLPDenoiser(
@@ -169,16 +178,25 @@ class MLXLatentDiffusionSubstrate:
         root = mx.random.key(seed)
         train_root, sample_root, data_root = mx.random.split(root, num=3)
 
-        # Tiny synthetic latent dataset : 4 batches × batch_size 8.
-        # Held small so the M3 smoke fits in seconds on M5.
+        loader_batches = getattr(request, "loader_batches", ())
         d_latent = self.config.d_latent
-        n_batches = 4
-        batch_size = 8
-        data_keys = mx.random.split(data_root, num=n_batches)
-        dataset = [
-            mx.random.normal(shape=(batch_size, d_latent), key=k)
-            for k in data_keys
-        ]
+        if loader_batches:
+            dataset = [
+                self._encode_features(batch.features)
+                for batch in loader_batches
+            ]
+            synthetic = False
+        else:
+            # Tiny synthetic latent dataset : 4 batches × batch_size 8.
+            # Held small so the M3 smoke fits in seconds on M5.
+            n_batches = 4
+            batch_size = 8
+            data_keys = mx.random.split(data_root, num=n_batches)
+            dataset = [
+                mx.random.normal(shape=(batch_size, d_latent), key=k)
+                for k in data_keys
+            ]
+            synthetic = True
 
         t0 = time.perf_counter()
 
@@ -213,7 +231,7 @@ class MLXLatentDiffusionSubstrate:
             "recombine_rate": float(len(losses)),
             "delta_acc": loss_first - loss_last,
             "wall_time_s": wall,
-            "synthetic": True,
+            "synthetic": synthetic,
             "profile": getattr(request, "profile", "unknown"),
             "seed": seed,
             "substrate": MLX_LATENT_DIFFUSION_SUBSTRATE_NAME,
@@ -230,6 +248,19 @@ class MLXLatentDiffusionSubstrate:
         handles here.
         """
         return None
+
+    # ------------------------------------------------------------------
+    # Internal helpers.
+    # ------------------------------------------------------------------
+
+    def _encode_features(self, features: "mx.array") -> "mx.array":
+        """Project raw (B, 3072) CIFAR features to (B, d_latent).
+
+        Routes through ``_cifar_encoder`` (Encoder sized
+        3072 → config.d_latent) — distinct from ``self.encoder``
+        which handles the default d_in=512 awake activations.
+        """
+        return self._cifar_encoder(features)
 
     # ------------------------------------------------------------------
     # Convenience accessors used by future M3 wiring and by the

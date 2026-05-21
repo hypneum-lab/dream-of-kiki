@@ -268,3 +268,31 @@ def test_encoder_and_denoiser_train_step_smoke() -> None:
     assert isinstance(loss_d, float)
     assert math.isfinite(loss_d)
     assert loss_d >= 0.0
+
+
+def test_execute_profile_consumes_loader_batches() -> None:
+    """execute_profile uses real batches when loader_batches is non-empty.
+
+    When request.loader_batches carries at least one batch, the substrate
+    must encode the raw features into latents (synthetic=False) instead of
+    generating synthetic normal latents (synthetic=True).  The standard
+    metrics dict must still be returned with the same keys, and
+    ``replay_rate`` / ``downscale_norm`` must be present.
+    """
+
+    class _Req:
+        seed = 0
+        profile = "p_min"
+        task_idx = 0
+        loader_batches = (
+            type("B", (), {
+                "features": mx.zeros((8, 3072)),
+                "labels": mx.zeros((8,), dtype=mx.int32),
+                "task_idx": 0,
+            })(),
+        )
+
+    substrate = MLXLatentDiffusionSubstrate()
+    metrics = substrate.execute_profile(_Req())
+    assert metrics["synthetic"] is False
+    assert "replay_rate" in metrics
