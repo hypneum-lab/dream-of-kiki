@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 import mlx.core as mx
+import mlx.nn as _nn_inner
 import numpy as np
 
 from kiki_oniric.dream.channels import WeightUpdate
@@ -15,21 +18,24 @@ from kiki_oniric.substrates._diffusion.handlers_emit import (
 )
 from kiki_oniric.substrates._diffusion.model import MLPDenoiser
 
+# mlx.nn re-exports confuse mypy's star-import resolution; pin an
+# Any-typed alias to keep the test free of per-line type: ignores.
+_nn: Any = _nn_inner
 
-def _model_adapter(denoiser: MLPDenoiser):
+
+def _model_adapter(denoiser: MLPDenoiser) -> Any:
     # Thin nn.Module holder exposing .layers (mirroring
     # _DenoiserSingleArgAdapter surface that bind_real_handlers
-    # binds to). Must subclass mlx.nn.Module so that nn.value_and_grad
+    # binds to). Must subclass mlx.nn.Module so nn.value_and_grad
     # can traverse the parameter tree.
-    import mlx.nn as _nn_inner
 
-    class _A(_nn_inner.Module):  # type: ignore[misc]
+    class _A(_nn.Module):  # type: ignore[misc]
         def __init__(self, d: MLPDenoiser) -> None:
             super().__init__()
             self.denoiser = d
 
         @property
-        def layers(self):  # type: ignore[override]
+        def layers(self) -> list[Any]:
             return self.denoiser.layers
 
         def __call__(self, x: mx.array) -> mx.array:
@@ -39,7 +45,7 @@ def _model_adapter(denoiser: MLPDenoiser):
     return _A(denoiser)
 
 
-def _episode_with_records(records):
+def _episode_with_records(records: list[dict[str, Any]]) -> DreamEpisode:
     return DreamEpisode(
         trigger=EpisodeTrigger.SCHEDULED,
         input_slice={"beta_records": records},
