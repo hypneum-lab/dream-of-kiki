@@ -18,26 +18,59 @@ H4 verdicts — `reject_h0 == True` exactly where the framework predicts,
 and `False` exactly where it predicts the empirical-emptiness pattern
 (DR-4 v0.6 amendment, paper 2 §6).
 
-## 2. The contract (framework C §3, kiki_oniric/profiles/)
+## 2. The contract (framework C §3.1, NORMATIVE)
 
-The three profiles activate the dream-side primitives as follows
-(verbatim from `kiki_oniric/profiles/p_min.py`, `p_equ.py`,
-`p_max.py` — confirm against disk at plan time) :
+**Corrected post-audit 2026-05-21.** The activation table is fixed by
+`docs/specs/2026-04-17-dreamofkiki-framework-C-design.md` §3.1 as a
+formal definition with the monotonic inclusion constraint of §3.2 :
+`ops(P_min) ⊆ ops(P_equ) ⊆ ops(P_max)`. The substrate **must** honour
+this exact shape — the table is normative, not illustrative.
 
-| Profile | Replay (α) | Downscale (β) | Restructure (γ) | Recombine (δ) |
+| Profile | replay | downscale | restructure | recombine |
 |---|---|---|---|---|
-| `p_min` | — | — | — | ✓ |
-| `p_equ` | ✓ | ✓ | — | ✓ |
-| `p_max` | ✓ | ✓ | ✓ | ✓ |
+| `p_min` | ✓ | ✓ | — | — |
+| `p_equ` | ✓ | ✓ | ✓ | ✓ (light) |
+| `p_max` | ✓ | ✓ | ✓ | ✓ (full) |
 
-(Mapping is illustrative — M7 plan reads the real profile dataclasses
-from `kiki_oniric/profiles/` and binds the substrate to them ; if the
-disk shape diverges from this table, the disk wins.)
+(Plus channel-out sets : P_min → {WeightDelta}, P_equ → {WeightDelta,
+HierarchyChange, AttentionPrior}, P_max → all 4. M7 honours the ops
+column ; channels are surfaced through the existing channel infra and
+are out of scope for the substrate adapter.)
+
+`PMinProfile` / `PEquProfile` / `PMaxProfile` already encode this map
+**in their `__post_init__`** — each registers exactly the listed
+handlers on `self.runtime: DreamRuntime`. The handler signatures
+(audited 2026-05-21) :
+
+- `replay_real_handler(state: ReplayRealState, *, model, lr=0.01)`
+  → `Callable[[DreamEpisode], None]`. Reads `input_slice["beta_records"]`.
+  Mutates `model.parameters()` in-place ; touches K1
+  `state.last_compute_flops` / `total_compute_flops`.
+- `downscale_real_handler(state: DownscaleRealState, *, model)` →
+  `Callable[[DreamEpisode], None]`. Reads `input_slice["shrink_factor"]`
+  (must be in `(0, 1]`). Mutates layer weights + bias in-place ; S2
+  finite guard on the mutated tensors. K1 = `_param_count(model)`.
+- `restructure_real_handler(state: RestructureRealState, *, model)`
+  → `Callable[[DreamEpisode], None]`. *Legacy cycle-3* — only
+  `topo_op == "reroute"` is supported in the **real** variant
+  (the `_lora` variant has the full `{add, remove, reroute}` vocab).
+  Reads `input_slice["topo_op"]` and `input_slice["swap_indices"]`.
+- `recombine_real_handler(state: RecombineRealState, *, encoder, decoder, seed)`
+  → `Callable[[DreamEpisode], LatentSample | None]`. Reads
+  `input_slice["delta_latents"]` (required, non-empty — raises
+  `I3` on empty). The substrate must supply VAE-shape `encoder` /
+  `decoder` ; the diffusion `MLPDenoiser` is **not** a VAE — see §3
+  decision D7 below for how the substrate maps onto this.
 
 `mlx_latent_diffusion` today runs `Trainer(denoiser).fit + Sampler.sample`
-unconditionally and attaches the profile string to the output dict. M7
-replaces this with a per-profile pipeline that calls the real handler
-for each activated primitive.
+unconditionally, attaches the profile string to the output dict, and
+**never instantiates `PMinProfile / PEquProfile / PMaxProfile`** —
+the `DreamRuntime` handler-dispatch mechanism is entirely bypassed
+(`scripts/ablation_cycle3_diffusion.py` carries only the profile
+**string** in `_CellRequest`, never the dataclass). M7 replaces this
+with a per-profile pipeline that *instantiates* the right profile
+dataclass, drives a small `DreamEpisode` stream through its `runtime`,
+and reads the per-op metrics off the profile's state fields.
 
 ## 3. Decisions
 
@@ -52,41 +85,95 @@ for each activated primitive.
   denoiser / encoder / sampler handles), and reads back the
   state's emitted metric.
 
-### D2 — Per-op metrics
+### D2 — Per-op metrics (audited)
 
-Replace the M5-era proxies with op-native quantities :
+Read the metrics off the **state objects the handlers already mutate**.
+The four state classes from the audit (verbatim) :
 
-| Op | Today (M5 proxy) | M7 (real) |
-|---|---|---|
-| replay_rate | `loss_last` (single trainer.fit loss) | distinct-replay rate per `replay_real` (count of unique latent samples emitted / total batches) |
-| downscale_norm | `sample_norm` (single sampler.sample L2) | rank-decay measure from `downscale_real` (S-Vd: top-k singular-value retained ratio post-shrink) |
-| restructure_sum | hard-coded `0.0` | `restructure_real` topology-diff size (Add / Remove / Reroute event counts, S3-guarded) |
-| recombine_rate | `float(len(losses))` | novel-sample rate per `recombine_real` (LatentSample provenance count, ep-tag distinct) |
-| delta_acc | `loss_first - loss_last` | downstream MLP classifier delta accuracy on the task's val split (real CL signal) |
-| wall_time_s | per-cell wall | unchanged |
+```python
+@dataclass class ReplayRealState:
+    total_records_consumed: int = 0
+    last_loss: float | None = None
+    last_compute_flops: int = 0
+    total_compute_flops: int = 0
 
-`delta_acc` becomes a real continual-learning measurement : train a
-tiny one-layer classifier head on the substrate's latents over the
-task, evaluate on the task's val split. This is what makes H1
-(forgetting / replay benefit) actually measurable.
+@dataclass class DownscaleRealState:
+    compound_factor: float = 1.0
+    last_compute_flops: int = 0
 
-### D3 — Per-profile dispatch
+@dataclass class RestructureRealState:
+    diff_history: list[str] = field(default_factory=list)
+    last_compute_flops: int = 0
+    adds_this_episode: int = 0
+    total_adds: int = 0
+    total_removes: int = 0
+    total_reroutes: int = 0
+
+@dataclass class RecombineRealState:
+    last_sample: list | None = None
+    last_compute_flops: int = 0
+    _episode_count: int = 0
+```
+
+Substrate row schema after M7 (replaces the M5 proxies — the field
+names stay so milestone-aggregator code does not break, but the
+**source** of each field changes) :
+
+| Substrate row field | Source after M7 |
+|---|---|
+| `replay_rate` | `replay_state.last_loss` (drops to `0.0` if replay inactive) |
+| `downscale_norm` | `downscale_state.compound_factor` (stays `1.0` if inactive — that *is* "no downscaling") |
+| `restructure_sum` | `restructure_state.total_reroutes` (legacy real-handler only emits `reroute`, see audit ; stays `0` if inactive — matching the M5 behaviour for `p_min` honestly) |
+| `recombine_rate` | `recombine_state._episode_count` (number of recombine events ; `0` if inactive) |
+| `delta_acc` | a tiny 1-layer classifier head trained on the substrate's latents over the task, eval on the task's val split — task-local CL accuracy delta (`acc_after_dream − acc_before_dream`). This is the real H1 signal. |
+| `wall_time_s` | per-cell wall, unchanged |
+| `op_flops_total` | new : sum of `last_compute_flops` across the activated ops (K1 audit trail) |
+
+`delta_acc` is the load-bearing new measurement. The classifier head
+is a `mx.nn.Linear(d_latent, N_CLASSES_PER_TASK)` trained for a
+fixed micro-budget (e.g. 50 steps, batch 64) on the encoded latents
+before and after the dream cycle ; the difference is per-cell real
+CL signal. Hyper-parameters pinned in the plan so the bench is
+deterministic.
+
+### D3 — Per-profile dispatch via existing `DreamRuntime`
 
 Inside `execute_profile` :
 
-1. Read the activation set from `request.profile_obj` (extend
-   `_CellRequest` to carry the profile dataclass, not just the
-   string tag — keeps lookups out of the substrate).
-2. For each activated op, in the canonical chain order
-   `(replay → downscale → restructure) ∥ recombine` (per
-   `kiki_oniric/dream/operations/CLAUDE.md`), invoke the
-   `_real.py` handler with the substrate state.
-3. Collect the metrics dict, emit it as-is to the harness row.
+1. **Instantiate the profile dataclass** matching `request.profile`
+   (`{"p_min": PMinProfile, "p_equ": PEquProfile, "p_max": PMaxProfile}[…]`).
+   Each profile's `__post_init__` already registers exactly the right
+   handlers on its `runtime: DreamRuntime` per framework-C §3.1 — we
+   do **not** re-derive the activation surface, we *use* it.
+2. The substrate provides : the `model` (denoiser MLP), and for the
+   `recombine` adapter an `encoder` / `decoder` pair (see D7) and a
+   `seed`. These are passed to the handler factories via a small
+   **substrate-wiring adapter** that re-registers the existing
+   handlers on the profile's `runtime` with the substrate-supplied
+   `model` argument (the default `model=None` in profile fields
+   needs to be replaced for the real path).
+3. Drive a **canonical `DreamEpisode` stream** : one `DreamEpisode`
+   per loader batch, with `input_slice` populated for *all* possible
+   ops (the runtime ignores keys whose op isn't registered, so a
+   single shared episode shape works) :
+   - `"beta_records"` : encoded `(x, y)` pairs from the batch
+   - `"shrink_factor"` : a fixed value (e.g. `0.95`) so the
+     downscale handler does measurable but bounded work
+   - `"topo_op"` : `"reroute"` ; `"swap_indices"` : a deterministic
+     pair per (seed, batch_idx)
+   - `"delta_latents"` : the encoder output for the batch
+   - `"species"` : `"diffusion"`
+4. Read the metrics dict by snapshotting the 4 state dataclasses
+   after the run. Inactive ops keep their default values (legitimate
+   zeros, **not** hard-coded — the field defaults *are* the framework-C
+   no-op semantics).
+5. Compute `delta_acc` separately (before/after head-eval, see D2).
 
-The synthetic-only branch (no `loader_batches`) is removed in M7 —
-once the substrate respects the profile contract, the synthetic
-path becomes redundant with the conformance tests. The R1 hashes
-for the synthetic path are regenerated under FC MINOR.
+The synthetic-only branch (no `loader_batches`) **stays** in M7 to
+preserve the M3 R1 test contract — the synthetic path remains
+profile-aware in the same way, but with synthetic latents instead
+of CIFAR. The synthetic-path R1 hashes regenerate under FC MINOR
+(D5).
 
 ### D4 — FC MINOR justification
 
@@ -113,6 +200,32 @@ per `REBASELINE_NOTE.md` discipline. A new entry
 task_idx)` cell across the 3 profiles produces 3 distinct hashes
 that are *each* byte-stable within a machine.
 
+### D7 — VAE-shape adapter for the recombine handler
+
+The `recombine_real_handler` audit reveals that it expects an
+`encoder: VAEEncoder` and a `decoder: VAEDecoder` per the existing
+Protocols at `kiki_oniric/dream/operations/recombine_real.py` lines
+55-77 (audit-confirmed). The diffusion substrate has an encoder
+(`self._cifar_encoder : 3072 → d_latent`) but **no decoder** — the
+`MLPDenoiser` predicts noise, it does not reconstruct features.
+
+For the recombine contract to be honoured on the diffusion substrate
+(active for `p_equ` and `p_max` per framework-C §3.1), M7 adds a
+small **`_diffusion_decoder` MLP** mirroring the existing `Encoder`
+shape : `d_latent → RAW_FEATURE_DIM=3072`. Construction lives in
+the substrate's `__init__` next to `_cifar_encoder` ; the two are
+passed as `encoder` / `decoder` arguments to `recombine_real_handler`
+at handler-build time.
+
+This is **not** a learned-decoder claim — it is a random-init MLP
+that gives the recombine handler a Protocol-valid surface so the
+deterministic LatentSample generation is well-defined. The decoder
+weights are stable across the bench (init once, reuse 450 cells per
+seed family — actually re-init per cell to match the per-cell
+fresh-substrate posture from M5).
+
+`p_min` is unaffected — recombine is inactive there.
+
 ### D6 — Acceptance for the eventual bench v3
 
 The M7 work is *complete* (and unlocks M6) when :
@@ -138,9 +251,12 @@ alongside G4-sexto / G4-septimo. M7 ships either way.
 | File | Action | LoC est. |
 |---|---|---|
 | `kiki_oniric/substrates/mlx_latent_diffusion.py` | Replace `execute_profile` body with per-profile dispatch | +120 −80 |
-| `kiki_oniric/substrates/_diffusion/dream_ops_adapter.py` | New : 4 substrate→`_real.py` adapter shims | +200 |
-| `scripts/ablation_cycle3_diffusion.py` | Extend `_CellRequest` with `profile_obj`, materialise it from the profile string | +30 −5 |
-| `kiki_oniric/profiles/p_{min,equ,max}.py` | Read-only — confirm activation maps match D2 table | 0 |
+| `kiki_oniric/substrates/_diffusion/dream_ops_adapter.py` | New : profile → substrate-wiring adapter that supplies `model` / `encoder` / `decoder` / `seed` to the existing `_real.py` factories and re-registers them on the profile's `runtime` | +150 |
+| `kiki_oniric/substrates/_diffusion/decoder.py` | New : random-init MLP `d_latent → 3072` for the recombine VAE-shape contract (D7) | +40 |
+| `kiki_oniric/substrates/_diffusion/__init__.py` | Re-export the new `Decoder` next to `Encoder` | +2 |
+| `scripts/ablation_cycle3_diffusion.py` | No `profile_obj` field needed — the substrate instantiates `PMinProfile/PEquProfile/PMaxProfile` from the string at `execute_profile` entry. Keep `_CellRequest` shape stable. | 0 |
+| `kiki_oniric/profiles/p_{min,equ,max}.py` | Read-only — the existing `__post_init__` handler registrations *are* the activation surface ; M7 honours them via D3 | 0 |
+| `kiki_oniric/substrates/_diffusion/cl_eval_head.py` | New : 1-layer classifier head for `delta_acc` measurement (D2) | +60 |
 | `tests/conformance/axioms/test_dr3_diffusion_profile.py` | New : prove profile→activation surface | +90 |
 | `tests/reproducibility/golden_hashes_apple_*.json` | Regenerate per chip family under FC MINOR | (regen) |
 | `tests/reproducibility/REBASELINE_NOTE.md` | Append M7 rebaseline entry | +10 |
@@ -166,7 +282,7 @@ to `docs/specs-fr/`.
 
 | Ref | Risk | Mitigation |
 |---|---|---|
-| R1 | The diffusion-substrate adapters are non-trivial (e.g. `restructure_real` topology-diff doesn't map onto a denoiser MLP without a topology stand-in) | Plan task : decide the diffusion's "topology" surface explicitly (the MLP layer stack is the natural choice). If the mapping is genuinely impossible for restructure on this substrate, document and emit a documented no-op (mirror Canal 4 attention-prior treatment) — that is still a DR-3 conformance fix because the *contract* (substrate declares which ops it supports) is now honoured. |
+| R1 | The diffusion-substrate adapters are non-trivial (e.g. `restructure_real` only supports `reroute` per audit — the *legacy* real handler is feature-restricted vs. the LoRA variant) | The denoiser MLP `n_layers` stack *is* the topology surface for `reroute` (swap two layer indices). For the `add` and `remove` topo_ops the handler raises today — that is a substrate-honest limitation, not an M7 blocker. The activation surface honours what each profile actually drives ; the diffusion's restructure surface is `{reroute}` and the M7 conformance test asserts exactly that. |
 | R2 | FC MINOR bump triggers a paper 1 / framework-C spec mirror update in `docs/specs-fr/` | Plan tasks the FR mirror as one task. Per `CONTRIBUTING.md`, EN→FR propagation is enforced in the same PR. |
 | R3 | The 4 R1 hashes change → existing nightly `r1-nightly.yml` fails on first push | Plan ships the regenerated golden hashes in the same PR as the substrate change. The nightly fails for the duration of the PR review window — that is expected per `REBASELINE_NOTE.md` `pending_review` discipline. |
 | R4 | M7 takes longer than 5 days | Fall back to the sequencing-spec §4 recovery : ship M6 as `+PARTIAL` with the existing 2026-05-21 milestone, file the hedged OSF amendment, M7 → Wave 3c. |
