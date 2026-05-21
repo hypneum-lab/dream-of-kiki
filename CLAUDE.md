@@ -49,8 +49,11 @@ domain-specific guidance — read those when you enter them.
   `mlx_kiki_oniric`, `esnn_norse`, `esnn_thalamocortical`,
   `wake_sleep_cl_baseline`, `micro_kiki`, `_adversarial`, and
   the **Wave 3b `mlx_latent_diffusion`** (Track S — substrate-
-  internal `C-v0.14.0+PARTIAL`, M4 ablation harness shipped,
-  M5 pilot pending, M6 paper integration pending).
+  internal `C-v0.14.0+PARTIAL`, M5 bench shipped 2026-05-21 on
+  macM1, 450/450 cells in `docs/milestones/wave3b-bench-2026-05-21.*`,
+  EC profile-intensity quick-win in place, DR-3 substrate gap
+  filed as issue #36, M6 paper integration pending and likely
+  stays `+PARTIAL` until #36 is fixed).
 - Wave 3b plan + acceptance milestones live at
   `docs/plans/2026-05-20-wave3b-mlx-diffusion-substrate-plan.md`
   (M1-M6). M1 → M4 closed ; M5 / M6 deferred per plan §6.
