@@ -1,0 +1,51 @@
+{
+  "bit_equal_all_tiers": true,
+  "chip_family": "apple_m1_max",
+  "date": "2026-05-21",
+  "dr4_chain_inclusion": {
+    "emitters_strict_subset": true,
+    "ops_strict_subset": true,
+    "verdict": "PASS"
+  },
+  "framework_version": "C-v0.23.0+PARTIAL",
+  "milestone": "b6-lora-smoke-2026-05-21",
+  "package_version": "0.21.0",
+  "seed": 42,
+  "tiers": {
+    "PEquLoRA": {
+      "bit_equal": true,
+      "dispatch_count": 4,
+      "emitted_types": [
+        "TopologyDiff",
+        "WeightUpdate"
+      ],
+      "tier": "PEquLoRA",
+      "total_flops": 858,
+      "wall_s": 0.008807
+    },
+    "PMaxLoRA": {
+      "bit_equal": true,
+      "dispatch_count": 5,
+      "emitted_types": [
+        "LatentSample",
+        "TopologyDiff",
+        "WeightUpdate"
+      ],
+      "tier": "PMaxLoRA",
+      "total_flops": 874,
+      "wall_s": 0.010445
+    },
+    "PMinLoRA": {
+      "bit_equal": true,
+      "dispatch_count": 3,
+      "emitted_types": [
+        "WeightUpdate"
+      ],
+      "tier": "PMinLoRA",
+      "total_flops": 856,
+      "wall_s": 0.029537
+    }
+  },
+  "trigger_commit": "979f1d3dbdcc",
+  "verdict": "PASS"
+}
