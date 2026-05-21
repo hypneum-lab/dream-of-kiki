@@ -7,9 +7,10 @@ in the payload to call ``mx.random.key(seed)`` — this is the R1
 linchpin: the reconstructed ``LoRALinear`` is identical to the one
 created by ``restructure_lora_handler``.
 
-``_apply_topology_op`` is a module-level helper (future-friendly):
-it handles one ``(op, payload)`` entry and can be reused by other
-channel implementations that receive a ``TopologyDiff``.
+The per-op mutation kernel ``_apply_topology_op`` lives in
+``kiki_oniric.substrates.micro_kiki.lora_topology_ops`` (extracted
+2026-05-21). It is re-exported from this module for backwards
+compatibility — callers that imported it from here continue to work.
 
 Reference: docs/specs/2026-04-17-dreamofkiki-framework-C-design.md §4.2
 """
@@ -19,81 +20,12 @@ from typing import TYPE_CHECKING
 
 import mlx.core as mx
 
+from kiki_oniric.substrates.micro_kiki.lora_topology_ops import (
+    _apply_topology_op,
+)
+
 if TYPE_CHECKING:
     from kiki_oniric.substrates.micro_kiki.lora_model import LoRAModel
-
-
-def _apply_topology_op(
-    model: "LoRAModel",
-    op: str,
-    payload: dict[str, object],
-) -> None:
-    """Apply one topology op from a ``TopologyDiff`` entry onto *model*.
-
-    ``add``    — insert a new ``LoRALinear`` at ``payload["index"]``,
-                 reconstructed via ``mx.random.key(payload["seed"])``
-                 for R1 bit-exactness.
-    ``remove`` — pop the layer at ``payload["index"]``.  The snapshot
-                 stored in the payload is not re-applied here (undo
-                 logic is future work); only the layer is removed so
-                 that the topology matches the dream-side post-state.
-    ``reroute`` — swap the two layers at ``payload["swap_indices"]``.
-
-    Raises ``ValueError`` with an ``"S3:"`` prefix on any structural
-    defect (unknown op, index out of bounds).
-    """
-    from kiki_oniric.substrates.micro_kiki.lora_model import LoRALinear
-
-    _VALID_OPS = frozenset({"add", "remove", "reroute"})
-    if op not in _VALID_OPS:
-        raise ValueError(
-            f"S3: _apply_topology_op unknown op {op!r}; "
-            f"must be one of {sorted(_VALID_OPS)}"
-        )
-
-    if op == "add":
-        index = int(payload["index"])  # type: ignore[arg-type]
-        in_features = int(payload["in_features"])  # type: ignore[arg-type]
-        out_features = int(payload["out_features"])  # type: ignore[arg-type]
-        rank = int(payload["rank"])  # type: ignore[arg-type]
-        alpha = float(payload["alpha"])  # type: ignore[arg-type]
-        seed = int(payload["seed"])  # type: ignore[arg-type]
-        if not (0 <= index <= len(model.layers)):
-            raise ValueError(
-                f"S3: add index {index} out of bounds for "
-                f"{len(model.layers)} layers"
-            )
-        new_layer = LoRALinear(
-            in_features=in_features,
-            out_features=out_features,
-            rank=rank,
-            alpha=alpha,
-            key=mx.random.key(seed),
-        )
-        model.layers.insert(index, new_layer)
-
-    elif op == "remove":
-        rm_at = int(payload["index"])  # type: ignore[arg-type]
-        if not (0 <= rm_at < len(model.layers)):
-            raise ValueError(
-                f"S3: remove index {rm_at} out of bounds for "
-                f"layers of length {len(model.layers)}"
-            )
-        model.layers.pop(rm_at)
-
-    else:  # reroute
-        swap = payload["swap_indices"]
-        i, j = int(swap[0]), int(swap[1])  # type: ignore[index]
-        layers_len = len(model.layers)
-        if not (0 <= i < layers_len and 0 <= j < layers_len):
-            raise ValueError(
-                f"S3: reroute swap_indices ({i}, {j}) out of bounds "
-                f"for layers of length {layers_len}"
-            )
-        model.layers[i], model.layers[j] = (
-            model.layers[j],
-            model.layers[i],
-        )
 
 
 class LoRAHierarchyChangeChannel:
