@@ -2,7 +2,7 @@
 
 - substrate: `mlx_latent_diffusion`
 - c_version: `C-v0.14.0+PARTIAL`
-- commit: `6de09f16fa6a51d737eb3030f435d86097206650`
+- commit: `5f71bac22e2bbb769cedf617733017c7b0296608`
 - total cells: 450
 
 ## Per-profile cell counts
