@@ -26,6 +26,24 @@ def _describe(values: list[float]) -> dict[str, float]:
             "min": min(values), "max": max(values)}
 
 
+def _c_version_of(cells: list[dict[str, Any]]) -> str:
+    """Return the most common c_version across cells.
+
+    Heterogeneous c_versions appear when a registry has not been
+    purged between runs of different substrate versions; emitting
+    the dominant value avoids silently stamping a stale version
+    onto the milestone summary.
+    """
+    if not cells:
+        return "unknown"
+    from collections import Counter
+    versions: list[str] = [
+        str(c.get("c_version", "unknown")) for c in cells
+    ]
+    counts: Counter[str] = Counter(versions)
+    return counts.most_common(1)[0][0]
+
+
 def aggregate_cells(cells: list[dict[str, Any]]) -> dict[str, Any]:
     """Pure aggregation — deterministic given the same cell list."""
     profiles: dict[str, Any] = {}
@@ -37,7 +55,7 @@ def aggregate_cells(cells: list[dict[str, Any]]) -> dict[str, Any]:
         }
         profiles[profile] = {"n_cells": len(rows), "stats": stats}
     return {
-        "c_version": "C-v0.14.0+PARTIAL",
+        "c_version": _c_version_of(cells),
         "substrate": "mlx_latent_diffusion",
         "total_cells": len(cells),
         "profiles": profiles,
