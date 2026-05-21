@@ -222,7 +222,7 @@ def test_loader_rejects_bad_args() -> None:
     with pytest.raises(ValueError, match="split"):
         list(
             load_split_cifar100(
-                task_idx=0, smoke=True, split="weird"  # type: ignore[arg-type]
+                task_idx=0, smoke=True, split="weird"
             )
         )
     with pytest.raises(ValueError, match="task_idx"):
