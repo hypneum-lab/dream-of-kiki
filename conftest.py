@@ -23,6 +23,7 @@ if sys.platform != "darwin":
         "tests/unit/experiments/test_g4_*.py",
         "tests/unit/experiments/test_g5_*.py",
         "tests/unit/experiments/test_g6_*.py",
+        "tests/unit/scripts/test_pilot_b6_lora_smoke.py",
         "tests/unit/test_esnn_norse.py",
         "tests/unit/test_g4_quinto_*.py",
         "tests/unit/test_micro_kiki_*.py",
