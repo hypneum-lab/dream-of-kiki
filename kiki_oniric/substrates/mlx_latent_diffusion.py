@@ -79,6 +79,121 @@ class MLXLatentDiffusionConfig:
     beta_max: float = _DEFAULT_BETA_MAX
 
 
+# ---------------------------------------------------------------------------
+# Module-level adapter classes (FIX 5: lifted from execute_profile body).
+# ---------------------------------------------------------------------------
+
+def _make_denoiser_adapter_class() -> type:
+    """Return a fresh nn.Module subclass for _DenoiserSingleArgAdapter.
+
+    Deferred to a factory function so the ``mlx.nn`` import happens
+    at call time rather than at module import time (preserves Linux
+    CI importability where mlx is absent).
+    """
+    import mlx.core as mx
+    import mlx.nn as _nn_raw
+    from typing import Any as _Any, cast as _cast
+
+    _nn: _Any = _cast(_Any, _nn_raw)
+
+    class _Cls(_nn.Module):  # type: ignore[misc]
+        """Thin nn.Module wrapper: model(x) → denoiser(x, t~Uniform[0,T)).
+
+        Exposes model.layers so downscale_real / restructure_real
+        can iterate and mutate weights in-place. The underlying
+        denoiser's parameters are addressable via the standard
+        nn.Module API (trainable_parameters, parameters, etc.)
+        because they are stored as a sub-attribute.
+
+        The diffusion timestep ``t`` is sampled uniformly from
+        ``[0, schedule.t_steps)`` using a deterministic RNG key
+        derived from the cell seed (R1 byte-stability).
+
+        Because ``mx.random.randint`` cannot be called inside an
+        MLX gradient trace, ``t`` is sampled OUTSIDE the
+        differentiable forward pass via ``advance_timestep()``
+        and cached as a plain Python-side ``mx.array`` in
+        ``self._t_cache``.  The default ``_t_cache`` is zeros
+        (matching the original M7 behaviour before this fix) and
+        is overwritten by ``advance_timestep()`` before each
+        replay episode loop.
+
+        Args:
+            denoiser: The underlying ``MLPDenoiser`` module.
+            t_steps: Upper bound for timestep sampling (exclusive).
+            rng_root: Seeded ``mx.random.key`` from
+                ``execute_profile`` (``train_root``).
+        """
+
+        def __init__(
+            self, denoiser: _Any, t_steps: int, rng_root: _Any
+        ) -> None:
+            super().__init__()
+            self._denoiser = denoiser
+            self._t_steps = t_steps
+            self._rng_root = rng_root
+            self._step_counter: int = 0
+            # Default t cache: zeros (1,) — replaced by
+            # advance_timestep() before each episode.
+            self._t_cache: _Any = mx.zeros((1,), dtype=mx.int32)
+            # Expose a shallow copy of the denoiser's layer list so
+            # downscale_real_handler / restructure_real_handler can
+            # iterate and swap ``model.layers`` without reordering the
+            # denoiser's own internal layer list (which would break its
+            # forward pass after a restructure swap).
+            self.layers = list(denoiser.layers)
+
+        def advance_timestep(self, batch: int) -> None:
+            """Sample a fresh t for the next forward pass.
+
+            Must be called OUTSIDE any gradient trace, once per
+            episode, before the episode's replay loop.  The key
+            is derived from ``_rng_root`` and ``_step_counter``
+            so R1 byte-stability holds across re-runs.
+            """
+            subkey = mx.random.split(
+                self._rng_root, num=self._step_counter + 2
+            )[self._step_counter]
+            self._step_counter += 1
+            self._t_cache = mx.random.randint(
+                0, self._t_steps, (batch,), key=subkey,
+            )
+
+        def __call__(self, x: mx.array) -> mx.array:
+            # Use the pre-sampled timestep; no random ops inside
+            # the differentiable trace (MLX grad-trace safety).
+            batch = x.shape[0] if x.ndim > 1 else 1
+            t = self._t_cache
+            if t.shape[0] == 1 and batch != 1:
+                t = mx.broadcast_to(t, (batch,))
+            out: mx.array = self._denoiser(x, t)
+            return out
+
+    return _Cls
+
+
+class _LatentPassthroughVAEEncoder:
+    """Returns ``(latent_as_mu, zeros_log_var)``: no re-encoding.
+
+    log_var = zeros gives sigma = exp(0) = 1.0, so the
+    reparameterisation in the recombine handler applies
+    unit-variance Gaussian perturbation.  The noise is seeded
+    deterministically by the recombine handler's ``seed``.
+    The stochastic recombination is intentional and matches the
+    framework-C recombine semantics.
+    """
+
+    def __call__(
+        self, x: "mx.array"
+    ) -> "tuple[mx.array, mx.array]":
+        import mlx.core as mx
+
+        if x.ndim == 1:
+            x = x[None, :]
+        log_var: "mx.array" = mx.zeros_like(x)
+        return x, log_var
+
+
 class MLXLatentDiffusionSubstrate:
     """Public substrate adapter — Wave 3b M2 skeleton.
 
@@ -141,16 +256,16 @@ class MLXLatentDiffusionSubstrate:
             beta_max=config.beta_max,
         )
         from kiki_oniric.substrates._diffusion.decoder import Decoder
-        from kiki_oniric.substrates._diffusion.cl_eval_head import (
-            ClEvalHead,
-        )
+
         self._diffusion_decoder: Decoder = Decoder(
             d_latent=config.d_latent, d_out=self._CIFAR_D_IN,
         )
-        self._cl_head: ClEvalHead = ClEvalHead(
-            d_latent=config.d_latent,
-            n_classes=20,  # CIFAR-100 task-window size
-        )
+        # NOTE: ClEvalHead is NOT stored on self.  A fresh head is
+        # constructed at the start of each execute_profile call so
+        # that delta_acc depends only on (seed, profile, task_idx)
+        # and never on cell execution order (R1 order-independence,
+        # FIX 1 — same class of bug as the M5 shared-substrate
+        # weight leak).
 
     # ------------------------------------------------------------------
     # SubstrateAdapter Protocol surface (factory.py).
@@ -186,7 +301,9 @@ class MLXLatentDiffusionSubstrate:
             bind_real_handlers,
         )
         from kiki_oniric.substrates._diffusion.cl_eval_head import (
-            train_head_inplace, eval_head_accuracy,
+            ClEvalHead,
+            train_head_inplace,
+            eval_head_accuracy,
         )
 
         seed = int(getattr(request, "seed", 0))
@@ -194,8 +311,13 @@ class MLXLatentDiffusionSubstrate:
         loader_batches = getattr(request, "loader_batches", ())
 
         root = mx.random.key(seed)
-        train_root, sample_root, data_root, head_root = mx.random.split(
-            root, num=4,
+        # train_root: feeds the denoiser adapter's RNG (FIX 2).
+        # data_root: used for synthetic dataset generation.
+        # sample_root and head_root are not consumed in this milestone;
+        # they are reserved for M5 (real sampler) and future per-cell
+        # head seeding respectively.
+        train_root, _sample_root, data_root, _head_root = (
+            mx.random.split(root, num=4)
         )
 
         # Build the dataset: encoded latents (one per loader batch),
@@ -224,73 +346,42 @@ class MLXLatentDiffusionSubstrate:
             ]
             synthetic = True
 
+        # Fresh ClEvalHead per cell — do NOT reuse across calls.
+        # This ensures delta_acc depends only on (seed, profile,
+        # task_idx) and never on the order in which cells are run
+        # (R1 order-independence; see __init__ NOTE).
+        cl_head = ClEvalHead(
+            d_latent=self.config.d_latent,
+            n_classes=20,  # CIFAR-100 task-window size
+        )
+
         # delta_acc baseline: train + eval the head BEFORE dream cycle.
         # All cells use the first batch as the eval slice for simplicity.
         baseline_acc = 0.0
         if dataset:
             train_head_inplace(
-                self._cl_head, dataset[0], labels_per_batch[0],
+                cl_head, dataset[0], labels_per_batch[0],
             )
             baseline_acc = eval_head_accuracy(
-                self._cl_head, dataset[0], labels_per_batch[0],
+                cl_head, dataset[0], labels_per_batch[0],
             )
 
-        # Instantiate the profile and bind real handlers.
-        # The replay_real_handler calls model(x) with a single arg;
-        # MLPDenoiser requires (z, t). Wrap the denoiser in a thin
-        # nn.Module subclass that injects a zero timestep so the
-        # handler's loss_fn can call model(x) without modification.
-        # We subclass nn.Module (via cast-to-Any alias to avoid mypy
-        # issues with MLX's star-import resolution — mirrors the
-        # pattern used in model.py and decoder.py).
-        from typing import Any as _Any, cast as _cast
-        import mlx.nn as _nn_raw
-        _nn_any: _Any = _cast(_Any, _nn_raw)
+        # Wrap the denoiser: model(x) → denoiser(x, t) where t is
+        # sampled uniformly from [0, T) using train_root (FIX 2).
+        # The adapter's RNG state is per-call (call counter resets
+        # each execute_profile invocation) so R1 holds.
+        _DenoiserSingleArgAdapter = _make_denoiser_adapter_class()
+        model_adapter = _DenoiserSingleArgAdapter(
+            self.denoiser,
+            t_steps=self.config.t_steps,
+            rng_root=train_root,
+        )
 
-        class _DenoiserSingleArgAdapter(_nn_any.Module):  # type: ignore[misc]
-            """Thin nn.Module wrapper: model(x) → denoiser(x, t=0).
-
-            Exposes model.layers so downscale_real / restructure_real
-            can iterate and mutate weights in-place. The underlying
-            denoiser's parameters are addressable via the standard
-            nn.Module API (trainable_parameters, parameters, etc.)
-            because they are stored as a sub-attribute.
-            """
-
-            def __init__(self, denoiser: _Any) -> None:
-                super().__init__()
-                self._denoiser = denoiser
-                # Expose layers as a direct attribute so
-                # downscale_real_handler / restructure_real_handler
-                # can iterate ``model.layers``.
-                self.layers = denoiser.layers
-
-            def __call__(self, x: "mx.array") -> "mx.array":
-                batch = x.shape[0] if x.ndim > 1 else 1
-                t = mx.zeros((batch,), dtype=mx.int32)
-                out: "mx.array" = self._denoiser(x, t)
-                return out
-
-        model_adapter = _DenoiserSingleArgAdapter(self.denoiser)
-
-        # The recombine_real_handler expects a VAEEncoder that returns
-        # (mu, log_var). The delta_latents are already encoded latents
-        # (d_latent-dimensional vectors from _encode_features), not
-        # raw features. Treat the latent directly as mu with zero
-        # log_var so reparameterisation has zero variance — the latent
-        # is deterministic and the VAEEncoder Protocol contract is
-        # satisfied without a re-encoding pass.
-        class _LatentPassthroughVAEEncoder:
-            """Returns (latent_as_mu, zeros_log_var): no re-encoding."""
-
-            def __call__(
-                self, x: "mx.array"
-            ) -> "tuple[mx.array, mx.array]":
-                if x.ndim == 1:
-                    x = x[None, :]
-                log_var: "mx.array" = mx.zeros_like(x)
-                return x, log_var
-
+        # The recombine_real_handler expects a VAEEncoder returning
+        # (mu, log_var).  The delta_latents are already d_latent-
+        # dimensional vectors from _encode_features.  Treat the latent
+        # as mu; log_var = zeros gives unit-variance reparameterisation
+        # seeded deterministically by the recombine handler's seed.
         vae_encoder = _LatentPassthroughVAEEncoder()
 
         profile_ctor = {
@@ -317,7 +408,14 @@ class MLXLatentDiffusionSubstrate:
                 Operation.RESTRUCTURE, Operation.RECOMBINE,
             ) if op in activated
         )
+        n_layers = self.config.n_layers
         for batch_idx, latents in enumerate(dataset):
+            # Sample a fresh diffusion timestep for this episode
+            # outside the gradient trace (MLX grad-trace safety).
+            # advance_timestep() uses train_root + a step counter so
+            # each batch gets a different but deterministic t.
+            model_adapter.advance_timestep(latents.shape[0])
+
             # replay_real_handler computes MSE(model(x), y) so x and
             # y must be compatible with the model output shape. Since
             # the adapter outputs (batch, d_latent), y must also be
@@ -331,14 +429,22 @@ class MLXLatentDiffusionSubstrate:
                 {"x": latents[i], "y": latents[i]}
                 for i in range(latents.shape[0])
             ]
+            # Vary the restructure swap pair deterministically per
+            # batch so restructure does non-degenerate work across
+            # batches (FIX 6).  Indices are functions of batch_idx
+            # only → deterministic, no RNG required.
+            swap_a = batch_idx % n_layers
+            swap_b = (batch_idx + 1) % n_layers
             episode = DreamEpisode(
                 trigger=EpisodeTrigger.SCHEDULED,
                 input_slice={
                     "beta_records": records,
                     "shrink_factor": 0.95,
                     "topo_op": "reroute",
-                    "swap_indices": (0, min(1, self.config.n_layers - 1)),
-                    "delta_latents": [latents[i] for i in range(latents.shape[0])],
+                    "swap_indices": (swap_a, swap_b),
+                    "delta_latents": [
+                        latents[i] for i in range(latents.shape[0])
+                    ],
                     "species": "diffusion",
                 },
                 operation_set=op_order,
@@ -348,15 +454,18 @@ class MLXLatentDiffusionSubstrate:
                     wall_time_s=60.0,
                     energy_j=1.0,
                 ),
-                episode_id=f"diff/{profile_tag}/seed={seed}/b={batch_idx}",
+                episode_id=(
+                    f"diff/{profile_tag}/seed={seed}/b={batch_idx}"
+                ),
             )
             profile.runtime.execute(episode)
 
-        # delta_acc post-cycle: same head, eval again after the dream.
+        # delta_acc post-cycle: same (per-cell) head, eval again after
+        # the dream.
         post_acc = 0.0
         if dataset:
             post_acc = eval_head_accuracy(
-                self._cl_head, dataset[0], labels_per_batch[0],
+                cl_head, dataset[0], labels_per_batch[0],
             )
 
         wall = time.perf_counter() - t0
@@ -370,6 +479,10 @@ class MLXLatentDiffusionSubstrate:
             if hasattr(profile, "downscale_state") else 1.0
         restructure_sum = int(profile.restructure_state.total_reroutes) \
             if hasattr(profile, "restructure_state") else 0
+        # _episode_count is a plain dataclass field on the recombine
+        # handler's RealState, read intentionally as the recombine-
+        # event count metric.  The leading underscore is the handler's
+        # naming convention; the field is not a property (FIX 4).
         recombine_rate = int(profile.recombine_state._episode_count) \
             if hasattr(profile, "recombine_state") else 0
         op_flops_total = sum(
