@@ -7,7 +7,7 @@ Research program producing two complementary papers, both released as arXiv prep
 - **Paper 1** — formal framework **C** with axioms **DR-0..DR-4** and invariants families **I / S / K**. Journal submission (PLOS Computational Biology candidate) deferred until preprint signal.
 - **Paper 2** — empirical ablation on the `kiki_oniric` substrate across profiles `P_min`, `P_equ`, `P_max`. Peer-review venue deferred — arXiv preprint first, then decide.
 
-**Status** — DualVer `C-v0.8.0+PARTIAL` (2026-04-21 ; SemVer alias `0.8.0` in `pyproject.toml` / `CITATION.cff`). Paper 1 **v0.2** frozen (22 p), release path : arXiv preprint + Zenodo DOI. Journal submission (PLOS Computational Biology candidate) deferred — we want a preprint in the world first and a signal from it before committing to a months-long peer review. Gates **G1, G7, G8, G9 LOCKED** (cycle 2 closed) ; **G10 deferred to Paper 2**. 277 tests / 91.17 % coverage. OSF pre-registration **live** at DOI `10.17605/OSF.IO/Q6JYN` (https://osf.io/q6jyn, DataCite-minted 2026-04-19T00:28:05Z). arXiv deposit ready, only web-UI walkthrough pending. Bonferroni amendment (2026-04-19) still to be filed as a linked OSF registration before submit — see `docs/osf-amendment-submission-package.md`.
+**Status** — DualVer `C-v0.24.0+PARTIAL` (2026-05-21 ; SemVer alias `0.22.0` in `pyproject.toml`). 914 tests, coverage 89 % (Linux gate 30 %, macOS nightly gate 90 %). Last bump 2026-05-21 Wave 3b M3 (MLX latent-diffusion substrate trainer + sampler + R1 entries). Historic Paper 1 v0.2 status: Paper 1 **v0.2** frozen (22 p), release path : arXiv preprint + Zenodo DOI. Journal submission (PLOS Computational Biology candidate) deferred — we want a preprint in the world first and a signal from it before committing to a months-long peer review. Gates **G1, G7, G8, G9 LOCKED** (cycle 2 closed) ; **G10 deferred to Paper 2**. 277 tests / 91.17 % coverage. OSF pre-registration **live** at DOI `10.17605/OSF.IO/Q6JYN` (https://osf.io/q6jyn, DataCite-minted 2026-04-19T00:28:05Z). arXiv deposit ready, only web-UI walkthrough pending. Bonferroni amendment (2026-04-19) still to be filed as a linked OSF registration before submit — see `docs/osf-amendment-submission-package.md`.
 **Author** — Clément Saillant (L'Electron Rare), *dreamOfkiki* program author. Hypneum Lab.
 **License** — MIT (code) + CC-BY-4.0 (docs).
 
@@ -88,6 +88,45 @@ revoked); OQ-3 spec scope = Paper 2 appendix scaffolding.
 
 Follow-up: `dream-of-kiki#20` for paper1-fr EN→FR sync of PR #18
 §8.4 changes.
+
+---
+
+## 2026-05-20 → 2026-05-21 session — Wave 3a Dream2Learn resolved + Wave 3b M1-M4 shipped
+
+Session shipped **6 PRs + 2 direct commits** (master green at
+`5e5582e`). Two work-streams advanced :
+
+**Wave 3a — Paper 2 c-alert resolution.** PR #27 (`a55f3bc`)
+ships a formal DR-3 separation proof for **Dream2Learn**
+(`docs/proofs/dream2learn-dr3-separation.md`) : Dream2Learn does
+**not** satisfy the Conformance Criterion (CC condition 1 typed-
+interface failure ; DE / role-partition mismatch). The 2026-05-19
+c-alert is resolved and Dream2Learn is reclassified from c-alert
+→ category (a) baseline. §7.8 EN + FR updated, bib +
+`calcagno2026`, glossary updated.
+
+**Wave 3b — MLX latent-diffusion substrate (Track S).** Four
+milestones closed :
+
+| M | PR / commit | What |
+|---|---|---|
+| M1 | PR #29 (`92afef9`) | Plan (525 L, 6 milestones M1-M6, D1-D5 decisions) + DR-3 evidence skeleton v0.1 + OSF amendment draft for Q6JYN |
+| M2 | PR #30 (`05f737f`) | `kiki_oniric/substrates/mlx_latent_diffusion.py` + `_diffusion/` E/U/σ class signatures only ; 8 tests, 98 % coverage. Track S chosen at M2 review |
+| M3 | PR #31 (`4cd259c`) | Sampler R1 key tree (`mx.random.split`) + trainer + 3 DR conformance families (DR-3, DR-0, DR-1) + 3 R1 entries `apple_m5` (`pending_review`). DualVer `C-v0.23 → C-v0.24` framework + `C-v0.13 → C-v0.14` substrate-internal. +33 tests → 898 |
+| M4 | direct `e17c17e` | `scripts/ablation_cycle3_diffusion.py` + `harness/diffusion_eval/{cifar100_split_loader,diffusion_metrics}.py` + 15 integration tests ; +11 tests → 914, coverage 89 %, smoke 1.3 s, R1 deterministic. PR #32 closed as superseded |
+
+Operational PRs : PR #26 (`38fcefa`) B5 bounds-check on
+`hierarchy_change.add` + `weight_delta`, closes #24 ; PR #28
+(`2013176`) skip MLX-only tests on Linux runners (root
+`conftest.py` `collect_ignore_glob` + Linux coverage gate
+30 % / macOS nightly 90 %) — first green master CI since
+2026-05-03. Direct CI fix `5e5582e` follows M4.
+
+**No empirical claim is advanced by Wave 3b at this stage** :
+M3 ships R1 entries with `status: "pending_review"` (M5 GrosMac)
+and `pending_remote_validation` (M1 Max). M5 (ablation pilot)
+remains gated on 5 listed blockers ; M6 (paper integration)
+follows M5.
 
 ---
 
