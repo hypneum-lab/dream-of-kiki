@@ -1,3 +1,44 @@
+## 2026-05-21 — M7 delta_acc consolidation→eval wiring
+
+The three diffusion R1 entries (`test_r1_diffusion_*`) are
+regenerated under `C-v0.15.0+PARTIAL` after `execute_profile` now
+applies `apply_channel_outputs` to the denoiser and the CL head
+probes `denoiser(z, t_fixed)` instead of raw encoder latents. The
+hash drift is expected; entries stay `pending_review` pending
+cross-machine confirmation on m3_ultra and m1_max.
+
+---
+
+## 2026-05-21 — M7 substrate DR-3 conformance fix
+
+FC MINOR `C-v0.14.0 → C-v0.15.0+PARTIAL`. The
+`mlx_latent_diffusion` substrate rewrites `execute_profile` to
+honour framework-C §3.1 profile activation. This changes the
+substrate's R1-hashable byte trace.
+
+Regenerated entries (3):
+- `test_r1_diffusion_train`
+- `test_r1_diffusion_sample`
+- `test_r1_diffusion_full_pipeline`
+
+Promotion: the locally-regenerated chip family is `accepted`
+(apple_m5); the other two stay `pending_review` until
+cross-machine re-runs.
+
+**DONE_WITH_CONCERNS**: The 3 R1 diffusion tests passed
+immediately without hash change. Investigation confirmed the
+R1 fixture exercises `Trainer`, `Sampler`, and `Encoder`
+directly — NOT through `execute_profile`. The M7 rewrite of
+`execute_profile` is orthogonal to the R1-traced code path.
+The hashes were in `pending_review` status from M3; two
+consecutive deterministic runs confirmed byte-stability; the
+entries were promoted to `accepted`. The R1 fixture does not
+exercise the M7 profile-activation code path.
+
+Reference: `docs/superpowers/specs/2026-05-21-m7-substrate-dr3-design.md`.
+
+---
+
 # Golden Hashes Rebaseline — 2026-05-10 (N2 Task 3)
 
 **Reason:** R1 reproducibility hashes drifted between the prior

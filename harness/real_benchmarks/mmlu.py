@@ -302,7 +302,7 @@ def _load_mmlu_records(
     try:  # pragma: no cover - optional cache path
         import os
 
-        from datasets import load_dataset  # type: ignore[import-not-found]
+        from datasets import load_dataset
 
         os.environ.setdefault("HF_DATASETS_OFFLINE", "1")
         ds = load_dataset("cais/mmlu", "all", split="test")

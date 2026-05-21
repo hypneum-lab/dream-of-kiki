@@ -210,12 +210,12 @@ def test_forward_passes_return_correct_shapes() -> None:
 
 
 def test_execute_profile_runs_minimal_smoke_cycle() -> None:
-    """Wave 3b M3 wires a minimal train + sample driver.
+    """M7 execute_profile returns the M7 metric schema (synthetic path).
 
-    The smoke cycle returns the standard metrics-dict shape used
-    by the sibling substrates and carries a ``"synthetic": True``
-    flag per CLAUDE.md §Working rules item 3 (no synthetic
-    placeholder may be reported as an empirical claim).
+    Updated in M7: restructure_sum is int (total_reroutes) and
+    recombine_rate is int (_episode_count), not floats. The
+    ``synthetic: True`` honesty marker, provenance keys, and
+    wall_time_s float are unchanged.
     """
     from dataclasses import dataclass
 
@@ -227,15 +227,26 @@ def test_execute_profile_runs_minimal_smoke_cycle() -> None:
     adapter = MLXLatentDiffusionSubstrate()
     out = adapter.execute_profile(_StubRequest())
 
-    # Standard sibling-substrate keys.
-    for key in (
-        "replay_rate", "downscale_norm", "restructure_sum",
-        "recombine_rate", "delta_acc", "wall_time_s",
-    ):
+    # Float-valued metric keys (M7 schema).
+    for key in ("replay_rate", "downscale_norm", "delta_acc", "wall_time_s"):
         assert key in out, f"missing metric key {key!r}"
         assert isinstance(out[key], float), f"{key!r} must be float"
 
-    # M3-specific provenance keys (honesty marker + identity).
+    # Integer-valued metric keys (M7 schema — counters not proxies).
+    assert "restructure_sum" in out
+    assert isinstance(out["restructure_sum"], int), (
+        "restructure_sum must be int (total_reroutes counter)"
+    )
+    assert "recombine_rate" in out
+    assert isinstance(out["recombine_rate"], int), (
+        "recombine_rate must be int (_episode_count counter)"
+    )
+
+    # M7 additional metrics.
+    assert "op_flops_total" in out
+    assert isinstance(out["op_flops_total"], int)
+
+    # Provenance keys (honesty marker + identity).
     assert out["synthetic"] is True
     assert out["profile"] == "p_min"
     assert out["seed"] == 7
@@ -296,3 +307,110 @@ def test_execute_profile_consumes_loader_batches() -> None:
     metrics = substrate.execute_profile(_Req())
     assert metrics["synthetic"] is False
     assert "replay_rate" in metrics
+
+
+def test_execute_profile_p_min_only_activates_replay_downscale() -> None:
+    """Framework-C §3.1: p_min activates {replay, downscale}, no more."""
+
+    class _Req:
+        seed = 0
+        profile = "p_min"
+        task_idx = 0
+        loader_batches = (
+            type("B", (), {
+                "features": mx.zeros((8, 3072)),
+                "labels": mx.zeros((8,), dtype=mx.int32),
+                "task_idx": 0,
+            })(),
+        )
+
+    metrics = MLXLatentDiffusionSubstrate().execute_profile(_Req())
+    # restructure inactive for p_min -> total_reroutes stays 0
+    assert metrics["restructure_sum"] == 0
+    # recombine inactive for p_min -> _episode_count stays 0
+    assert metrics["recombine_rate"] == 0
+    # replay / downscale active -> compound_factor changed (downscale ran)
+    assert metrics["downscale_norm"] != 1.0 or metrics["replay_rate"] != 0.0
+
+
+def test_execute_profile_p_max_activates_all_four() -> None:
+    """Framework-C §3.1: p_max activates all four ops."""
+
+    class _Req:
+        seed = 0
+        profile = "p_max"
+        task_idx = 0
+        loader_batches = (
+            type("B", (), {
+                "features": mx.zeros((8, 3072)),
+                "labels": mx.zeros((8,), dtype=mx.int32),
+                "task_idx": 0,
+            })(),
+        )
+
+    metrics = MLXLatentDiffusionSubstrate().execute_profile(_Req())
+    # All 4 ops active -> recombine ran at least once
+    recombine_rate = metrics["recombine_rate"]
+    assert isinstance(recombine_rate, int) and recombine_rate >= 1
+
+
+def test_execute_profile_delta_acc_is_real_and_order_independent() -> None:
+    """delta_acc must be (a) bounded in [-1, 1], (b) non-zero on a
+    profile that actually exercises the consolidation, and (c)
+    order-independent across calls on the same substrate.
+
+    M7 delta_acc design: the CL head probes denoiser(z, t_fixed) on
+    a fixed feature; replay + downscale emit WeightUpdates that
+    apply_channel_outputs applies to a per-call deepcopy of the
+    denoiser between baseline and post. delta_acc therefore reflects
+    the consolidation's effect on the denoiser feature.
+
+    Cell A uses p_equ (all four ops active) so the SGD-driven replay
+    update produces a non-trivial delta — guarding against a
+    regression to the pre-fix structural zero. Cell B (p_min) runs
+    between the two cell-A measurements to expose any state leakage.
+    """
+    from dataclasses import dataclass
+
+    @dataclass
+    class _Req:
+        seed: int
+        profile: str
+
+    # Single substrate instance so self.denoiser initial weights are
+    # identical across all three calls (delta_acc depends only on
+    # (seed, profile) under the per-call deepcopy contract).
+    shared = MLXLatentDiffusionSubstrate()
+
+    raw_solo = shared.execute_profile(
+        _Req(seed=1, profile="p_equ")
+    )["delta_acc"]
+    assert isinstance(raw_solo, float)
+    acc_a_solo: float = raw_solo
+
+    # Cell B runs between the two cell-A measurements.
+    shared.execute_profile(_Req(seed=2, profile="p_min"))
+
+    raw_after = shared.execute_profile(
+        _Req(seed=1, profile="p_equ")
+    )["delta_acc"]
+    assert isinstance(raw_after, float)
+    acc_a_after_b: float = raw_after
+
+    # Order-independence (the original guard).
+    assert acc_a_after_b == acc_a_solo, (
+        "delta_acc changed when cell A ran after cell B — state "
+        "leakage between execute_profile calls on the same substrate"
+    )
+    # Bounded by construction (head frozen, both accs in [0, 1]).
+    assert -1.0 <= acc_a_solo <= 1.0, (
+        f"delta_acc out of [-1, 1]: {acc_a_solo}"
+    )
+    # Real measurement — non-zero. A regression to the pre-M7
+    # structural zero (head decoupled from the consolidation target)
+    # would re-introduce delta_acc == 0 here.
+    assert acc_a_solo != 0.0, (
+        "delta_acc is exactly zero on p_equ — the consolidation→eval "
+        "wiring (denoiser_feature probe + apply_channel_outputs) is "
+        "not connected (regression to pre-fix M7 state)"
+    )
