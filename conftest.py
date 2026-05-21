@@ -15,7 +15,11 @@ collect_ignore_glob: list[str] = []
 if sys.platform != "darwin":
     collect_ignore_glob = [
         "tests/conformance/axioms/test_dr3_*.py",
+        "tests/conformance/axioms/test_dr0_diffusion_*.py",
+        "tests/conformance/axioms/test_dr1_diffusion_*.py",
         "tests/conformance/test_baseline_registration.py",
+        "tests/reproducibility/test_r1_diffusion.py",
+        "tests/unit/test_diffusion_*.py",
         "tests/unit/experiments/test_g4_*.py",
         "tests/unit/experiments/test_g5_*.py",
         "tests/unit/experiments/test_g6_*.py",

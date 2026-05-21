@@ -33,5 +33,26 @@
     "hash": "1adfe6b3924fc33af3b1f07db8aaa60b4a2b41b891fee717650e8370d99b6b83",
     "mlx_version": "0.31.1",
     "status": "pending_review"
+  },
+  "test_r1_diffusion_train": {
+    "chip_family": "apple_m1_max",
+    "commit": "pending",
+    "hash": "pending",
+    "mlx_version": "pending",
+    "status": "pending_remote_validation"
+  },
+  "test_r1_diffusion_sample": {
+    "chip_family": "apple_m1_max",
+    "commit": "pending",
+    "hash": "pending",
+    "mlx_version": "pending",
+    "status": "pending_remote_validation"
+  },
+  "test_r1_diffusion_full_pipeline": {
+    "chip_family": "apple_m1_max",
+    "commit": "pending",
+    "hash": "pending",
+    "mlx_version": "pending",
+    "status": "pending_remote_validation"
   }
 }
