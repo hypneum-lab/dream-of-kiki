@@ -1,0 +1,45 @@
+{
+  "acc_matrix": {
+    "complement_alternating": [
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    "gray_code": [
+      null,
+      null,
+      0.22,
+      0.28,
+      null
+    ],
+    "parity_chunks_4": [
+      null,
+      0.2,
+      0.2,
+      0.12,
+      null
+    ],
+    "reverse": [
+      null,
+      null,
+      null,
+      0.44,
+      null
+    ],
+    "xor_shift_3": [
+      0.2,
+      0.24,
+      0.24,
+      0.26,
+      null
+    ]
+  },
+  "arm": "P_min",
+  "idx": 3,
+  "seed": 0,
+  "smoke": false,
+  "subdomain": "reverse",
+  "wall_time_s": 163.84661078453064
+}
