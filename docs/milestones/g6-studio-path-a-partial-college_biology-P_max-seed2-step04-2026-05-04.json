@@ -1,0 +1,45 @@
+{
+  "acc_matrix": {
+    "anatomy": [
+      0.6062000000000001,
+      0.5347999999999999,
+      0.64,
+      0.52,
+      0.66
+    ],
+    "astronomy": [
+      null,
+      0.458,
+      0.54,
+      0.56,
+      0.5244
+    ],
+    "business_ethics": [
+      null,
+      null,
+      0.46,
+      0.46,
+      0.46
+    ],
+    "clinical_knowledge": [
+      null,
+      null,
+      null,
+      0.54,
+      0.52
+    ],
+    "college_biology": [
+      null,
+      null,
+      null,
+      null,
+      0.44
+    ]
+  },
+  "arm": "P_max",
+  "idx": 4,
+  "seed": 2,
+  "smoke": false,
+  "subdomain": "college_biology",
+  "wall_time_s": 222.49729895591736
+}
