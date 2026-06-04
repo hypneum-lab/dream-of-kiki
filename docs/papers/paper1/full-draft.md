@@ -396,6 +396,8 @@ finding 12 non-commutative cross-pairs.
 - **K3** swap latency bounded (WARN)
 - **K4** eval matrix coverage on MAJOR bump (BLOCKING)
 
+The empirical sufficiency of these invariants is examined in §5.8.
+
 ### 4.7 DualVer formal+empirical versioning
 
 `C-vX.Y.Z+{STABLE,UNSTABLE}` — formal axis (FC) and empirical
@@ -512,7 +514,86 @@ generated-semigroup theorem (full proof in
 executable Conformance Criterion on two substrates (§5.6) ;
 DR-4 proved in `docs/proofs/dr4-profile-inclusion.md` as chain
 inclusion of ops and channels plus the DR-4.L monotonicity
-lemma.
+lemma. These proofs establish satisfaction of the axioms by the
+reference substrates ; the complementary question of whether the
+criterion can be satisfied by accident is addressed in §5.8.
+
+### 5.8 Negative tests — necessity of C2 axiom property tests
+
+Sections 5.1-5.7 establish the four structural pillars of the
+Conformance Criterion (deterministic compilation, single-threaded
+scheduler, atomic swap with invariant guards, profile chain
+inclusion) and present positive walkthroughs across two substrates.
+A complementary question is whether these structural pillars are
+*sufficient* to discriminate genuine substrates from constructions
+that satisfy them by accident. We addressed this with a
+pre-registered negative-test audit (OSF-style ; pre-registration in
+`docs/milestones/q2-conformance-negative-2026-05-10.md`).
+
+We constructed 15 adversarial substrates in three categories :
+trivial accidents (Identity, RandomNoise, Lookup, FrozenZeros,
+Constant) ; adversarial-construction accidents
+(ShapePreservingNoise, BudgetGaming, PermutedReplay,
+OverloadRecombine, StatelessAccident, CommutativityViolator,
+BoundaryCheater) ; and statistical accidents evaluated at *N*=100
+trials each (RandomCoinFlip, ShapeDistributionDependent,
+SeedDependentSubstrate). Each substrate implements the
+`SubstrateAdapter` Protocol but is designed to violate at least one
+axiom or invariant in spirit.
+
+Applying the structural-invariant layer of the criterion alone
+(S2 finiteness ; range bounds on `replay_rate` and `recombine_rate`
+mirroring S4 ; nonnegativity of `restructure_sum` and
+`wall_time_s` ; bounded `delta_acc`) the structural-invariant layer
+is **insufficient as a stand-alone criterion** : 12/15 N8
+substrates (Cat A trivial + Cat B adversarial) pass deterministically
+with the single-trial protocol, while the 3 Cat C statistical
+substrates display heterogeneous FP rates. Specifically,
+ShapeDistributionDependent passes 80/100 trials (the structural
+layer fails to discriminate it on 80% of input distributions),
+RandomCoinFlip passes 6/100 trials (3.1% theoretical, 6% observed
+— within seed noise), and SeedDependentSubstrate passes 1/100
+(only on seed=0, as constructed). The first finding (80% FP on
+ShapeDistributionDependent) confirms the criterion has a category-X
+blindspot — passing on common-distribution inputs while flunking
+on long-tail. The latter two findings (1-6% FP) show the structural
+layer *does* have discriminative power against statistical
+adversaries that inject NaN/Inf or out-of-range values, just not
+100% safety. Per the pre-registered decision rule (≥3 false
+positives ⇒ reformulate), this result establishes that **the
+structural layer is necessary but not sufficient** : the Conformance
+Criterion must additionally require **C2 substrate-specific axiom
+property tests**, as exemplified for the E-SNN substrate in §5.6.
+The reference implementations of §5.6 satisfy both layers ; an
+arbitrary substrate satisfying only the structural layer is not,
+on its own strength, conformant.
+
+This finding strengthens rather than weakens the criterion : it
+makes explicit a requirement that was implicit in the §5.6
+walkthroughs. Reproduction artefacts are at
+`tests/conformance/adversarial/test_negative_substrates.py` and
+`scripts/run_q2_conformance_audit.py` ; raw audit output at
+`docs/milestones/q2-conformance-negative-results.json`.
+
+**Q2+ extension (2026-05-11).** We extended the negative-test pool
+with 10 additional substrates spanning three new categories: Cat D
+modular-arithmetic obfuscation (Mod7Cycler, Mod13Hasher, BinaryGray,
+AffineModN), Cat E replay-loop violators (ReplayHistorySpoof,
+BetaPermutationLeak, AlphaInfiniteRecycle, GammaSnapshotRollback),
+and Cat F asymmetric-channel (AsymReplayHeavy, AsymRecombineEmpty).
+All 10 pass the structural-invariant layer **deterministically (1/1
+trials each)** because they were constructed to satisfy
+S2/range/nonneg/bounded-delta_acc by design. Combined with the N8
+base, the cumulative pool spans 22 substrates that the structural
+layer cannot reject (12 N8 trivial+adversarial + 10 N9
+modular+replay+asymmetric) and 3 statistical substrates with
+heterogeneous FP rates (1-80%). The "C2 required" conclusion is
+correspondingly strengthened : the structural layer is necessary
+but provably not sufficient for *any* substrate that obeys the
+basic invariants, and only partially discriminating against
+statistical adversaries. Reproduction artefact at
+`docs/milestones/q2plus-conformance-negative-results.json` ;
+extended audit harness at `scripts/run_q2_conformance_audit.py`.
 
 ---
 
@@ -922,6 +1003,10 @@ claim empirical parity.
 | @gavranovic2024fundamental (Fundamental Components of Deep Learning, PhD thesis / arXiv:2403.13001) | Unified category-theoretic account of deep learning architectures and training (parametric optics over semicartesian categories) | Orthogonal prior art for categorical ML : we formalise *dream-phase consolidation operations* rather than gradient-based training, and use a strictly weaker algebraic structure (free semigroup) adequate for the compositional-semantics claim without committing to the full optics stack |
 | @klinzing2019mechanisms (Nature Neuroscience, systems-consolidation review) ; @rasch2025sleep (Physiological Reviews, sleep-contribution review) | Canonical three-process framing (active systems consolidation + SHY + integration) with extensive empirical grounding | Empirical anchor we commit to (cf. §3 preamble) ; our four-primitive decomposition refines *integration* into `restructure` and `recombine` — the extra generator is justified by non-commutativity with `downscale` (DR-2 proof), not by disagreement with the review literature |
 | @huh2024platonic (Platonic Representation Hypothesis, ICML 2024) | Sufficiently capable models converge to a shared statistical representation independent of architecture and modality | Theoretical underpinning for our DR-3 substrate-agnosticism claim : if PRH holds, conformance is *expected* to transfer across the MLX, E-SNN and LoRA substrates rather than being an architectural coincidence ; companion empirical PRH probe in a cognitive-architecture setting reported in @saillant2026nervewml (`nerve-wml` v1.7.0, GammaThetaMultiplexer experiment) |
+| @liu2021dvnc (Discrete-Valued Neural Communication, NeurIPS 2021) | VQ-VAE shared global codebook for discrete messages between neural modules | Closest prior art for cross-module discrete communication ; DVNC uses one shared codebook and homogeneous modules, whereas our substrate-portability claim (DR-3) and the companion nerve-wml protocol use per-substrate codebooks with learned transducers and typed prediction/error roles — DVNC is a special case (single substrate, single codebook) of the more general portability our Conformance Criterion targets |
+| @pedersen2024nir (Neuromorphic Intermediate Representation, Nature Communications 2024) | Static computational-graph IR : a hardware-agnostic instruction set for compiling one spiking model onto many neuromorphic backends | Operates at the *model-graph* layer ; orthogonal to our framework, which composes *consolidation operations* over a substrate and is agnostic to the IR that lowers any one substrate to hardware — NIR could serve as the compilation target for our E-SNN substrate (§9.1) without altering the axioms |
+| @aer2025biohybrid (Address-Event Representation over UDP/Ethernet, arXiv:2501.09128, 2025) | Transport / encoding layer specifying how spike events are timestamped, addressed and physically carried, including biohybrid silicon–wetware links | Operates at the *transport* layer ; orthogonal to our framework — the Conformance Criterion constrains the semantics of consolidation operations, not the wire protocol that moves spikes, and AER is one admissible carrier for a conformant E-SNN substrate |
+| @liu2024hybrid (Advancing brain-inspired computing with hybrid neural networks, National Science Review 2024) | Survey arguing hybrid ANN/SNN systems are the path to brain-inspired computing | Canonical hybrid-neural-network anchor for our cross-substrate claim : our cycle-1 validation across an MLX dense substrate and a LIF spiking substrate is precisely a hybrid-neural-network configuration, and the executable Conformance Criterion supplies the contract such hybrids currently lack |
 
 Our distinguishing features relative to the above : **(a)** a
 unified *formal* framework covering all four pillars with a
@@ -949,6 +1034,27 @@ companion `nerve-wml` v1.7.0 working-memory layer
 GammaThetaMultiplexer experiment ; the cross-substrate conformance
 matrix reported here (cycle 2 + 3) is the dreamOfkiki side of the
 same empirical bet.
+
+**The 2026 critiques and a global-versus-local refinement.** The PRH
+has since been contested. @platoscave2026 report that cross-model
+representational alignment is fragile and degrades as model scale
+grows, and @aristotelianprh2026 show that the *global* convergence
+originally claimed is substantially a width/depth confounder : once
+alignment is null-calibrated against capacity-matched random baselines,
+only *local* neighbourhood structure survives as a genuine
+cross-substrate signal. We fold this into DR-3 rather than against it.
+Our substrate-agnosticism claim does not require that the MLX, E-SNN and
+LoRA substrates share one global representation ; it requires only that
+a *conformant* substrate preserves the *local* operational structure the
+Conformance Criterion checks — that the same consolidation operations,
+composed in the same order, produce neighbourhood-equivalent episode
+states. This is the local form of PRH, and it is the form the 2026
+evidence still supports. The companion nerve-wml probe
+[@saillant2026nervewml] is consistent with this reading : its
+mutual-kNN measurement is a local-neighbourhood metric reported against
+a capacity-matched random baseline, exactly the null-calibrated, local
+quantity @aristotelianprh2026 argue is the defensible one. DR-3 is
+therefore anchored to local, not global, representational convergence.
 
 ---
 

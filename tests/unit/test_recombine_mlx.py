@@ -3,8 +3,14 @@ from __future__ import annotations
 
 import pytest
 
-mx = pytest.importorskip("mlx.core")
-nn = pytest.importorskip("mlx.nn")
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    import mlx.core as mx
+    import mlx.nn as nn
+else:
+    mx = pytest.importorskip("mlx.core")
+    nn = pytest.importorskip("mlx.nn")
 
 from kiki_oniric.dream.episode import (
     BudgetCap,
@@ -19,30 +25,30 @@ from kiki_oniric.dream.operations.recombine import (
 )
 
 
-class TinyEncoder(nn.Module):
+class TinyEncoder(nn.Module):  # type: ignore[misc,name-defined]  # mlx.nn dynamic
     """Encoder: input_dim -> 2 * latent_dim (mu + log_sigma)."""
 
     def __init__(self, input_dim: int, latent_dim: int) -> None:
         super().__init__()
-        self.fc = nn.Linear(input_dim, 2 * latent_dim)
+        self.fc = nn.Linear(input_dim, 2 * latent_dim)  # type: ignore[attr-defined]  # mlx dynamic
         self.latent_dim = latent_dim
 
-    def __call__(self, x):
+    def __call__(self, x: mx.array) -> tuple[mx.array, mx.array]:
         out = self.fc(x)
         mu = out[..., : self.latent_dim]
         log_sigma = out[..., self.latent_dim :]
         return mu, log_sigma
 
 
-class TinyDecoder(nn.Module):
+class TinyDecoder(nn.Module):  # type: ignore[misc,name-defined]  # mlx.nn dynamic
     """Decoder: latent_dim -> output_dim."""
 
     def __init__(self, latent_dim: int, output_dim: int) -> None:
         super().__init__()
-        self.fc = nn.Linear(latent_dim, output_dim)
+        self.fc = nn.Linear(latent_dim, output_dim)  # type: ignore[attr-defined]  # mlx dynamic
 
-    def __call__(self, z):
-        return self.fc(z)
+    def __call__(self, z: mx.array) -> mx.array:
+        return self.fc(z)  # type: ignore[no-any-return]  # mlx dynamic
 
 
 def make_recombine_episode(
@@ -88,6 +94,7 @@ def test_recombine_mlx_sampling_diversity_over_runs() -> None:
             f"de-mlx-rc-div-{seed}",
             [[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]],
         ))
+        assert state.last_sample is not None
         samples.append(tuple(state.last_sample))
     # All samples should be distinct (diversity)
     assert len(set(samples)) >= 3
@@ -129,4 +136,6 @@ def test_recombine_mlx_deterministic_with_same_seed() -> None:
     # last_sample is `list[float]`; compare element-wise with a
     # single boolean assertion (the previous `==` against an mx
     # array silently produced an array of booleans).
+    assert state_a.last_sample is not None
+    assert state_b.last_sample is not None
     assert list(state_a.last_sample) == list(state_b.last_sample)

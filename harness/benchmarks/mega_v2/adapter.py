@@ -19,6 +19,7 @@ import hashlib
 import json
 import random
 from pathlib import Path
+from typing import Any
 
 from harness.benchmarks.retained.retained import RetainedBenchmark
 
@@ -41,14 +42,14 @@ class MegaV2NotAvailable(Exception):
 
 def _generate_synthetic_items(
     items_per_domain: int, seed: int
-) -> list[dict]:
+) -> list[dict[str, Any]]:
     """Generate stratified synthetic items.
 
     items_per_domain × len(SYNTHETIC_DOMAINS) total. Each item:
     {id, context, expected, domain}. Deterministic with seed.
     """
     rng = random.Random(seed)
-    items: list[dict] = []
+    items: list[dict[str, Any]] = []
     for domain_idx, domain in enumerate(SYNTHETIC_DOMAINS):
         for i in range(items_per_domain):
             global_idx = domain_idx * items_per_domain + i
@@ -64,14 +65,14 @@ def _generate_synthetic_items(
     return items
 
 
-def _load_real(path: Path, items_per_domain: int) -> list[dict]:
+def _load_real(path: Path, items_per_domain: int) -> list[dict[str, Any]]:
     """Load and stratify real mega-v2.
 
     Real schema assumed: JSONL with at least {id, context,
     expected, domain} fields per line. Stratification: keep first
     N items per encountered domain.
     """
-    by_domain: dict[str, list[dict]] = {}
+    by_domain: dict[str, list[dict[str, Any]]] = {}
     with path.open("r", encoding="utf-8") as fh:
         for line in fh:
             line = line.strip()
@@ -82,7 +83,7 @@ def _load_real(path: Path, items_per_domain: int) -> list[dict]:
             bucket = by_domain.setdefault(domain, [])
             if len(bucket) < items_per_domain:
                 bucket.append(row)
-    items: list[dict] = []
+    items: list[dict[str, Any]] = []
     for domain in sorted(by_domain.keys()):
         items.extend(by_domain[domain])
     return items

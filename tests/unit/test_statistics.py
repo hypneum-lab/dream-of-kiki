@@ -1,7 +1,6 @@
 """Unit tests for statistical eval module (H1-H4 OSF pre-reg)."""
 from __future__ import annotations
 
-import pytest
 
 from kiki_oniric.eval.statistics import (
     StatTestResult,

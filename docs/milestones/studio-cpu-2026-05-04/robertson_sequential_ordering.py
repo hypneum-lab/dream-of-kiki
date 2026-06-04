@@ -22,9 +22,7 @@ Hypothesis (descriptive, not pre-registered) :
   H_RO-B : a specific order shows a meaningful improvement (g >= 0.4)
   H_RO-C : null effect — retention statistically indistinguishable across orders
 """
-import itertools
 import json
-import sys
 from pathlib import Path
 import numpy as np
 import mlx.core as mx
@@ -174,7 +172,7 @@ def main():
         print(f"  {key}: mean={np.mean(accs):.4f} ± {np.std(accs):.4f}")
     # Compute pairwise Hedges' g vs canonical
     canonical = list(results.values())[0]["accs"]
-    print(f"\nPairwise Hedges' g vs canonical (REP→DOW→RES→REC):")
+    print("\nPairwise Hedges' g vs canonical (REP→DOW→RES→REC):")
     for key, r in list(results.items())[1:]:
         accs = r["accs"]
         pooled_sd = np.sqrt((np.var(canonical, ddof=1) + np.var(accs, ddof=1)) / 2)

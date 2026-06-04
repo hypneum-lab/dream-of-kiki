@@ -11,6 +11,7 @@ import hashlib
 import json
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 
 class RetainedIntegrityError(Exception):
@@ -21,7 +22,7 @@ class RetainedIntegrityError(Exception):
 class RetainedBenchmark:
     """Frozen retained benchmark with integrity check."""
 
-    items: list[dict]
+    items: list[dict[str, Any]]
     hash_verified: bool
     source_hash: str
 

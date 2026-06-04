@@ -1,8 +1,8 @@
 """Helpers for R1 bit-exact reproducibility tests.
 
 Exposes the canonical serialization + hash routine and the
-compare-or-bootstrap logic that reads / writes
-``golden_hashes.json``.
+compare-or-bootstrap logic that reads / writes a per-chip-family
+``golden_hashes_<family>.json``.
 
 Two modes :
 
@@ -15,18 +15,81 @@ Two modes :
 Any ``"pending_review"`` or unknown status is treated as bootstrap
 so repeated runs keep writing the current hash (useful while
 drafting) but do not pass a stale value as a golden.
+
+**Per-chip-family split** (2026-05-20 cross-machine probe found
+that some ops, notably anything routing through
+``mx.random.normal`` with a directly-constructed key, diverge
+across Apple Silicon hardware) : the golden file path now ends
+in ``_<family>`` where ``family`` is derived from
+``sysctl machdep.cpu.brand_string`` (e.g. ``apple_m5``,
+``apple_m3_ultra``, ``apple_m1_max``). Each machine bootstraps
+and verifies against its own file ; cross-machine comparison is
+an explicit milestone exercise, not a CI gate.
+
+Reference : ``docs/milestones/r1-cross-machine-m5-vs-m1-2026-05-20.md``.
 """
 from __future__ import annotations
 
 import hashlib
 import json
 import os
+import platform
+import re
 import subprocess
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 from typing import Any
 
-GOLDEN_PATH = Path(__file__).parent / "golden_hashes.json"
+# Legacy single-file path — kept only for explicit migration code /
+# tooling. Tests never write or read this file ; use ``golden_path``.
+LEGACY_GOLDEN_PATH = Path(__file__).parent / "golden_hashes.json"
+
+
+def _chip_family() -> str:
+    """Return a slug for the current chip family.
+
+    On macOS, parse ``sysctl machdep.cpu.brand_string`` (e.g.
+    ``Apple M3 Ultra`` → ``apple_m3_ultra``). On other platforms
+    or when sysctl is unavailable, fall back to a slug built from
+    ``platform.system()`` + ``platform.machine()``.
+    """
+    override = os.environ.get("R1_CHIP_FAMILY")
+    if override:
+        return _slugify(override)
+    if platform.system() == "Darwin":
+        try:
+            raw = subprocess.check_output(
+                ["sysctl", "-n", "machdep.cpu.brand_string"],
+                stderr=subprocess.DEVNULL,
+            ).decode().strip()
+            if raw:
+                return _slugify(raw)
+        except (subprocess.CalledProcessError, FileNotFoundError):
+            pass
+    return _slugify(f"{platform.system()}_{platform.machine()}")
+
+
+def _slugify(text: str) -> str:
+    """Lowercase + collapse non-alphanumerics to single underscores."""
+    s = text.strip().lower()
+    s = re.sub(r"[^a-z0-9]+", "_", s)
+    s = s.strip("_")
+    return s or "unknown"
+
+
+def golden_path(family: str | None = None) -> Path:
+    """Return the per-chip-family golden hashes path.
+
+    Defaults to the current machine's family via ``_chip_family()``.
+    Useful for tooling that wants to inspect a specific machine's
+    file (e.g. ``golden_path("apple_m1_max")``).
+    """
+    fam = family if family is not None else _chip_family()
+    return Path(__file__).parent / f"golden_hashes_{fam}.json"
+
+
+# Convenience alias used throughout the helpers below.
+GOLDEN_PATH = golden_path()
 
 # Canonical scenario parameters — every test in this suite MUST use
 # these constants so that the JSON is coherent across ops.
@@ -138,6 +201,7 @@ def compare_or_bootstrap(
         "status": "pending_review",
         "mlx_version": _mlx_version(),
         "commit": _git_commit(),
+        "chip_family": _chip_family(),
     }
     if extra:
         metadata.update(extra)
@@ -172,7 +236,9 @@ __all__ = [
     "CANONICAL_PROFILE",
     "CANONICAL_SEED",
     "GOLDEN_PATH",
+    "LEGACY_GOLDEN_PATH",
     "canonical_hash",
     "compare_or_bootstrap",
+    "golden_path",
     "tensor_to_list",
 ]

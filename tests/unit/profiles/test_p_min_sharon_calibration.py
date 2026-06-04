@@ -63,7 +63,8 @@ def test_compute_so_amplitude_proxy_rejects_non_profile() -> None:
         pass
 
     with pytest.raises(TypeError, match="so_trough_amplitude_factor"):
-        compute_so_amplitude_proxy(_NotAProfile())
+        # Intentionally wrong type to exercise the TypeError guard.
+        compute_so_amplitude_proxy(_NotAProfile())  # type: ignore[arg-type]
 
 
 def test_sharon_2025_anchor_constants() -> None:

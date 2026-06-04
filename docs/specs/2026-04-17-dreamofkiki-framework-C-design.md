@@ -147,6 +147,48 @@ P_equ = { primitives_in: {β, δ},  primitives_out: {1,3,4}, ops: {replay, downs
 P_max = { primitives_in: {α,β,δ}, primitives_out: {1,2,3,4}, ops: {replay, downscale, restructure, recombine_full} }
 ```
 
+As of B6c (issue #15), P_max has a LoRA-substrate variant
+`PMaxLoRAProfile` (in `kiki_oniric/profiles/p_max_lora.py`)
+that wires the full B-series : LoRA-emitting handlers for
+replay / downscale / restructure on a dream/awake `LoRAModel`
+pair, plus `recombine_real_handler` (B4 VAE) on a required
+encoder + decoder MLX `nn.Module` pair. `consolidate_log()`
+dispatches ch1 (`WeightUpdate`), ch2 (`LatentSample`,
+`LatentSampleQueue(capacity=1024)`), and ch3 (`TopologyDiff`)
+to the awake side. ch4 (`AttentionPrior`) and the α input
+channel are inherited from cycle-3 `PMaxProfile` as state
+surfaces. With B6a, B6b, B6c, all three profile tiers have
+LoRA-substrate variants forming a strict DR-4 subset chain
+(verified empirically). The cycle-3 `PMaxProfile` remains the
+canonical skeleton reference. B6 closes the profile-wiring
+decomposition.
+
+As of B6a (issue #15), P_min has a LoRA-substrate variant
+`PMinLoRAProfile` (in `kiki_oniric/profiles/p_min_lora.py`)
+that wires the B-series LoRA-emitting handlers
+(`replay_lora_handler`, `downscale_lora_handler`) onto a dream
+/ awake `LoRAModel` pair. The variant exposes
+`consolidate_log()` that applies the runtime's accumulated
+`WeightUpdate` outputs onto the awake model via a
+`LoRAWeightDeltaChannel`. The cycle-3 `PMinProfile` (skeleton
+handlers, no emission) remains the canonical DR-4 chain-
+inclusion reference. B6c will introduce `PMaxLoRAProfile`.
+
+As of B6b (issue #15), P_equ has a LoRA-substrate variant
+`PEquLoRAProfile` (in `kiki_oniric/profiles/p_equ_lora.py`) that
+wires the B-series LoRA-emitting handlers (`replay_lora_handler`,
+`downscale_lora_handler`, `restructure_lora_handler`) on a
+dream/awake `LoRAModel` pair. The skeleton `recombine_handler`
+is kept for `recombine_light` (no ch2 emission, matching the
+spec's `channels_out` exclusion of channel 2). `consolidate_log()`
+dispatches ch1 (`WeightUpdate`) and ch3 (`TopologyDiff`) onto the
+awake model via `LoRAWeightDeltaChannel` and
+`LoRAHierarchyChangeChannel`. ch4 (`AttentionPrior`) is exposed
+as a state-surface field set externally via
+`profile.attention_prior.set_prior(prior)`. Cycle-3 `PEquProfile`
+remains the canonical DR-4 chain-inclusion reference. B6c will
+introduce `PMaxLoRAProfile`.
+
 ### 3.2 Inclusion chain (Axiom DR-4 setup)
 
 ```
@@ -176,6 +218,31 @@ where:
 - `output_delta ∈ {WeightUpdate, LatentSample, TopologyDiff, AttentionPrior}` (channels 1-4)
 - `budget = max(FLOPs, wall_time, energy_J)` (resource cap)
 
+#### Channel-output value types (B0, issue #15)
+
+Each operation publishes its result as a typed channel-output
+value, captured in `EpisodeLogEntry.channel_outputs`:
+
+- Channel 1 — `WeightUpdate(lora_delta, fisher_bump)`
+- Channel 2 — `LatentSample(species, latent_vector, provenance)`
+- Channel 3 — `TopologyDiff(diff)`
+- Channel 4 — `AttentionPrior(prior)`
+
+`ChannelOutput` is their union. Implemented in
+`kiki_oniric/dream/channels/` (package `__init__.py`). The
+operations return `None` until sub-projects B1-B4 populate real
+values.
+
+As of B5 (issue #15), the four channel Protocols have concrete
+LoRA-target implementations: `LoRAWeightDeltaChannel`,
+`LoRAHierarchyChangeChannel`, `LatentSampleQueue` and the
+existing `AttentionPriorChannel` (with a new `set_prior` alias
+of `emit`). The free function
+`kiki_oniric.consolidate.apply_channel_outputs(log, …)` walks
+the runtime log and dispatches each `ChannelOutput` to the
+matching channel — closing the awake↔dream loop. Profile-level
+wiring is deferred to **B6**.
+
 ### 4.2 Operations
 
 Four canonical operations, typed `Op : State × Budget → State × Output`:
@@ -185,10 +252,44 @@ Four canonical operations, typed `Op : State × Budget → State × Output`:
 - Input : β slice
 - Output : WeightUpdate (channel 1)
 
+The low-rank substrate `replay` operates on is the LoRA-adapter
+model `kiki_oniric/substrates/micro_kiki/lora_model.py`
+(`LoRALinear` / `LoRAModel`) — frozen base weights, trainable
+A/B adapters (B1a, issue #15).
+
+As of B1b (issue #15), `replay` emits a real channel-1
+`WeightUpdate`: `replay_lora_handler` runs an adapter-only SGD
+step on a `LoRAModel` and returns the per-adapter low-rank
+delta. The other three operations still return `None`.
+
 **downscale** — apply homeostatic regularizer (SHY-style), shrink weights toward prior, reduce noise
 - Source : B-Tononi synaptic homeostasis
 - Input : γ or W directly
 - Output : WeightUpdate (channel 1)
+
+As of B2 (issue #15), `downscale` emits a real channel-1
+`WeightUpdate`: `downscale_lora_handler` shrinks the A/B adapters
+of a `LoRAModel` by a validated `shrink_factor` and returns the
+per-adapter low-rank delta. With `replay` (B1b) and `downscale`
+(B2), two of the four dream operations now emit real channel
+outputs. `restructure` and `recombine` still return `None`.
+
+As of B3 (issue #15), `restructure` emits a real channel-3
+`TopologyDiff`: `restructure_lora_handler` mutates a `LoRAModel`'s
+adapter stack with the full `{add, remove, reroute}` vocab,
+applies an INSS soft cap on `add`, and returns an executable +
+SHA-256-fingerprinted diff. With `replay` (B1b), `downscale`
+(B2), and `restructure` (B3), three of the four dream operations
+now emit real channel outputs. `recombine` still returns `None`.
+
+As of B4 (issue #15), `recombine` emits a real channel-2
+`LatentSample`: `recombine_real_handler` returns the sampled
+VAE latent `z` as `latent_vector`, with `species` (from the
+episode `input_slice`, default `"default"`) and an auto-derived
+`provenance` string `recombine:de={episode_id}:ep={count}:seed={key_seed}`.
+With B1b/B2/B3/B4, **all four** dream operations now emit real
+channel outputs. B5 will rewire `consolidate()` to actually
+apply them to a target model.
 
 **restructure** — apply predictive processing update, minimize free energy over hierarchy, add/remove/reroute layers if needed
 - Source : D-Friston FEP

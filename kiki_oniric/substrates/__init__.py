@@ -36,6 +36,13 @@ from kiki_oniric.substrates.wake_sleep_cl_baseline import (
     wake_sleep_substrate_components,
 )
 
+# Wave 3b M2: ``mlx_latent_diffusion`` is intentionally NOT re-exported
+# here. Its module-level ``import mlx.core as mx`` would break the
+# libmlx-less Linux CI runner by failing this package's import chain
+# (test_esnn_operations.py etc. transitively import the substrates
+# package). Access the substrate via ``build_substrate_adapter
+# ("mlx_latent_diffusion")`` in factory.py, which lazy-imports it.
+
 __all__ = [
     "MLX_SUBSTRATE_NAME",
     "MLX_SUBSTRATE_VERSION",

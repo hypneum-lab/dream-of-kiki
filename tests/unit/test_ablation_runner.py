@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Any
 
 import pandas as pd
 import pytest
@@ -25,18 +26,18 @@ def _bench_fixture() -> RetainedBenchmark:
     )
 
 
-def _correct_predictor(item: dict) -> str:
-    return item["expected"]
+def _correct_predictor(item: dict[str, Any]) -> str:
+    return str(item["expected"])
 
 
-def _wrong_predictor(item: dict) -> str:
+def _wrong_predictor(item: dict[str, Any]) -> str:
     return "WRONG"
 
 
-def _half_predictor(item: dict) -> str:
+def _half_predictor(item: dict[str, Any]) -> str:
     rid_token = item["id"].split("-")[-1]
     rid = int(rid_token)
-    return item["expected"] if rid % 2 == 0 else "WRONG"
+    return str(item["expected"]) if rid % 2 == 0 else "WRONG"
 
 
 def _isolated_runner(

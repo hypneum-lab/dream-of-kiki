@@ -1370,6 +1370,50 @@ divergent du cycle-3 sur le même jeu de données. La ligne
 de base sert d'**ancre référence-publiée**, pas de test de
 significativité.
 
+## 7.8 Dream2Learn — ligne de base citation-seule (catégorie (a))
+
+Dream2Learn (D2L), Calcagno et al. 2026
+[@calcagno2026dream2learn] (arXiv:2603.01935), est une
+architecture d'apprentissage continu class-incremental qui
+conditionne un **modèle de diffusion latente gelé** via une
+**optimisation de soft-prompt** afin de générer de nouvelles
+classes « rêvées », puis entraîne le classifieur sur ces
+échantillons rêvés pour étendre son espace de représentation.
+La synthèse de deep-research du 2026-05-19 avait signalé D2L
+comme concurrent potentiel de la substrat-agnosticité (DR-3) ;
+la passe de classification du 2026-05-20 l'a reclassifié en
+**ligne de base citation-seule de catégorie (a)** sur la base
+d'un argument de séparation formel, documenté dans
+`docs/proofs/dream2learn-dr3-separation.md` v0.1-draft.
+
+L'argument procède selon deux angles disjoints : (i) sur
+le plan structurel, les primitives extérieurement observables
+de D2L (mise à jour du classifieur, boucle interne de
+soft-prompt, tirage d'échantillons par diffusion gelée)
+n'exposent pas les huit primitives typées de framework-C
+(α, β, γ, δ + canaux 1–4) — la condition 1 du Critère de
+Conformité échoue ex hypothesi ; (ii) sur le plan
+comportemental, la dynamique de consolidation de D2L
+(débruitage continu sur une géométrie latente fixe, aucune
+partition de rôle entre worktrees awake et dream, aucune
+trace d'accountability bornée par DE, aucune primitive de
+hiérarchie) n'instancie pas le contrat DE-discret / partition
+de rôle de framework-C, même sous un emballage adaptateur
+contrefactuel. DR-3 n'est donc **pas remis en cause** : D2L
+est hors du domaine de discours de l'axiome, ce n'est pas
+une violation. Ce traitement reproduit le motif §7.7
+Wake-Sleep CL : la ligne est une *ancre référence-publiée*,
+pas un candidat substrat. Aucune exécution empirique, aucun
+test H, aucun run\_id ; la classification repose entièrement
+sur la preuve conceptuelle.
+
+Une variante future de D2L qui déclarerait les huit
+primitives typées avec un wrapper DE-discret et une partition
+wake/dream rouvrirait l'analyse ; jusque-là la
+reclassification en catégorie (a) tient. Voir
+`docs/proofs/dream2learn-dr3-separation.md` §5 pour les
+trois déclencheurs qui forceraient une révision.
+
 ---
 
 ## Notes pour révision

@@ -15,10 +15,11 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Callable
 
+from kiki_oniric.dream.channels import ChannelOutput
 from kiki_oniric.dream.episode import DreamEpisode, Operation
 
 
-OperationHandler = Callable[[DreamEpisode], None]
+OperationHandler = Callable[[DreamEpisode], "ChannelOutput | None"]
 
 
 @dataclass(frozen=True)
@@ -28,12 +29,27 @@ class EpisodeLogEntry:
     `completed=False` + non-empty `error` means the DE raised during
     handler execution. DR-0 still satisfied: every DE produces a log
     entry regardless of handler outcome.
+
+    `channel_outputs` is strictly parallel to `operations_executed`
+    (same length, same order); index `i` holds the output of
+    `operations_executed[i]`, or `None` if that op emitted nothing.
+    Empty `()` marks a legacy entry where no outputs were captured.
     """
 
     episode_id: str
     operations_executed: tuple[Operation, ...]
     completed: bool
     error: str | None = None
+    channel_outputs: tuple[ChannelOutput | None, ...] = ()
+
+    def __post_init__(self) -> None:
+        if self.channel_outputs and len(self.channel_outputs) != len(
+            self.operations_executed
+        ):
+            raise ValueError(
+                "channel_outputs must be empty or the same length "
+                "as operations_executed"
+            )
 
 
 class DreamRuntime:
@@ -79,10 +95,12 @@ class DreamRuntime:
         error: str | None = None
         completed = False
         executed_ops: list[Operation] = []
+        outputs: list[ChannelOutput | None] = []
         try:
             for op in episode.operation_set:
                 executed_ops.append(op)
-                self._handlers[op](episode)
+                outputs.append(None)  # placeholder keeps lengths equal
+                outputs[-1] = self._handlers[op](episode)
             completed = True
         except Exception as exc:
             error = f"{type(exc).__name__}: {exc}"
@@ -94,5 +112,16 @@ class DreamRuntime:
                     operations_executed=tuple(executed_ops),
                     completed=completed,
                     error=error,
+                    channel_outputs=tuple(outputs),
                 )
             )
+
+    def reset_log(self) -> None:
+        """Clear the accountability log (DR-0 trace).
+
+        Profile-driven consolidation flows that consume the log
+        via ``apply_channel_outputs`` use this to start the next
+        dream cycle with a clean slate. The handler registrations
+        and ``_handlers`` mapping are not touched.
+        """
+        self._log.clear()

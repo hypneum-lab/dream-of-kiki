@@ -10,7 +10,7 @@ from kiki_oniric.dream.episode import (
     Operation,
     OutputChannel,
 )
-from kiki_oniric.dream.runtime import DreamRuntime, EpisodeLogEntry
+from kiki_oniric.dream.runtime import DreamRuntime
 
 
 def make_episode(ep_id: str, ops: tuple[Operation, ...]) -> DreamEpisode:
@@ -55,7 +55,9 @@ def test_runtime_log_entry_immutable() -> None:
     runtime.execute(make_episode("de-0003", (Operation.REPLAY,)))
     entry = runtime.log[0]
     with pytest.raises((AttributeError, TypeError)):
-        entry.episode_id = "de-mutated"
+        # Intentional write to a read-only property to assert it
+        # is immutable; mypy correctly flags the assignment.
+        entry.episode_id = "de-mutated"  # type: ignore[misc]
 
 
 def test_runtime_unknown_operation_raises() -> None:

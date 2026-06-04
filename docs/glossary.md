@@ -87,3 +87,9 @@ Rename only via DualVer MINOR bump of the framework spec.
   2024 [IEEE TNNLS, arXiv 2401.08623] — closest published NREM/REM
   dual-phase analog ; Paper 2 §5.8 baseline (variant-c published
   reference, FC-MINOR `baselines:` block landed C-v0.12.0).
+- **Dream2Learn (D2L)** — Calcagno et al. 2026 [arXiv 2603.01935] —
+  latent-diffusion + soft-prompt continual-learning architecture
+  (PeRCeiVe Lab, Catania). **Category-(a) citation-only baseline**,
+  Paper 2 §7.8 ; **not** a framework-C primitive and **not** a
+  framework-C substrate. See `docs/proofs/dream2learn-dr3-separation.md`
+  v0.1 for the DR-3 separation argument.

@@ -5,6 +5,8 @@ P_equ on ops and out-channels) at the runtime-handler layer.
 """
 from __future__ import annotations
 
+from typing import Any
+
 from kiki_oniric.dream.episode import (
     BudgetCap,
     DreamEpisode,
@@ -15,7 +17,7 @@ from kiki_oniric.dream.episode import (
 from kiki_oniric.profiles.p_equ import PEquProfile
 
 
-def _make_de(ep_id: str, op: Operation, slice_data: dict) -> DreamEpisode:
+def _make_de(ep_id: str, op: Operation, slice_data: dict[str, Any]) -> DreamEpisode:
     channel_map = {
         Operation.REPLAY: OutputChannel.WEIGHT_DELTA,
         Operation.DOWNSCALE: OutputChannel.WEIGHT_DELTA,

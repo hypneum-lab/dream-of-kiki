@@ -9,19 +9,17 @@ from experiments.g4_quater_test.run_step2_restructure_sweep import (
     run_pilot,
 )
 
+from .conftest import FMNIST_DATA, skip_if_no_fmnist
+
 
 def test_constants_match_prereg() -> None:
     assert ARMS == ("baseline", "P_min", "P_equ", "P_max")
     assert RESTRUCTURE_FACTORS == (0.85, 0.95, 0.99)
 
 
+@skip_if_no_fmnist
 def test_run_pilot_smoke(tmp_path: Path) -> None:
-    data_dir = (
-        Path(__file__).resolve().parents[3]
-        / "experiments"
-        / "g4_split_fmnist"
-        / "data"
-    )
+    data_dir = FMNIST_DATA
     out_json = tmp_path / "step2.json"
     out_md = tmp_path / "step2.md"
     registry_db = tmp_path / "registry.sqlite"

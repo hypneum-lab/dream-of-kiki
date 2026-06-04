@@ -31,7 +31,6 @@ from harness.real_benchmarks.mega_v2_adapter import (
 )
 from harness.real_benchmarks.mega_v2_eval import (
     MegaV2EvalLoader,
-    MegaV2EvalRecord,
 )
 from kiki_oniric.dream.episode import (
     DreamEpisode,

@@ -22,7 +22,6 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import pytest
 
 from harness.storage.run_registry import RunRegistry
 from scripts import ablation_cycle3 as runner_mod

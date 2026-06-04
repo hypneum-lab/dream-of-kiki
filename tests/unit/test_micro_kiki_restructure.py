@@ -23,6 +23,7 @@ dep). Reference :
 from __future__ import annotations
 
 import numpy as np
+from typing import Any
 import pytest
 
 from kiki_oniric.substrates.micro_kiki import (
@@ -153,7 +154,7 @@ def test_restructure_consumes_episode_projects_new_B() -> None:
     # the projection must move it.
     new_B_original = rng.standard_normal((out_dim, rank)).astype(np.float32)
 
-    adapter: dict = {
+    adapter: dict[str, Any] = {
         "layers.5.q_proj_B": new_B_original.copy(),
         "prior_deltas": priors,
         "episode_id": "ep-restruct-42",
@@ -198,7 +199,7 @@ def test_restructure_dr1_episode_id_stamping() -> None:
     B0 = rng.standard_normal((out_dim, 2)).astype(np.float32)
 
     for eid in ("e0", "e1", "e2"):
-        adapter: dict = {
+        adapter: dict[str, Any] = {
             "B": B0.copy(),
             "prior_deltas": [prior],
             "episode_id": eid,
@@ -233,7 +234,7 @@ def test_restructure_empty_priors_is_dr0_noop() -> None:
     handler = substrate.restructure_handler_factory()
 
     B = np.ones((3, 2), dtype=np.float32)
-    adapter: dict = {
+    adapter: dict[str, Any] = {
         "B": B.copy(),
         "prior_deltas": [],
         "episode_id": "ep-noop",
@@ -270,7 +271,7 @@ def test_restructure_rejects_missing_key() -> None:
     """
     substrate = MicroKikiSubstrate()
     handler = substrate.restructure_handler_factory()
-    adapter: dict = {"prior_deltas": []}
+    adapter: dict[str, Any] = {"prior_deltas": []}
     with pytest.raises(KeyError, match="missing entry"):
         handler(adapter, "oplora", "does_not_exist")
 
@@ -282,7 +283,7 @@ def test_restructure_rejects_projector_shape_mismatch() -> None:
 
     prior = np.ones((5, 2), dtype=np.float32)  # out_dim = 5
     new_B = np.ones((4, 2), dtype=np.float32)  # out_dim = 4
-    adapter: dict = {
+    adapter: dict[str, Any] = {
         "B": new_B,
         "prior_deltas": [prior],
     }

@@ -32,7 +32,11 @@ def test_buffer_push_and_snapshot_roundtrip() -> None:
     snap = buf.snapshot()
     assert len(snap) == 1
     assert snap[0]["y"] == 0
-    np.testing.assert_allclose(snap[0]["latent"], [0.5, 0.6], rtol=1e-6)
+    np.testing.assert_allclose(
+        np.asarray(snap[0]["latent"], dtype=float),
+        np.asarray([0.5, 0.6], dtype=float),
+        rtol=1e-6,
+    )
 
 
 def test_buffer_capacity_evicts_fifo() -> None:

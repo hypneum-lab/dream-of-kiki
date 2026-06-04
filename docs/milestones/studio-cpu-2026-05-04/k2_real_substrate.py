@@ -16,8 +16,6 @@ Multiprocessing : 24 P-cores in parallel (Studio M3 Ultra).
 Compute estimate : ~5-10 min Studio.
 """
 import json
-import os
-import sys
 from multiprocessing import Pool
 from pathlib import Path
 
@@ -84,7 +82,7 @@ def process_module(args):
         weight = data[key]
         spikes = lif_simulate(weight, seed=seed)
         return (npz_path.name, spikes)
-    except Exception as e:
+    except Exception:
         return (npz_path.name, None)
 
 
@@ -112,13 +110,13 @@ def main():
             mvls.append(mvl)
     mvls = np.array(mvls)
 
-    print(f"\n=== K2 phase-coupling on real SpikingKiki-V4 spike trains ===")
+    print("\n=== K2 phase-coupling on real SpikingKiki-V4 spike trains ===")
     print(f"Pairs measured: {len(mvls)}")
     print(f"MVL mean: {mvls.mean():.4f}")
     print(f"MVL std:  {mvls.std():.4f}")
     print(f"MVL median: {np.median(mvls):.4f}")
     print(f"MVL 5-95 percentile: [{np.percentile(mvls, 5):.4f}, {np.percentile(mvls, 95):.4f}]")
-    print(f"\nK2 invariant range: [0.27, 0.39] (eLife 2025 BF=58 anchor)")
+    print("\nK2 invariant range: [0.27, 0.39] (eLife 2025 BF=58 anchor)")
     in_range = ((mvls >= 0.27) & (mvls <= 0.39)).mean()
     print(f"Fraction of pairs in K2 range: {in_range*100:.1f}%")
     if in_range > 0.5:
@@ -145,7 +143,7 @@ def main():
         "n_modules_sampled": len(spike_trains),
     }
     Path("/tmp/k2_real_substrate_result.json").write_text(json.dumps(result, indent=2))
-    print(f"\nResult saved to /tmp/k2_real_substrate_result.json")
+    print("\nResult saved to /tmp/k2_real_substrate_result.json")
 
 
 if __name__ == "__main__":

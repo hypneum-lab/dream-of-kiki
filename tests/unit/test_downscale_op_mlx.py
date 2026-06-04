@@ -1,10 +1,18 @@
 """Unit tests for downscale operation MLX backend (S9.2)."""
 from __future__ import annotations
 
+from typing import Any
+
 import pytest
 
-mx = pytest.importorskip("mlx.core")
-nn = pytest.importorskip("mlx.nn")
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    import mlx.core as mx
+    import mlx.nn as nn
+else:
+    mx = pytest.importorskip("mlx.core")
+    nn = pytest.importorskip("mlx.nn")
 
 # Deterministic seed for MLX random init across all tests
 mx.random.seed(42)
@@ -22,16 +30,16 @@ from kiki_oniric.dream.operations.downscale import (
 )
 
 
-class TinyMLP(nn.Module):
+class TinyMLP(nn.Module):  # type: ignore[misc,name-defined]  # mlx.nn dynamic
     """Minimal 2-layer MLP for downscale tests (seeded via mx.random.seed)."""
 
     def __init__(self) -> None:
         super().__init__()
-        self.fc1 = nn.Linear(4, 8)
-        self.fc2 = nn.Linear(8, 2)
+        self.fc1 = nn.Linear(4, 8)  # type: ignore[attr-defined]  # mlx dynamic
+        self.fc2 = nn.Linear(8, 2)  # type: ignore[attr-defined]  # mlx dynamic
 
-    def __call__(self, x):
-        return self.fc2(nn.relu(self.fc1(x)))
+    def __call__(self, x: mx.array) -> mx.array:
+        return self.fc2(nn.relu(self.fc1(x)))  # type: ignore[attr-defined,no-any-return]  # mlx dynamic
 
 
 def make_downscale_episode(
@@ -47,11 +55,12 @@ def make_downscale_episode(
     )
 
 
-def _flat_weight_norm(model: nn.Module) -> float:
+# mlx.nn star re-export: nn.Module not statically resolvable.
+def _flat_weight_norm(model: nn.Module) -> float:  # type: ignore[name-defined]
     """Compute the Frobenius norm across all model parameters."""
-    leaves: list = []
+    leaves: list[Any] = []
 
-    def collect(node) -> None:
+    def collect(node: Any) -> None:
         if isinstance(node, dict):
             for v in node.values():
                 collect(v)

@@ -23,7 +23,8 @@ class StackedMLP:
     """Simple list-of-Linear model for restructure tests."""
 
     def __init__(self, dims: list[int]) -> None:
-        self.layers: list[nn.Linear] = [
+        # mlx.nn star re-export: nn.Linear not statically resolvable.
+        self.layers: list[nn.Linear] = [  # type: ignore[name-defined]
             nn.Linear(dims[i], dims[i + 1])
             for i in range(len(dims) - 1)
         ]
@@ -36,7 +37,7 @@ class StackedMLP:
 def make_restructure_episode(
     ep_id: str, topo_op: str, **extra: object
 ) -> DreamEpisode:
-    slice_data: dict = {"topo_op": topo_op}
+    slice_data: dict[str, object] = {"topo_op": topo_op}
     slice_data.update(extra)
     return DreamEpisode(
         trigger=EpisodeTrigger.SCHEDULED,

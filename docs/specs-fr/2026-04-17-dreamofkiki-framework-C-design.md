@@ -148,6 +148,51 @@ P_equ = { primitives_in: {β, δ},  primitives_out: {1,3,4}, ops: {replay, downs
 P_max = { primitives_in: {α,β,δ}, primitives_out: {1,2,3,4}, ops: {replay, downscale, restructure, recombine_full} }
 ```
 
+Depuis B6c (issue #15), P_max possède une variante de substrat
+LoRA `PMaxLoRAProfile` (dans
+`kiki_oniric/profiles/p_max_lora.py`) qui branche toute la
+série B : gestionnaires LoRA pour replay / downscale /
+restructure sur une paire de `LoRAModel` rêve/éveil, plus
+`recombine_real_handler` (VAE de B4) sur une paire encoder +
+decoder MLX `nn.Module` requise. `consolidate_log()` répartit
+ch1 (`WeightUpdate`), ch2 (`LatentSample`,
+`LatentSampleQueue(capacity=1024)`) et ch3 (`TopologyDiff`)
+vers le côté éveil. ch4 (`AttentionPrior`) et le canal d'entrée
+α sont hérités de `PMaxProfile` cycle-3 comme surfaces d'état.
+Avec B6a, B6b et B6c, les trois niveaux de profile possèdent
+des variantes substrat LoRA formant une chaîne d'inclusion
+DR-4 stricte (vérifiée empiriquement). Le `PMaxProfile`
+cycle-3 reste la référence squelette canonique. B6 ferme la
+décomposition de câblage des profiles.
+
+Depuis B6a (issue #15), P_min possède une variante de substrat
+LoRA `PMinLoRAProfile` (dans
+`kiki_oniric/profiles/p_min_lora.py`) qui branche les
+gestionnaires LoRA de la série B (`replay_lora_handler`,
+`downscale_lora_handler`) sur une paire de `LoRAModel`
+rêve / éveil. La variante expose `consolidate_log()` qui
+applique les `WeightUpdate` accumulés sur le modèle éveil via
+un `LoRAWeightDeltaChannel`. Le `PMinProfile` cycle-3
+(gestionnaires squelettes, aucune émission) reste la référence
+canonique pour la chaîne d'inclusion DR-4. B6c introduira
+`PMaxLoRAProfile`.
+
+Depuis B6b (issue #15), P_equ possède une variante de substrat
+LoRA `PEquLoRAProfile` (dans
+`kiki_oniric/profiles/p_equ_lora.py`) qui branche les
+gestionnaires LoRA de la série B (`replay_lora_handler`,
+`downscale_lora_handler`, `restructure_lora_handler`) sur une
+paire de `LoRAModel` rêve / éveil. Le `recombine_handler`
+squelette est conservé pour `recombine_light` (aucune émission
+ch2, conforme à l'exclusion `channels_out` du canal 2 dans la
+spec). `consolidate_log()` répartit ch1 (`WeightUpdate`) et ch3
+(`TopologyDiff`) sur le modèle éveil via `LoRAWeightDeltaChannel`
+et `LoRAHierarchyChangeChannel`. ch4 (`AttentionPrior`) est
+exposé comme champ de surface d'état défini en externe via
+`profile.attention_prior.set_prior(prior)`. Le `PEquProfile`
+cycle-3 reste la référence canonique pour la chaîne d'inclusion
+DR-4. B6c introduira `PMaxLoRAProfile`.
+
 ### 3.2 Chaîne d'inclusion (setup axiome DR-4)
 
 ```
@@ -177,6 +222,32 @@ où :
 - `output_delta ∈ {WeightUpdate, LatentSample, TopologyDiff, AttentionPrior}` (canaux 1-4)
 - `budget = max(FLOPs, wall_time, energy_J)` (plafond de ressources)
 
+#### Types de valeur de sortie de canal (B0, issue #15)
+
+Chaque opération publie son résultat sous forme d'une valeur de
+sortie de canal typée, capturée dans
+`EpisodeLogEntry.channel_outputs` :
+
+- Canal 1 — `WeightUpdate(lora_delta, fisher_bump)`
+- Canal 2 — `LatentSample(species, latent_vector, provenance)`
+- Canal 3 — `TopologyDiff(diff)`
+- Canal 4 — `AttentionPrior(prior)`
+
+`ChannelOutput` est leur union. Implémenté dans
+`kiki_oniric/dream/channels/` (package `__init__.py`). Les
+opérations renvoient `None` jusqu'à ce que les sous-projets B1-B4
+peuplent des valeurs réelles.
+
+Depuis B5 (issue #15), les quatre Protocols de canaux ont des
+implémentations concrètes ciblant le substrat LoRA :
+`LoRAWeightDeltaChannel`, `LoRAHierarchyChangeChannel`,
+`LatentSampleQueue` et l'`AttentionPriorChannel` existant (avec
+un nouvel alias `set_prior` de `emit`). La fonction libre
+`kiki_oniric.consolidate.apply_channel_outputs(log, …)` parcourt
+le journal du runtime et répartit chaque `ChannelOutput` vers le
+canal correspondant — fermant la boucle éveil↔rêve. Le câblage
+au niveau des profils est différé à **B6**.
+
 ### 4.2 Opérations
 
 Quatre opérations canoniques, typées `Op : State × Budget → State × Output` :
@@ -186,10 +257,48 @@ Quatre opérations canoniques, typées `Op : State × Budget → State × Output
 - Entrée : tranche β
 - Sortie : WeightUpdate (canal 1)
 
+Le substrat de bas rang sur lequel opère `replay` est le modèle
+à adaptateurs LoRA `kiki_oniric/substrates/micro_kiki/lora_model.py`
+(`LoRALinear` / `LoRAModel`) — poids de base gelés, adaptateurs
+A/B entraînables (B1a, issue #15).
+
+Depuis B1b (issue #15), `replay` émet un véritable `WeightUpdate`
+sur le canal 1 : `replay_lora_handler` effectue un pas de SGD
+restreint aux adaptateurs sur un `LoRAModel` et renvoie le delta
+de bas rang par adaptateur. Les trois autres opérations
+renvoient toujours `None`.
+
 **downscale** — applique un régulariseur homéostatique (SHY-style), rétrécit les poids vers un prior, réduit le bruit
 - Source : homéostasie synaptique B-Tononi
 - Entrée : γ ou W directement
 - Sortie : WeightUpdate (canal 1)
+
+Depuis B2 (issue #15), `downscale` émet un véritable `WeightUpdate`
+sur le canal 1 : `downscale_lora_handler` rétrécit les adaptateurs
+A/B d'un `LoRAModel` par un `shrink_factor` validé et renvoie le
+delta de bas rang par adaptateur. Avec `replay` (B1b) et
+`downscale` (B2), deux des quatre opérations de rêve émettent
+désormais de véritables sorties sur canal. `restructure` et
+`recombine` renvoient toujours `None`.
+
+Depuis B3 (issue #15), `restructure` émet un véritable
+`TopologyDiff` (canal 3) : `restructure_lora_handler` mute la
+pile d'adaptateurs d'un `LoRAModel` avec le vocabulaire complet
+`{add, remove, reroute}`, applique un plafond INSS doux sur
+`add`, et retourne un diff exécutable avec empreinte SHA-256.
+Avec `replay` (B1b), `downscale` (B2) et `restructure` (B3),
+trois des quatre opérations de rêve émettent désormais des
+sorties de canal réelles. `recombine` retourne encore `None`.
+
+Depuis B4 (issue #15), `recombine` émet un véritable
+`LatentSample` (canal 2) : `recombine_real_handler` retourne le
+latent VAE échantillonné `z` comme `latent_vector`, avec
+`species` (lu depuis `input_slice`, défaut `"default"`) et un
+`provenance` auto-dérivé au format
+`recombine:de={episode_id}:ep={count}:seed={key_seed}`. Avec
+B1b/B2/B3/B4, **les quatre** opérations de rêve émettent
+désormais des sorties de canal réelles. B5 recâblera
+`consolidate()` pour appliquer ces sorties à un modèle cible.
 
 **restructure** — applique une mise à jour de codage prédictif, minimise l'énergie libre sur la hiérarchie, ajoute/supprime/reroute des couches si nécessaire
 - Source : D-Friston FEP

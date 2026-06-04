@@ -525,6 +525,88 @@ DR-4 prouvé dans `docs/proofs/dr4-profile-inclusion.md` comme
 inclusion en chaîne des opérations et canaux plus le lemme de
 monotonie DR-4.L.
 
+### 5.8 Tests négatifs — nécessité des tests de propriétés C2
+
+Les sections 5.1-5.7 établissent les quatre piliers structurels du
+Critère de Conformité (compilation déterministe, ordonnanceur
+monothread, basculement atomique avec gardes d'invariants, inclusion
+en chaîne des profils) et présentent des parcours positifs sur deux
+substrats. Une question complémentaire est de savoir si ces piliers
+structurels sont *suffisants* pour discriminer un substrat genuine
+de constructions qui les satisfont par accident. Nous avons traité
+cette question via un audit de tests négatifs pré-enregistré
+(style OSF ; pré-enregistrement dans
+`docs/milestones/q2-conformance-negative-2026-05-10.md`).
+
+Nous avons construit 15 substrats adversariaux en trois catégories :
+accidents triviaux (Identity, RandomNoise, Lookup, FrozenZeros,
+Constant) ; accidents de construction adversariale
+(ShapePreservingNoise, BudgetGaming, PermutedReplay,
+OverloadRecombine, StatelessAccident, CommutativityViolator,
+BoundaryCheater) ; et accidents statistiques évalués sur *N*=100
+essais chacun (RandomCoinFlip, ShapeDistributionDependent,
+SeedDependentSubstrate). Chaque substrat implémente le Protocole
+`SubstrateAdapter` mais est conçu pour violer au moins un axiome
+ou invariant en esprit.
+
+En appliquant la couche structurelle-invariant du critère seule
+(finitude S2 ; bornes de domaine sur `replay_rate` et
+`recombine_rate` mirroir de S4 ; non-négativité de
+`restructure_sum` et `wall_time_s` ; `delta_acc` borné), la couche
+structurelle-invariant est **insuffisante comme critère
+autonome** : 12/15 substrats N8 (Cat A trivial + Cat B adversarial)
+passent de manière déterministe avec le protocole single-trial,
+tandis que les 3 substrats statistiques Cat C affichent des taux de
+faux positifs hétérogènes. Spécifiquement,
+ShapeDistributionDependent passe 80/100 essais (la couche
+structurelle ne parvient pas à le discriminer sur 80% des
+distributions d'entrée), RandomCoinFlip passe 6/100 essais (3,1%
+théorique, 6% observé — dans le bruit de seed), et
+SeedDependentSubstrate passe 1/100 (uniquement sur seed=0, comme
+construit). Le premier résultat (80% FP sur
+ShapeDistributionDependent) confirme que le critère a un angle
+mort de catégorie X — passant sur les entrées à distribution
+commune tout en flunkant sur la longue traîne. Les deux derniers
+résultats (1-6% FP) montrent que la couche structurelle *a* un
+pouvoir discriminant contre les adversaires statistiques injectant
+NaN/Inf ou des valeurs hors-borne, mais sans garantie 100%. Selon
+la règle de décision pré-enregistrée (≥3 faux positifs ⇒
+reformuler), ce résultat établit que **la couche structurelle est
+nécessaire mais non suffisante** : le Critère de Conformité doit
+en plus exiger des **tests de propriétés axiomatiques C2 spécifiques
+au substrat**, comme illustré pour le substrat E-SNN au §5.6. Les
+implémentations de référence du §5.6 satisfont les deux couches ;
+un substrat arbitraire qui ne satisfait que la couche structurelle
+n'est pas, par sa seule force, conforme.
+
+Ce résultat renforce le critère plutôt qu'il ne l'affaiblit : il
+rend explicite une exigence qui était implicite dans les parcours
+du §5.6. Artefacts de reproduction :
+`tests/conformance/adversarial/test_negative_substrates.py` et
+`scripts/run_q2_conformance_audit.py` ; sortie d'audit brute dans
+`docs/milestones/q2-conformance-negative-results.json`.
+
+**Extension Q2+ (2026-05-11).** Nous avons étendu le pool de tests
+négatifs avec 10 substrats supplémentaires couvrant trois nouvelles
+catégories : Cat D obfuscation par arithmétique modulaire
+(Mod7Cycler, Mod13Hasher, BinaryGray, AffineModN), Cat E violateurs
+de boucle de replay (ReplayHistorySpoof, BetaPermutationLeak,
+AlphaInfiniteRecycle, GammaSnapshotRollback), et Cat F canal
+asymétrique (AsymReplayHeavy, AsymRecombineEmpty). Tous les 10
+passent la couche structurelle-invariant **de manière déterministe
+(1/1 essai chacun)** car ils ont été construits pour satisfaire
+S2/range/nonneg/bounded-delta_acc par conception. Combinés avec la
+base N8, le pool cumulé couvre 22 substrats que la couche
+structurelle ne peut rejeter (12 N8 trivial+adversarial + 10 N9
+modulaire+replay+asymétrique) et 3 substrats statistiques avec des
+taux FP hétérogènes (1-80%). La conclusion « C2 requis » est
+correspondamment renforcée : la couche structurelle est nécessaire
+mais prouvablement non suffisante pour *tout* substrat qui obéit
+aux invariants de base, et seulement partiellement discriminante
+contre les adversaires statistiques. Artefact de reproduction dans
+`docs/milestones/q2plus-conformance-negative-results.json` ;
+harnais d'audit étendu dans `scripts/run_q2_conformance_audit.py`.
+
 ---
 
 ## 6. Méthodologie

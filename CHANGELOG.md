@@ -12,6 +12,127 @@ see `docs/specs/2026-04-17-dreamofkiki-framework-C-design.md` §12).
 
 ## [Unreleased]
 
+### Refactored (B3 delegate to topology kernel, 2026-05-21)
+
+- `_apply_topology_op(model, op, payload)` — the LoRA topology
+  mutation kernel — moved from
+  `kiki_oniric/dream/channels/hierarchy_change.py` to a new
+  substrate utility
+  `kiki_oniric/substrates/micro_kiki/lora_topology_ops.py`.
+  Both `LoRAHierarchyChangeChannel.apply_diff` (B5, awake-side
+  replay of a `TopologyDiff`) and `restructure_lora_handler`
+  (B3, dream-side mutation + diff emission) now delegate to
+  the substrate-level kernel. The dream-side handler keeps its
+  responsibilities (seed derivation via `_derive_op_seed`,
+  snapshot capture before `remove`, `model_sha256_post` after
+  each op, state counters) ; only the three `model.layers`
+  mutation primitives are delegated.
+- `hierarchy_change.py` re-exports `_apply_topology_op` through
+  its `__all__` so B5's published symbol is unchanged.
+- Zero behaviour change. The 14 existing B3 tests
+  (`tests/unit/test_restructure_lora.py`) + B5 tests
+  (`tests/unit/test_apply_channel_outputs.py`) all pass
+  unchanged. One new test
+  (`tests/unit/test_lora_topology_ops_reexport.py`) pins the
+  re-export identity.
+- DualVer FC-PATCH (`C-v0.24.0 → C-v0.24.1`). `pyproject.toml`
+  version `0.22.0 → 0.22.1`. No new versioned
+  `[C-v0.24.1+PARTIAL]` section per dreamOfkiki PATCH
+  convention (matches the 2026-04-21 DR-2 PATCH precedent —
+  change-tracked via this `[Unreleased]` bullet + spec).
+
+### Operational (Wave 3b M4 ablation_cycle3 diffusion + CI fix, 2026-05-21)
+
+- **Direct ship** `e17c17e feat(harness): wave3b M4 ablation
+  diffusion` — new driver `scripts/ablation_cycle3_diffusion.py`
+  exercising the wired `mlx_latent_diffusion` substrate end-to-end
+  plus harness eval helpers
+  `harness/diffusion_eval/cifar100_split_loader.py` and
+  `harness/diffusion_eval/diffusion_metrics.py`. +15 integration
+  tests (total 914, coverage 89 %, smoke 1.3 s, R1 deterministic).
+  PR #32 closed as superseded by direct ship. M4 acceptance (plan
+  §4) reached ; M5 ablation cycle is the next milestone (5
+  pending blockers tracked separately).
+- **Direct ship** `5e5582e fix(ci): drop unused type ignore in
+  wave3b M4 test` — follow-up CI fix on the M4 integration tests.
+- No FC / EC bump — M4 closes the substrate-internal wiring and
+  evaluation harness ; the empirical claim stays deferred until
+  M5 pilot + M6 paper integration.
+
+### Substrate (Wave 3b M2 — MLX latent-diffusion skeleton, 2026-05-20, PR #30)
+
+- `05f737f feat(substrate): Wave 3b M2 — MLX latent-diffusion
+  skeleton` — `kiki_oniric/substrates/mlx_latent_diffusion.py`
+  + `kiki_oniric/substrates/_diffusion/{model,sampler,trainer}.py`
+  ship E / U / σ class signatures only (NotImplementedError on
+  `train_step` + sampler bodies). Factory wired ; 8 tests, 98 %
+  coverage on the new package. **Track S chosen at M2 review**
+  (vs Track B legacy diffusion). Substrate-internal version stamped
+  `C-v0.13.0+PARTIAL`. M3 / M4 build on this skeleton.
+
+### Docs (Wave 3b M1 — plan + DR-3 evidence skeleton + OSF amendment, 2026-05-20, PR #29)
+
+- `92afef9 docs(wave3b): M1 — plan + DR-3 evidence skeleton + OSF
+  amendment draft` adds three append-only docs:
+  - `docs/plans/2026-05-20-wave3b-mlx-diffusion-substrate-plan.md`
+    (525 L, 7 sections, 6 milestones M1-M6, adopted D1-D5
+    decisions).
+  - `docs/proofs/dr3-diffusion-substrate-evidence.md` v0.1 (281 L,
+    7/8 typed primitives + Canal 4 documented no-op).
+  - `docs/osf-amendment-wave3b.md` (239 L, OSF Q6JYN amendment
+    draft).
+- M1 acceptance reached ; M2-M4 now shipped (see entries above
+  + the `C-v0.24.0+PARTIAL` Wave 3b M3 entry below).
+
+### CI (skip MLX-only tests on Linux runners, 2026-05-20, PR #28)
+
+- `2013176 chore(ci): skip MLX-only tests on Linux runners` —
+  root `conftest.py` `collect_ignore_glob` + lazy import in
+  `kiki_oniric/substrates/micro_kiki/__init__.py` + Linux
+  coverage gate dropped to **30 %** (macOS Apple-Silicon nightly
+  preserves the **90 %** gate via `r1-nightly.yml`). First green
+  master CI run since 2026-05-03. The libmlx skip pattern is
+  extended in C-v0.24.0+PARTIAL to cover the new diffusion
+  conformance / unit / R1 tests.
+
+### Paper 2 (Dream2Learn DR-3 separation proof — c-alert resolution, 2026-05-20, PR #27)
+
+- `a55f3bc docs(paper2): Dream2Learn DR-3 separation proof —
+  c-alert resolution` ships `docs/proofs/dream2learn-dr3-
+  separation.md` — formal proof that Dream2Learn does **not**
+  satisfy the DR-3 Conformance Criterion (CC condition 1 typed-
+  interface failure ; DE / role-partition mismatch). The
+  2026-05-19 c-alert is **resolved** : Dream2Learn is reclassified
+  from c-alert → category (a) baseline. §7.8 EN + FR updated ;
+  bibliography entry `calcagno2026` added ; glossary entry for
+  "Dream2Learn" registered.
+
+### Substrate (B5 bounds-check on add + weight-delta, 2026-05-19, PR #26)
+
+- `38fcefa fix(channels): B5 bounds-check add+weight-delta`
+  guards `hierarchy_change.add` against negative / oversized
+  layer indices and rejects `weight_delta` with `layer_idx < 0`.
+  +3 unit tests. Closes #24.
+
+### Operational (B6 LoRA smoke pilot first-run, 2026-05-21)
+
+- First run of `scripts/pilot_b6_lora_smoke.py` on `main`
+  (post-B6c). Synthetic workload at seed=42 across the three
+  LoRA profile tiers (PMinLoRA / PEquLoRA / PMaxLoRA) exercising
+  the closed awake↔dream loop via `apply_channel_outputs`.
+  Verdict + per-tier metrics captured in
+  `docs/milestones/b6-lora-smoke-2026-05-21.{json,md}` (Apple M5
+  first-run : 3/3 bit_equal, dispatch counts 3/4/5, DR-4 chain
+  inclusion strict subset on both `_active_ops` and
+  `emitted_types`, overall verdict PASS). Chip family + commit
+  recorded for the audit trail. Future Studio/M1Max reruns will
+  produce distinct artifacts capturing per-chip-family
+  behaviour (relevant given the 2026-05-20 MLX cross-machine
+  divergence on M1 Max documented in
+  `docs/proofs/r1-cross-machine.md`). No FC / EC bump — pilot
+  is infra-validation, no empirical claim and no substrate
+  change.
+
 ### Operational (G6 family compute closeout, 2026-05-04 17:30)
 
 - User-requested termination of all dreamOfkiki compute on
@@ -669,6 +790,10 @@ see `docs/specs/2026-04-17-dreamofkiki-framework-C-design.md` §12).
 - `tests/unit/profiles/test_p_min_sharon_calibration.py` (13 tests):
   default values, proxy reader, monotonicity P_max ≥ P_equ ≥ P_min,
   seed-independence, DR-4 chain coexistence guard.
+- Wave 3b M5: production CIFAR-100 split loader and the
+  `ablation_cycle3_diffusion.py` prod execute loop (450-cell grid,
+  `--resume`, R1 output hashing, milestone aggregation). EC bench
+  only — no framework-C axiom touched.
 
 ### Versioning
 - **No DualVer bump.** Calibration is profile metadata, not an axiom
@@ -676,6 +801,608 @@ see `docs/specs/2026-04-17-dreamofkiki-framework-C-design.md` §12).
   change. FC stays at v0.10.0; EC stays PARTIAL. Per framework-C
   spec §12 (only spec/proof changes trigger FC; only gate results
   trigger EC).
+
+---
+
+## [C-v0.25.0+PARTIAL] — 2026-05-21 — Wave 3b M7 diffusion substrate DR-3 conformance (Track S)
+
+### Changed
+- M7 substrate DR-3 conformance fix. `mlx_latent_diffusion.execute_profile`
+  now honours framework-C §3.1 normative activation per profile :
+  p_min activates {replay, downscale}, p_equ + p_max activate all
+  four ops. Skeleton handlers in `__post_init__` are overridden by
+  the `_real.py` factories bound to the diffusion denoiser via
+  `_diffusion.dream_ops_adapter.bind_real_handlers`. The recombine
+  contract is satisfied via a new random-init `Decoder` MLP
+  (`_diffusion.decoder`). `delta_acc` is a real CL head measurement
+  wired via the B5 awake/dream loop: replay + downscale emit
+  `WeightUpdate`s (compute-only handlers via SGD-then-rollback for
+  replay and pure arithmetic for downscale), `apply_channel_outputs`
+  applies them to a per-call deepcopy of the denoiser through
+  `DenoiserWeightDeltaChannel`, and the head probes
+  `denoiser(z, t_fixed)` before and after — so `delta_acc` reflects
+  the consolidation's effect on the denoiser feature (bounded in
+  `[-1, 1]` by construction). Closes issue #36.
+
+### Added
+- `kiki_oniric/substrates/_diffusion/decoder.py` (Decoder MLP).
+- `kiki_oniric/substrates/_diffusion/cl_eval_head.py` (ClEvalHead +
+  train/eval helpers).
+- `kiki_oniric/substrates/_diffusion/dream_ops_adapter.py`
+  (`bind_real_handlers`).
+- `tests/conformance/axioms/test_dr3_diffusion_profile.py`.
+- `kiki_oniric/substrates/_diffusion/denoiser_weight_channel.py`
+  (`DenoiserWeightDeltaChannel`).
+- `kiki_oniric/substrates/_diffusion/handlers_emit.py`
+  (`replay_diffusion_handler`, `downscale_diffusion_handler` —
+  compute-only emitters).
+- `denoiser_feature` helper in `_diffusion.cl_eval_head`.
+- `tests/unit/test_denoiser_weight_channel.py`,
+  `tests/unit/test_diffusion_handlers_emit.py`.
+
+### DualVer
+- Project FC MINOR `C-v0.24.0 → C-v0.25.0`. EC stays `+PARTIAL` ;
+  M6 ship-critic decides STABLE / PARTIAL.
+- Substrate-internal axis : `mlx_latent_diffusion` C-v0.14.0 →
+  C-v0.15.0 (`MLX_LATENT_DIFFUSION_SUBSTRATE_VERSION`).
+- 3 R1 entries regenerated ; see
+  `tests/reproducibility/REBASELINE_NOTE.md`.
+
+---
+
+## [C-v0.24.0+PARTIAL] — 2026-05-21 — Wave 3b M3 diffusion train + sample + R1 (Track S)
+
+### Formal axis (FC) — MINOR (v0.23.0 → v0.24.0)
+
+- **Substrate-internal bump** `mlx_latent_diffusion` from
+  `C-v0.13.0+PARTIAL` (Wave 3b M2 skeleton) to
+  `C-v0.14.0+PARTIAL` (Wave 3b M3 — trainer + sampler + R1
+  entries shipped). EC stays `+PARTIAL` ; M6 will conditionally
+  flip to `+STABLE` per framework-C §12.3 STABLE conditions, not
+  this PR.
+- **New module** `kiki_oniric/substrates/_diffusion/sampler.py`
+  (~155 LoC) : DDPM reverse-process sampler with the R1-clean
+  per-step subkey tree (plan §2.3 D3). Documents the key
+  derivation contract `mx.random.split(root_key, num=n_steps+1)`
+  with the index-0 reservation pattern.
+- **New module** `kiki_oniric/substrates/_diffusion/trainer.py`
+  (~150 LoC) : noise-prediction SGD `Trainer.fit` and
+  `train_step`, R1-clean per-step subkey tree
+  (`split(seed_key, num=n_total+1)`). Deterministic given
+  (dataset, n_epochs, seed_key, MLX version, chip family).
+- **Model upgrade** `kiki_oniric/substrates/_diffusion/model.py` :
+  `Encoder` and `MLPDenoiser` now `nn.Module` with learnable
+  parameters and a working `train_step` (MSE reconstruction /
+  noise-prediction respectively). The M2 NotImplementedError
+  surface on `train_step` is removed ; the public `__call__`
+  shape contract is preserved.
+- **Adapter wiring**
+  `kiki_oniric/substrates/mlx_latent_diffusion.py` :
+  `execute_profile` now runs a deterministic synthetic-latent
+  smoke cycle (Trainer.fit + Sampler.sample) and returns a
+  sibling-shaped metrics dict with a `"synthetic": True` honesty
+  marker per CLAUDE.md §Working rules item 3. The
+  ablation_cycle3 wiring lands in M4.
+
+### Empirical axis (EC) — UNCHANGED (PARTIAL)
+
+- No new empirical claim. Three new R1 entries
+  (`test_r1_diffusion_train`, `test_r1_diffusion_sample`,
+  `test_r1_diffusion_full_pipeline`) captured on M5 GrosMac
+  with `status: "pending_review"` per the 2026-05-10 N2
+  rebaseline discipline. M1 Max entries placeholder with
+  `status: "pending_remote_validation"` (bootstrap on the next
+  macM1 run via `compare_or_bootstrap` unknown-status path).
+
+### Tests (Track S — DR-3 full conformance)
+
+- `tests/unit/test_diffusion_sampler_keys.py` (5 tests) —
+  R1 key-derivation contract probe.
+- `tests/conformance/axioms/test_dr3_diffusion_substrate.py`
+  (8 tests) — 3 DR-3 conditions exercised against the wired
+  substrate (7/8 typed primitives + Canal 4 documented no-op).
+- `tests/conformance/axioms/test_dr0_diffusion_de_budget.py`
+  (4 tests) — DR-0 accountability via Hypothesis on the
+  trainer loss-history length contract.
+- `tests/conformance/axioms/test_dr1_diffusion_finite.py`
+  (4 tests) — DR-1 finiteness : training + sampler terminate
+  in bounded steps, all losses finite.
+- `tests/reproducibility/test_r1_diffusion.py` (3 R1 entries).
+- `tests/unit/test_mlx_latent_diffusion_adapter.py` extended :
+  the M2 NotImplementedError-deferral test is replaced by
+  positive train + smoke-cycle tests.
+- Root `conftest.py` extended : the new diffusion conformance,
+  unit, and R1 tests are added to the libmlx-less Linux skip
+  list (collect_ignore_glob).
+
+### Packaging
+
+- `pyproject.toml` version bumped `0.21.0 → 0.22.0`.
+
+### Notes
+
+- Track S/B M2 review gate (plan §4 M2 acceptance) : **Track S
+  selected** at M2 review ; this PR ships the full DR-3
+  conformance test family (3 conditions) + the 3 R1 entries.
+- DualVer atomic bump : all updated C-v references in code
+  (substrate-internal `C-v0.13.0` → `C-v0.14.0` in
+  `mlx_latent_diffusion.py`) and the framework C-v entry above
+  (`C-v0.23.0` → `C-v0.24.0`) flip in this single PR. Dated
+  immutables (`docs/plans/2026-05-20-...`,
+  `docs/osf-amendment-wave3b.md`) are deliberately untouched
+  per `docs/CLAUDE.md` (append-only rule).
+- M4 (ablation_cycle3 integration + smoke) is the next
+  milestone ; this PR is the M3 substrate-internal closure.
+
+---
+
+## [C-v0.23.0+PARTIAL] — 2026-05-20 — PMaxLoRAProfile wires P_max to channels (B6c)
+
+### Formal axis (FC) — MINOR (v0.22.0 → v0.23.0)
+
+- **New subclass** `kiki_oniric/profiles/p_max_lora.py`:
+  `PMaxLoRAProfile(PMaxProfile)` with kw-only `dream_model`,
+  `awake_model`, `encoder`, `decoder` kwargs (plus `lr=0.01`,
+  `max_adds_per_episode=1`, `seed=0`,
+  `latent_queue_capacity=1024`). Registers four B-series
+  handlers : `replay_lora_handler`, `downscale_lora_handler`,
+  `restructure_lora_handler` (all bound to `dream_model`) +
+  `recombine_real_handler` (bound to `encoder` / `decoder` /
+  `seed` per the B4 VAE contract). Builds three dispatch
+  channels on the awake side : `LoRAWeightDeltaChannel`,
+  `LoRAHierarchyChangeChannel`, `LatentSampleQueue(capacity=
+  1024)`. Inherits `alpha_stream` (awake → dream input ring
+  buffer) and `attention_prior` (ch4 state surface) fields
+  from cycle-3 `PMaxProfile` — neither is dispatched by
+  `consolidate_log()` (α is input-side ; ch4 has no op
+  emitter).
+- `consolidate_log() -> int` dispatches ch1 + ch2 + ch3 via
+  `apply_channel_outputs` and clears the log on success.
+  Attention defaults to `None` per the B6a refactor.
+- **State widening, 4-of-4** : all four state fields are
+  widened from cycle-3 skeleton `OpState` types to `_RealState`
+  variants (vs B6b which kept `RecombineOpState` skeleton for
+  `recombine_light`).
+- **Test helper extraction** : `tests/unit/profiles/_lora_helpers
+  .py` ships `lora_clones(seed)` and
+  `assert_lora_models_equal(a, b)` previously duplicated in
+  B6a + B6b test files. `test_p_min_lora.py` and
+  `test_p_equ_lora.py` were amended to import from the shared
+  module (zero behaviour change).
+- **DR-4 triple chain inclusion** : Test 17 (in
+  `test_p_max_lora.py`) pins the strict-subset chain on both
+  ops keys (`ops(PMinLoRA) ⊆ ops(PEquLoRA) ⊆ ops(PMaxLoRA)`)
+  and emitted channel types (`{WeightUpdate} ⊆ {WeightUpdate,
+  TopologyDiff} ⊆ {WeightUpdate, TopologyDiff, LatentSample}`).
+  First empirical pin of the full triple LoRA chain.
+- Sub-project B6c of issue #15. **Closes the B6 profile-wiring
+  decomposition** (B6a PMin done, B6b PEqu done, B6c PMax this
+  entry). Cycle-3 `PMaxProfile` untouched — legacy tests +
+  cycle-3 pilots unaffected.
+
+### Empirical axis (EC) — UNCHANGED (PARTIAL)
+
+- No new substrate, axiom, or empirical claim. EC stays
+  `+PARTIAL`.
+
+### Packaging
+
+- `pyproject.toml` version bumped `0.20.0 → 0.21.0`.
+
+---
+
+## [C-v0.22.0+PARTIAL] — 2026-05-20 — PEquLoRAProfile wires P_equ to channels (B6b)
+
+### Formal axis (FC) — MINOR (v0.21.0 → v0.22.0)
+
+- **New subclass** `kiki_oniric/profiles/p_equ_lora.py`:
+  `PEquLoRAProfile(PEquProfile)` with kw-only `dream_model` and
+  `awake_model` LoRAModel kwargs (plus `lr=0.01`,
+  `max_adds_per_episode=1`, `seed=0`). Registers
+  `replay_lora_handler`, `downscale_lora_handler`,
+  `restructure_lora_handler` on its runtime against
+  `dream_model`, keeps the skeleton `recombine_handler` for
+  `recombine_light` (no ch2 emission). Builds
+  `LoRAWeightDeltaChannel(awake_model)` for ch1 and
+  `LoRAHierarchyChangeChannel(awake_model)` for ch3.
+  `attention_prior` is an `AttentionPriorChannel` state surface
+  populated externally via `profile.attention_prior.set_prior(arr)` ;
+  no op emits `AttentionPrior` into the runtime log.
+- `consolidate_log() -> int` dispatches ch1 + ch3 via
+  `apply_channel_outputs` and clears the log on success. `ch2`
+  (LatentSample) and `ch4` (AttentionPrior) default to `None`
+  channel kwargs — neither reaches the log in P_equ.
+- **State widening** : `replay_state` / `downscale_state` /
+  `restructure_state` widened from cycle-3 skeleton
+  `OpState` types to `_RealState` variants. `recombine_state`
+  kept at `RecombineOpState` because the skeleton handler
+  services `recombine_light` and never emits.
+- Sub-project B6b of issue #15 (B6 decomposed by profile: B6a
+  PMin done, B6b PEqu this entry, B6c PMax future). Cycle-3
+  `PEquProfile` untouched — legacy tests + DR-4 inclusion checks
+  unaffected. The 14 new tests include a DR-4 chain-inclusion
+  check confirming `ops(PMinLoRA) ⊆ ops(PEquLoRA)` and
+  `channels_emitted(PMinLoRA) = {WeightUpdate} ⊆
+  channels_emitted(PEquLoRA) = {WeightUpdate, TopologyDiff}`.
+
+### Empirical axis (EC) — UNCHANGED (PARTIAL)
+
+- No new substrate, axiom, or empirical claim. EC stays
+  `+PARTIAL`.
+
+### Packaging
+
+- `pyproject.toml` version bumped `0.19.0 → 0.20.0`.
+
+---
+
+## [C-v0.21.0+PARTIAL] — 2026-05-20 — PMinLoRAProfile wires P_min to channels (B6a)
+
+### Formal axis (FC) — MINOR (v0.20.0 → v0.21.0)
+
+- **New subclass** `kiki_oniric/profiles/p_min_lora.py`:
+  `PMinLoRAProfile(PMinProfile)` with kw-only `dream_model` and
+  `awake_model` LoRAModel kwargs. Registers
+  `replay_lora_handler` and `downscale_lora_handler` on its
+  runtime against `dream_model`, builds a
+  `LoRAWeightDeltaChannel(awake_model)`, and exposes
+  `consolidate_log() -> int` that calls `apply_channel_outputs`
+  then clears the log so a second call without further episodes
+  is a no-op. State field types are widened from
+  `ReplayOpState` / `DownscaleOpState` to `ReplayRealState` /
+  `DownscaleRealState` to match the LoRA handler contract.
+- **Refactor** `kiki_oniric/consolidate.py`: the three non-
+  attention channel kwargs of `apply_channel_outputs`
+  (`weight_channel`, `hierarchy_channel`, `latent_channel`) are
+  now `Optional[…] = None`. Each raises a per-type `ValueError`
+  if a matching `ChannelOutput` appears in the log without the
+  channel set. Backwards compatible (existing 4-kwarg call
+  sites still work). Lets profiles that emit only ch1 (PMin)
+  omit the unused channel kwargs.
+- **New runtime helper** `kiki_oniric/dream/runtime.py`:
+  `DreamRuntime.reset_log()` clears the accountability log
+  without touching handler registrations. Used by
+  `PMinLoRAProfile.consolidate_log()`.
+- Sub-project B6a of issue #15 (B6 decomposes into B6a / B6b /
+  B6c by profile). Cycle-3 `PMinProfile` stays intact: legacy
+  tests + DR-4 inclusion checks unaffected. B6b
+  (`PEquLoRAProfile`, channels `{1, 3, 4}`) and B6c
+  (`PMaxLoRAProfile`, channels `{1, 2, 3, 4}` + encoder/decoder
+  for `recombine_full`) are future work.
+
+### Empirical axis (EC) — UNCHANGED (PARTIAL)
+
+- No new substrate, axiom, or empirical claim. EC stays
+  `+PARTIAL`.
+
+### Packaging
+
+- `pyproject.toml` version bumped `0.18.0 → 0.19.0`.
+
+---
+
+## [C-v0.20.0+PARTIAL] — 2026-05-20 — channel apply closes the loop (B5)
+
+### Formal axis (FC) — MINOR (v0.19.0 → v0.20.0)
+
+- **Three new concrete channels** in `kiki_oniric/dream/channels/`:
+  - `LoRAWeightDeltaChannel` (`weight_delta.py`) — additively
+    applies a `lora_delta` dict onto a `LoRAModel` target. Per-key
+    `"S1:"` parsing rejects unknown layer indices and bad attrs;
+    `"S2:"` finite guard rejects NaN/Inf on the new tensor.
+    `fisher_bump=None` accepted to match the `WeightDeltaChannel`
+    Protocol; ignored in B5 (Fisher is future work).
+  - `LoRAHierarchyChangeChannel` (`hierarchy_change.py`) — replays
+    every `TopologyDiff` entry via the new module-level
+    `_apply_topology_op(model, op, payload)` helper. `add` payloads
+    carry `seed`, which the channel passes to `mx.random.key` so
+    the reconstructed `LoRALinear` matches the dream-side bit-
+    exactly (R1).
+  - `LatentSampleQueue` (`latent_sample.py`) — substrate-agnostic
+    FIFO `collections.deque` with optional capacity. `S2:` finite
+    check on enqueue.
+- **`AttentionPriorChannel.set_prior`** — thin alias of `emit` so
+  the cycle-2 class matches the `AttentionPriorChannel` Protocol
+  vocabulary used by `apply_channel_outputs`.
+- **`apply_channel_outputs`** in `kiki_oniric/consolidate.py` — a
+  free function that walks `EpisodeLogEntry.channel_outputs`,
+  skips `None`, and dispatches by `isinstance` to the matching
+  channel. Returns the number of outputs dispatched. Raises
+  `TypeError` on an unknown `ChannelOutput` type; raises
+  `ValueError` if an `AttentionPrior` is encountered but
+  `attention_channel is None`. `consolidate()`'s nerve-wml-facing
+  signature is untouched.
+- Sub-project B5 of issue #15 — closes the awake↔dream loop. Tests
+  use a dream/awake `LoRAModel` clone pair (same `seed`); after
+  running an emitting handler on the dream side and
+  `apply_channel_outputs` on the awake side, the two models match
+  bit-for-bit (R1).
+
+### Empirical axis (EC) — UNCHANGED (PARTIAL)
+
+- No new substrate, axiom, or empirical claim. EC stays
+  `+PARTIAL`.
+
+### Packaging
+
+- `pyproject.toml` version bumped `0.17.0 → 0.18.0`.
+
+### Deferred
+
+- Profile wiring (`p_min` / `p_equ` / `p_max` continue to use
+  their cycle-3 channel wiring). A future **B6** sub-project
+  integrates `apply_channel_outputs` into the profile-driven
+  consolidation flow.
+- Refactoring `restructure_lora_handler` to delegate to
+  `_apply_topology_op`. The helper is intentionally module-level
+  so B3 can delegate later, but B5 does not change B3.
+- Fisher bump handling on `WeightDeltaChannel.apply`.
+
+---
+
+## [C-v0.19.0+PARTIAL] — 2026-05-20 — recombine emits LatentSample (B4)
+
+### Formal axis (FC) — MINOR (v0.18.0 → v0.19.0)
+
+- **Patched handler** `recombine_real_handler` in
+  `kiki_oniric/dream/operations/recombine_real.py`: return type
+  widened from `Callable[[DE], None]` to
+  `Callable[[DE], LatentSample | None]`. The handler now builds
+  and returns a channel-2 `LatentSample` whose
+  `latent_vector` is the sampled VAE latent `z` (not the decoded
+  output — `state.last_sample` continues to hold that for
+  backwards compatibility). `species` is read from
+  `input_slice` (default `"default"`; non-str raises
+  `ValueError("recombine: species must be str, …")`).
+  `provenance` is auto-derived as
+  `"recombine:de={episode_id}:ep={count}:seed={key_seed}"`,
+  R1-traceable.
+- **Asymmetry preserved** — empty `delta_latents` continues to
+  raise `ValueError("I3: …")` instead of falling through to a
+  silent S1 no-op (the pattern used by B1b/B2/B3). Invariant I3
+  presumes a non-empty latent buffer; an empty input is an
+  upstream scheduling error, not a recombine no-op.
+- **Counter-bump ordering** — the `LatentSample` is constructed
+  *before* the per-episode counter increments, so `provenance`
+  reads `ep=<state._episode_count>` directly (no off-by-one).
+  If `LatentSample.__post_init__` raises on non-finite `z`, the
+  counter does not advance — sound "this episode didn't emit"
+  semantics.
+- Sub-project B4 of issue #15 — **4 of 4** dream operations now
+  emit real channel outputs. `replay` (B1b) and `downscale` (B2)
+  on channel 1 (`WeightUpdate`), `restructure` (B3) on channel
+  3 (`TopologyDiff`), `recombine` (B4) on channel 2
+  (`LatentSample`). B5 will rewire `consolidate()` to actually
+  apply the four channel outputs to a target model.
+
+### Empirical axis (EC) — UNCHANGED (PARTIAL)
+
+- No new substrate, axiom, or empirical claim. EC stays
+  `+PARTIAL`.
+
+### Packaging
+
+- `pyproject.toml` version bumped `0.16.0 → 0.17.0`.
+
+---
+
+## [C-v0.18.0+PARTIAL] — 2026-05-20 — restructure emits TopologyDiff (B3)
+
+### Formal axis (FC) — MINOR (v0.17.0 → v0.18.0)
+
+- **New handler** `restructure_lora_handler` in
+  `kiki_oniric/dream/operations/restructure_real.py`: mutates a
+  `LoRAModel`'s adapter stack with the full
+  `{add, remove, reroute}` vocab and emits a channel-3
+  `TopologyDiff`. Validates every op pre-mutation with `"S3:"`-
+  tagged errors. INSS soft cap on `add`
+  (`max_adds_per_episode`, default 1) silently skips overflowing
+  adds (no entry in the diff). `remove` snapshots
+  `base_weight` / `lora_a` / `lora_b` / `bias` and the
+  reconstruction dims into the payload so B5 can undo or rebuild
+  the layer. Each applied op carries a 64-hex
+  `model_sha256_post` fingerprint (R1).
+- **Hardened type** `TopologyDiff` now has a `__post_init__`
+  enforcing structural S3 validity (vocab, per-op required keys,
+  positive `rank`, finite snapshot arrays, 64-hex sha). B0 had
+  documented the deferral; B3 fills it in.
+- **State** `RestructureRealState` gains 4 backwards-compatible
+  counter fields (`adds_this_episode`, `total_adds`,
+  `total_removes`, `total_reroutes`).
+- Sub-project B3 of issue #15. `restructure` is the third dream
+  operation to emit a real channel output (after `replay` B1b
+  and `downscale` B2). `recombine` (B4) remains the only
+  skeleton-only op. No profile wiring — the handler is exercised
+  via a direct `DreamRuntime`. CasCor partial weight-freeze
+  (INSS hint, optional companion to the Add bound) is **not**
+  implemented in B3 and is flagged as future work.
+
+### Empirical axis (EC) — UNCHANGED (PARTIAL)
+
+- No new substrate, axiom, or empirical claim. EC stays
+  `+PARTIAL`.
+
+### Packaging
+
+- `pyproject.toml` version bumped `0.15.0 → 0.16.0`.
+
+---
+
+## [C-v0.17.0+PARTIAL] — 2026-05-20 — downscale emits WeightUpdate (B2)
+
+### Formal axis (FC) — MINOR (v0.16.0 → v0.17.0)
+
+- **New handler** `downscale_lora_handler` in
+  `kiki_oniric/dream/operations/downscale_real.py`: shrinks every
+  `LoRALinear`'s A/B adapters by a validated `shrink_factor` in
+  `(0, 1]` and returns a channel-1 `WeightUpdate` whose
+  `lora_delta` carries the per-adapter low-rank deltas. The
+  frozen base weight is untouched — SHY shrinkage on the LoRA
+  substrate targets the adaptation only. `factor == 1.0` is an
+  S1 no-op (returns `None`, FLOPs 0). `compound_factor` compounds
+  multiplicatively across episodes (Tononi non-idempotence).
+- Re-uses the `adapter_delta` helper shipped with B1b
+  (`kiki_oniric/substrates/micro_kiki/lora_model.py`) — no new
+  file in `substrates/`.
+- Sub-project B2 of issue #15. `downscale` is the second dream
+  operation to emit a real channel output (after `replay` in B1b).
+  No profile wiring — the handler is exercised via a direct
+  `DreamRuntime`. `I-Wmag` is trivially satisfied by multiplicative
+  shrinkage (`f ≤ 1` only decreases magnitudes) and flagged as an
+  out-of-scope cleanup item for `docs/invariants/registry.md`.
+
+### Empirical axis (EC) — UNCHANGED (PARTIAL)
+
+- No new substrate, axiom, or empirical claim. EC stays
+  `+PARTIAL`.
+
+### Packaging
+
+- `pyproject.toml` version bumped `0.14.0 → 0.15.0`.
+
+---
+
+## [C-v0.16.0+PARTIAL] — 2026-05-19 — replay emits WeightUpdate (B1b)
+
+### Formal axis (FC) — MINOR (v0.15.0 → v0.16.0)
+
+- **New handler** `replay_lora_handler` in
+  `kiki_oniric/dream/operations/replay_real.py`: runs an
+  adapter-only SGD step on a `LoRAModel` (the base weight is
+  frozen, so MLX trains only the A/B adapters) and returns a
+  channel-1 `WeightUpdate` whose `lora_delta` carries the
+  per-adapter low-rank deltas. Empty `beta_records` returns
+  `None`. K1 FLOPs tagged on `ReplayRealState`.
+- **New helper** `adapter_delta` in
+  `kiki_oniric/substrates/micro_kiki/lora_model.py`: diffs two
+  `adapter_parameters()` snapshots into a float32 numpy delta
+  dict, keeping the MLX-only `replay_real.py` free of numpy.
+- Sub-project B1b of issue #15. `replay` is the first dream
+  operation to emit a real channel output. No profile wiring —
+  the handler is exercised via a direct `DreamRuntime`.
+
+### Empirical axis (EC) — UNCHANGED (PARTIAL)
+
+- No new substrate, axiom, or empirical claim. EC stays
+  `+PARTIAL`.
+
+### Packaging
+
+- `pyproject.toml` version bumped `0.13.0 → 0.14.0`.
+
+---
+
+## [C-v0.15.0+PARTIAL] — 2026-05-19 — LoRA model abstraction (B1a)
+
+### Formal axis (FC) — MINOR (v0.14.0 → v0.15.0)
+
+- **New module** `kiki_oniric/substrates/micro_kiki/lora_model.py`:
+  `LoRALinear` (a linear layer with a frozen base weight and a
+  trainable rank-r adapter pair `A`/`B`, effective weight
+  `W0 + (alpha/rank) * B@A`) and `LoRAModel` (a named stack of
+  `LoRALinear` exposing `adapter_parameters()`).
+- Standard LoRA init: `A` seeded-random, `B` zeros — the initial
+  effective weight equals the base weight.
+- Sub-project B1a of issue #15: the model abstraction `replay`
+  (B1b) will gradient-step to emit a low-rank `WeightUpdate`. No
+  training, no channel output, no runtime wiring in B1a.
+
+### Empirical axis (EC) — UNCHANGED (PARTIAL)
+
+- New substrate component only; no op, axiom, or empirical claim.
+  EC stays `+PARTIAL`.
+
+### Packaging
+
+- `pyproject.toml` version bumped `0.12.0 → 0.13.0`.
+
+---
+
+## [C-v0.14.0+PARTIAL] — 2026-05-19 — channel-output contract (B0)
+
+### Formal axis (FC) — MINOR (v0.13.0 → v0.14.0)
+
+- **New module** `kiki_oniric/dream/channels/` : the four
+  channel-output value types (`WeightUpdate`, `LatentSample`,
+  `TopologyDiff`, `AttentionPrior`) and the `ChannelOutput`
+  union. Frozen dataclasses with S2 finiteness validation.
+- **`EpisodeLogEntry`** gains `channel_outputs`, a tuple parallel
+  to `operations_executed`. Default `()` — data-level backward
+  compatible.
+- **`OperationHandler`** return type widened `None →
+  ChannelOutput | None`. Non-breaking: a handler returning `None`
+  still conforms. The four DR-3 primitive Protocols in
+  `core/primitives.py` are unchanged — hence FC-MINOR.
+- **`DreamRuntime.execute()`** records each handler return into
+  `channel_outputs`.
+- Sub-project B0 of issue #15. Operations still return `None`;
+  B1-B4 populate real values, B5 rewires `consolidate()`.
+
+### Empirical axis (EC) — UNCHANGED (PARTIAL)
+
+- No new substrate, op, or empirical claim. EC stays `+PARTIAL`.
+
+### Packaging
+
+- `pyproject.toml` version bumped `0.11.0 → 0.12.0`.
+
+---
+
+## [C-v0.13.0+PARTIAL] — 2026-05-19 — `consolidate()` public facade
+
+### Formal axis (FC) — MINOR (v0.12.0 → v0.13.0)
+
+- **New public top-level API** : `kiki_oniric.consolidate()`,
+  re-exported from `kiki_oniric/consolidate.py` via
+  `kiki_oniric/__init__.py`. Single entry point for downstream
+  consumers — notably `nerve-wml`'s `bridge/dream_bridge.py`
+  scaffold — that previously had to compose primitives themselves
+  or import through private sub-module paths.
+- **Facade only — no new primitive logic.** Pure composition over
+  already-tested primitives : decodes an event `trace` into one
+  `DreamEpisode` per phase-clock window, runs the profile's
+  `DreamRuntime` (S2/S3 guards + DR-0 log fire unchanged). No
+  primitive signature changes — hence FC-MINOR, not MAJOR.
+- Signature : `consolidate(trace, profile, *, n_transducers=12,
+  alphabet_size=64) -> np.ndarray`. Output shape
+  `[n_transducers, alphabet_size, alphabet_size]`, dtype
+  `float32`. Contract covers shape, dtype and R1 bit-exact
+  determinism only — delta magnitude carries no semantic promise.
+- `alphabet_size` default fixed at **64** (issue #14 prose
+  mentioning "32" was stale) — matches the canonical `nerve-wml`
+  alphabet (`Nerve.ALPHABET_SIZE`, `track_p/transducer.py`
+  `alphabet_size: int = 64`).
+- DR-4 chain inclusion holds at the facade level : because the
+  op-set of `P_min` is a strict subset of `P_equ`'s (and `P_equ`'s
+  of `P_max`'s) and each op contributes additively, the delta
+  tensors satisfy `delta(P_min) ⊆ delta(P_equ) ⊆ delta(P_max)`.
+- New unit suite `tests/unit/test_consolidate_facade.py`
+  (11 tests) : zero-trace → zero delta, default shape/dtype,
+  DR-4 inclusion (`P_min ⊆ P_equ`, `P_equ ⊆ P_max`), R1 bit-exact
+  determinism, malformed-trace and non-finite (S2) guard failures,
+  out-of-range index clamping.
+
+### Known limitation — placeholder delta magnitude
+
+- The skeleton op handlers mutate state counters only ;
+  `EpisodeLogEntry` carries no delta payload. The facade therefore
+  **synthesises** the returned delta from the executed-op count
+  scattered over event-indexed cells — a deterministic scaffold,
+  not a framework-C consolidation result. Shape, dtype and R1
+  determinism are contractual ; magnitude is not. A real delta
+  needs `EpisodeLogEntry` extended to carry an op payload —
+  tracked as a separate follow-up issue.
+
+### Empirical axis (EC) — UNCHANGED (PARTIAL)
+
+- The facade introduces no new substrate, op, or empirical claim.
+  It composes already-validated primitives ; the DR-3 conformance
+  matrix is unaffected. EC stays `+PARTIAL`.
+
+### Packaging
+
+- `pyproject.toml` package version bumped `0.10.0 → 0.11.0`
+  (FC-MINOR facade addition).
 
 ---
 

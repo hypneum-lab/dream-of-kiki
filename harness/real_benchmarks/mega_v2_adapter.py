@@ -50,7 +50,7 @@ _DEFAULT_ENERGY = 0.001
 def _to_float_list(values: Iterable[Any]) -> list[float]:
     """Coerce encoder output (numpy / list / tuple) to list[float]."""
     try:
-        tolist = values.tolist  # numpy / mlx surface
+        tolist = values.tolist  # type: ignore[attr-defined]  # numpy / mlx surface
     except AttributeError:
         return [float(v) for v in values]
     materialised = tolist()

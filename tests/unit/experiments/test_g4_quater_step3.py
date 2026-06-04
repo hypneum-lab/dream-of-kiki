@@ -9,19 +9,17 @@ from experiments.g4_quater_test.run_step3_recombine_strategies import (
     run_pilot,
 )
 
+from .conftest import FMNIST_DATA, skip_if_no_fmnist
+
 
 def test_constants_match_prereg() -> None:
     assert ARMS == ("baseline", "P_min", "P_equ", "P_max")
     assert STRATEGIES == ("mog", "ae", "none")
 
 
+@skip_if_no_fmnist
 def test_run_pilot_smoke(tmp_path: Path) -> None:
-    data_dir = (
-        Path(__file__).resolve().parents[3]
-        / "experiments"
-        / "g4_split_fmnist"
-        / "data"
-    )
+    data_dir = FMNIST_DATA
     out_json = tmp_path / "step3.json"
     out_md = tmp_path / "step3.md"
     registry_db = tmp_path / "registry.sqlite"

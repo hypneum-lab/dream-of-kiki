@@ -108,7 +108,7 @@ def test_c2_micro_kiki_restructure_oplora_orthogonality() -> None:
     ]
     new_B = rng.standard_normal((out_dim, rank)).astype(np.float32)
 
-    adapter: dict = {
+    adapter: dict[str, Any] = {
         "B": new_B.copy(),
         "prior_deltas": priors,
     }
@@ -133,7 +133,7 @@ def test_c2_micro_kiki_restructure_dr0_accountability() -> None:
 
     out_dim = 4
     prior = np.eye(out_dim, dtype=np.float32)[:, :2]
-    adapter: dict = {
+    adapter: dict[str, Any] = {
         "B": np.ones((out_dim, 2), dtype=np.float32),
         "prior_deltas": [prior],
     }
@@ -155,7 +155,7 @@ def test_c2_micro_kiki_restructure_dr1_episode_stamp() -> None:
 
     out_dim = 4
     prior = np.eye(out_dim, dtype=np.float32)[:, :2]
-    adapter: dict = {
+    adapter: dict[str, Any] = {
         "B": np.ones((out_dim, 2), dtype=np.float32),
         "prior_deltas": [prior],
         "episode_id": "ep-conformance-dr1",

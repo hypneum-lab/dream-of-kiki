@@ -1,0 +1,271 @@
+{
+  "verdict": "ge_3_FP_reformulate",
+  "q2plus_verdict": "q2plus_25_25_FP_C2_required",
+  "n_fp_substrates": 25,
+  "n_total": 25,
+  "per_category": {
+    "A_trivial": {
+      "fp": 5,
+      "total": 5
+    },
+    "B_adversarial": {
+      "fp": 7,
+      "total": 7
+    },
+    "C_statistical": {
+      "fp": 3,
+      "total": 3
+    },
+    "D_modular": {
+      "fp": 4,
+      "total": 4
+    },
+    "E_replay_loops": {
+      "fp": 4,
+      "total": 4
+    },
+    "F_asymmetric": {
+      "fp": 2,
+      "total": 2
+    }
+  },
+  "audits": [
+    {
+      "name": "IdentitySubstrate",
+      "category": "A_trivial",
+      "n_trials": 1,
+      "pass_count": 1,
+      "fail_count": 0,
+      "fp_rate": 1.0,
+      "sample_failures": []
+    },
+    {
+      "name": "RandomNoiseSubstrate",
+      "category": "A_trivial",
+      "n_trials": 1,
+      "pass_count": 1,
+      "fail_count": 0,
+      "fp_rate": 1.0,
+      "sample_failures": []
+    },
+    {
+      "name": "LookupSubstrate",
+      "category": "A_trivial",
+      "n_trials": 1,
+      "pass_count": 1,
+      "fail_count": 0,
+      "fp_rate": 1.0,
+      "sample_failures": []
+    },
+    {
+      "name": "FrozenZerosSubstrate",
+      "category": "A_trivial",
+      "n_trials": 1,
+      "pass_count": 1,
+      "fail_count": 0,
+      "fp_rate": 1.0,
+      "sample_failures": []
+    },
+    {
+      "name": "ConstantSubstrate",
+      "category": "A_trivial",
+      "n_trials": 1,
+      "pass_count": 1,
+      "fail_count": 0,
+      "fp_rate": 1.0,
+      "sample_failures": []
+    },
+    {
+      "name": "ShapePreservingNoise",
+      "category": "B_adversarial",
+      "n_trials": 1,
+      "pass_count": 1,
+      "fail_count": 0,
+      "fp_rate": 1.0,
+      "sample_failures": []
+    },
+    {
+      "name": "BudgetGamingSubstrate",
+      "category": "B_adversarial",
+      "n_trials": 1,
+      "pass_count": 1,
+      "fail_count": 0,
+      "fp_rate": 1.0,
+      "sample_failures": []
+    },
+    {
+      "name": "PermutedReplay",
+      "category": "B_adversarial",
+      "n_trials": 1,
+      "pass_count": 1,
+      "fail_count": 0,
+      "fp_rate": 1.0,
+      "sample_failures": []
+    },
+    {
+      "name": "OverloadRecombine",
+      "category": "B_adversarial",
+      "n_trials": 1,
+      "pass_count": 1,
+      "fail_count": 0,
+      "fp_rate": 1.0,
+      "sample_failures": []
+    },
+    {
+      "name": "StatelessAccident",
+      "category": "B_adversarial",
+      "n_trials": 1,
+      "pass_count": 1,
+      "fail_count": 0,
+      "fp_rate": 1.0,
+      "sample_failures": []
+    },
+    {
+      "name": "CommutativityViolator",
+      "category": "B_adversarial",
+      "n_trials": 1,
+      "pass_count": 1,
+      "fail_count": 0,
+      "fp_rate": 1.0,
+      "sample_failures": []
+    },
+    {
+      "name": "BoundaryCheater",
+      "category": "B_adversarial",
+      "n_trials": 1,
+      "pass_count": 1,
+      "fail_count": 0,
+      "fp_rate": 1.0,
+      "sample_failures": []
+    },
+    {
+      "name": "RandomCoinFlip",
+      "category": "C_statistical",
+      "n_trials": 100,
+      "pass_count": 6,
+      "fail_count": 94,
+      "fp_rate": 0.06,
+      "sample_failures": [
+        "seed=0: restructure_sum: Inf; recombine_rate: 2.0 outside [0,1]",
+        "seed=1: restructure_sum: Inf; delta_acc: NaN",
+        "seed=2: replay_rate: NaN; recombine_rate: 2.0 outside [0,1]"
+      ]
+    },
+    {
+      "name": "ShapeDistributionDependent",
+      "category": "C_statistical",
+      "n_trials": 100,
+      "pass_count": 80,
+      "fail_count": 20,
+      "fp_rate": 0.8,
+      "sample_failures": [
+        "seed=8: replay_rate: Inf; restructure_sum: NaN; delta_acc: NaN; recombine_rate: 2.0 outside [0,1]",
+        "seed=9: replay_rate: Inf; restructure_sum: NaN; delta_acc: NaN; recombine_rate: 2.0 outside [0,1]",
+        "seed=18: replay_rate: Inf; restructure_sum: NaN; delta_acc: NaN; recombine_rate: 2.0 outside [0,1]"
+      ]
+    },
+    {
+      "name": "SeedDependentSubstrate",
+      "category": "C_statistical",
+      "n_trials": 100,
+      "pass_count": 1,
+      "fail_count": 99,
+      "fp_rate": 0.01,
+      "sample_failures": [
+        "seed=1: replay_rate: 34.558419206478604 outside [0,1]; recombine_rate: -130.31572316043608 outside [0,1]; delta_acc: |0.9053558666731177| > 0.1",
+        "seed=2: replay_rate: 18.905338179353308 outside [0,1]; recombine_rate: -244.14673826398555 outside [0,1]; restructure_sum: -41.30635433918934 < 0; delta_acc: |1.799707382720902| > 0.1",
+        "seed=3: replay_rate: 204.09191213851824 outside [0,1]; recombine_rate: -56.77696061279298 outside [0,1]; delta_acc: |-0.45264929211044586| > 0.1"
+      ]
+    },
+    {
+      "name": "Mod7Cycler",
+      "category": "D_modular",
+      "n_trials": 1,
+      "pass_count": 1,
+      "fail_count": 0,
+      "fp_rate": 1.0,
+      "sample_failures": []
+    },
+    {
+      "name": "Mod13Hasher",
+      "category": "D_modular",
+      "n_trials": 1,
+      "pass_count": 1,
+      "fail_count": 0,
+      "fp_rate": 1.0,
+      "sample_failures": []
+    },
+    {
+      "name": "BinaryGray",
+      "category": "D_modular",
+      "n_trials": 1,
+      "pass_count": 1,
+      "fail_count": 0,
+      "fp_rate": 1.0,
+      "sample_failures": []
+    },
+    {
+      "name": "AffineModN",
+      "category": "D_modular",
+      "n_trials": 1,
+      "pass_count": 1,
+      "fail_count": 0,
+      "fp_rate": 1.0,
+      "sample_failures": []
+    },
+    {
+      "name": "ReplayHistorySpoof",
+      "category": "E_replay_loops",
+      "n_trials": 1,
+      "pass_count": 1,
+      "fail_count": 0,
+      "fp_rate": 1.0,
+      "sample_failures": []
+    },
+    {
+      "name": "BetaPermutationLeak",
+      "category": "E_replay_loops",
+      "n_trials": 1,
+      "pass_count": 1,
+      "fail_count": 0,
+      "fp_rate": 1.0,
+      "sample_failures": []
+    },
+    {
+      "name": "AlphaInfiniteRecycle",
+      "category": "E_replay_loops",
+      "n_trials": 1,
+      "pass_count": 1,
+      "fail_count": 0,
+      "fp_rate": 1.0,
+      "sample_failures": []
+    },
+    {
+      "name": "GammaSnapshotRollback",
+      "category": "E_replay_loops",
+      "n_trials": 1,
+      "pass_count": 1,
+      "fail_count": 0,
+      "fp_rate": 1.0,
+      "sample_failures": []
+    },
+    {
+      "name": "AsymReplayHeavy",
+      "category": "F_asymmetric",
+      "n_trials": 1,
+      "pass_count": 1,
+      "fail_count": 0,
+      "fp_rate": 1.0,
+      "sample_failures": []
+    },
+    {
+      "name": "AsymRecombineEmpty",
+      "category": "F_asymmetric",
+      "n_trials": 1,
+      "pass_count": 1,
+      "fail_count": 0,
+      "fp_rate": 1.0,
+      "sample_failures": []
+    }
+  ]
+}

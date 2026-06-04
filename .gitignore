@@ -49,3 +49,7 @@ experiments/g4_sexto_test/data/cifar100-train.parquet
 experiments/g4_sexto_test/data/cifar100-test.parquet
 experiments/g4_sexto_test/data/tiny-imagenet-train.parquet
 experiments/g4_sexto_test/data/tiny-imagenet-valid.parquet
+# pytest coverage shards (Finder duplicates)
+.coverage
+.coverage.*
+.coverage [0-9]*

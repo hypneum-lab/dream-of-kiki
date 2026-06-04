@@ -4,9 +4,16 @@
 
 | Priorité | Lab | Contact | Data type | Status |
 |----------|-----|---------|-----------|--------|
-| 1 | Huth Lab (UT Austin) | alex@cs.utexas.edu | Narratives natural language | DRAFT_READY_S3 |
-| 2 | Norman Lab (Princeton) | knorman@princeton.edu | Episodic memory | DRAFT_READY_S3 |
-| 3 | Gallant Lab (UC Berkeley) | gallant@berkeley.edu | Natural stimuli | DRAFT_READY_S3 |
+| 1 | Huth Lab (UT Austin) | alex@cs.utexas.edu | Narratives natural language | SENT 2026-04-18, SILENT 22d (effective decline) |
+| 2 | Norman Lab (Princeton) | knorman@princeton.edu | Episodic memory | SENT 2026-04-18, SILENT 22d (effective decline) |
+| 3 | Gallant Lab (UC Berkeley) | gallant@berkeley.edu | Natural stimuli | SENT 2026-04-18, **DECLINED 2026-04-19** (scope mismatch — pointed to open semantic-map data) |
+
+## Audit log fMRI track (append-only)
+
+- **2026-04-18** — 3 sends went out (Huth, Norman, Gallant) offering courtesy co-authorship + ~2-3h review + data coordination.
+- **2026-04-19** — Gallant declined gracefully ("not a sleep expert", "all semantic map data are open"). Reply ack drafted 2026-05-10 in `~/Documents/Business electron rare/dr2-recruitment-2026-05-10/mail-gallant-ack.eml`.
+- **2026-05-10** — 22-day silence from Huth + Norman = effective decline per academic convention. Move on. Studyforrest BOLD remains the fallback per Paper 2 outline §6.6 (already infra-ready, C3.15 + C3.16 + C3.18 loaders in place).
+- **Decision** — do not pursue replacements for Huth + Norman. Studyforrest fallback is sufficient for Paper 2 cross-modal validation. Re-evaluate post Paper 1 v0.2 PLOS CB submission if reviewer feedback specifically requests broader fMRI dataset coverage.
 
 Fallback : **Studyforrest** (public, already available) — feasibility
 note S2 mandatory before proceeding.

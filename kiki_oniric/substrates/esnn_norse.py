@@ -196,7 +196,7 @@ class NorseSNNSubstrate:
 
     def replay_handler_factory(
         self,
-    ) -> Callable[[list[dict], int], NDArray]:
+    ) -> Callable[..., NDArray]:
         """A-Walker/Stickgold replay → spike-rate retention."""
 
         def handler(beta_records, n_steps: int = 20):
@@ -225,7 +225,7 @@ class NorseSNNSubstrate:
 
     def downscale_handler_factory(
         self,
-    ) -> Callable[[NDArray, float], NDArray]:
+    ) -> Callable[..., NDArray]:
         """B-Tononi SHY → multiplicative synaptic scaling."""
 
         def handler(weights: NDArray, factor: float) -> NDArray:
@@ -239,7 +239,7 @@ class NorseSNNSubstrate:
 
     def restructure_handler_factory(
         self,
-    ) -> Callable[[NDArray, str, int, int], NDArray]:
+    ) -> Callable[..., NDArray]:
         """D-Friston FEP restructure → topology edits."""
 
         def handler(
@@ -264,7 +264,7 @@ class NorseSNNSubstrate:
 
     def recombine_handler_factory(
         self,
-    ) -> Callable[[NDArray, int, int], NDArray]:
+    ) -> Callable[..., NDArray]:
         """C-Hobson recombine → Poisson spike-train mix of latents."""
 
         def handler(

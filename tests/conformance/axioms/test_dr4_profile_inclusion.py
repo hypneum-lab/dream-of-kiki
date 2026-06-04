@@ -52,7 +52,7 @@ def test_dr4_p_equ_contains_restructure_and_recombine() -> None:
 # === DR-4 P_equ ⊆ P_max chain (S16.2 extension) ===
 
 
-def _p_max_metadata():
+def _p_max_metadata() -> PMaxProfile:
     """Read PMaxProfile target metadata (handlers not yet wired)."""
     return PMaxProfile()
 
@@ -62,8 +62,8 @@ def test_dr4_ops_inclusion_p_equ_subset_p_max() -> None:
     p_max = _p_max_metadata()
     ops_equ = registered_ops("P_equ")
     assert ops_equ <= p_max.target_ops, (
-        f"DR-4 violated: ops(P_equ) not subset of "
-        f"target_ops(P_max)"
+        "DR-4 violated: ops(P_equ) not subset of "
+        "target_ops(P_max)"
     )
 
 

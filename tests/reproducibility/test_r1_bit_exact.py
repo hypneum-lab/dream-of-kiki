@@ -71,7 +71,7 @@ from tests.reproducibility._r1_helpers import (  # noqa: E402
 # --------------------------------------------------------------------------
 
 
-class _TinyMLP(nn.Module):  # type: ignore[misc]
+class _TinyMLP(nn.Module):  # type: ignore[misc,name-defined]  # mlx.nn star re-export
     """4-in / 8-hidden / 2-out MLP — matches ``test_real_ops.py``."""
 
     def __init__(self) -> None:
@@ -84,7 +84,7 @@ class _TinyMLP(nn.Module):  # type: ignore[misc]
         return self.layers[1](h)
 
 
-class _TinyEncoder(nn.Module):  # type: ignore[misc]
+class _TinyEncoder(nn.Module):  # type: ignore[misc,name-defined]  # mlx.nn star re-export
     def __init__(self) -> None:
         super().__init__()
         self.fc = nn.Linear(4, 4)
@@ -95,7 +95,7 @@ class _TinyEncoder(nn.Module):  # type: ignore[misc]
         return h, log_var
 
 
-class _TinyDecoder(nn.Module):  # type: ignore[misc]
+class _TinyDecoder(nn.Module):  # type: ignore[misc,name-defined]  # mlx.nn star re-export
     def __init__(self) -> None:
         super().__init__()
         self.fc = nn.Linear(4, 4)

@@ -1,5 +1,8 @@
 """H1 empirical validation v2 — PermutedMNIST, CPU, proper per-experience extraction."""
-import argparse, csv, time, torch
+import argparse
+import csv
+import time
+import torch
 from torch.nn import CrossEntropyLoss
 from torch.optim import SGD
 from avalanche.benchmarks.classic import PermutedMNIST

@@ -14,9 +14,7 @@ Output : results_h1.csv with columns
 
 import argparse
 import csv
-import sys
 import time
-from pathlib import Path
 
 import numpy as np
 import torch
@@ -24,11 +22,11 @@ from torch.nn import CrossEntropyLoss
 from torch.optim import SGD
 
 from avalanche.benchmarks.classic import SplitFMNIST
-from avalanche.evaluation.metrics import accuracy_metrics, forgetting_metrics, loss_metrics
+from avalanche.evaluation.metrics import accuracy_metrics, forgetting_metrics
 from avalanche.logging import InteractiveLogger
 from avalanche.models import SimpleMLP
 from avalanche.training.plugins import EvaluationPlugin
-from avalanche.training.supervised import Naive, Replay, EWC
+from avalanche.training.supervised import Naive, Replay
 
 
 CONDITIONS = {

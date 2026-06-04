@@ -38,6 +38,33 @@ version and active gate live in `STATUS.md` — read it first.
 Several of these directories have their own `CLAUDE.md` with
 domain-specific guidance — read those when you enter them.
 
+## Current state (2026-05-21)
+
+- DualVer (framework) : `C-v0.24.0+PARTIAL` (last bump 2026-05-21
+  Wave 3b M3, see `CHANGELOG.md`). `pyproject.toml` SemVer alias
+  `0.22.0`.
+- Test suite : **914 tests**, coverage **89 %** (Linux gate 30 %,
+  macOS Apple-Silicon nightly gate 90 % via `r1-nightly.yml`).
+- Substrates registered under `kiki_oniric/substrates/` :
+  `mlx_kiki_oniric`, `esnn_norse`, `esnn_thalamocortical`,
+  `wake_sleep_cl_baseline`, `micro_kiki`, `_adversarial`, and
+  the **Wave 3b `mlx_latent_diffusion`** (Track S — substrate-
+  internal `C-v0.14.0+PARTIAL`, M4 ablation harness shipped,
+  M5 pilot pending, M6 paper integration pending).
+- Wave 3b plan + acceptance milestones live at
+  `docs/plans/2026-05-20-wave3b-mlx-diffusion-substrate-plan.md`
+  (M1-M6). M1 → M4 closed ; M5 / M6 deferred per plan §6.
+- Recent proofs : `docs/proofs/dream2learn-dr3-separation.md`
+  (Dream2Learn formally separated from DR-3, c-alert resolved)
+  and `docs/proofs/dr3-diffusion-substrate-evidence.md` v0.1
+  (7/8 typed primitives + Canal 4 documented no-op, PARTIAL).
+- OSF amendment draft for Wave 3b : `docs/osf-amendment-wave3b.md`
+  (not yet filed against Q6JYN).
+- CI (since PR #28, 2026-05-20) : Linux runners skip MLX-only
+  tests via root `conftest.py` `collect_ignore_glob` + lazy
+  import in `kiki_oniric/substrates/micro_kiki/__init__.py`.
+  Add any new MLX-only test path to the same glob list.
+
 ## Read-first context
 
 Before writing any code or doc claim, read the relevant spec — this
