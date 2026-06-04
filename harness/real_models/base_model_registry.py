@@ -30,6 +30,7 @@ stability is preserved for downstream ``get_pin`` callers.
 """
 from __future__ import annotations
 
+import os
 import re
 from dataclasses import dataclass
 
@@ -257,7 +258,10 @@ REGISTRY: dict[str, BaseModelPin] = {
     "qwen3p6-35b-bf16-local": BaseModelPin(
         name="qwen3p6-35b-bf16-local",
         scale_params=35_000_000_000,
-        repo_id="/Users/clems/KIKI-Mac_tunner/models/Qwen3.6-35B-A3B",
+        repo_id=os.getenv(
+            "KIKI_35B_BF16_PATH",
+            "/Users/clems/KIKI-Mac_tunner/models/Qwen3.6-35B-A3B",
+        ),
         revision_sha="0" * 40,  # dummy ; local path bypasses live check
         file_sha256=None,  # bypass SHA check (local, no HF oid)
         quantization="bf16",

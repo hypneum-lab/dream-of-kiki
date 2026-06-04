@@ -148,6 +148,13 @@ def _parse_cli(argv: list[str]) -> argparse.Namespace:
         help="Profile used in --smoke-cell mode. Ignored by full run.",
     )
     parser.add_argument(
+        "--report-power",
+        action="store_true",
+        help="Print the E1 TOST power analysis (required n/arm for "
+        "80%% power at SESOI g=0.29) and exit. Zero compute — no "
+        "model load.",
+    )
+    parser.add_argument(
         "--scale",
         choices=REAL_SCALE_CHOICES,
         default=REAL_SCALE_FP16,
@@ -743,6 +750,72 @@ def _h1_test(cells: list[dict]) -> dict:
 
 
 # -------------------------------------------------------------------
+# E1 — powered TOST equivalence (paired pre vs post per profile)
+# -------------------------------------------------------------------
+
+
+def _e1_tost(cells: list[dict]) -> dict:
+    """Powered standardized TOST (Hedges' g) pre vs post per profile.
+
+    Complements the H1 paired t-test : H1 asks "did dream *improve*?",
+    E1's TOST asks "is post *equivalent* to pre within the SESOI
+    g=0.29?" — the only way to *support* the coupling NULL (Lakens
+    2017). Bounds and α are pre-registered in :mod:`harness.stats.tost`.
+    Skips profiles with < 2 paired cells.
+    """
+    from harness.stats.tost import (
+        SESOI_HEDGES_G,
+        TOST_ALPHA_BONFERRONI,
+        required_n_for_power,
+        tost_equivalence_g,
+    )
+
+    power = required_n_for_power(design="paired")
+    out: dict = {
+        "sesoi_hedges_g": SESOI_HEDGES_G,
+        "alpha_per_test": TOST_ALPHA_BONFERRONI,
+        "power_analysis": {
+            "target_power": power.target_power,
+            "required_n_pairs": power.required_n,
+            "achieved_power_at_required_n": power.achieved_power,
+            "available_seeds": len(REAL_SEEDS_DEFAULT),
+            "adequately_powered": (
+                len(REAL_SEEDS_DEFAULT) >= power.required_n
+            ),
+        },
+        "per_profile": {},
+    }
+    for profile in PROFILES:
+        pres = [
+            c["pre"]
+            for c in cells
+            if c.get("profile") == profile and "pre" in c
+        ]
+        posts = [
+            c["post"]
+            for c in cells
+            if c.get("profile") == profile and "post" in c
+        ]
+        if len(pres) < 2 or len(posts) < 2:
+            out["per_profile"][profile] = {
+                "equivalent": None,
+                "n": len(pres),
+                "note": "insufficient samples",
+            }
+            continue
+        res = tost_equivalence_g(treatment=posts, control=pres)
+        out["per_profile"][profile] = {
+            "observed_g": res.observed_g,
+            "p_lower": res.p_lower,
+            "p_upper": res.p_upper,
+            "p_tost": res.p_tost,
+            "equivalent": res.equivalent,
+            "n": res.n_pairs,
+        }
+    return out
+
+
+# -------------------------------------------------------------------
 # Run registry
 # -------------------------------------------------------------------
 
@@ -794,6 +867,39 @@ def main(argv: list[str] | None = None) -> int:
 
     scale = args.scale
     slug = _scale_slug(scale)
+
+    if args.report_power:
+        from harness.stats.tost import (
+            SESOI_HEDGES_G,
+            TOST_ALPHA_BONFERRONI,
+            required_n_for_power,
+            tost_power_at_n,
+        )
+
+        paired = required_n_for_power(design="paired")
+        two = required_n_for_power(design="two_sample")
+        n_seeds = len(REAL_SEEDS_DEFAULT)
+        print("E1 TOST power analysis (no compute)")
+        print(f"  SESOI (Hedges' g)        : {SESOI_HEDGES_G}")
+        print(f"  alpha per one-sided test : {TOST_ALPHA_BONFERRONI:.6f}")
+        print(f"  target power             : {paired.target_power}")
+        print(
+            f"  required n (paired)      : {paired.required_n} pairs "
+            f"(power {paired.achieved_power:.3f})"
+        )
+        print(
+            f"  required n (two-sample)  : {two.required_n}/arm "
+            f"(power {two.achieved_power:.3f})"
+        )
+        print(
+            f"  available seeds          : {n_seeds} "
+            f"(power@{n_seeds}={tost_power_at_n(n_seeds):.3f})"
+        )
+        print(
+            "  adequately powered       : "
+            f"{n_seeds >= paired.required_n}"
+        )
+        return 0
 
     if args.smoke_cell:
         _print_banner(
@@ -909,6 +1015,7 @@ def main(argv: list[str] | None = None) -> int:
     run_wall = time.time() - run_start
 
     h1 = _h1_test(cells)
+    e1_tost = _e1_tost(cells)
     rejected = sum(1 for v in h1.values() if v.get("reject_h0"))
     verdict = "GO" if rejected >= GO_PROFILES_REJECTED_MIN else "NO-GO"
     print("-" * 64)
@@ -916,6 +1023,17 @@ def main(argv: list[str] | None = None) -> int:
         print(
             f"H1 {profile}: p={r.get('p')} "
             f"reject_h0={r.get('reject_h0')} n={r.get('n')}"
+        )
+    pa = e1_tost["power_analysis"]
+    print(
+        f"E1 TOST: SESOI g={e1_tost['sesoi_hedges_g']} "
+        f"required_n={pa['required_n_pairs']} pairs "
+        f"powered={pa['adequately_powered']}"
+    )
+    for profile, r in e1_tost["per_profile"].items():
+        print(
+            f"E1 {profile}: equivalent={r.get('equivalent')} "
+            f"p_tost={r.get('p_tost')} n={r.get('n')}"
         )
     print(f"verdict          : {verdict} ({rejected}/{len(PROFILES)})")
     print(f"wall-clock total : {run_wall:.1f}s")
@@ -940,6 +1058,7 @@ def main(argv: list[str] | None = None) -> int:
                     "profiles_total": len(PROFILES),
                 },
                 "h1": h1,
+                "e1_tost": e1_tost,
                 "verdict": verdict,
                 "wall_time_s": run_wall,
                 "cells": cells,
