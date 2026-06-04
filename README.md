@@ -130,6 +130,28 @@ follows M5.
 
 ---
 
+## 2026-06-04 update — real 1.5B pilot GO (sub-powered) + E1 TOST harness + turnkey 35B pin
+
+The cycle-3 real-weight pilot on `qwen3p5-1p5b-fp16` was extended from
+5 to **20 seeds** (`docs/milestones/pilot-cycle3-real-1p5b.{json,md}`,
+60 cells, `failed_cells=0`). **Verdict GO — but pipeline-validated,
+sub-powered, and explicitly a 1.5B pilot, NOT the 35B claim.**
+
+| Item | State |
+|---|---|
+| H1 vs baseline | rejected 3/3 (`p_min` p≈2.4e-20, `p_equ` p≈1.1e-19, `p_max` p≈1.5e-19, n=20) at α=0.0125 ; gain carried by `mega_v2` |
+| E1 powered TOST harness | **delivered** — Hedges' g, SESOI g=0.29, α=0.0167 (Bonferroni), power analysis |
+| Power deficit (honest) | **≈ 141 pairs** needed for 80 % power ; only 20 seeds available (`adequately_powered=False`) — **not** a nominal-power proof |
+| 35B bf16 pin | **turnkey** — `qwen3p6-35b-bf16-local` resolves `repo_id` via `KIKI_35B_BF16_PATH` ; real 35B run **out of reach of the dev M1 Max (32 GB)**, ready on the Mac Studio |
+| hellaswag fixture | **real** 200-item `rowanz/val` replaces a degenerate 8-item fallback (was saturating ≈1.0) ; now ≈0.38–0.42, gain isolated to `mega_v2` |
+| mmlu loader | **audited, no silent fallback** — raises `ValueError` on missing fixture ; 0.91 is on a real "sanity" subset |
+
+No DualVer bump — this is an FC/pilot result; EC stays **PARTIAL**.
+The GO is reported as *GO pipeline-validated, sub-powered* and must
+not be presented as a nominal-power result, nor as the 35B claim.
+
+---
+
 ## What this repo is
 
 - **Research code**, not a product. Correctness > performance.

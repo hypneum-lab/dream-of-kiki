@@ -5,7 +5,7 @@ From the external review (REVIEW.md). Run in a fresh session with the repo env
 **Heavy items need the Mac Studio M3 Ultra + KIKI-Mac_tunner mega-v2 pipeline — not
 runnable from an orchestration session.**
 
-## E1 — Powered TOST on real predictors  [HEAVY: real mega-v2 35B]
+## E1 — Powered TOST on real predictors  [HARNESS DONE ; 35B run PENDING on Studio]
 **Why**: the headline coupling NULL is unsupported — NHST cannot support the null
 (Lakens 2017); the pre-specified TOST is smoke-only (results-section.md 7.6); all §7 cells
 are synthetic mocks (50/70/85).
@@ -16,6 +16,16 @@ are synthetic mocks (50/70/85).
 3. Run the TOST; register run_id.
 **Acceptance**: a powered, pre-registered TOST that can actually *support* (not just fail
 to reject) the coupling NULL.
+
+**Status (2026-06-04)** — **(1) DONE** : the powered TOST harness ships (TOST in
+Hedges' g, SESOI g=0.29, α=0.0167 Bonferroni, explicit power analysis). It reports
+**≈ 141 pairs needed for 80 % power** at the pre-registered SESOI. **(2) PARTIAL** :
+exercised on **real** `qwen3p5-1p5b-fp16` mega-v2 outputs in
+`docs/milestones/pilot-cycle3-real-1p5b.{json,md}` (20 seeds → `equivalent=False` on all 3
+profiles, as expected when the observed effect is large). The **35B run is still PENDING** —
+out of reach of the dev M1 Max (32 GB); the `qwen3p6-35b-bf16-local` pin is now turnkey
+(`KIKI_35B_BF16_PATH`) and ready on the Mac Studio. **Honest caveat** : 20 seeds ≪ 141, so
+the 1.5B pilot is **sub-powered** and cannot yet *support* the null at nominal power.
 
 ## E2 — Replace §7 synthetic cells with real mega-v2  [HEAVY]
 Run the real-LLM cells, test against the g=0.29 pre-registered floors; the cross-substrate
