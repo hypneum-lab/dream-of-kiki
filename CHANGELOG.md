@@ -12,6 +12,47 @@ see `docs/specs/2026-04-17-dreamofkiki-framework-C-design.md` §12).
 
 ## [Unreleased]
 
+### Empirical (cycle-3 real 1.5B pilot → 20 seeds, GO sub-powered + E1 TOST + turnkey 35B pin, 2026-06-04)
+
+- **Cycle-3 real 1.5B pilot extended 5 → 20 seeds.**
+  `docs/milestones/pilot-cycle3-real-1p5b.json` now carries 60 cells
+  (3 profiles × 20 seeds × {mmlu, hellaswag, mega_v2}, 100 samples
+  each, `failed_cells = 0`, wall ≈ 6934 s) on **real** `qwen3p5-1p5b-fp16`
+  weights. **Verdict GO** : H1 rejects H0 on all 3 profiles
+  (`p_min` p ≈ 2.4e-20, `p_equ` p ≈ 1.1e-19, `p_max` p ≈ 1.5e-19,
+  n = 20), GO rule 3/3 at α = 0.0125. New companion
+  `docs/milestones/pilot-cycle3-real-1p5b.md`.
+- **GO is qualified : pipeline-validated, sub-powered, 1.5B pilot — NOT
+  the 35B claim.** The E1 power analysis requires **≈ 141 pairs** for
+  80 % power at the pre-registered SESOI; 20 seeds is far below that
+  (`adequately_powered = False`). The directional GO validates that the
+  real-weight pipeline runs end-to-end and produces a registerable
+  result on a 1.5B substrate; it is **not** a nominal-power proof. The
+  gain is carried by `mega_v2` and is labelled a 1.5B pilot effect.
+- **E1 — powered TOST equivalence harness delivered** (backlog E1).
+  TOST in Hedges' g, SESOI g = 0.29, α = 0.0167 (Bonferroni family),
+  with an explicit power analysis (`required_n_pairs = 141`,
+  `target_power = 0.8`). On this run `equivalent = False` on all 3
+  profiles (expected — the observed improvement is large). The honest
+  power deficit is recorded rather than papered over.
+- **35B bf16 pin rendered turnkey.** The `qwen3p6-35b-bf16-local` slot
+  in `harness/real_models/base_model_registry.py` resolves `repo_id`
+  via `os.getenv("KIKI_35B_BF16_PATH", <default path>)` instead of a
+  hard-coded nonexistent path. The **real 35B run remains out of reach
+  of the development M1 Max (32 GB)** and is ready to run on the Mac
+  Studio; until then the 35B claim is not established.
+- **hellaswag fixture made real.** A 200-item `rowanz/val` fixture
+  replaces a degenerate fallback (8 recycled items saturating ≈ 1.0);
+  hellaswag now reads ≈ 0.38–0.42 (sensible), correctly isolating the
+  consolidation gain to `mega_v2`.
+- **mmlu loader audited — no silent fallback.** The loader raises
+  `ValueError` when its fixture is missing; the 0.91 figure is on a
+  real ("sanity" subset) fixture, not a degenerate recycle. No bug.
+- **No DualVer bump.** This is an FC/pilot result; EC stays
+  **PARTIAL** (a sub-powered 1.5B pilot is not a STABLE-promotion event
+  per framework-C §12.3). FC unchanged. Every number resolves to a
+  cell in the sibling JSON.
+
 ### Refactored (B3 delegate to topology kernel, 2026-05-21)
 
 - `_apply_topology_op(model, op, payload)` — the LoRA topology
