@@ -1,0 +1,45 @@
+{
+  "harness_version": "C-v0.7.0+PARTIAL",
+  "mode": "smoke-cell",
+  "benchmark": "mmlu",
+  "n_samples": 20,
+  "wall_time_s": 21.92232894897461,
+  "model": "qwen3p5-1p5b-fp16",
+  "cell": {
+    "profile": "p_min",
+    "seed": 0,
+    "benchmarks": [
+      "mmlu"
+    ],
+    "n_samples": 20,
+    "scale": "qwen3p5-1p5b-fp16",
+    "weight_mutation_verified": false,
+    "pre_weight_snapshot": [
+      "model.embed_tokens.weight",
+      0.00628662109375
+    ],
+    "post_weight_snapshot": [
+      "model.embed_tokens.weight",
+      0.00628662109375
+    ],
+    "pre": 0.9,
+    "post": 0.9,
+    "delta": 0.0,
+    "pre_results": {
+      "mmlu": {
+        "accuracy": 0.9,
+        "n": 20
+      }
+    },
+    "post_results": {
+      "mmlu": {
+        "accuracy": 0.9,
+        "n": 20
+      }
+    },
+    "wall_time_s": 21.8995680809021,
+    "model": "qwen3p5-1p5b-fp16",
+    "run_id": "21d438a31b6a0a614fbc24f92f02ddf5"
+  },
+  "status": "OK"
+}
