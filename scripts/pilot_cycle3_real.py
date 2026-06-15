@@ -80,6 +80,7 @@ REAL_SCALE_CHOICES = (
     "qwen3p5-1p5b-fp16",
     "qwen3p5-7b-fp16",
     "qwen3p5-35b-fp16",
+    "qwen3p6-35b-bf16-local",
 )
 REAL_SEEDS_DEFAULT = tuple(range(30))
 REAL_BENCHMARKS = ("mmlu", "hellaswag", "mega_v2")

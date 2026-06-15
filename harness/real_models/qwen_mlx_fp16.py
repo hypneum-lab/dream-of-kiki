@@ -284,7 +284,9 @@ def load_qwen_fp16(
     conventions. Raises :class:`KeyError` for unknown slots and
     :class:`ValueError` when the resolved pin is not bf16/fp16.
     """
-    if not slot.endswith("-fp16"):
+    # Bare ``qwen3p5-1p5b`` → ``-fp16`` variant. Already-qualified bf16/fp16
+    # slots (incl. the local ``…-bf16-local`` pin) are passed through unchanged.
+    if not slot.endswith(("-fp16", "-bf16-local")):
         slot = f"{slot}-fp16"
     pin = get_pin(slot)
     return QwenMLXFP16Wrapper(pin, enforce_pin=enforce_pin)
