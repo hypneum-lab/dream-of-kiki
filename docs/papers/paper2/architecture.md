@@ -67,7 +67,7 @@ P_equ's, and the same inclusion holds at the channel level.
 Violations would be caught by the DR-4 axiom suite
 (`tests/conformance/axioms/test_dr4_*`).
 
-## 5.3 Four canonical operations on a free semigroup
+## 5.3 Four canonical operations on a non-commutative semigroup
 
 The 4 operations are, per DR-2 (compositionality,
 `docs/proofs/dr2-compositionality.md`), generators of a **free

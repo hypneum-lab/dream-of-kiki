@@ -129,7 +129,7 @@ dans les systèmes cognitifs artificiels, avec les contributions
 suivantes :
 
 1. **Framework C-v0.5.0+STABLE** : 8 primitives typées, 4 opérations
-   canoniques formant un semi-groupe libre, 4 OutputChannels,
+   canoniques formant un semi-groupe non commutatif (générateurs sémantiquement indépendants), 4 OutputChannels,
    ontologie de Dream Episode en quintuplet, axiomes DR-0..DR-4 avec
    Critère de Conformité exécutable (§4). Les éléments 2–4 ci-
    dessous sont rapportés dans le Paper 2 (compagnon empirique) ;

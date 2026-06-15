@@ -71,7 +71,7 @@ Sous-sections :
 - 4.5 Axiomes DR-0..DR-4
   - 4.5.1 DR-0 Redevabilité
   - 4.5.2 DR-1 Conservation épisodique
-  - 4.5.3 DR-2 Compositionnalité (semi-groupe libre) — preuve
+  - 4.5.3 DR-2 Compositionnalité (semi-groupe engendré) — preuve
     différée (voir brouillon `docs/proofs/dr2-compositionality.md`)
   - 4.5.4 DR-3 Indépendance du substrat + Critère de Conformité
   - 4.5.5 DR-4 Inclusion en chaîne des profils

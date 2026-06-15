@@ -118,7 +118,7 @@ framework for dream-based consolidation in artificial cognitive
 systems with the following contributions :
 
 1. **Framework C-v0.5.0+STABLE** : 8 typed primitives, 4 canonical
-   operations forming a free semigroup, 4 OutputChannels, 5-tuple
+   operations forming a non-commutative semigroup (semantically independent generators), 4 OutputChannels, 5-tuple
    Dream Episode ontology, axioms DR-0..DR-4 with executable
    Conformance Criterion (§4). Items 2–4 below are reported in
    Paper 2 (empirical companion) ; Paper 1 confines itself to the
