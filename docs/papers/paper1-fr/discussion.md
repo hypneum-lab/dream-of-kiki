@@ -11,7 +11,7 @@ premier framework formel exécutable pour la consolidation mnésique
 basée sur le rêve dans les systèmes cognitifs artificiels. En
 axiomatisant les quatre piliers (replay (DR-1), downscaling
 (DR-2), restructuring (DR-3), recombination (DR-4)) comme
-opérations composables sur un semi-groupe libre à budget additif
+opérations composables sur un semi-groupe non commutatif à budget additif
 (voir DR-2 dans `docs/proofs/dr2-compositionality.md`), nous
 explicitons ce que les travaux antérieurs laissaient implicite :
 l'**ordre et la composition** des opérations de consolidation
@@ -99,6 +99,8 @@ requiert le câblage réel de P_max (cycle 2).
 | @pedersen2024nir (Neuromorphic Intermediate Representation, Nature Communications 2024) | IR de graphe de calcul statique : un jeu d'instructions agnostique au matériel pour compiler un modèle spiking sur de nombreux backends neuromorphiques | Opère à la couche *graphe de modèle* ; orthogonal à notre framework, qui compose des *opérations de consolidation* sur un substrat et est agnostique à l'IR qui abaisse un substrat donné vers le matériel — NIR pourrait servir de cible de compilation pour notre substrat E-SNN (§9.1) sans modifier les axiomes |
 | @aer2025biohybrid (Address-Event Representation over UDP/Ethernet, arXiv:2501.09128, 2025) | Couche de transport / encodage spécifiant comment les événements de spike sont horodatés, adressés et transportés physiquement, y compris les liens biohybrides silicium–wetware | Opère à la couche *transport* ; orthogonal à notre framework — le Critère de Conformité contraint la sémantique des opérations de consolidation, pas le protocole filaire qui transporte les spikes, et AER est un porteur admissible pour un substrat E-SNN conforme |
 | @liu2024hybrid (Advancing brain-inspired computing with hybrid neural networks, National Science Review 2024) | Revue soutenant que les systèmes hybrides ANN/SNN sont la voie vers l'informatique bio-inspirée | Ancre canonique réseau-neuronal-hybride pour notre revendication cross-substrat : notre validation cycle-1 sur un substrat MLX dense et un substrat LIF spiking est précisément une configuration de réseau neuronal hybride, et le Critère de Conformité exécutable fournit le contrat dont de tels hybrides manquent actuellement |
+| Sorrenti et al. 2023 (WSCL) | Cycle veille/sommeil CLS avec phases NREM/REM explicites; transfert direct REM positif | Nous axiomatisons les opérations de phase de façon agnostique au substrat (DR-0..DR-4 + Conformance Criterion) plutôt que de figer une architecture veille-sommeil; comparaison empirique reportée au Paper 2 |
+| Robinson et al. 2022 | Replay NREM + replay génératif REM + downscaling synaptique réduisent conjointement l'oubli catastrophique | Nos quatre opérations typées généralisent ce triplet en primitives composables sous un Conformance Criterion exécutable; recombine est un générateur sémantiquement indépendant absent de ce triplet |
 
 Nos traits distinctifs : **(a)** framework formel unifié couvrant
 les quatre piliers, **(b)** Critère de Conformité exécutable

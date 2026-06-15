@@ -144,7 +144,7 @@ sur downscale), pilier D → DR-3 indépendance du substrat (la
 garde topologique restructure S3 vit sur cet axe), pilier C → DR-4
 inclusion en chaîne des profils qui maintient les profils riches
 en recombine au sommet. L'axiome de compositionnalité en
-semi-groupe libre DR-2 (prouvé dans
+semi-groupe engendré DR-2 (prouvé dans
 `docs/proofs/dr2-compositionality.md`) est la propriété
 fondationnelle, et le Critère de Conformité DR-3 le contrat
 exécutable pour l'indépendance du substrat.

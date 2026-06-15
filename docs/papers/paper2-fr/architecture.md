@@ -74,11 +74,11 @@ au niveau des canaux. Les violations seraient attrapées par
 la suite d'axiomes DR-4
 (`tests/conformance/axioms/test_dr4_*`).
 
-## 5.3 Quatre opérations canoniques sur un semi-groupe libre
+## 5.3 Quatre opérations canoniques sur un semi-groupe engendré
 
 Les 4 opérations sont, selon DR-2 (compositionnalité,
 `docs/proofs/dr2-compositionality.md`), des générateurs d'un
-**semi-groupe libre** de séquences d'opérations oniriques :
+**semi-groupe non commutatif** de séquences d'opérations oniriques :
 
 - **`replay`** — pilier de consolidation Walker / Stickgold.
   Échantillonne les épisodes du buffer β, propage à travers

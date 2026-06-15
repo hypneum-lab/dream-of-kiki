@@ -56,7 +56,7 @@ et les run_ids sont MIT / CC-BY-4.0.
 ### 2.1 D'un substrat unique à une revendication de Conformité
 
 L'Article 1 [dreamOfkiki, cycle 1] a introduit le Framework C
-avec les axiomes DR-0..DR-4, un semi-groupe libre de 4
+avec les axiomes DR-0..DR-4, un semi-groupe engendré par 4
 opérations oniriques canoniques, 8 primitives typées, et 3
 profils chaînés par DR-4. La contribution la plus
 structurante fut **DR-3** : un Critère de Conformité

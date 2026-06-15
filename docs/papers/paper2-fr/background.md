@@ -18,7 +18,7 @@ License : Creative Commons Attribution 4.0 International (CC-BY-4.0)
 L'Article 1 a introduit le Framework C : 8 primitives typées
 (entrées α, β, γ, δ + 4 canaux de sortie), 4 opérations
 oniriques canoniques (replay, downscale, restructure,
-recombine) formant un semi-groupe libre sous la
+recombine) formant un semi-groupe non commutatif sous la
 compositionnalité DR-2, une ontologie de Dream Episode en
 quintuplet, et les axiomes DR-0 (redevabilité), DR-1
 (conservation épisodique), DR-2 (compositionnalité), DR-3

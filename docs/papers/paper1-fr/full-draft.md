@@ -163,7 +163,7 @@ dans les systèmes cognitifs artificiels, avec les contributions
 suivantes :
 
 1. **Framework C-v0.5.0+STABLE** : 8 primitives typées, 4 opérations
-   canoniques formant un semi-groupe libre, 4 OutputChannels,
+   canoniques formant un semi-groupe non commutatif (générateurs sémantiquement indépendants), 4 OutputChannels,
    ontologie de Dream Episode en quintuplet, axiomes DR-0..DR-4 avec
    Critère de Conformité exécutable (§4). Les éléments 2–4 ci-
    dessous sont rapportés dans le Paper 2 (compagnon empirique) ;
@@ -292,7 +292,7 @@ sur downscale), pilier D → DR-3 indépendance du substrat (la
 garde topologique restructure S3 vit sur cet axe), pilier C → DR-4
 inclusion en chaîne des profils qui maintient les profils riches
 en recombine au sommet. L'axiome de compositionnalité en
-semi-groupe libre DR-2 (prouvé dans
+semi-groupe engendré DR-2 (prouvé dans
 `docs/proofs/dr2-compositionality.md`) est la propriété
 fondationnelle, et le Critère de Conformité DR-3 le contrat
 exécutable pour l'indépendance du substrat.
@@ -348,8 +348,7 @@ energy_j) par invariant K1.
 
 ### 4.4 Opérations — semi-groupe d'étapes de consolidation
 
-L'ensemble d'opérations forme un semi-groupe libre
-non-commutatif sous la composition `∘` avec budget additif (DR-2
+L'ensemble d'opérations forme un semi-groupe non commutatif engendré par les quatre primitives sous la composition `∘` avec budget additif (DR-2
 compositionnalité, brouillon de preuve dans
 `docs/proofs/dr2-compositionality.md`). Ordre canonique : replay →
 downscale → restructure (séquentiel, ordre A-B-D des piliers) ;
@@ -864,7 +863,7 @@ premier framework formel exécutable pour la consolidation mnésique
 basée sur le rêve dans les systèmes cognitifs artificiels. En
 axiomatisant les quatre piliers (replay (DR-1), downscaling
 (DR-2), restructuring (DR-3), recombination (DR-4)) comme
-opérations composables sur un semi-groupe libre à budget additif
+opérations composables sur un semi-groupe non commutatif à budget additif
 (voir DR-2 dans `docs/proofs/dr2-compositionality.md`), nous
 explicitons ce que les travaux antérieurs laissaient implicite :
 l'**ordre et la composition** des opérations de consolidation
@@ -957,6 +956,8 @@ revendiquer de parité empirique.
 | Inférence active / agents de style PEARL [Tschantz 2020, Millidge 2021] | Modèles d'agents enracinés FEP composant perception + action | Complément : l'inférence active est compatible au niveau du framework avec notre opération `restructure` et le Critère de Conformité ; la conformité sur un tel agent est un travail futur explicite |
 | Modèles du monde (Dreamer, DreamerV2/V3) [Hafner 2020–2023] | Agents à modèle du monde latent avec replay et apprentissage structurel | Recouvrement sur replay + restructure, mais pas de `recombine` ou `downscale` explicite dans leur ontologie ; substrat conforme possible avec ces deux primitives laissées en `no-op` ou absorbées dans l'objectif d'apprentissage |
 | Famille JEPA [LeCun 2022 « A Path Towards Autonomous Machine Intelligence » ; Assran et al. 2023 I-JEPA ; Bardes et al. 2024 V-JEPA ; AMI Labs 2026] | Entraînement de modèles du monde prédictifs auto-supervisés sur des latents par embeddings joints ; « modèles du monde qui apprennent du réel, pas du langage » | Candidat substrat complémentaire : JEPA réalise la primitive `restructure` (Pilier D / FEP) à grande échelle sur des représentations latentes, sans contrepartie native explicite de `replay` ou `downscale`. Un parcours de conformité sur un substrat de classe JEPA (p. ex. encodeur vidéo V-JEPA avec ajout d'un tampon épisodique β et d'un downscale homéostatique) relève explicitement du cycle 2 ; le motif de portabilité inter-substrats démontré ici sur MLX + E-SNN est destiné à généraliser vers une telle configuration. |
+| @alfarano2024wakesleep (WSCL, Sorrenti et al. 2023) | Système d'apprentissage complémentaire veille/sommeil avec consolidation NREM explicite et rêve REM ; transfert direct REM positif | Nous axiomatisons les opérations de phase de façon agnostique au substrat (DR-0..DR-4 + Conformance Criterion + DR-3) plutôt que de figer une architecture veille-sommeil ; ablation empirique reportée au Paper 2 |
+| @robinson2022continual (NREM/REM + downscaling synaptique) | Trois mécanismes de sommeil mammifère — replay NREM véridique, replay génératif REM, downscaling synaptique — réduisent conjointement l'oubli catastrophique | Nos quatre opérations typées (replay, downscale, restructure, recombine) généralisent ce triplet en primitives composables sous un Conformance Criterion exécutable ; recombine est un générateur sémantiquement indépendant absent du triplet |
 
 Nos traits distinctifs par rapport à ce qui précède : **(a)** un
 framework *formel* unifié couvrant les quatre piliers avec un
