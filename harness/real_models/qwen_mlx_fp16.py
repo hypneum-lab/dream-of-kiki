@@ -132,6 +132,44 @@ def _weights_bytes(model: Any) -> bytes:
     return b"".join(chunks)
 
 
+def _weights_sha256(model: Any) -> str:
+    """Streaming SHA-256 of model weights — memory-bounded.
+
+    Produces the SAME digest as ``sha256(_weights_bytes(model))`` (identical
+    byte sequence and traversal order) but ``update``\\ s the hash one tensor
+    at a time instead of materialising the full fp32-widened byte string.
+    For a 35B model the eager path spiked ~290 GB (72 GB weights + 144 GB
+    fp32 widening + the join) and OOM-killed the process ; the peak here is a
+    single tensor.
+    """
+    h = hashlib.sha256()
+    if hasattr(model, "weights_bytes"):
+        h.update(bytes(model.weights_bytes()))
+        return h.hexdigest()
+
+    def _walk(node: Any, path: str = "") -> None:
+        if isinstance(node, dict):
+            for k in sorted(node.keys()):
+                h.update(str(k).encode("utf-8"))
+                _walk(node[k], f"{path}.{k}" if path else str(k))
+        elif isinstance(node, (list, tuple)):
+            for i, v in enumerate(node):
+                _walk(v, f"{path}[{i}]")
+        else:
+            try:
+                widened = node.astype(mx.float32) if hasattr(node, "astype") else node
+                h.update(np.asarray(widened).tobytes())
+            except Exception as exc:
+                raise RuntimeError(
+                    f"_weights_sha256: failed to serialise tensor at path "
+                    f"{path!r} (type {type(node).__name__}) — refusing to omit "
+                    f"from the digest. Underlying error: {exc!r}"
+                ) from exc
+
+    _walk(model.parameters())
+    return h.hexdigest()
+
+
 class QwenMLXFP16Wrapper:
     """Trainable wrapper around a bf16 mlx-lm Qwen model.
 
@@ -169,20 +207,20 @@ class QwenMLXFP16Wrapper:
         self._model, self._tokenizer = _load_checkpoint_fp16(
             registry_pin.repo_id
         )
-        self._actual_sha256 = hashlib.sha256(
-            _weights_bytes(self._model)
-        ).hexdigest()
-        if (
-            enforce_pin
-            and registry_pin.file_sha256 is not None
-            and self._actual_sha256 != registry_pin.file_sha256
-        ):
-            raise ValueError(
-                f"sha256 mismatch on {registry_pin.repo_id} "
-                f"(rev {registry_pin.revision_sha}): expected "
-                f"{registry_pin.file_sha256!r}, got "
-                f"{self._actual_sha256!r}"
-            )
+        # Lazy, streaming weight digest. The eager fp32-widened
+        # materialisation spiked ~290 GB on a 35B model and OOM-killed the
+        # process at load; compute on demand via _weights_sha256 (bounded to
+        # one tensor) and only eagerly when an enforced pin must be verified.
+        self._actual_sha256: str | None = None
+        if enforce_pin and registry_pin.file_sha256 is not None:
+            self._actual_sha256 = _weights_sha256(self._model)
+            if self._actual_sha256 != registry_pin.file_sha256:
+                raise ValueError(
+                    f"sha256 mismatch on {registry_pin.repo_id} "
+                    f"(rev {registry_pin.revision_sha}): expected "
+                    f"{registry_pin.file_sha256!r}, got "
+                    f"{self._actual_sha256!r}"
+                )
         self._total_compute_flops = 0
 
     # ---- GammaSnapshotProtocol surface ---------------------------------
@@ -192,7 +230,14 @@ class QwenMLXFP16Wrapper:
         return Path(self._pin.repo_id)
 
     def get_checkpoint_sha256(self) -> str:
-        """Return the 64-char SHA-256 of the loaded weights."""
+        """Return the 64-char SHA-256 of the loaded weights.
+
+        Computed lazily and cached (streaming, memory-bounded — see
+        ``_weights_sha256``) so the wrapper's ``__init__`` no longer spikes
+        ~290 GB hashing a 35B weight tree.
+        """
+        if self._actual_sha256 is None:
+            self._actual_sha256 = _weights_sha256(self._model)
         return self._actual_sha256
 
     # ---- Wrapper-specific surface --------------------------------------
@@ -216,7 +261,7 @@ class QwenMLXFP16Wrapper:
 
     def weights_sha256(self) -> str:
         """Alias for ``get_checkpoint_sha256`` — clearer at call sites."""
-        return self._actual_sha256
+        return self.get_checkpoint_sha256()
 
     def _estimate_flops(self, n_tokens: int) -> int:
         return 2 * self._pin.scale_params * max(n_tokens, 1)
