@@ -58,11 +58,13 @@ deferring it to cycle 2.
 statistical chain (four pre-registered tests under Bonferroni
 correction), invariant-guard fault injection on the BLOCKING
 invariants S1–S3, and R1 reproducibility determinism across
-matched registry tuples. We additionally report cross-substrate
-portability measurements from the sibling Nerve-WML work (§7.4)
-that independently confirm substrate-agnosticism on linearly
-separable tasks (gap < 5 %) and disclose the non-linear regime
-gap (12.1 %) as an honest negative result. A pilot run of the
+matched registry tuples. We additionally report companion cross-substrate
+portability measurements from the sibling Nerve-WML work (§7.4) :
+substrate-agnosticism holds on linearly separable tasks (gap 0 %),
+the earlier non-linear gap (12.1 %) is shown to be a decoder-readout
+artefact that inverts under symmetric readouts, and representational
+alignment is corroborated at the local (neighbourhood) level, bounded
+by shared task and objective rather than a universal code. A pilot run of the
 pre-registered pipeline on PermutedMNIST-5 (§7.5) produces
 Bonferroni-compliant statistics (t = 2.524, p = 0.01216 < α =
 0.0125) consistent with the pre-registered H1 signal direction
@@ -780,48 +782,76 @@ mutation (`test_r3_integrity.py`). Width was bumped from 16 → 32
 hex characters in commit `df731b0` after a code-review flag on
 64-bit collision risk at expected cycle-2 scale.
 
-### 7.4 Cross-substrate portability — independent corroboration
+### 7.4 Cross-substrate portability — companion measurement
 
 A sibling project at `github.com/hypneum-lab/nerve-wml` (same
 byline, same Protocol-typing discipline ; archived release
-**v1.1.2, Zenodo DOI
-[10.5281/zenodo.19656354](https://doi.org/10.5281/zenodo.19656354)**)
-measures cross-substrate polymorphism on a separate Nerve
-interface with two concrete substrates : `MlpWML` (dense MLP)
-and `LifWML` (surrogate-gradient leaky-integrate-and-fire SNN).
-The nerve-wml Gate W measurement is a test of the same
-*substrate-agnosticism* principle articulated here as DR-3. We
-summarise the reported numbers — full details in the cited
-preprint and the archived Zenodo record.
+**v1.9.0**, Zenodo concept DOI
+[10.5281/zenodo.19656342](https://doi.org/10.5281/zenodo.19656342),
+which resolves to the latest released version [@saillant2026nervewml])
+measures cross-substrate polymorphism on a separate Nerve interface
+with two concrete substrates : `MlpWML` (dense MLP) and `LifWML`
+(surrogate-gradient leaky-integrate-and-fire SNN). The nerve-wml
+Gate W measurement probes the same *substrate-agnosticism* principle
+articulated here as DR-3. These measurements are **companion, not
+independent** : both substrates share task, data, and the Protocol
+objective, so a low gap is *expected* under that shared structure
+(the Aristotelian critique of the Platonic Representation Hypothesis
+[@aristotelianprh2026]) and corroborates DR-3 only at the *local*
+(neighbourhood) level, not as a task-independent universal code. We
+summarise the reported numbers — full details in the cited preprint
+and the archived Zenodo record.
 
 **Linearly separable task (FlowProxyTask 4-class, N = 4 pool,
 multi-seed).** `MlpWML` and `LifWML` pools both saturate at
-accuracy 1.000 ; relative gap 0.000. Both substrates satisfy the
-shared Nerve protocol.
+accuracy 1.000 ; relative gap 0.000 (0 % under a linear probe on
+the two substrates' codes). Both substrates satisfy the shared
+Nerve protocol.
 
 **Non-linear task (HardFlowProxyTask 12-class, XOR-projected
-label).** `MlpWML` reaches accuracy 0.547 ; `LifWML` reaches
-accuracy 0.480. Absolute gap 0.067, relative gap **12.1 %** —
-above the 5 % target. This is disclosed in the nerve-wml paper
-as an honest negative result and reflects the lag of the current
-cosine pattern-match decoder in the LIF variant on non-linear
-tasks.
+label) — decoder-artefact correction.** Under a v0.3 fixed-cosine
+decoder, `LifWML` (0.480) lagged `MlpWML` (0.547) by a relative
+**12.1 %**, originally reported as a substrate limitation. nerve-wml
+subsequently identified this as a *crippled-readout artefact* :
+`MlpWML` used a learned linear π head while `LifWML` matched against
+a fixed, randomly initialised codebook. Replacing the LIF readout
+with a symmetric learned head (v0.4) **inverts** the gap — `LifWML`
+0.611 versus `MlpWML` 0.547, a 10.7 % gap in the *opposite*
+direction — establishing that the original gap was not
+substrate-intrinsic but a readout-parity artefact.
 
-**Gate M (merge test).** An `MlpWML` trained against a mock
-Nerve and deployed against a real Nerve retains **1.000** of
-its mock-baseline accuracy (criterion ≥ 0.95), confirming
+**Representational alignment (mutual-kNN and mutual information).**
+Neighbourhood overlap between the `MlpWML` and `LifWML` codes is
+mutual-kNN = 0.174 at k = 10 (N = 1024, 3 seeds), 18.8× a
+label-matched random baseline. Discrete (post-VQ) mutual
+information is MI/H = 0.931 (Panzeri–Treves bias-corrected ;
+plug-in 0.932 at N = 5000 ; permutation null ≈ 0.005, p < 0.01).
+**Caveat (mandatory on this figure)** : the high discrete MI/H is
+amplified ≈ 10× by vector quantisation ; the pre-VQ continuous
+estimate (Kraskov–KSG) is MI/H ≈ 0.095, and a frozen-encoder
+control gives a shared-encoder ceiling of 0.949 against a
+distinct-encoder floor of 0.762. The defensible claim is *local*
+neighbourhood alignment beyond a capacity-matched baseline, not
+global representational identity.
+
+**Gate M (merge test).** An `MlpWML` trained against a mock Nerve
+and deployed against a real Nerve retains **1.000** of its
+mock-baseline accuracy (criterion ≥ 0.95), confirming
 substrate-interoperability end-to-end.
 
 *Interpretation.* Read at Paper-1 scope : (a) the
 substrate-agnosticism principle of DR-3 is empirically tractable
-and already demonstrated on linearly separable tasks in a sibling
-system ; (b) the 12.1 % non-linear gap bounds the current
-substrate-portability envelope and sets an explicit cycle-2
-target ; (c) the honest reporting discipline — disclosing the
-gap rather than hiding it — is preserved. These numbers do not
-constitute H1–H4 evidence ; they constitute *methodological*
-evidence that the framework's agnosticism claim is operational
-rather than asserted.
+and demonstrated on linearly separable tasks in a sibling system ;
+(b) the earlier 12.1 % non-linear gap was a readout artefact, not a
+substrate limitation, and disappears — indeed inverts — under
+symmetric readouts ; (c) the alignment evidence is *local*
+(neighbourhood-level, capacity-baseline-calibrated) and bounded by
+shared task, data, and objective : we therefore claim only that the
+Protocol extends measured alignment from shared- to
+heterogeneous-encoder conditions on these substrates, not a
+task-independent universal code. These numbers do not constitute
+H1–H4 evidence ; they constitute *methodological* evidence that the
+framework's agnosticism claim is operational rather than asserted.
 
 ### 7.5 Preliminary empirical pilot on a standard CL benchmark
 
@@ -1000,7 +1030,7 @@ claim empirical parity.
 | @phillips2010categorial (Categorial Compositionality, PLOS Computational Biology 2010) | Category-theoretic explanation for systematicity in human cognition ; argues cognitive compositionality is a categorical functor | Prior art for the algebraic framing of cognition ; our DR-2 is a *domain-specific* instantiation on dream-episode operations (non-commutative semigroup generated by four operations, not full Cartesian closed category) with an **executable** predicate and an empirical Conformance Criterion rather than an interpretive equivalence |
 | @gavranovic2024fundamental (Fundamental Components of Deep Learning, PhD thesis / arXiv:2403.13001) | Unified category-theoretic account of deep learning architectures and training (parametric optics over semicartesian categories) | Orthogonal prior art for categorical ML : we formalise *dream-phase consolidation operations* rather than gradient-based training, and use a strictly weaker algebraic structure (a semigroup generated by four operations) adequate for the compositional-semantics claim without committing to the full optics stack |
 | @klinzing2019mechanisms (Nature Neuroscience, systems-consolidation review) ; @rasch2025sleep (Physiological Reviews, sleep-contribution review) | Canonical three-process framing (active systems consolidation + SHY + integration) with extensive empirical grounding | Empirical anchor we commit to (cf. §3 preamble) ; our four-primitive decomposition refines *integration* into `restructure` and `recombine` — the extra generator is justified by non-commutativity with `downscale` (DR-2 proof), not by disagreement with the review literature |
-| @huh2024platonic (Platonic Representation Hypothesis, ICML 2024) | Sufficiently capable models converge to a shared statistical representation independent of architecture and modality | Theoretical underpinning for our DR-3 substrate-agnosticism claim : if PRH holds, conformance is *expected* to transfer across the MLX, E-SNN and LoRA substrates rather than being an architectural coincidence ; companion empirical PRH probe in a cognitive-architecture setting reported in @saillant2026nervewml (`nerve-wml` v1.7.0, GammaThetaMultiplexer experiment) |
+| @huh2024platonic (Platonic Representation Hypothesis, ICML 2024) | Sufficiently capable models converge to a shared statistical representation independent of architecture and modality | Theoretical underpinning for our DR-3 substrate-agnosticism claim : if PRH holds, conformance is *expected* to transfer across the MLX, E-SNN and LoRA substrates rather than being an architectural coincidence ; companion empirical PRH probe in a cognitive-architecture setting reported in @saillant2026nervewml (`nerve-wml` v1.9.0, GammaThetaMultiplexer experiment) |
 | @liu2021dvnc (Discrete-Valued Neural Communication, NeurIPS 2021) | VQ-VAE shared global codebook for discrete messages between neural modules | Closest prior art for cross-module discrete communication ; DVNC uses one shared codebook and homogeneous modules, whereas our substrate-portability claim (DR-3) and the companion nerve-wml protocol use per-substrate codebooks with learned transducers and typed prediction/error roles — DVNC is a special case (single substrate, single codebook) of the more general portability our Conformance Criterion targets |
 | @pedersen2024nir (Neuromorphic Intermediate Representation, Nature Communications 2024) | Static computational-graph IR : a hardware-agnostic instruction set for compiling one spiking model onto many neuromorphic backends | Operates at the *model-graph* layer ; orthogonal to our framework, which composes *consolidation operations* over a substrate and is agnostic to the IR that lowers any one substrate to hardware — NIR could serve as the compilation target for our E-SNN substrate (§9.1) without altering the axioms |
 | @aer2025biohybrid (Address-Event Representation over UDP/Ethernet, arXiv:2501.09128, 2025) | Transport / encoding layer specifying how spike events are timestamped, addressed and physically carried, including biohybrid silicon–wetware links | Operates at the *transport* layer ; orthogonal to our framework — the Conformance Criterion constrains the semantics of consolidation operations, not the wire protocol that moves spikes, and AER is one admissible carrier for a conformant E-SNN substrate |
@@ -1029,7 +1059,7 @@ agnosticism claim a falsifiable theoretical anchor : if PRH is
 empirically vindicated, we should *expect* conformance metrics to
 transfer across the MLX, E-SNN and LoRA substrates rather than
 treat such transfer as a happy architectural accident. The
-companion `nerve-wml` v1.7.0 working-memory layer
+companion `nerve-wml` v1.9.0 working-memory layer
 [@saillant2026nervewml] runs an explicit PRH probe via its
 GammaThetaMultiplexer experiment ; the cross-substrate conformance
 matrix reported here (cycle 2 + 3) is the dreamOfkiki side of the

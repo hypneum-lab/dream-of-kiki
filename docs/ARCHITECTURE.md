@@ -25,8 +25,9 @@ research program. It is intended as a reader's guide for :
 - `nerve-wml` is the **reference cross-substrate measurement** : it
   hosts two concrete substrates (MlpWML dense, LifWML
   surrogate-gradient SNN) sharing a single `Nerve` Protocol, and the
-  Gate W / Gate M measurements cited in Paper 1 §7.4 as independent
-  evidence of the substrate-agnosticism principle.
+  Gate W / Gate M measurements cited in Paper 1 §7.4 (pinned to
+  nerve-wml v1.9.0) as companion, local-neighbourhood evidence for
+  the substrate-agnosticism principle.
 - `micro-kiki` is a **deployable MoE-LoRA instance** : 35
   domain-expert LoRA adapters on a Qwen3.5 MoE base, with inference
   optimised for consumer GPUs. It is the "product-facing" artifact
@@ -65,9 +66,9 @@ research program. It is intended as a reader's guide for :
 │  ──────────────────    │      │  (cross-substrate portability)     │
 │  • Nerve Protocol      │      │                                    │
 │  • MlpWML substrate    │◄──── │  cites MlpWML/LifWML polymorphism  │
-│  • LifWML substrate    │      │  (0 % / 12.1 % gap), Gate M merge  │
-│  • Gate W / Gate M     │      │  retains 1.000 of mock baseline.   │
-│    measurements        │      │                                    │
+│  • LifWML substrate    │      │  (0 % linear; 12.1 % non-linear    │
+│  • Gate W / Gate M     │      │  gap = readout artefact), Gate M   │
+│    measurements        │      │  merge retains 1.000 baseline.     │
 └────────────────────────┘      └────────────────────────────────────┘
 
                                   │
@@ -136,7 +137,7 @@ See `CONTRIBUTORS.md` in each repository for the detailed policy.
 | Axioms DR-0..DR-4 proved (DR-2 as generated-semigroup theorem) | `dream-of-kiki/docs/proofs/dr2-compositionality.md`, `dr4-profile-inclusion.md` |
 | Conformance Criterion satisfied on MLX substrate | `dream-of-kiki/kiki_oniric/substrates/mlx_kiki_oniric.py` + `tests/conformance/axioms/` |
 | Conformance Criterion satisfied on E-SNN substrate (G7 LOCKED) | `dream-of-kiki/kiki_oniric/substrates/esnn_thalamocortical.py` + `tests/conformance/axioms/test_dr3_esnn_substrate.py` |
-| Cross-substrate portability (0 % / 12.1 % gap, Gate M merge = 1.000) | `nerve-wml/scripts/run_w2_hard.py`, `scripts/merge_pilot.py` ; full numbers in `nerve-wml/papers/paper1/main.tex` |
+| Cross-substrate portability (0 % linear; non-linear gap a readout artefact that inverts under symmetric heads; Gate M merge = 1.000) | `nerve-wml/scripts/run_w2_hard.py`, `scripts/merge_pilot.py` ; full numbers in nerve-wml v1.9.0 `papers/paper1/main.tex` |
 | Pre-registered hypotheses H1-H4 + Bonferroni correction | OSF [osf.io/q6jyn](https://osf.io/q6jyn), DOI 10.17605/OSF.IO/Q6JYN |
 | Invariant guards S1/S2/S3 enforce atomic swap | `dream-of-kiki/kiki_oniric/dream/guards/` + `tests/invariants/` |
 | R1 run-registry determinism | `dream-of-kiki/harness/storage/run_registry.py` |
@@ -153,7 +154,8 @@ See `CONTRIBUTORS.md` in each repository for the detailed policy.
   project contributors" vs "nerve-wml project contributors"),
   protocol-pattern shared (typed Protocol interfaces for
   substrate-swap), no shared Python import. Paper 1 §7.4 cites the
-  nerve-wml measurements as independent corroboration.
+  nerve-wml v1.9.0 measurements as companion, local-neighbourhood
+  evidence — not independent corroboration.
 - **`dream-of-kiki` → `micro-kiki`** : the consumer relationship is
   *declared* (micro-kiki targets the cognitive layer of
   dreamOfkiki) but *not yet wired* — the shared consolidation

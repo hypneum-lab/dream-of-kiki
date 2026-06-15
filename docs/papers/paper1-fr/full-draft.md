@@ -69,11 +69,13 @@ et statistique (quatre tests pré-enregistrés sous correction de
 Bonferroni), l'injection de fautes sur les gardes des invariants
 BLOCKING S1–S3, et le déterminisme de reproductibilité R1 sur des
 tuples appariés du registre. Nous rapportons en complément des
-mesures de portabilité inter-substrats issues du projet sœur
-Nerve-WML (§7.4) qui confirment indépendamment l'indépendance du
-substrat sur les tâches linéairement séparables (écart < 5 %) et
-divulguent l'écart en régime non linéaire (12,1 %) comme résultat
-négatif honnête. **Aucune décision d'hypothèse d'apprentissage
+mesures de portabilité inter-substrats compagnes issues du projet
+sœur Nerve-WML (§7.4) : l'indépendance au substrat tient sur les
+tâches linéairement séparables (écart 0 %), l'écart en régime non
+linéaire (12,1 %) s'avère un artefact de tête de lecture qui
+s'inverse sous des têtes symétriques, et l'alignement
+représentationnel est corroboré au niveau local (voisinage), borné
+par la tâche et l'objectif partagés plutôt que par un code universel. **Aucune décision d'hypothèse d'apprentissage
 continu sur H1–H4 n'est annoncée dans cet article** ; l'évaluation
 empirique de H1–H4 est rapportée dans le Paper 2.
 
@@ -795,31 +797,61 @@ caractères hex dans le commit `df731b0` après une revue de code
 ayant signalé un risque de collision 64 bits à l'échelle attendue
 du cycle 2.
 
-### 7.4 Portabilité inter-substrats — corroboration indépendante
+### 7.4 Portabilité inter-substrats — mesure compagne
 
 Un projet sœur à `github.com/hypneum-lab/nerve-wml` (même byline,
-même discipline de typage Protocol) mesure le polymorphisme
-inter-substrats sur une interface Nerve séparée avec deux
-substrats concrets : `MlpWML` (MLP dense) et `LifWML` (SNN à
-intégration-et-tir avec fuite, gradient de substitution). La
-mesure de la porte W de nerve-wml est un test du même *principe
-d'indépendance du substrat* articulé ici comme DR-3. Nous
-résumons les chiffres rapportés — détails complets dans le
-preprint cité.
+même discipline de typage Protocol ; release archivée **v1.9.0**,
+DOI Zenodo concept
+[10.5281/zenodo.19656342](https://doi.org/10.5281/zenodo.19656342),
+qui se résout à la dernière version publiée [@saillant2026nervewml])
+mesure le polymorphisme inter-substrats sur une interface Nerve
+séparée avec deux substrats concrets : `MlpWML` (MLP dense) et
+`LifWML` (SNN à intégration-et-tir avec fuite, gradient de
+substitution). La mesure de la porte W de nerve-wml sonde le même
+*principe d'indépendance du substrat* articulé ici comme DR-3. Ces
+mesures sont **compagnes, non indépendantes** : les deux substrats
+partagent la tâche, les données et l'objectif Protocol, si bien
+qu'un faible écart est *attendu* sous cette structure partagée (la
+critique aristotélicienne de l'hypothèse de la représentation
+platonique [@aristotelianprh2026]) et ne corrobore DR-3 qu'au
+niveau *local* (voisinage), non comme un code universel indépendant
+de la tâche. Nous résumons les chiffres rapportés — détails complets
+dans le preprint cité et l'enregistrement Zenodo archivé.
 
 **Tâche linéairement séparable (FlowProxyTask 4 classes, pool
 N = 4, multi-graine).** Les pools `MlpWML` et `LifWML` saturent
-tous deux à une précision de 1,000 ; écart relatif 0,000. Les
-deux substrats satisfont le protocole Nerve partagé.
+tous deux à une précision de 1,000 ; écart relatif 0,000 (0 % sous
+une sonde linéaire sur les codes des deux substrats). Les deux
+substrats satisfont le protocole Nerve partagé.
 
 **Tâche non linéaire (HardFlowProxyTask 12 classes, étiquette
-projetée par XOR).** `MlpWML` atteint une précision de 0,547 ;
-`LifWML` atteint une précision de 0,480. Écart absolu 0,067,
-écart relatif **12,1 %** — au-dessus de la cible de 5 %. Cela
-est divulgué dans le papier nerve-wml comme un résultat négatif
-honnête et reflète le retard du décodeur actuel par appariement
-de motifs cosinus dans la variante LIF sur les tâches non
-linéaires.
+projetée par XOR) — correction d'un artefact de décodeur.** Sous un
+décodeur cosinus fixe (v0.3), `LifWML` (0,480) accusait un retard
+relatif de **12,1 %** sur `MlpWML` (0,547), initialement rapporté
+comme une limitation de substrat. nerve-wml a ensuite identifié
+cela comme un *artefact de tête de lecture bridée* : `MlpWML`
+utilisait une tête π linéaire apprise tandis que `LifWML`
+s'appariait contre un codebook fixe initialisé aléatoirement.
+Remplacer la tête de lecture LIF par une tête apprise symétrique
+(v0.4) **inverse** l'écart — `LifWML` 0,611 contre `MlpWML` 0,547,
+un écart de 10,7 % dans le sens *opposé* — établissant que l'écart
+initial n'était pas intrinsèque au substrat mais un artefact de
+parité de lecture.
+
+**Alignement représentationnel (mutual-kNN et information
+mutuelle).** Le recouvrement de voisinage entre les codes `MlpWML`
+et `LifWML` est mutual-kNN = 0,174 à k = 10 (N = 1024, 3 graines),
+soit 18,8× une baseline aléatoire appariée aux étiquettes.
+L'information mutuelle discrète (post-VQ) est MI/H = 0,931 (corrigée
+du biais par Panzeri–Treves ; plug-in 0,932 à N = 5000 ; null de
+permutation ≈ 0,005, p < 0,01). **Caveat (obligatoire sur ce
+chiffre)** : la MI/H discrète élevée est amplifiée ≈ 10× par la
+quantification vectorielle ; l'estimation continue pré-VQ
+(Kraskov–KSG) est MI/H ≈ 0,095, et un contrôle à encodeur gelé
+donne un plafond à encodeur partagé de 0,949 contre un plancher à
+encodeur distinct de 0,762. La revendication défendable est un
+alignement *local* de voisinage au-delà d'une baseline à capacité
+appariée, non une identité représentationnelle globale.
 
 **Porte M (test de fusion).** Un `MlpWML` entraîné contre un
 Nerve mock et déployé contre un Nerve réel retient **1,000** de
@@ -828,14 +860,19 @@ l'interopérabilité inter-substrats de bout en bout.
 
 *Interprétation.* Lu à la portée du Paper 1 : (a) le principe
 d'indépendance du substrat de DR-3 est empiriquement traitable
-et déjà démontré sur des tâches linéairement séparables dans un
-système sœur ; (b) l'écart non linéaire de 12,1 % borne
-l'enveloppe actuelle de portabilité inter-substrats et fixe une
-cible cycle-2 explicite ; (c) la discipline de rapport honnête —
-divulguer l'écart plutôt que le masquer — est préservée. Ces
-chiffres ne constituent pas des preuves H1–H4 ; ils constituent
-une preuve *méthodologique* que l'assertion d'indépendance du
-framework est opérationnelle plutôt qu'asserte.
+et démontré sur des tâches linéairement séparables dans un système
+sœur ; (b) l'écart non linéaire de 12,1 % était un artefact de tête
+de lecture, non une limitation de substrat, et disparaît — voire
+s'inverse — sous des têtes symétriques ; (c) la preuve d'alignement
+est *locale* (au niveau du voisinage, calibrée sur une baseline de
+capacité) et bornée par la tâche, les données et l'objectif
+partagés : nous ne revendiquons donc que le fait que le Protocol
+étend l'alignement mesuré des conditions à encodeur partagé aux
+conditions à encodeur hétérogène sur ces substrats, non un code
+universel indépendant de la tâche. Ces chiffres ne constituent pas
+des preuves H1–H4 ; ils constituent une preuve *méthodologique* que
+l'assertion d'indépendance du framework est opérationnelle plutôt
+qu'asserte.
 
 ### 7.5 Synthèse
 
@@ -846,9 +883,9 @@ BLOCKING S1–S3 imposent le comportement d'avortement attendu sous
 injection de fautes sur les deux substrats conformes ; le contrat
 de reproductibilité R1 produit des hash de `run_id`
 déterministes à la largeur requise ; et les mesures
-inter-substrats indépendantes dans un système sœur corroborent
-le principe d'indépendance du substrat dans les régimes où il
-est mesurable aujourd'hui. Aucune décision d'hypothèse
+inter-substrats compagnes dans un système sœur corroborent, au
+niveau local (voisinage), le principe d'indépendance du substrat
+dans les régimes où il est mesurable aujourd'hui. Aucune décision d'hypothèse
 d'apprentissage continu sur H1–H4 n'est annoncée dans le
 Paper 1 ; ces décisions sont l'objet du Paper 2.
 

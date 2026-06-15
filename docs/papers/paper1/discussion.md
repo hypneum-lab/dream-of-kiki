@@ -88,7 +88,7 @@ cycle 1. Real H2 evaluation requires P_max real wiring (cycle 2).
 | Friston 2010 (FEP) | Free energy principle | Operationalized as `restructure` operation with topology guard S3 |
 | Hobson 2009 (REM) | Creative dreaming theory | Operationalized as `recombine` operation with VAE-light skeleton |
 | McClelland 1995 (CLS) | Two-system hippocampus + neocortex | Embedded in profile inclusion DR-4 (P_min minimal vs P_equ richer) |
-| Huh 2024 (PRH, ICML 2024) | Convergent representation across model scales / modalities | Theoretical anchor for DR-3 substrate-agnosticism ; companion empirical probe in nerve-wml v1.7.0 (Zenodo DOI 10.5281/zenodo.19656342) |
+| Huh 2024 (PRH, ICML 2024) | Convergent representation across model scales / modalities | Theoretical anchor for DR-3 substrate-agnosticism ; companion empirical probe in nerve-wml v1.9.0 (Zenodo DOI 10.5281/zenodo.19656342) |
 | @liu2021dvnc (Discrete-Valued Neural Communication, NeurIPS 2021) | VQ-VAE shared global codebook for discrete messages between neural modules | Closest prior art for cross-module discrete communication ; DVNC uses one shared codebook and homogeneous modules, whereas our substrate-portability claim (DR-3) and the companion nerve-wml protocol use per-substrate codebooks with learned transducers and typed prediction/error roles — DVNC is a special case (single substrate, single codebook) of the more general portability our Conformance Criterion targets |
 | @pedersen2024nir (Neuromorphic Intermediate Representation, Nature Communications 2024) | Static computational-graph IR : a hardware-agnostic instruction set for compiling one spiking model onto many neuromorphic backends | Operates at the *model-graph* layer ; orthogonal to our framework, which composes *consolidation operations* over a substrate and is agnostic to the IR that lowers any one substrate to hardware — NIR could serve as the compilation target for our E-SNN substrate (§9.1) without altering the axioms |
 | @aer2025biohybrid (Address-Event Representation over UDP/Ethernet, arXiv:2501.09128, 2025) | Transport / encoding layer specifying how spike events are timestamped, addressed and physically carried, including biohybrid silicon–wetware links | Operates at the *transport* layer ; orthogonal to our framework — the Conformance Criterion constrains the semantics of consolidation operations, not the wire protocol that moves spikes, and AER is one admissible carrier for a conformant E-SNN substrate |
@@ -108,7 +108,7 @@ theoretical floor under DR-3 : if convergent representations across
 substrates is a real phenomenon, conformance transfer across the
 MLX, E-SNN and LoRA substrates is *expected* rather than a happy
 accident. The cross-repo `nerve-wml` PRH probe (GammaThetaMultiplexer
-experiment, v1.7.0) is the empirical complement to the conformance
+experiment, v1.9.0) is the empirical complement to the conformance
 matrix reported here.
 
 ## 8.5 Cross-substrate preliminary replication (cycle 2)

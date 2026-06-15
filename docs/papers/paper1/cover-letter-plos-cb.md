@@ -61,8 +61,7 @@ remit:
    pipeline under Bonferroni correction, (ii) BLOCKING-invariant
    fault injection on S1–S3, (iii) R1 reproducibility
    determinism, and (iv) cross-substrate portability numbers
-   from a sibling project (Nerve-WML: 0% linear gap, 12.1%
-   non-linear gap, Gate M merge retains 1.000). H1–H4 evaluation
+   from a sibling project (Nerve-WML v1.9.0: 0% linear gap; the earlier 12.1% non-linear gap is a decoder-readout artefact that inverts under symmetric readouts; local-neighbourhood representational alignment; Gate M merge retains 1.000). H1–H4 evaluation
    on real continual-learning benchmarks is the scope of the
    companion Paper 2.
 
