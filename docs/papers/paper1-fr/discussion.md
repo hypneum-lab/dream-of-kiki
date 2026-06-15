@@ -94,7 +94,7 @@ requiert le câblage réel de P_max (cycle 2).
 | Friston 2010 (FEP) | Principe d'énergie libre | Opérationnalisé comme opération `restructure` avec garde topologique S3 |
 | Hobson 2009 (REM) | Théorie du rêve créatif | Opérationnalisée comme opération `recombine` avec squelette VAE allégé |
 | McClelland 1995 (CLS) | Système dual hippocampe + néocortex | Intégré dans l'inclusion de profils DR-4 (P_min minimal vs P_equ plus riche) |
-| Huh 2024 (PRH, ICML 2024) | Convergence représentationnelle entre échelles de modèles et modalités | Ancrage théorique de l'agnosticisme au substrat DR-3 ; sonde empirique compagne dans nerve-wml v1.7.0 (DOI Zenodo 10.5281/zenodo.19656342) |
+| Huh 2024 (PRH, ICML 2024) | Convergence représentationnelle entre échelles de modèles et modalités | Ancrage théorique de l'agnosticisme au substrat DR-3 ; sonde empirique compagne dans nerve-wml v1.9.0 (DOI Zenodo 10.5281/zenodo.19656342) |
 | @liu2021dvnc (Discrete-Valued Neural Communication, NeurIPS 2021) | Codebook global partagé de type VQ-VAE pour des messages discrets entre modules neuronaux | Art antérieur le plus proche pour la communication discrète inter-modules ; DVNC utilise un seul codebook partagé et des modules homogènes, tandis que notre revendication de portabilité au substrat (DR-3) et le protocole nerve-wml compagnon utilisent des codebooks par substrat avec des transducteurs appris et des rôles prédiction/erreur typés — DVNC est un cas particulier (substrat unique, codebook unique) de la portabilité plus générale que cible notre Critère de Conformité |
 | @pedersen2024nir (Neuromorphic Intermediate Representation, Nature Communications 2024) | IR de graphe de calcul statique : un jeu d'instructions agnostique au matériel pour compiler un modèle spiking sur de nombreux backends neuromorphiques | Opère à la couche *graphe de modèle* ; orthogonal à notre framework, qui compose des *opérations de consolidation* sur un substrat et est agnostique à l'IR qui abaisse un substrat donné vers le matériel — NIR pourrait servir de cible de compilation pour notre substrat E-SNN (§9.1) sans modifier les axiomes |
 | @aer2025biohybrid (Address-Event Representation over UDP/Ethernet, arXiv:2501.09128, 2025) | Couche de transport / encodage spécifiant comment les événements de spike sont horodatés, adressés et transportés physiquement, y compris les liens biohybrides silicium–wetware | Opère à la couche *transport* ; orthogonal à notre framework — le Critère de Conformité contraint la sémantique des opérations de consolidation, pas le protocole filaire qui transporte les spikes, et AER est un porteur admissible pour un substrat E-SNN conforme |
@@ -114,7 +114,7 @@ plancher théorique falsifiable sous DR-3 : si la convergence
 représentationnelle entre substrats est un phénomène réel, le
 transfert de conformité entre les substrats MLX, E-SNN et LoRA est
 *attendu* plutôt qu'un heureux accident. La sonde PRH cross-repo
-dans `nerve-wml` (expérience GammaThetaMultiplexer, v1.7.0) est le
+dans `nerve-wml` (expérience GammaThetaMultiplexer, v1.9.0) est le
 complément empirique de la matrice de conformité rapportée ici.
 
 ## 8.5 Réplication cross-substrat préliminaire (cycle 2)
