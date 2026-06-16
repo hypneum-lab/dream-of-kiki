@@ -80,6 +80,7 @@ REAL_SCALE_CHOICES = (
     "qwen3p5-1p5b-fp16",
     "qwen3p5-7b-fp16",
     "qwen3p5-35b-fp16",
+    "qwen3p6-35b-bf16-local",
 )
 REAL_SEEDS_DEFAULT = tuple(range(30))
 REAL_BENCHMARKS = ("mmlu", "hellaswag", "mega_v2")
@@ -365,12 +366,21 @@ def _dream_episodes(
                 continue
             input_ids_arr = mx.array([full_ids[:-1]])
             target_ids_arr = mx.array([full_ids[1:]])
-            for _ in range(replay_inner_steps):
-                _, grads = replay_grad_fn(
-                    qwen, input_ids_arr, target_ids_arr
-                )
-                replay_optimizer.update(qwen, grads)
-                mx.eval(qwen.parameters())
+            # MoE routing indices are stop_gradient'd only in training mode
+            # (mlx_lm SwitchGLU); without train() value_and_grad raises
+            # "[GatherMM] Cannot calculate VJP with respect to indices" on
+            # the A3B expert gather. Restore eval() so post-dream scoring is
+            # deterministic inference.
+            qwen.train()
+            try:
+                for _ in range(replay_inner_steps):
+                    _, grads = replay_grad_fn(
+                        qwen, input_ids_arr, target_ids_arr
+                    )
+                    replay_optimizer.update(qwen, grads)
+                    mx.eval(qwen.parameters())
+            finally:
+                qwen.eval()
 
     downscale_state = DownscaleRealState()
     restructure_state = RestructureRealState()
