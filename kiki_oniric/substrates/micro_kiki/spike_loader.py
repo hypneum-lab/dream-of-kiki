@@ -91,8 +91,19 @@ class SpikeLoaderMixin:
         for npz in npz_files[:3]:
             try:
                 data = np.load(npz, allow_pickle=False)
-                if "weight" in data.files:
-                    w = np.asarray(data["weight"])
+                # SpikingKiki-35B-A3B-V4 stores each layer weight under
+                # "tensor" (passthrough layers additionally carry a
+                # "passthrough" flag); earlier fixtures use "weight".
+                # Accept either so the real bundle loads.
+                wkey = (
+                    "weight"
+                    if "weight" in data.files
+                    else "tensor"
+                    if "tensor" in data.files
+                    else None
+                )
+                if wkey is not None:
+                    w = np.asarray(data[wkey])
                     # Normalise to 2-D (out_dim, in_dim). A 1-D
                     # weight vector is the degenerate
                     # single-output-neuron case ; awake_spike_payload

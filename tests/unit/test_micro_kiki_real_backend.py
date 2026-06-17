@@ -98,6 +98,39 @@ def test_real_backend_loads_artifact_when_env_set(
     assert "spikes=" in out
 
 
+def test_real_backend_accepts_tensor_key(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """SpikingKiki-35B-A3B-V4 stores each layer weight under the
+    ``tensor`` key (passthrough layers add a ``passthrough`` flag), not
+    ``weight``. The loader must read ``tensor`` so the real bundle loads
+    as real weights rather than zero sentinels.
+    """
+    monkeypatch.setenv(_REAL_BACKEND_ENV_VAR, "1")
+    tmp_path.mkdir(parents=True, exist_ok=True)
+    (tmp_path / "lif_metadata.json").write_text(
+        json.dumps({"T": 128, "threshold": 0.0625, "tau": 1.0})
+    )
+    rng = np.random.default_rng(0)
+    weight = rng.standard_normal((4, 3)).astype(np.float32)
+    np.savez(
+        tmp_path / "model_layers_0_mod.npz",
+        tensor=weight,
+        passthrough=np.array([1]),
+    )
+
+    substrate = MicroKikiSubstrate(real_backend_path=tmp_path)
+    substrate.load()
+
+    assert substrate._real_state is not None
+    loaded = [
+        v for v in substrate._real_state["sample_weights"].values()
+        if getattr(v, "size", 0) > 0
+    ]
+    assert loaded, "tensor-key weight was not loaded (still zero sentinel)"
+    assert tuple(loaded[0].shape) == (4, 3)
+
+
 def test_real_backend_missing_metadata_falls_back_to_stub(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
 ) -> None:
