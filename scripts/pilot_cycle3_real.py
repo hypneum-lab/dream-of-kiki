@@ -285,8 +285,20 @@ def _dream_episodes(
       (``i = seed % (n_layers - 1)``) — a NAS-style perturbation
       that produces measurable logit shifts.
 
+    Control profiles (no positive claim, used to bound the dream effect) :
+
+    - ``p_noise`` — NOISE FLOOR. No dream op runs ; the model is left
+      untouched. Paired with a different eval-sample seed in ``_run_cell``,
+      ``delta = post - pre`` then measures pure test-retest variance. The
+      dream delta must clear this band to count as real signal (answers the
+      "pre was just a lucky low draw / regression to the mean" objection).
+
     Reference : ``scripts/pilot_cycle3_real.py`` C3.8 Phase B.
     """
+    # CONTROL: noise-floor profile leaves the model unchanged.
+    if profile_name == "p_noise":
+        return
+
     import mlx.core as mx
     import mlx.nn as nn
     import mlx.optimizers as optim
@@ -693,11 +705,15 @@ def _run_cell(
             )
             cell["pre_weight_snapshot"] = pre_snap
             cell["post_weight_snapshot"] = post_snap
+        # Noise-floor control: re-evaluate the UNCHANGED model on a different
+        # sample draw, so its delta reflects test-retest variance (the band the
+        # dream delta must beat) rather than a model change.
+        post_seed = seed + 9973 if profile_name == "p_noise" else seed
         post = _evaluate_benchmarks(
             wrapper,
             benchmarks=benchmarks,
             n_samples=n_samples,
-            seed=seed,
+            seed=post_seed,
         )
         post_score = _composite_score(post)
     except Exception as exc:
@@ -996,7 +1012,14 @@ def main(argv: list[str] | None = None) -> int:
 
     # Full Phase A/B pilot — 3 profiles × n_seeds × 3 benchmarks.
     seeds = tuple(range(args.n_seeds))
-    total_cells = len(PROFILES) * len(seeds)
+    # HL_PROFILES overrides which profiles run (comma-separated), so control
+    # profiles (e.g. p_noise) run on the SAME seeds as the dream for a paired
+    # comparison, without touching the GO test (which stays on PROFILES).
+    profiles_run = (
+        tuple(p.strip() for p in os.environ["HL_PROFILES"].split(","))
+        if os.environ.get("HL_PROFILES") else PROFILES
+    )
+    total_cells = len(profiles_run) * len(seeds)
     _print_banner(
         total_cells=total_cells, n_samples=args.n_samples, scale=scale
     )
@@ -1023,7 +1046,7 @@ def main(argv: list[str] | None = None) -> int:
     failures: list[dict] = []
     run_start = time.time()
     idx = 0
-    for profile_name in PROFILES:
+    for profile_name in profiles_run:
         for seed in seeds:
             idx += 1
             if (profile_name, seed) in done:

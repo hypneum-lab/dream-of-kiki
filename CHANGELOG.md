@@ -12,6 +12,18 @@ see `docs/specs/2026-04-17-dreamofkiki-framework-C-design.md` §12).
 
 ## [Unreleased]
 
+### Added (E1 control profiles to bound the dream effect, 2026-06-18)
+
+- **`scripts/pilot_cycle3_real.py` — noise-floor control profile `p_noise`.**
+  Runs no dream op (model untouched) and re-evaluates on a different sample
+  draw (`seed + 9973`), so `delta = post - pre` measures pure test-retest
+  variance — the band the dream delta must beat to count as real signal
+  (answers the "pre was a lucky low draw / regression to the mean" objection
+  to the huge paired effect size). `HL_PROFILES=p_noise` runs it on the same
+  seeds as the dream for a paired comparison, without touching the GO test.
+  First of the planned control suite (matched-compute SFT, shuffled replay,
+  leakage/transfer, forgetting).
+
 ### Fixed (E1 35B replay handler — MoE/hybrid-attention gradient drift, 2026-06-18)
 
 - **`scripts/pilot_cycle3_real.py` — intermittent `tree_map` `KeyError`
