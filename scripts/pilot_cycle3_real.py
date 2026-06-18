@@ -55,6 +55,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 import time
 import traceback
@@ -999,13 +1000,34 @@ def main(argv: list[str] | None = None) -> int:
     _print_banner(
         total_cells=total_cells, n_samples=args.n_samples, scale=scale
     )
+    # Resumable cell cache (JSONL) : one successful cell per line. Each cell
+    # is deterministic under R1 (profile, seed, commit_sha), so skipping
+    # already-computed cells on a restart yields an identical final dump —
+    # the run can be stopped and relaunched without losing progress. Failed
+    # cells are NOT cached, so they retry on the next run (the recombine fix
+    # then lets p_max cells that previously KeyError'd complete). Set
+    # HL_E1_FRESH=1 to ignore an existing cache and recompute from scratch.
+    cache_path = out_dir / f"pilot-cycle3-real-{slug}.cells.jsonl"
     cells: list[dict] = []
+    done: set[tuple[str, int]] = set()
+    if cache_path.exists() and not os.getenv("HL_E1_FRESH"):
+        with cache_path.open(encoding="utf-8") as fh:
+            for line in fh:
+                line = line.strip()
+                if not line:
+                    continue
+                rec = json.loads(line)
+                cells.append(rec)
+                done.add((rec["profile"], int(rec["seed"])))
+        print(f"[resume] {len(done)} cached cells loaded; only the rest will run")
     failures: list[dict] = []
     run_start = time.time()
     idx = 0
     for profile_name in PROFILES:
         for seed in seeds:
             idx += 1
+            if (profile_name, seed) in done:
+                continue
             cell = _run_cell(
                 profile_name,
                 seed,
@@ -1013,6 +1035,11 @@ def main(argv: list[str] | None = None) -> int:
                 n_samples=args.n_samples,
                 n_episodes=N_EPISODES_PER_PROFILE,
                 scale=scale,
+                # Snapshot the first Qwen weight pre/post-dream so each cell
+                # carries parametric evidence (weight_mutation_verified) that
+                # the dream corpus actually moved the model — complementing the
+                # behavioural pre->post benchmark delta.
+                verify_downscale=True,
             )
             if "error" in cell:
                 failures.append(cell)
@@ -1025,7 +1052,10 @@ def main(argv: list[str] | None = None) -> int:
                 run_id = _register_cell(profile_name, seed, scale)
             except Exception as exc:  # pragma: no cover - defensive
                 run_id = f"register-failed:{exc}"
-            cells.append({**cell, "run_id": run_id})
+            record = {**cell, "run_id": run_id}
+            cells.append(record)
+            with cache_path.open("a", encoding="utf-8") as fh:
+                fh.write(json.dumps(record) + "\n")
             print(
                 f"[cell {idx}/{total_cells}] {profile_name} "
                 f"seed={seed:02d} pre={cell['pre']:.4f} "

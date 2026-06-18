@@ -29,6 +29,21 @@ see `docs/specs/2026-04-17-dreamofkiki-framework-C-design.md` §12).
   already succeeded (R1 `run_id` determinism preserved); `S2 finite`
   guard unchanged. Tagged `e1-35b-cycle3-v1` as the next-run baseline.
 
+### Added (resumable E1 run + parametric weight-change evidence, 2026-06-18)
+
+- **`scripts/pilot_cycle3_real.py` — the full E1 run is now resumable.**
+  Each successful cell is appended to a JSONL cache
+  (`pilot-cycle3-real-<slug>.cells.jsonl`); on restart the cached
+  `(profile, seed)` cells are skipped and only the remainder runs. Cells
+  are deterministic under R1, so a stopped-and-relaunched run yields a
+  dump identical to an uninterrupted one. Failed cells are not cached and
+  retry on the next run. `HL_E1_FRESH=1` forces a from-scratch recompute.
+- **Per-cell parametric weight-change evidence.** The full loop now calls
+  `_run_cell(..., verify_downscale=True)`, snapshotting the first Qwen
+  weight pre/post-dream so every cell records `weight_mutation_verified`
+  and the pre/post snapshots — demonstrating the dream corpus actually
+  moved the model, alongside the behavioural pre→post benchmark delta.
+
 ### Empirical (cycle-3 real 1.5B pilot → 20 seeds, GO sub-powered + E1 TOST + turnkey 35B pin, 2026-06-04)
 
 - **Cycle-3 real 1.5B pilot extended 5 → 20 seeds.**
