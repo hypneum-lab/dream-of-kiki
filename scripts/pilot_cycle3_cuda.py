@@ -36,14 +36,33 @@ from pathlib import Path
 
 import torch
 
-# --- tiny built-in fixtures so the slice runs standalone (replace with the real
-#     mmlu/hellaswag/mega_v2 fixtures for a publication run) -------------------
-_MC_FIXTURE = [
-    {"q": "The capital of France is", "choices": ["Paris", "Rome", "Berlin", "Madrid"], "answer": 0},
-    {"q": "Two plus two equals", "choices": ["three", "four", "five", "six"], "answer": 1},
-    {"q": "Water is made of hydrogen and", "choices": ["carbon", "oxygen", "nitrogen", "iron"], "answer": 1},
-    {"q": "The opposite of hot is", "choices": ["warm", "cold", "fast", "loud"], "answer": 1},
-]
+# --- real benchmark fixtures (dream-of-kiki tests/fixtures), backend-agnostic
+#     JSONL reused as-is; only the scoring is ported to torch. ----------------
+_FIX = Path(__file__).resolve().parents[1] / "tests" / "fixtures"
+
+
+def _load_mmlu(path: Path) -> list[dict]:
+    items = []
+    for line in path.read_text(encoding="utf-8").splitlines():
+        if line.strip():
+            r = json.loads(line)
+            items.append({"prompt": r["question"].strip() + "\nAnswer:",
+                          "choices": [" " + c for c in r["choices"]],
+                          "answer": int(r["answer"])})
+    return items
+
+
+def _load_hellaswag(path: Path) -> list[dict]:
+    items = []
+    for line in path.read_text(encoding="utf-8").splitlines():
+        if line.strip():
+            r = json.loads(line)
+            items.append({"prompt": r["ctx"].strip(),
+                          "choices": [" " + e for e in r["endings"]],
+                          "answer": int(r["label"])})
+    return items
+
+
 _REPLAY_TEXTS = [
     "The capital of France is Paris, a city on the Seine.",
     "Two plus two equals four; addition combines quantities.",
@@ -99,24 +118,42 @@ def _weight_sig(model):
 
 
 @torch.no_grad()
-def _eval_mc(model, tok, fixture, n_samples: int, seed: int) -> float:
-    """MMLU-style accuracy: score each choice by its mean token log-prob, argmax."""
-    g = torch.Generator().manual_seed(seed)
-    idx = torch.randperm(len(fixture), generator=g)[:n_samples].tolist()
+def _score_choice(model, tok, prompt: str, choice: str) -> float:
+    """Length-normalised log-prob of `choice` continued after `prompt` (the
+    standard cloze score for MMLU/HellaSwag multiple-choice)."""
     dev = next(model.parameters()).device
+    p_ids = tok(prompt, return_tensors="pt").input_ids
+    full = tok(prompt + choice, return_tensors="pt").input_ids.to(dev)
+    out = model(full)
+    logp = torch.log_softmax(out.logits[0, :-1].float(), dim=-1)
+    tgt = full[0, 1:]
+    cont = logp[range(tgt.numel()), tgt][p_ids.shape[1] - 1:]   # continuation tokens only
+    return cont.mean().item() if cont.numel() else -1e9
+
+
+@torch.no_grad()
+def _eval_bench(model, tok, items, n_samples: int, seed: int) -> float:
+    """Accuracy = fraction of subsampled items whose correct choice wins."""
+    if not items:
+        return 0.0
+    g = torch.Generator().manual_seed(seed)
+    n = min(n_samples, len(items)) if n_samples > 0 else len(items)
+    idx = torch.randperm(len(items), generator=g)[:n].tolist()
     correct = 0
     for i in idx:
-        ex = fixture[i]
-        scores = []
-        for choice in ex["choices"]:
-            ids = tok(ex["q"] + " " + choice, return_tensors="pt").input_ids.to(dev)
-            out = model(ids)
-            logp = torch.log_softmax(out.logits[0, :-1].float(), dim=-1)
-            tgt = ids[0, 1:]
-            scores.append(logp[range(tgt.numel()), tgt].mean().item())
+        ex = items[i]
+        scores = [_score_choice(model, tok, ex["prompt"], c) for c in ex["choices"]]
         if int(torch.tensor(scores).argmax()) == ex["answer"]:
             correct += 1
     return correct / max(1, len(idx))
+
+
+def _eval_composite(model, tok, benches: dict, n_samples: int, seed: int) -> dict:
+    """Per-benchmark accuracy + composite mean (mirrors the MLX harness)."""
+    accs = {name: _eval_bench(model, tok, items, n_samples, seed)
+            for name, items in benches.items()}
+    accs["composite"] = sum(accs.values()) / max(1, len(accs))
+    return accs
 
 
 def _replay(model, tok, texts, lr: float, inner: int) -> None:
@@ -137,21 +174,24 @@ def _replay(model, tok, texts, lr: float, inner: int) -> None:
     model.eval()
 
 
-def _run_cell(model, tok, base, profile, seed, *, n_samples, lr, inner):
+def _run_cell(model, tok, base, benches, profile, seed, *, n_samples, lr, inner):
     t0 = time.time()
     _restore(model, base)
-    pre = _eval_mc(model, tok, _MC_FIXTURE, n_samples, seed)
+    pre = _eval_composite(model, tok, benches, n_samples, seed)
     w_pre = _weight_sig(model)
     if profile != "p_noise":
         _replay(model, tok, _REPLAY_TEXTS, lr, inner)
     w_post = _weight_sig(model)
     # noise floor re-evals the UNCHANGED model on a different draw
     post_seed = seed + 9973 if profile == "p_noise" else seed
-    post = _eval_mc(model, tok, _MC_FIXTURE, n_samples, post_seed)
+    post = _eval_composite(model, tok, benches, n_samples, post_seed)
     return {
-        "profile": profile, "seed": seed, "pre": pre, "post": post,
-        "delta": post - pre, "w_pre": w_pre, "w_post": w_post,
-        "weight_changed": (w_pre is not None and w_post is not None and w_pre != w_post),
+        "profile": profile, "seed": seed,
+        "pre": pre["composite"], "post": post["composite"],
+        "delta": post["composite"] - pre["composite"],
+        "pre_by_bench": pre, "post_by_bench": post,
+        "w_pre": w_pre, "w_post": w_post,
+        "weight_changed": w_pre != w_post,
         "wall_s": round(time.time() - t0, 1),
     }
 
@@ -174,6 +214,18 @@ def main() -> int:
 
     print(f"[e1-cuda] device={_device()} model={args.scale} "
           f"profiles={profiles} seeds={len(seeds)} lr={lr} inner={inner}", flush=True)
+    # real benchmark fixtures (env overrides for custom/larger sets)
+    benches = {}
+    mmlu_p = Path(os.environ.get("HL_MMLU", _FIX / "mmlu_real.jsonl"))
+    hella_p = Path(os.environ.get("HL_HELLASWAG", _FIX / "hellaswag_sanity.jsonl"))
+    if mmlu_p.exists():
+        benches["mmlu"] = _load_mmlu(mmlu_p)
+    if hella_p.exists():
+        benches["hellaswag"] = _load_hellaswag(hella_p)
+    if not benches:
+        raise SystemExit(f"[e1-cuda] no fixtures found ({mmlu_p}, {hella_p})")
+    print(f"[e1-cuda] benches: " + ", ".join(f"{k}={len(v)}" for k, v in benches.items()), flush=True)
+
     model, tok = _load_model(args.scale)
     base = _snapshot_cpu(model)              # load ONCE, restore per cell
     print(f"[e1-cuda] model loaded + baseline snapshotted "
@@ -190,7 +242,7 @@ def main() -> int:
         for seed in seeds:
             if (profile, seed) in done:
                 continue
-            cell = _run_cell(model, tok, base, profile, seed,
+            cell = _run_cell(model, tok, base, benches, profile, seed,
                              n_samples=args.n_samples, lr=lr, inner=inner)
             cells.append(cell)
             with cache.open("a") as fh:
