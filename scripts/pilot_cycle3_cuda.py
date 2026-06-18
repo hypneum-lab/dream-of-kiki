@@ -28,7 +28,6 @@ R1: results are a DIFFERENT backend from the MLX runs — never mix the numbers.
 from __future__ import annotations
 
 import argparse
-import copy
 import json
 import os
 import time
@@ -63,12 +62,51 @@ def _load_hellaswag(path: Path) -> list[dict]:
     return items
 
 
-_REPLAY_TEXTS = [
-    "The capital of France is Paris, a city on the Seine.",
-    "Two plus two equals four; addition combines quantities.",
-    "Water (H2O) is two hydrogen atoms bonded to one oxygen atom.",
-    "Cold is the opposite of hot; temperature measures heat.",
+# Neutral filler for the matched-compute SFT control — content unrelated to the
+# benchmarks, so it isolates "any gradient step helps" from "relevant replay".
+_NEUTRAL_TEXTS = [
+    "The weather changed slowly from one day to the next.",
+    "A long road wound quietly through the empty valley.",
+    "She closed the wooden door and walked down the street.",
+    "Clouds drifted above the distant grey hills at dusk.",
+    "The old clock kept its steady rhythm through the night.",
 ]
+
+
+def _shuffle_text(text: str, seed: int) -> str:
+    """Word-shuffle: keeps the tokens (same updates) but destroys meaning."""
+    w = text.split()
+    if len(w) < 2:
+        return text
+    g = torch.Generator().manual_seed(seed + len(w))
+    return " ".join(w[i] for i in torch.randperm(len(w), generator=g).tolist())
+
+
+def _cell_split(benches: dict, seed: int, n_replay: int, n_eval: int):
+    """Disjoint per-(bench, seed) split — replay pool vs eval subset — so the
+    dream never replays an item it is scored on (leakage control built in)."""
+    eval_sets, replay_items = {}, []
+    for name, items in benches.items():
+        g = torch.Generator().manual_seed(seed)
+        order = torch.randperm(len(items), generator=g).tolist()
+        replay_items += [items[i] for i in order[:n_replay]]
+        ev = order[n_replay:]
+        eval_sets[name] = [items[i] for i in (ev[:n_eval] if n_eval > 0 else ev)]
+    return eval_sets, replay_items
+
+
+def _profile_replay(profile: str, replay_items: list, seed: int) -> list:
+    """Replay corpus per profile: relevant facts (dream), neutral (SFT control),
+    shuffled (content-destroyed control), or none (noise floor)."""
+    if profile == "p_noise":
+        return []
+    facts = [it["prompt"] + it["choices"][it["answer"]] for it in replay_items]
+    if profile == "p_ctrl_sft":
+        reps = (len(facts) // len(_NEUTRAL_TEXTS)) + 1
+        return (_NEUTRAL_TEXTS * reps)[:max(1, len(facts))]
+    if profile == "p_ctrl_shuffle":
+        return [_shuffle_text(f, seed) for f in facts]
+    return facts  # p_min: relevant, coherent, held-out replay
 
 
 def _device() -> str:
@@ -132,26 +170,21 @@ def _score_choice(model, tok, prompt: str, choice: str) -> float:
 
 
 @torch.no_grad()
-def _eval_bench(model, tok, items, n_samples: int, seed: int) -> float:
-    """Accuracy = fraction of subsampled items whose correct choice wins."""
+def _eval_items(model, tok, items) -> float:
+    """Accuracy over a fixed item list (already subsampled by _cell_split)."""
     if not items:
         return 0.0
-    g = torch.Generator().manual_seed(seed)
-    n = min(n_samples, len(items)) if n_samples > 0 else len(items)
-    idx = torch.randperm(len(items), generator=g)[:n].tolist()
     correct = 0
-    for i in idx:
-        ex = items[i]
+    for ex in items:
         scores = [_score_choice(model, tok, ex["prompt"], c) for c in ex["choices"]]
         if int(torch.tensor(scores).argmax()) == ex["answer"]:
             correct += 1
-    return correct / max(1, len(idx))
+    return correct / len(items)
 
 
-def _eval_composite(model, tok, benches: dict, n_samples: int, seed: int) -> dict:
-    """Per-benchmark accuracy + composite mean (mirrors the MLX harness)."""
-    accs = {name: _eval_bench(model, tok, items, n_samples, seed)
-            for name, items in benches.items()}
+def _eval_sets(model, tok, eval_sets: dict) -> dict:
+    """Per-benchmark accuracy + composite mean over pre-split eval sets."""
+    accs = {name: _eval_items(model, tok, items) for name, items in eval_sets.items()}
     accs["composite"] = sum(accs.values()) / max(1, len(accs))
     return accs
 
@@ -174,24 +207,29 @@ def _replay(model, tok, texts, lr: float, inner: int) -> None:
     model.eval()
 
 
-def _run_cell(model, tok, base, benches, profile, seed, *, n_samples, lr, inner):
+def _run_cell(model, tok, base, benches, profile, seed, *, n_samples, n_replay, lr, inner):
     t0 = time.time()
     _restore(model, base)
-    pre = _eval_composite(model, tok, benches, n_samples, seed)
+    eval_sets, replay_items = _cell_split(benches, seed, n_replay, n_samples)
+    pre = _eval_sets(model, tok, eval_sets)
     w_pre = _weight_sig(model)
-    if profile != "p_noise":
-        _replay(model, tok, _REPLAY_TEXTS, lr, inner)
+    texts = _profile_replay(profile, replay_items, seed)
+    if texts:
+        _replay(model, tok, texts, lr, inner)
     w_post = _weight_sig(model)
-    # noise floor re-evals the UNCHANGED model on a different draw
-    post_seed = seed + 9973 if profile == "p_noise" else seed
-    post = _eval_composite(model, tok, benches, n_samples, post_seed)
+    # dream/control profiles re-eval the SAME held-out items (isolate the model
+    # change); the noise floor uses a fresh disjoint draw (sampling variance).
+    if profile == "p_noise":
+        eval_post, _ = _cell_split(benches, seed + 9973, n_replay, n_samples)
+    else:
+        eval_post = eval_sets
+    post = _eval_sets(model, tok, eval_post)
     return {
         "profile": profile, "seed": seed,
         "pre": pre["composite"], "post": post["composite"],
         "delta": post["composite"] - pre["composite"],
-        "pre_by_bench": pre, "post_by_bench": post,
-        "w_pre": w_pre, "w_post": w_post,
-        "weight_changed": w_pre != w_post,
+        "pre_by_bench": pre, "post_by_bench": post, "n_replay": len(replay_items),
+        "w_pre": w_pre, "w_post": w_post, "weight_changed": w_pre != w_post,
         "wall_s": round(time.time() - t0, 1),
     }
 
@@ -206,10 +244,13 @@ def main() -> int:
 
     lr = float(os.environ.get("HL_LR", "1e-4"))
     inner = int(os.environ.get("HL_INNER", "3"))
-    profiles = tuple((os.environ.get("HL_PROFILES", "p_min,p_noise")).split(","))
+    n_replay = int(os.environ.get("HL_NREPLAY", "10"))
+    profiles = tuple((os.environ.get(
+        "HL_PROFILES", "p_min,p_ctrl_sft,p_ctrl_shuffle,p_noise")).split(","))
     seeds = (0,) if args.smoke else tuple(range(args.n_seeds))
     slug = args.scale.replace("/", "_")
-    out_dir = Path(os.environ.get("HL_OUT", ".")); out_dir.mkdir(parents=True, exist_ok=True)
+    out_dir = Path(os.environ.get("HL_OUT", "."))
+    out_dir.mkdir(parents=True, exist_ok=True)
     cache = out_dir / f"pilot-cycle3-cuda-{slug}.cells.jsonl"
 
     print(f"[e1-cuda] device={_device()} model={args.scale} "
@@ -224,18 +265,20 @@ def main() -> int:
         benches["hellaswag"] = _load_hellaswag(hella_p)
     if not benches:
         raise SystemExit(f"[e1-cuda] no fixtures found ({mmlu_p}, {hella_p})")
-    print(f"[e1-cuda] benches: " + ", ".join(f"{k}={len(v)}" for k, v in benches.items()), flush=True)
+    print("[e1-cuda] benches: " + ", ".join(f"{k}={len(v)}" for k, v in benches.items()), flush=True)
 
     model, tok = _load_model(args.scale)
     base = _snapshot_cpu(model)              # load ONCE, restore per cell
     print(f"[e1-cuda] model loaded + baseline snapshotted "
           f"({sum(v.numel() for v in base.values())/1e9:.2f} G params)", flush=True)
 
-    done = set(); cells = []
+    done, cells = set(), []
     if cache.exists() and not os.getenv("HL_E1_FRESH"):
         for line in cache.open():
             if line.strip():
-                r = json.loads(line); cells.append(r); done.add((r["profile"], r["seed"]))
+                r = json.loads(line)
+                cells.append(r)
+                done.add((r["profile"], r["seed"]))
         print(f"[e1-cuda] resume: {len(done)} cached cells", flush=True)
 
     for profile in profiles:
@@ -243,7 +286,7 @@ def main() -> int:
             if (profile, seed) in done:
                 continue
             cell = _run_cell(model, tok, base, benches, profile, seed,
-                             n_samples=args.n_samples, lr=lr, inner=inner)
+                             n_samples=args.n_samples, n_replay=n_replay, lr=lr, inner=inner)
             cells.append(cell)
             with cache.open("a") as fh:
                 fh.write(json.dumps(cell) + "\n")
