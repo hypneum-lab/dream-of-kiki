@@ -331,7 +331,13 @@ def _dream_episodes(
 
     replay_lr = 1e-4
     replay_inner_steps = 5
-    replay_optimizer = optim.SGD(learning_rate=replay_lr)
+    # No persistent optimizer: the A3B MoE + hybrid attention emit a
+    # gradient tree whose key set varies per replay episode (sparse
+    # expert routing / per-seed activation). A reused optimizer's state
+    # tree, init'd on an earlier episode's gradients, then lacks keys
+    # ('self_attn' / 'linear_attn') present later -> apply_gradients
+    # tree_map KeyError. A fresh stateless SGD per step keeps state
+    # aligned with the current gradient tree (S2 finite still holds).
 
     def _ce_loss(qwen_inner, input_ids, target_ids):
         # input_ids : (1, L) ; target_ids : (1, L) shifted by one.
@@ -377,7 +383,11 @@ def _dream_episodes(
                     _, grads = replay_grad_fn(
                         qwen, input_ids_arr, target_ids_arr
                     )
-                    replay_optimizer.update(qwen, grads)
+                    # Fresh SGD each step (momentumless => identical
+                    # numerics) so the optimizer state tree matches this
+                    # step's gradient key set; avoids tree_map KeyError on
+                    # the hybrid attention / MoE expert keys.
+                    optim.SGD(learning_rate=replay_lr).update(qwen, grads)
                     mx.eval(qwen.parameters())
             finally:
                 qwen.eval()
