@@ -12,6 +12,23 @@ see `docs/specs/2026-04-17-dreamofkiki-framework-C-design.md` §12).
 
 ## [Unreleased]
 
+### Fixed (E1 35B replay handler — MoE/hybrid-attention gradient drift, 2026-06-18)
+
+- **`scripts/pilot_cycle3_real.py` — intermittent `tree_map` `KeyError`
+  in `_replay_qwen_handler` removed.** The A3B MoE + hybrid attention
+  (`self_attn` / `linear_attn` blocks) emit a gradient tree whose key
+  set varies per replay episode (sparse expert routing / per-seed
+  activation). A single persistent `optim.SGD`, init'd on an earlier
+  episode's gradients, then carried a `state` tree missing keys present
+  in a later episode's gradients → `apply_gradients` failed with
+  `KeyError: 'self_attn'` / `'linear_attn'`, concentrated on `p_max`
+  (strongest downscale mutation). On the in-flight 141-seed 35B run this
+  dropped ≈ 4 % of cells. Fix : create a fresh stateless SGD per inner
+  step so the optimizer `state` always matches the current gradient
+  tree. SGD is momentumless, so numerics are identical for cells that
+  already succeeded (R1 `run_id` determinism preserved); `S2 finite`
+  guard unchanged. Tagged `e1-35b-cycle3-v1` as the next-run baseline.
+
 ### Empirical (cycle-3 real 1.5B pilot → 20 seeds, GO sub-powered + E1 TOST + turnkey 35B pin, 2026-06-04)
 
 - **Cycle-3 real 1.5B pilot extended 5 → 20 seeds.**
