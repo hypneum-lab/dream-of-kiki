@@ -117,13 +117,16 @@ def _load_model(model_id: str):
     from transformers import AutoModelForCausalLM, AutoTokenizer
     dev = _device()
     dtype = torch.bfloat16 if dev == "cuda" else torch.float32
-    tok = AutoTokenizer.from_pretrained(model_id)
+    # trust_remote_code lets newer archs (e.g. qwen3_5_moe) load when the
+    # installed transformers lacks native support / the repo ships modeling code.
+    trc = os.environ.get("HL_TRUST_REMOTE_CODE", "0") == "1"
+    tok = AutoTokenizer.from_pretrained(model_id, trust_remote_code=trc)
     # device_map="auto" (sharding a 35B over GPUs) needs `accelerate`; only use
     # it for multi-GPU. Single GPU/CPU: plain load + .to(dev). HL_DEVICE_MAP
     # overrides (e.g. "auto" to force sharding on a multi-H200 node).
     default_map = "auto" if (dev == "cuda" and torch.cuda.device_count() > 1) else ""
     use_map = os.environ.get("HL_DEVICE_MAP", default_map)
-    kw = {"dtype": dtype}
+    kw = {"dtype": dtype, "trust_remote_code": trc}
     if use_map:
         kw["device_map"] = use_map
     model = AutoModelForCausalLM.from_pretrained(model_id, **kw)

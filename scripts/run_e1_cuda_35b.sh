@@ -19,7 +19,10 @@ OUT=${HL_OUT:-$WORK/output}
 mkdir -p "$WORK" "$OUT"
 cd "$WORK"
 
-: "${HL_MODEL:?set HL_MODEL to the Qwen 35B HF repo id or a local transformers path}"
+# HF repo id (default) or a local transformers path. The local studio dir named
+# "...-MLX-BF16" is actually plain HF safetensors — point HL_MODEL at it for a
+# sovereign run (no HF download); otherwise the HF repo is pulled (fast on OVH).
+HL_MODEL=${HL_MODEL:-Qwen/Qwen3.6-35B-A3B}
 
 echo "[e1-35b] === deps ==="
 pip install -q --break-system-packages transformers accelerate "huggingface_hub[cli]" \
@@ -48,6 +51,7 @@ nvidia-smi --query-gpu=index,name,memory.total --format=csv,noheader || true
 
 echo "[e1-35b] === run (resumable) ==="
 export HL_DEVICE_MAP=auto HL_OUT="$OUT" \
+  HL_TRUST_REMOTE_CODE=${HL_TRUST_REMOTE_CODE:-1} \
   HL_MMLU="$WORK/mmlu_real.jsonl" HL_HELLASWAG="$WORK/hellaswag_sanity.jsonl" \
   HL_NSAMPLES=${HL_NSAMPLES:-50} HL_NREPLAY=${HL_NREPLAY:-20} \
   HL_LR=${HL_LR:-1e-4} HL_INNER=${HL_INNER:-5}
