@@ -12,6 +12,26 @@ see `docs/specs/2026-04-17-dreamofkiki-framework-C-design.md` §12).
 
 ## [Unreleased]
 
+### Added (E1 CUDA port — full study runnable on sovereign GPU cloud, 2026-06-18)
+
+- **`scripts/pilot_cycle3_cuda.py` — torch/transformers port of the E1 cell**
+  so the whole study runs on NVIDIA (OVH H200 / DataCrunch / Scaleway), a
+  different backend from the MLX harness (R1: never mix the numbers). Slices:
+  (1) load-once + per-cell CPU-baseline restore (≈halves per-cell cost vs a
+  disk reload); (2) real `mmlu_real` (114) + `hellaswag_sanity` (200) fixtures
+  with length-normalised cloze scoring; (3) dream ops `p_equ` (downscale) /
+  `p_max` (downscale + adjacent-block restructure, undone post-eval so the
+  baseline restore stays canonical); (4) leakage-controlled relevant replay +
+  matched-compute controls (`p_ctrl_sft`, `p_ctrl_shuffle`, `p_noise`) via a
+  disjoint per-(bench,seed) split; (5) multi-GPU `device_map=auto` (accelerate)
+  for the sharded 35B, inputs on the embedding device, cross-device restructure
+  guard. Validated end-to-end on Qwen2.5-0.5B/CUDA (single GPU + device_map):
+  clean restore across all cells incl. after restructure, correct weight-change
+  probe. The 0.5B deltas sit in the noise band (expected; the effect needs 35B).
+- **`scripts/run_e1_cuda_35b.sh` — turnkey 35B launcher** (clone harness +
+  fixtures, install deps, resolve HF weights, run the full 6-profile × N-seed
+  resumable study sharded across the GPUs).
+
 ### Added (E1 control profiles to bound the dream effect, 2026-06-18)
 
 - **`scripts/pilot_cycle3_real.py` — noise-floor control profile `p_noise`.**
