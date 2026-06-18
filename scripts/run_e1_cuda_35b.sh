@@ -49,6 +49,17 @@ fi
 echo "[e1-35b] === GPUs ==="
 nvidia-smi --query-gpu=index,name,memory.total --format=csv,noheader || true
 
+if [ "${HL_SKIP_SMOKE:-0}" != "1" ]; then
+  echo "[e1-35b] === SMOKE: validate 35B load + cells before the 141-seed run ==="
+  HL_DEVICE_MAP=auto HL_TRUST_REMOTE_CODE=${HL_TRUST_REMOTE_CODE:-1} HL_OUT="$OUT/smoke" \
+    HL_MMLU="$WORK/mmlu_real.jsonl" HL_HELLASWAG="$WORK/hellaswag_sanity.jsonl" \
+    HL_PROFILES=p_min,p_noise HL_NSAMPLES=8 HL_NREPLAY=4 HL_INNER=2 \
+    python "$WORK/pilot_cycle3_cuda.py" --scale "$HL_MODEL" --smoke \
+    || { echo "[e1-35b] SMOKE FAILED — fix before committing to the full run"; exit 1; }
+  echo "[e1-35b] smoke OK ✓"
+  [ "${HL_SMOKE_ONLY:-0}" = "1" ] && { echo "[e1-35b] HL_SMOKE_ONLY=1 — stopping after smoke"; exit 0; }
+fi
+
 echo "[e1-35b] === run (resumable) ==="
 export HL_DEVICE_MAP=auto HL_OUT="$OUT" \
   HL_TRUST_REMOTE_CODE=${HL_TRUST_REMOTE_CODE:-1} \
