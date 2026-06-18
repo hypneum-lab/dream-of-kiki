@@ -141,6 +141,16 @@ def _restore(model, base: dict) -> None:
     model.load_state_dict(base, strict=True)
 
 
+def _input_device(model):
+    """Device where inputs must land. On a device_map-sharded 35B the input
+    embedding lives on one GPU and accelerate hooks move activations across the
+    others, so inputs go to the embedding's device, not next(parameters())."""
+    try:
+        return model.get_input_embeddings().weight.device
+    except Exception:  # noqa: BLE001
+        return next(model.parameters()).device
+
+
 @torch.no_grad()
 def _weight_sig(model):
     """Cheap global fingerprint: mean of the first few large weight tensors.
@@ -159,7 +169,7 @@ def _weight_sig(model):
 def _score_choice(model, tok, prompt: str, choice: str) -> float:
     """Length-normalised log-prob of `choice` continued after `prompt` (the
     standard cloze score for MMLU/HellaSwag multiple-choice)."""
-    dev = next(model.parameters()).device
+    dev = _input_device(model)
     p_ids = tok(prompt, return_tensors="pt").input_ids
     full = tok(prompt + choice, return_tensors="pt").input_ids.to(dev)
     out = model(full)
@@ -192,7 +202,7 @@ def _eval_sets(model, tok, eval_sets: dict) -> dict:
 def _replay(model, tok, texts, lr: float, inner: int) -> None:
     """DREAM core: SGD next-token replay over experiences (momentumless SGD =
     same family as the MLX harness; no optimizer state to bloat the 35B)."""
-    dev = next(model.parameters()).device
+    dev = _input_device(model)
     opt = torch.optim.SGD(model.parameters(), lr=lr)
     model.train()
     for text in texts:
@@ -207,6 +217,68 @@ def _replay(model, tok, texts, lr: float, inner: int) -> None:
     model.eval()
 
 
+def _get_layers(model):
+    """Locate the transformer block list across common architectures."""
+    for path in ("model.layers", "model.model.layers", "transformer.h", "gpt_neox.layers"):
+        obj = model
+        ok = True
+        for a in path.split("."):
+            if hasattr(obj, a):
+                obj = getattr(obj, a)
+            else:
+                ok = False
+                break
+        if ok:
+            return obj
+    return None
+
+
+@torch.no_grad()
+def _downscale(model, factor: float) -> None:
+    """DOWNSCALE op: shrink every weight by `factor` (mirrors the MLX recursive
+    downscale that multiplies each leaf tensor)."""
+    for p in model.parameters():
+        if p.is_floating_point():
+            p.mul_(factor)
+
+
+def _swap_layers(model, i: int) -> None:
+    layers = _get_layers(model)
+    layers[i], layers[i + 1] = layers[i + 1], layers[i]
+
+
+def _restructure(model, seed: int):
+    """RESTRUCTURE op (p_max): swap two adjacent transformer blocks (NAS-style
+    perturbation, i = seed % (n-1)). Returns the swapped index (so the caller
+    can undo it before the next baseline restore), or None. Skipped if the two
+    blocks live on different devices (sharded) to avoid a device mismatch."""
+    layers = _get_layers(model)
+    if layers is None or len(layers) < 2:
+        return None
+    i = seed % (len(layers) - 1)
+    try:
+        if next(layers[i].parameters()).device != next(layers[i + 1].parameters()).device:
+            return None
+        _swap_layers(model, i)
+        return i
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def _apply_dream_ops(model, profile: str, seed: int) -> dict:
+    """Structural dream ops beyond replay: downscale (p_equ/p_max) shrinks all
+    weights; restructure (p_max) swaps two adjacent blocks; recombine is a
+    weight-neutral latent op (no-op here, as in the MLX harness)."""
+    info = {"restructure_idx": None}
+    if profile in ("p_equ", "p_max"):
+        factor = float(os.environ.get("HL_SHRINK", "0.99"))
+        _downscale(model, factor)
+        info["downscale"] = factor
+    if profile == "p_max":
+        info["restructure_idx"] = _restructure(model, seed)
+    return info
+
+
 def _run_cell(model, tok, base, benches, profile, seed, *, n_samples, n_replay, lr, inner):
     t0 = time.time()
     _restore(model, base)
@@ -216,6 +288,7 @@ def _run_cell(model, tok, base, benches, profile, seed, *, n_samples, n_replay, 
     texts = _profile_replay(profile, replay_items, seed)
     if texts:
         _replay(model, tok, texts, lr, inner)
+    ops = _apply_dream_ops(model, profile, seed)
     w_post = _weight_sig(model)
     # dream/control profiles re-eval the SAME held-out items (isolate the model
     # change); the noise floor uses a fresh disjoint draw (sampling variance).
@@ -224,11 +297,14 @@ def _run_cell(model, tok, base, benches, profile, seed, *, n_samples, n_replay, 
     else:
         eval_post = eval_sets
     post = _eval_sets(model, tok, eval_post)
+    if ops.get("restructure_idx") is not None:    # undo the block swap so the
+        _swap_layers(model, ops["restructure_idx"])  # next _restore is canonical
     return {
         "profile": profile, "seed": seed,
         "pre": pre["composite"], "post": post["composite"],
         "delta": post["composite"] - pre["composite"],
         "pre_by_bench": pre, "post_by_bench": post, "n_replay": len(replay_items),
+        "ops": ops,
         "w_pre": w_pre, "w_post": w_post, "weight_changed": w_pre != w_post,
         "wall_s": round(time.time() - t0, 1),
     }
@@ -246,7 +322,8 @@ def main() -> int:
     inner = int(os.environ.get("HL_INNER", "3"))
     n_replay = int(os.environ.get("HL_NREPLAY", "10"))
     profiles = tuple((os.environ.get(
-        "HL_PROFILES", "p_min,p_ctrl_sft,p_ctrl_shuffle,p_noise")).split(","))
+        "HL_PROFILES",
+        "p_min,p_equ,p_max,p_ctrl_sft,p_ctrl_shuffle,p_noise")).split(","))
     seeds = (0,) if args.smoke else tuple(range(args.n_seeds))
     slug = args.scale.replace("/", "_")
     out_dir = Path(os.environ.get("HL_OUT", "."))
