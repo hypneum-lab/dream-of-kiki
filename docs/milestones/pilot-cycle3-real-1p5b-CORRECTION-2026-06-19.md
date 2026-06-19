@@ -129,6 +129,39 @@ adjudicate the residual ~+0.10 replay-specific signal.
 - Consider adding `p_ctrl_sft` (neutral-SGD) as the **default baseline** for the
   delta, so generic SGD warmup is not reported as consolidation.
 
+## Mechanism follow-up (2026-06-19, kxkm — pipeline/mechanism only)
+
+To test whether the residual ~+0.10 is robust or N=10 noise, two further
+leak-free runs (genuine loader, content-disjoint folds verified ∅):
+
+**Run A — real 20-row fallback, n=10, 20 seeds** (powering the 5-seed result):
+`p_min − p_ctrl_sft = +0.097`, sd 0.028, 95% CI **[+0.085, +0.109]**, **20/20
+seeds positive**. → the replay-specific residual is **robust, not noise** on the
+hand-authored facts. (Half of p_min's raw +0.19 is generic any-SGD lift
+(`p_ctrl_sft` +0.095); the contrast isolates the ~+0.10 specific to replaying
+the actual fact content.)
+
+**Run B — synthetic 500-row fixture, n=100, 5 seeds** (intended as a clean
+null-control). It did **NOT** return ~0: `p_min` +0.89 vs `p_ctrl_sft` −0.003.
+The lab synthetic generator emits a rigid template
+("synthetic context N domain X variant Y" → "expected-NNNNN"); train and eval
+rows are row-id-disjoint but share the identical template, so replay teaches the
+low-entropy format and it transfers to held-out rows. **Lesson: row-id
+disjointness does not guarantee a clean null when content shares a template —
+the replay-vs-neutral-SGD design is itself confounded by template/format
+transfer.**
+
+**Refined verdict.** The residual ~+0.10 on real facts is robust under power, but
+**cannot be attributed to genuine consolidation**: Run B shows that shared
+surface structure alone produces a (large) spurious `p_min − p_ctrl_sft` gap, and
+the 20 hand-authored facts share cloze structure too. A clean framework-C test
+therefore needs (a) a real ≥200-row corpus of **independent** facts (no shared
+template), (b) the `p_min − p_ctrl_sft` estimator, AND (c) a template-matched
+control to subtract format transfer. Item (a) requires the absent FineFab corpus
+— so the candidate stays **non-adjudicable** here, and the eval design needs the
+extra (c) control regardless. (Synthetic/toy results above are
+pipeline/mechanism only — never framework-C empirical claims.)
+
 ## Provenance
 
 Diagnosed while attempting to power the 1.5B pilot on the kxkm RTX 4090
