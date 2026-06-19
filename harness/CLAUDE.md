@@ -16,8 +16,9 @@ the stratified eval matrix, registers runs with a deterministic
 - `benchmarks/retained/` — retained-knowledge benchmark (currently
   synthetic placeholder). Ships with `items.jsonl.sha256` —
   integrity is checked on load.
-- `cli/dream_harness` — `uv run dream-harness …` entrypoint
-  (declared in `pyproject.toml`, see `[project.scripts]`).
+- `cli/` — CLI entrypoint (`uv run dream-harness`) declared in
+  `pyproject.toml [project.scripts]` but **not yet implemented**;
+  the `cli/` directory does not exist on disk.
 
 ## Anti-patterns specific to the harness
 
