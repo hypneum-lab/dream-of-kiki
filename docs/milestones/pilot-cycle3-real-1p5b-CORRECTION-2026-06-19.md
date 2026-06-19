@@ -162,6 +162,34 @@ control to subtract format transfer. Item (a) requires the absent FineFab corpus
 extra (c) control regardless. (Synthetic/toy results above are
 pipeline/mechanism only — never framework-C empirical claims.)
 
+## Blast radius
+
+Audit of every COMMITTED artefact that touches `mega_v2` (2026-06-19). The
+leak is specific to the `harness/real_benchmarks/mega_v2_eval.py` loader with
+`fold ∈ {train, eval}` at `n_samples > corpus/2` over the missing-fixture
+20-row fallback. It is contamination iff a run *scored* `mega_v2` on that
+held-out fold at `n_samples > 20`.
+
+| Artefact | uses `mega_v2`? | path / `n_samples` | contaminated? |
+|---|---|---|---|
+| `pilot-cycle3-real-1p5b.{json,md}` (2026-06-04, GO) | yes, real loader `fold=eval` | `n_samples=100`, 20-row fallback, pre≈0.3297 const | **YES** |
+| `pilot-cycle3-real-7b.json` (2026-04-20, GO, scaling-law) | yes, real loader `fold=eval` | `n_samples=100`, 20-row fallback, pre≈0.3649 const | **YES** |
+| `scaling-law-analysis-2026-04-20.md` (1.5B vs 7B finding) | yes (derives from the two pilots above) | `n=100`, 10 seeds | **YES** (derived) |
+| `pilot-cycle3-sanity-1p5b.{json,md}` | no (`eval_proxy=mmlu_logit_bias`, `status=plan-only`) | mmlu only, no mega | no |
+| 35B Path A* (G6, STATUS 2026-05-04) | no — scored **MMLU**, ABANDONED ~30/100 | never completed, no mega_v2 cell | no (never ran mega) |
+| `ablation-results.{json,md}`, `g2-pmin-report`, `g4-pequ-report`, `g5-publication-ready`, `g6-cycle2-decision`, `cross-substrate-results` | "mega-v2" only as the **synthetic 500-item stratified placeholder** via `harness/benchmarks/mega_v2/adapter.py::load_megav2_stratified` (no train/eval fold, different module) | 500 synthetic items, balanced | no (different code path, no fold leak) |
+| Vision / CL-retention ladder: G4-quater..septimo, G5/G5-bis/G5-ter, DR-4 refutation | **no** | Split-FMNIST / Split-CIFAR-10 / Split-CIFAR-100 / Split-Tiny-ImageNet × {3/5-layer MLP, small/medium CNN} (fields `h6a_cifar100`, `h6b_tiny_imagenet`); zero `mega_v2` occurrences | **UNAFFECTED** |
+
+**Verdict.** Only the two cycle-3 *real* pilots that completed-and-scored
+`mega_v2` on the held-out fold are contaminated: the **1.5B (2026-06-04 GO)**
+and the **7B (2026-04-20 scaling-law GO)**, plus the scaling-law note derived
+from them. The **35B Path A\* never scored `mega_v2`** (it ran MMLU and was
+abandoned ~30/100). The older synthetic-`mega-v2` ablations use a separate
+500-item stratified loader with no train/eval fold and are not affected. The
+**vision / CL-retention ladder is clean** — it evaluates Split-FMNIST/CIFAR/
+Tiny-ImageNet retention, never `mega_v2`, so the DR-4 empirical-emptiness
+refutation across that ladder stands.
+
 ## Provenance
 
 Diagnosed while attempting to power the 1.5B pilot on the kxkm RTX 4090

@@ -21,6 +21,7 @@ import hashlib
 import json
 import logging
 import random
+import warnings
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Iterator
@@ -353,9 +354,17 @@ def _load_mega_v2_records(
       genuine generalisation signal.
 
     For the train/eval folds, the loader requires the corpus to
-    contain ``2 * n_samples`` rows ; smaller corpora (e.g. the
-    hand-authored fallback at 20 rows) fall back to cycled sampling
-    that still keeps the two folds disjoint at the index level.
+    contain at least ``2 * n_samples`` rows so the two folds are
+    disjoint at the *content* level. If the corpus is smaller it
+    **raises** ``ValueError`` rather than silently cycling rows into
+    both folds — the old cycling behaviour produced a train/eval
+    content leak (cf. ``docs/milestones/
+    pilot-cycle3-real-1p5b-CORRECTION-2026-06-19.md``). Supply a real
+    fixture with ``>= 2 * n_samples`` rows for a valid held-out split.
+
+    For ``fold == "all"`` a corpus smaller than ``n_samples`` still
+    cycles with repeats (less harmful — there is no train/eval
+    contrast) but emits a ``warnings.warn`` so the repeat is visible.
     """
     def _materialise(raws: list[dict[str, Any]]) -> list[MegaV2EvalRecord]:
         rng = random.Random(seed)
@@ -366,29 +375,40 @@ def _load_mega_v2_records(
             if len(shuffled) >= n_samples:
                 selected = shuffled[:n_samples]
             else:
+                # Cycling-with-repeats is tolerable here (no
+                # train/eval contrast) but worth flagging so the
+                # caller knows the sample contains duplicates.
+                warnings.warn(
+                    f"mega_v2 fold='all' : corpus has "
+                    f"{len(shuffled)} rows < n_samples={n_samples} ; "
+                    "sampling with repeats. Supply a larger fixture "
+                    "to avoid duplicate records.",
+                    stacklevel=2,
+                )
                 selected = [
                     shuffled[i % len(shuffled)]
                     for i in range(n_samples)
                 ]
         elif fold in ("train", "eval"):
             # Deterministic 2-block split : first n_samples → train,
-            # next n_samples → eval. Train + eval are disjoint at the
-            # index level even when the underlying corpus is cycled.
+            # next n_samples → eval. A *content*-disjoint split needs
+            # the corpus to hold >= 2*n_samples distinct rows ; a
+            # smaller corpus can only be made index-disjoint by
+            # cycling, which leaks identical content into both folds
+            # (the 2026-06 1.5B/7B pilot fixture leak). Fail loud
+            # instead of silently cycling.
             total_needed = 2 * n_samples
-            if len(shuffled) >= total_needed:
-                block = shuffled[:total_needed]
-            else:
-                # Cycle deterministically ; the disjoint-index
-                # property is preserved because train draws indices
-                # [0, n_samples) and eval draws [n_samples,
-                # 2*n_samples). If the underlying corpus is smaller
-                # than n_samples, some raw rows inevitably appear in
-                # both folds, but their positions in the fold block
-                # remain disjoint.
-                block = [
-                    shuffled[i % len(shuffled)]
-                    for i in range(total_needed)
-                ]
+            if len(shuffled) < total_needed:
+                raise ValueError(
+                    f"mega_v2 fold={fold!r} : corpus has "
+                    f"{len(shuffled)} rows but a disjoint "
+                    f"train/eval split at n_samples={n_samples} "
+                    f"needs >= {total_needed} rows. Cycling would "
+                    "leak identical content into both folds "
+                    "(train/eval contamination). Supply a real "
+                    f"fixture with >= {total_needed} rows."
+                )
+            block = shuffled[:total_needed]
             if fold == "train":
                 selected = block[:n_samples]
             else:
