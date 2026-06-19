@@ -180,6 +180,8 @@ def test_evaluate_hellaswag_returns_accuracy_dict(tmp_path: Path) -> None:
 def test_evaluate_mega_v2_returns_accuracy_dict(tmp_path: Path) -> None:
     """``evaluate_mega_v2`` returns ``{accuracy, nll, n}`` with finite values."""
     fixture = tmp_path / "mv2.jsonl"
+    # >= 2*n_samples rows so the default fold="eval" can carve a
+    # *content*-disjoint train/eval split (n_samples=3 needs 6 rows).
     rows = [
         {
             "id": "mv2-0001",
@@ -198,6 +200,24 @@ def test_evaluate_mega_v2_returns_accuracy_dict(tmp_path: Path) -> None:
             "context": "Water freezes at zero degrees",
             "expected": " Celsius.",
             "domain": "science",
+        },
+        {
+            "id": "mv2-0004",
+            "context": "The opposite of up is",
+            "expected": " down.",
+            "domain": "language",
+        },
+        {
+            "id": "mv2-0005",
+            "context": "A triangle has three",
+            "expected": " sides.",
+            "domain": "math",
+        },
+        {
+            "id": "mv2-0006",
+            "context": "The largest planet is",
+            "expected": " Jupiter.",
+            "domain": "astronomy",
         },
     ]
     with fixture.open("w", encoding="utf-8") as fh:
@@ -301,3 +321,87 @@ def test_mega_v2_evaluator_uses_builtin_fallback(tmp_path: Path) -> None:
         mv2_mod._DEFAULT_MEGA_V2_FALLBACK = original
     assert result["n"] == 3
     assert np.isfinite(result["nll"])
+
+
+# --------------------------------------------------------------------------
+# Guard : disjoint train/eval split requires >= 2*n_samples rows.
+# Regression for the 2026-06 mega_v2 fixture leak (CORRECTION note).
+# --------------------------------------------------------------------------
+
+
+def _write_mega_rows(dst: Path, n: int) -> None:
+    with dst.open("w", encoding="utf-8") as fh:
+        for i in range(n):
+            fh.write(
+                json.dumps(
+                    {
+                        "id": f"mv2-{i:04d}",
+                        "context": f"context {i}",
+                        "expected": f" answer {i}",
+                        "domain": "math",
+                    }
+                )
+                + "\n"
+            )
+
+
+@pytest.mark.parametrize("fold", ["train", "eval"])
+def test_load_mega_v2_raises_on_small_corpus_for_disjoint_fold(
+    tmp_path: Path, fold: str
+) -> None:
+    """``fold in {train, eval}`` with corpus < 2*n_samples raises.
+
+    Silently cycling a small corpus into both folds is the root
+    cause of the 2026-06 1.5B/7B fixture leak (see
+    ``docs/milestones/pilot-cycle3-real-1p5b-CORRECTION-2026-06-19.md``):
+    train and eval then share identical content. The guard must fail
+    loud instead.
+    """
+    from harness.real_benchmarks.mega_v2_eval import _load_mega_v2_records
+
+    fixture = tmp_path / "mv2_small.jsonl"
+    _write_mega_rows(fixture, n=10)  # < 2*8 = 16
+    with pytest.raises(ValueError, match="disjoint train/eval split"):
+        _load_mega_v2_records(
+            n_samples=8, seed=0, fixture_path=fixture, fold=fold
+        )
+
+
+@pytest.mark.parametrize("fold", ["train", "eval"])
+def test_load_mega_v2_disjoint_fold_ok_when_corpus_large_enough(
+    tmp_path: Path, fold: str
+) -> None:
+    """With >= 2*n_samples rows the split is carved without error and
+    the two folds share no record ids."""
+    from harness.real_benchmarks.mega_v2_eval import _load_mega_v2_records
+
+    fixture = tmp_path / "mv2_big.jsonl"
+    _write_mega_rows(fixture, n=20)  # >= 2*8 = 16
+    train = _load_mega_v2_records(
+        n_samples=8, seed=0, fixture_path=fixture, fold="train"
+    )
+    eval_ = _load_mega_v2_records(
+        n_samples=8, seed=0, fixture_path=fixture, fold="eval"
+    )
+    assert len(train) == 8
+    assert len(eval_) == 8
+    train_ids = {r.id for r in train}
+    eval_ids = {r.id for r in eval_}
+    # Content-disjoint : no record id appears in both folds.
+    assert train_ids.isdisjoint(eval_ids)
+
+
+def test_load_mega_v2_fold_all_warns_on_small_corpus(
+    tmp_path: Path,
+) -> None:
+    """``fold='all'`` keeps working on a small corpus but warns about
+    the cycling-with-repeats (less harmful — no train/eval contrast)."""
+    from harness.real_benchmarks.mega_v2_eval import _load_mega_v2_records
+
+    fixture = tmp_path / "mv2_tiny.jsonl"
+    _write_mega_rows(fixture, n=3)
+    with pytest.warns(UserWarning, match="sampling with repeats"):
+        records = _load_mega_v2_records(
+            n_samples=5, seed=0, fixture_path=fixture, fold="all"
+        )
+    assert len(records) == 5
