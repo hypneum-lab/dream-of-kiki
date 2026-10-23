@@ -23,8 +23,9 @@ extended with the paired procedures of §2.
 (200 rows, SHA-256 `2ab581dc…0a979`), split into item-disjoint
 tuning and confirmatory partitions (§5). There is no `mega_v2`.
 **Compute:** 141 confirmatory seeds × 9 profiles = 1,269 cells, plus
-10 tuning seeds × 6 configurations × 3 tuned arms = 180 tuning
-cells; **1,449 cells** in total (§5, §9).
+10 tuning seeds × 6 configurations × 2 tuned arms = 120 tuning
+cells, plus 3 smoke seeds × 9 profiles = 27 smoke cells;
+**1,416 cells** in total (§5, §9).
 **Power script:** `scripts/prereg_power_2026_10.py` (§3).
 **Lock commit:** *(filled by introducing commit hash at filing)*
 **Lock timestamp:** *(filled at filing, pre-run)*
@@ -63,14 +64,25 @@ the items each seed is scored on (`_cell_split`), and in this
 revision also come from the same item-disjoint partition (§5). Any
 eval gain from replay is therefore transfer from **other** items: it
 can come from answer-format adaptation, domain text, or learning to
-emit correct answers in general. H14-A isolates the last of these
-from the first two; it does not test recall of the scored facts.
+emit correct answers in general. H14-A compares answer-containing
+replay with prompt-only replay. It does **not** separate answer
+format from answer content (the prompt-only control sees no
+completions at all), and it does not test recall of the scored facts.
+
+**Scope.** All conclusions are about this experiment: Qwen3.6-35B-A3B
+on the partitioned MMLU / HellaSwag fixtures. The 2026-06-19 residual
+was measured on hand-authored mega_v2 facts with a 1.5B model and a
+different endpoint. This study motivates, but cannot adjudicate, the
+mechanism of that historical residual.
 
 ## §2 Hypotheses (confirmatory)
 
 **Unit and pairing.** Unit = seed. Within a seed every profile uses
-the same replay / eval split, the same eval items for pre and post,
-and starts from the same restored base weights. All contrasts are
+the same replay / eval split, the same eval items for pre and post
+(except `p_noise`, whose post-evaluation uses the disjoint draw
+`_cell_split(seed + 9973)` by design, to measure item-sampling noise;
+`p_noise` enters no confirmatory contrast), and starts from the same
+restored base weights. All contrasts are
 **paired by seed**: for contrast (X, Y) the analysed quantity is
 `D_s = Δ_s(X) − Δ_s(Y)`, with `Δ = post − pre` on the composite.
 
@@ -105,11 +117,14 @@ paired helper with tests is a required pre-filing task (§9).
 **Family.** Three hypotheses, Bonferroni α = 0.05 / 3 = **1/60
 ≈ 0.0167** (same α as the E1 harness).
 
-- **H14-A (answer-supervision specificity over format)** —
-  `p_min` vs `p_ctrl_template` (format-only control, §5).
+- **H14-A (answer-containing vs prompt-only replay)** —
+  `p_min` vs `p_ctrl_template` (prompt-only control, §5).
   Primary claim: superiority.
-- **H14-B (dream ops beyond tuned replay)** — `p_equ` vs
-  `p_ctrl_vanilla_replay_tuned`. Primary claim: superiority.
+- **H14-B (DOWNSCALE on top of tuned replay)** — `p_equ` vs
+  `p_ctrl_vanilla_replay_tuned`. Both use the **same** tuned replay
+  configuration and the identical update sequence (§5); the only
+  difference is the DOWNSCALE step after replay. Primary claim:
+  superiority.
 - **H14-C (non-inferiority to on-policy replay)** — `p_equ` vs
   `p_ctrl_onpolicy_replay`. Primary claim: non-inferiority at δ.
 
@@ -132,15 +147,26 @@ For H14-C:
 |---|---|
 | UNINTERPRETABLE | a validity gate of §4 / §6 fails for this contrast |
 | NON-INFERIOR | `L > −δ` |
-| INFERIOR | `U < −δ` (worse than OPR by more than δ) |
+| INFERIOR (exploratory) | `U < −δ` (worse than OPR by more than δ) |
 | INCONCLUSIVE | neither |
+
+**What SUPERIOR means.** `L > 0` establishes a positive population
+difference at level α; `D̄ ≥ δ` filters the **point estimate**.
+SUPERIOR reads "a positive effect whose estimate is at least δ",
+never "the population effect is at least δ".
+
+**Error accounting.** Each hypothesis spends α once. For H14-A/B the
+confirmatory conclusions are SUPERIOR (false only if the true μ ≤ 0)
+and BOUNDED-NO-GAIN (false only if μ ≥ δ); as δ > 0, at most one can
+be false for any μ. For H14-C only NON-INFERIOR is confirmatory;
+INFERIOR is exploratory and spends no α (both can be false at
+μ = −δ exactly). The family bound is 3α = 0.05.
 
 `U < 0` in H14-A/B, and the paired TOST in H14-C, are reported as
 secondary results; no harm or equivalence conclusion is part of the
 confirmatory family. A non-significant superiority test never
 establishes absence: only BOUNDED-NO-GAIN does (and only below δ).
-INFERIOR is a positive finding with its own bound; failing to show
-non-inferiority alone is INCONCLUSIVE, not inferiority.
+Failing to show non-inferiority is INCONCLUSIVE, not inferiority.
 
 Secondary (reported, outside the family, nominal α = 0.05, same
 state rules): every dream profile (`p_min`, `p_equ`, `p_max`)
@@ -249,14 +275,15 @@ index (`torch.argmax`); this rule applies to eval and to OPR reward.
 **Profiles** (9 per confirmatory seed):
 - Existing, token-matched: `p_min`, `p_equ`, `p_max`, `p_ctrl_sft`,
   `p_ctrl_shuffle`, `p_noise` (no updates; the noise floor).
-- **`p_ctrl_template` (format-only control)** — the same replay
+- **`p_ctrl_template` (prompt-only control)** — the same replay
   items, but each replay text is the **prompt only** (MMLU
   `question + "\nAnswer:"`; HellaSwag `ctx`), with no answer tokens.
   It trains on the identical template and question text without any
-  answer supervision, true or false. It is cycled to T_s. (A
-  random-answer control was rejected: three times out of four it
-  teaches a false answer, so beating it could reflect avoiding
-  harmful updates rather than content.)
+  answer completion, true or false. It is cycled to T_s. It does not
+  hold completion-format exposure constant, so H14-A is read only as
+  "answer-containing vs prompt-only replay" (§1). (A random-answer
+  control was rejected: three times out of four it teaches a false
+  answer, so beating it could reflect avoiding harmful updates.)
 - **`p_ctrl_vanilla_replay_tuned`** — `p_min`'s corpus with LR and m
   set by tuning.
 - **`p_ctrl_onpolicy_replay` (OPR)** — for each replay prompt, the
@@ -271,15 +298,18 @@ index (`torch.argmax`); this rule applies to eval and to OPR reward.
 
 **Tuning.** Grid LR ∈ {3e-5, 1e-4, 3e-4} × m ∈ {2, 5} (6
 configurations), tuning seeds 1000-1009 on the tuning partition.
-**Per-arm** selection: each of `p_ctrl_vanilla_replay_tuned`,
-`p_equ` and `p_ctrl_onpolicy_replay` independently selects the
+Two independent selections: (i) vanilla replay (`p_min`'s corpus,
+no DOWNSCALE) and (ii) `p_ctrl_onpolicy_replay`. Each selects the
 configuration with the highest mean composite Δ over the 10 tuning
 seeds; ties (within 1e-9) go to the lower LR, then the smaller m.
-10 × 6 × 3 = 180 tuning cells. The three selections and the SD_D
-estimates are frozen in a dated amendment **before** the first
-confirmatory seed runs. `p_min`, `p_max` and the other controls keep
-the defaults (LR 1e-4, m = 5); `p_equ` uses its tuned configuration
-in every confirmatory cell, including secondary contrasts.
+10 × 6 × 2 = 120 tuning cells. **`p_equ` is not tuned separately**:
+it uses selection (i), so `p_equ` and `p_ctrl_vanilla_replay_tuned`
+share LR, m and the update sequence and differ only by DOWNSCALE
+(this is what makes H14-B a DOWNSCALE ablation). The two selections
+and the SD_D estimates are frozen in a dated amendment **before** the
+first confirmatory seed runs. `p_min`, `p_max` and the other
+controls keep the defaults (LR 1e-4, m = 5); `p_equ` uses selection
+(i) in every confirmatory cell, including secondary contrasts.
 
 **Fixed run knobs:** `HL_NSAMPLES = 50`, `HL_NREPLAY = 20`, seeds
 0-140, tuning seeds 1000-1009, smoke seeds 2000-2002 (tuning
@@ -306,14 +336,14 @@ has a reading:
 
 | Hypothesis | State | Reading |
 |---|---|---|
-| H14-A | SUPERIOR | Correct-answer supervision transfers beyond format and question exposure by ≥ δ. The 2026-06-19 residual is not only format. |
-| H14-A | POSITIVE-BELOW-SESOI | Detectable but below δ; reported, no claim. |
-| H14-A | BOUNDED-NO-GAIN | Answer supervision adds less than δ over format-only replay: the residual is attributed to format / question exposure (bounded). Candidate closed with a dated milestone. |
-| H14-B | SUPERIOR | DOWNSCALE (with tuned replay) beats tuned vanilla replay by ≥ δ at matched tokens. |
-| H14-B | POSITIVE-BELOW-SESOI | Detectable but below δ; reported, no claim. |
-| H14-B | BOUNDED-NO-GAIN | DOWNSCALE adds less than δ over tuned vanilla replay. Consistent with a REPLAY-only active core at the LLM tier. |
+| H14-A | SUPERIOR | In this experiment, answer-containing replay improves the composite over prompt-only replay at matched tokens (positive effect, estimate ≥ δ). Answer format and answer content are not separated. |
+| H14-A | POSITIVE-BELOW-SESOI | Positive, with an estimate below δ; reported, no claim. |
+| H14-A | BOUNDED-NO-GAIN | In this experiment, answer-containing replay adds less than δ over prompt-only replay. No statement about the 2026-06-19 mega_v2 residual. |
+| H14-B | SUPERIOR | Adding DOWNSCALE to tuned vanilla replay (same configuration and updates) improves the composite (positive effect, estimate ≥ δ). |
+| H14-B | POSITIVE-BELOW-SESOI | Positive, with an estimate below δ; reported, no claim. |
+| H14-B | BOUNDED-NO-GAIN | DOWNSCALE adds less than δ to tuned vanilla replay in this setting. Consistent with a REPLAY-only active core at this tier. |
 | H14-C | NON-INFERIOR | `p_equ` is not worse than restricted MC-OPR by δ or more. |
-| H14-C | INFERIOR | `p_equ` is worse than restricted MC-OPR by more than δ. |
+| H14-C | INFERIOR (exploratory) | Exploratory: `p_equ` appears worse than restricted MC-OPR by more than δ. |
 | any | INCONCLUSIVE | Inconclusive at n = 141 for this contrast; no claim either way. |
 | any | UNINTERPRETABLE | Validity gate failed; reported descriptively only. |
 
@@ -322,9 +352,9 @@ other combination):
 
 | # | Condition | Headline | EC / FC |
 |---|---|---|---|
-| J1 | A = SUPERIOR ∧ B = SUPERIOR ∧ C = NON-INFERIOR | First non-artefact LLM-tier framework-C signal: answer-specific, beyond tuned replay, not worse than restricted OPR. Candidate evidence needing replication. | EC stays PARTIAL ; FC unchanged |
-| J2 | A = SUPERIOR ∧ B = BOUNDED-NO-GAIN | Replay content matters; DOWNSCALE adds < δ over tuned replay. No DR-4 support at the LLM tier. | unchanged |
-| J3 | A = BOUNDED-NO-GAIN | The 2026-06-19 residual is format / question exposure within δ. Candidate closed. | unchanged |
+| J1 | A = SUPERIOR ∧ B = SUPERIOR ∧ C = NON-INFERIOR | Candidate LLM-tier framework-C signal on this benchmark pair: answer-containing replay beats prompt-only replay, DOWNSCALE adds to tuned replay, and the dream arm is not worse than restricted MC-OPR. Needs replication before any EC promotion. | EC stays PARTIAL ; FC unchanged |
+| J2 | A = SUPERIOR ∧ B = BOUNDED-NO-GAIN | Answer-containing replay helps; DOWNSCALE adds < δ to tuned replay. No DR-4 support at this tier in this setting. | unchanged |
+| J3 | A = BOUNDED-NO-GAIN | In this setting, answer-containing replay adds < δ over prompt-only replay. The mega_v2 candidate is **not** closed by this result; closing it needs a replication on that task. | unchanged |
 | J4 | any other combination | No joint headline; per-hypothesis readings only. | unchanged |
 
 ## §8 Reporting commitment and stopping rule
@@ -359,12 +389,22 @@ snapshot holds another ≈ 70 GB of host RAM, and every cell restores
 length; ≈ 100-200 for fact corpora at m = 5, more for the short
 `p_ctrl_sft` texts), + one 70 GB restore. Wall per cell and peak
 memory are unmeasured at 35B. The smoke on the filing hardware
-(seeds 2000-2002, all 9 profiles, tuning partition) must record
-per-cell wall, `torch.cuda.max_memory_allocated` per device and host
-RSS, and project the 1,449-cell total. The projection goes into the
+(seeds 2000-2002, all 9 profiles = 27 cells, tuning partition) must
+record per-cell wall, `torch.cuda.max_memory_allocated` per device
+and host RSS, achieved tokens and update counts. Because tuning-
+partition seeds use fewer eval items (24 MMLU + 40 HellaSwag instead
+of 50 + 50) and their own T_s, the projection to the 1,416 cells
+scales each component by the actual confirmatory workload (scoring
+forwards, update tokens, restores), not by cell count. The projection goes into the
 filed version. If it exceeds the available budget, the PI changes
 hardware or amends the design **before filing**; N is never reduced
 after filing.
+
+**Filing gate.** This draft is not filed until tasks 1-6 below are
+merged at a pinned commit with passing tests, the decision code has
+been run on synthetic paired data covering every §2 state and §7
+row, the smoke has run, and its measurements, the hardware and the
+HF revision hash are written into the filed version.
 
 **Required pre-filing code tasks** (each with unit tests):
 1. Paired NI / TOST / bound helper (e.g.
