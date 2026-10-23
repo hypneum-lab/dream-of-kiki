@@ -58,7 +58,7 @@ AER, and Liu 2024 HNN** as adjacent prior art and engages the
 `aristotelianprh2026` arXiv:2602.14486). DR-3 substrate-agnosticism
 is now explicitly anchored to the **local** form of PRH — mutual-kNN
 against a capacity-matched random baseline, per nerve-wml empirical
-evidence — rather than the unqualified global form. DVNC is
+evidence — rather than the unqualified global form. *Superseded wording (2026-10-23): DR-3 is now anchored to relational structure, not metric geometry (Paper 1 §8.4), and the 18.8× baseline is two i.i.d. Gaussian matrices (nerve-wml v1.9.0 script), not a capacity-matched or label-matched null.* DVNC is
 positioned as a special case of nerve-wml's general portability. NIR
 and AER are classified as orthogonal layers that could compile to
 an E-SNN substrate without altering DR-0..DR-4.
