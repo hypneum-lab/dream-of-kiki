@@ -224,6 +224,13 @@ dans notre analyse des paires d'opérations (voir
 downscale est **commutative mais non idempotente** (shrink_f ∘
 shrink_f donne facteur², pas facteur) — propriété qui contraint
 les choix d'ordonnancement canonique.
+Un modèle de replay inspiré du sommeil publié en 2026 montre
+qu'une unique phase de sommeil non supervisée, programmée après
+*plusieurs* tâches séquentielles, les restaure toutes, la plupart
+des synapses étant affaiblies et une minorité renforcée
+[@bazhenov2026notjustafterone] — une instance computationnelle du
+couplage replay-plus-downscale que décrivent conjointement les
+piliers A et B.
 
 ### 3.3 Pilier C — Rêve créatif Hobson / Solms
 
@@ -234,7 +241,14 @@ matériel émotionnellement significatif [@hobson2009rem;
 échantillonnage de style modèle génératif à partir d'une
 représentation latente des expériences récentes, produisant des
 combinaisons nouvelles qui sondent les frontières de la structure
-apprise. Dans notre framework, ceci se projette sur l'opération
+apprise. L'EEG haute densité chez l'humain montre que la
+réactivation verrouillée sur les complexes oscillation lente–
+fuseau en NREM et la réactivation pendant le REM phasique sont
+dissociables, la première soutenant la consolidation mnésique et
+la seconde la dissipation émotionnelle
+[@zhang2026nremremreactivation] — ce qui va dans le sens
+d'opérateurs distincts par stade plutôt que d'un processus unique
+d'« intégration ». Dans notre framework, ceci se projette sur l'opération
 `recombine` : échantillonner les latents du snapshot δ, appliquer
 un VAE allégé ou un noyau d'interpolation, émettre de nouveaux
 échantillons latents sur le canal 2.
@@ -995,6 +1009,9 @@ revendiquer de parité empirique.
 | Famille JEPA [LeCun 2022 « A Path Towards Autonomous Machine Intelligence » ; Assran et al. 2023 I-JEPA ; Bardes et al. 2024 V-JEPA ; AMI Labs 2026] | Entraînement de modèles du monde prédictifs auto-supervisés sur des latents par embeddings joints ; « modèles du monde qui apprennent du réel, pas du langage » | Candidat substrat complémentaire : JEPA réalise la primitive `restructure` (Pilier D / FEP) à grande échelle sur des représentations latentes, sans contrepartie native explicite de `replay` ou `downscale`. Un parcours de conformité sur un substrat de classe JEPA (p. ex. encodeur vidéo V-JEPA avec ajout d'un tampon épisodique β et d'un downscale homéostatique) relève explicitement du cycle 2 ; le motif de portabilité inter-substrats démontré ici sur MLX + E-SNN est destiné à généraliser vers une telle configuration. |
 | @alfarano2024wakesleep (WSCL, Sorrenti et al. 2023) | Système d'apprentissage complémentaire veille/sommeil avec consolidation NREM explicite et rêve REM ; transfert direct REM positif | Nous axiomatisons les opérations de phase de façon agnostique au substrat (DR-0..DR-4 + Conformance Criterion + DR-3) plutôt que de figer une architecture veille-sommeil ; ablation empirique reportée au Paper 2 |
 | @robinson2022continual (NREM/REM + downscaling synaptique) | Trois mécanismes de sommeil mammifère — replay NREM véridique, replay génératif REM, downscaling synaptique — réduisent conjointement l'oubli catastrophique | Nos quatre opérations typées (replay, downscale, restructure, recombine) généralisent ce triplet en primitives composables sous un Conformance Criterion exécutable ; recombine est un générateur sémantiquement indépendant absent du triplet |
+| @zahn2026discoverydreaming (recombinaison inter-domaines, 2026) | Le replay recombinatoire inter-domaines améliore les performances en aval, à la fois dans un pipeline d'affinage LoRA et dans un moteur symbolique ; la répétition intra-domaine non | Soutien indépendant à `recombine` comme générateur distinct, et marqueur de portée de son effet attendu : transfert inter-domaines plutôt que rétention intra-domaine (l'échelle d'ablation DR-4 du Paper 2 utilise des flux class-incrémentaux mono-domaine) |
+| @dey2026sharp (SHARP) ; @bazhenov2026notjustafterone | Phases hors ligne rejouant des traces à haute vitesse et les fusionnant en représentations de plus haut niveau ; une unique phase de sommeil après plusieurs tâches séquentielles qui les restaure toutes par une plasticité majoritairement affaiblissante | Instances concrètes de `replay` suivi d'un `restructure` modifiant la hiérarchie (l'ordre admissible sous DR-2) et du couplage `replay` + `downscale`, respectivement |
+| @zhang2026silentreplay (replay dans les degrés de liberté silencieux) | Replay écrit dans les synapses que l'entrée courante laisse silencieuses ; égale la répétition hors ligne sur split-MNIST sans phase hors ligne | Remet en cause l'hypothèse qu'une phase temporellement séparée est nécessaire ; un tel substrat exigerait des frontières d'épisode de rêve logiques (journal DR-0) plutôt que temporelles — question de conformité ouverte, non traitée ici |
 
 Nos traits distinctifs par rapport à ce qui précède : **(a)** un
 framework *formel* unifié couvrant les quatre piliers avec un

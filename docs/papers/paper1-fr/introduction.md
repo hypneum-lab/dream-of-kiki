@@ -103,7 +103,14 @@ cet écart — *Wake-Sleep Consolidated Learning* [Alfarano et al.
 2024] est, à notre connaissance, l'analogue dual-phase NREM/REM
 publié le plus proche, et la proposition contemporaine *Language
 Models Need Sleep* couple une distillation ascendante par RL avec
-un oubli intentionnel [Behrouz et al. 2026]. Les substrats
+un oubli intentionnel [Behrouz et al. 2026]. En affinage continu
+de LLM, rejouer les propres sorties du modèle courant sur des
+invites passées réduit l'oubli par rapport à un replay classique
+réglé [Chen et al. 2026], et l'auto-distillation a été proposée
+comme substitut de replay [Shenfeld et al. 2026], bien que
+l'auto-distillation on-policy puisse aussi amplifier la dérive et
+s'effondrer en post-entraînement continu [Wang et al. 2026]. Les
+substrats
 neuromorphiques montrent la même convergence : CLP-SNN sur Loihi 2
 rapporte un facteur 70× de vitesse et 5 600× d'efficacité
 énergétique sur des baselines GPU pour la réactivation hors ligne

@@ -95,7 +95,13 @@ Consolidated Learning* [@alfarano2024wakesleep] is, to our
 knowledge, the closest published NREM/REM dual-phase analog, and
 the contemporaneous *Language Models Need Sleep* proposal couples
 RL-based upward distillation with intentional forgetting
-[@iclr2026lmsleep]. Neuromorphic substrates show the same
+[@iclr2026lmsleep]. In continual LLM fine-tuning, replaying the
+current model's own outputs on past prompts reduces forgetting
+relative to tuned vanilla replay [@chen2026onpolicyreplay], and
+self-distillation has been proposed as a replay proxy
+[@shenfeld2026selfdistil], although on-policy self-distillation
+can also amplify drift and collapse under continual post-training
+[@wang2026denserneqbetter]. Neuromorphic substrates show the same
 convergence: CLP-SNN on Loihi 2 reports 70× speed and 5,600×
 energy efficiency over GPU baselines for offline replay
 [@hajizada2025clpsnn]. Three communities, one architectural

@@ -1317,6 +1317,17 @@ category-(a) reclassification holds. See
 `docs/proofs/dream2learn-dr3-separation.md` §5 for the three
 triggers that would force a revisit.
 
+A related caveat applies to frozen-generator replay in general,
+and to the latent-diffusion substrate under development (Wave
+3b) once its ablation lands : mixing synthetic old-class
+samples from a frozen text-to-image model with real new-class
+data can let the classifier learn a synthetic-versus-real
+*domain shortcut* rather than the old classes
+[@zhang2026domainshortcut]. Any future retention gain from
+diffusion-generated replay should therefore be reported together
+with a synthetic-versus-real probe on the classifier features.
+No such run exists yet ; this paragraph adds no result.
+
 ---
 
 ## Notes for revision

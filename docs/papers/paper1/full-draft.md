@@ -220,6 +220,12 @@ operation : multiplicative shrinkage of weights by a factor in
 downscale is **commutative but not idempotent** (shrink_f ∘
 shrink_f gives factor², not factor) — a property that constrains
 canonical ordering choices.
+A 2026 sleep-inspired replay model shows that a single
+unsupervised sleep phase scheduled after *several* sequential
+tasks restores all of them, with most synapses weakened and a
+minority strengthened [@bazhenov2026notjustafterone] — a
+computational instance of the replay-plus-downscale coupling
+that Pillars A and B jointly describe.
 
 ### 3.3 Pillar C — Hobson / Solms creative dreaming
 
@@ -229,7 +235,13 @@ emotionally significant material [@hobson2009rem; @solms2021revising].
 The mechanism is hypothesized to be a generative-model-style
 sampling from a latent representation of recent experiences,
 producing novel combinations that probe the boundaries of
-learned structure. In our framework, this maps to the
+learned structure. Human high-density EEG shows that
+reactivation time-locked to NREM slow-oscillation–spindle
+complexes and reactivation during phasic REM are dissociable,
+the former supporting memory consolidation and the latter
+emotional dissipation [@zhang2026nremremreactivation] —
+consistent with distinct operators per stage rather than a single
+"integration" process. In our framework, this maps to the
 `recombine` operation : sample latents from the δ snapshot,
 apply a VAE-light or interpolation kernel, emit new latent
 samples on canal 2.
@@ -1037,6 +1049,9 @@ claim empirical parity.
 | @liu2024hybrid (Advancing brain-inspired computing with hybrid neural networks, National Science Review 2024) | Survey arguing hybrid ANN/SNN systems are the path to brain-inspired computing | Canonical hybrid-neural-network anchor for our cross-substrate claim : our cycle-1 validation across an MLX dense substrate and a LIF spiking substrate is precisely a hybrid-neural-network configuration, and the executable Conformance Criterion supplies the contract such hybrids currently lack |
 | @alfarano2024wakesleep (WSCL, Sorrenti et al. 2023) | Complementary Learning System wake/sleep with explicit NREM consolidation and REM dreaming; reports positive REM forward-transfer | We axiomatise the phase operations substrate-agnostically (DR-0..DR-4 + Conformance Criterion + DR-3) rather than committing to a single wake-sleep architecture; empirical ablation deferred to Paper 2 |
 | @robinson2022continual (NREM/REM + synaptic downscaling) | Three mammalian sleep mechanisms — veridical NREM replay, generative REM replay, synaptic downscaling — jointly reduce catastrophic forgetting | Our four typed operations (replay, downscale, restructure, recombine) generalise this triplet as composable primitives under an executable Conformance Criterion; recombine is a semantically independent generator absent from the triplet |
+| @zahn2026discoverydreaming (cross-domain recombination, 2026) | Recombinatory replay across domains improves downstream performance in both a LoRA fine-tuning pipeline and a symbolic engine ; within-domain rehearsal does not | Independent support for `recombine` as a distinct generator, and a scope marker for its predicted effect : cross-domain transfer rather than within-domain retention (the Paper 2 DR-4 ablation ladder uses single-domain class-incremental streams) |
+| @dey2026sharp (SHARP) ; @bazhenov2026notjustafterone | Offline phases that replay traces at high speed and merge them into higher-level representations ; a single sleep phase after several sequential tasks that restores all of them through mostly-weakening plasticity | Concrete instances of `replay` followed by a hierarchy-modifying `restructure` (the DR-2-admissible order) and of the `replay` + `downscale` coupling, respectively |
+| @zhang2026silentreplay (replay in silent degrees of freedom) | Replay written into synapses that the current input leaves silent ; matches offline rehearsal on split-MNIST with no offline phase | Challenges the assumption that consolidation needs a temporally separate phase ; such a substrate would need dream-episode boundaries that are logical (DR-0 log) rather than temporal — an open conformance question, not addressed here |
 
 Our distinguishing features relative to the above : **(a)** a
 unified *formal* framework covering all four pillars with a
@@ -1065,26 +1080,32 @@ GammaThetaMultiplexer experiment ; the cross-substrate conformance
 matrix reported here (cycle 2 + 3) is the dreamOfkiki side of the
 same empirical bet.
 
-**The 2026 critiques and a global-versus-local refinement.** The PRH
+**The 2026 critiques and a structure-versus-geometry refinement.** The PRH
 has since been contested. @platoscave2026 report that cross-model
 representational alignment is fragile and degrades as model scale
 grows, and @aristotelianprh2026 show that the *global* convergence
 originally claimed is substantially a width/depth confounder : once
 alignment is null-calibrated against capacity-matched random baselines,
 only *local* neighbourhood structure survives as a genuine
-cross-substrate signal. We fold this into DR-3 rather than against it.
+cross-substrate signal. @you2026prhstructure refine this split : after
+calibration, the *relational structure* of representations converges at
+both local and global scales, whereas *metric geometry* does not, so the
+local-versus-global contrast partly confounds scale with
+structure-versus-geometry. @bangachev2026alignmentlinear further trace
+cross-model alignment to linearly encoded relations and show that it is
+sensitive to centering and normalisation, which an alignment probe must
+therefore fix in advance. We fold this into DR-3 rather than against it.
 Our substrate-agnosticism claim does not require that the MLX, E-SNN and
-LoRA substrates share one global representation ; it requires only that
-a *conformant* substrate preserves the *local* operational structure the
-Conformance Criterion checks — that the same consolidation operations,
-composed in the same order, produce neighbourhood-equivalent episode
-states. This is the local form of PRH, and it is the form the 2026
-evidence still supports. The companion nerve-wml probe
-[@saillant2026nervewml] is consistent with this reading : its
-mutual-kNN measurement is a local-neighbourhood metric reported against
-a capacity-matched random baseline, exactly the null-calibrated, local
-quantity @aristotelianprh2026 argue is the defensible one. DR-3 is
-therefore anchored to local, not global, representational convergence.
+LoRA substrates share one global representation or one metric geometry ;
+it requires only that a *conformant* substrate preserves the
+*relational* operational structure the Conformance Criterion checks —
+that the same consolidation operations, composed in the same order,
+produce neighbourhood-equivalent episode states. The companion nerve-wml
+probe [@saillant2026nervewml] is consistent with this reading : its
+mutual-kNN measurement is a relational, neighbourhood-level metric
+reported against a capacity-matched random baseline, the null-calibrated
+quantity these critiques treat as defensible. DR-3 is therefore anchored
+to relational structure, not metric geometry.
 
 ---
 
