@@ -1,7 +1,8 @@
 # G4-nono cross-domain RECOMBINE pre-registration
 
 **Status:** DRAFT — not yet filed on OSF (to be filed by the PI).
-**Date:** 2026-10-23 (revision 2 after independent review)
+**Date:** 2026-10-23 (revision 3: PI decisions of 2026-10-23 on N
+and ε applied)
 **Parent OSF:** 10.17605/OSF.IO/Q6JYN
 **Sister pre-regs (locked, not modified):**
 `docs/osf-prereg-g4-sexto-pilot.md` (H6-A, CIFAR-100),
@@ -16,7 +17,8 @@ are not edited).
 (class-incremental, no per-task label remap).
 **Benchmark:** Split-CIFAR-100-coarse two-domain stream (§5).
 **Design:** matched-block (seed = block), paired analysis (§2, §6).
-**Compute:** N = 30 seeds × 8 cells per seed = 240 cells (§5).
+**Compute:** N = 30 seeds × 8 cells per seed = 240 cells, or
+N = 95 (760 cells) if the pre-stated escalation rule fires (§3).
 **Power script:** `scripts/prereg_power_2026_10.py` (§3).
 **Lock commit:** *(filled by introducing commit hash at filing)*
 **Lock timestamp:** *(filled at filing, pre-driver-run)*
@@ -88,8 +90,9 @@ one-sided (1 − α) lower and upper confidence bounds for the mean of
   `J = 1 − 3 / (4(n − 1) − 1)` (Lakens 2013 average-SD form).
 - **g_z** (reported): `mean(D) / sd(D) × J`.
 
-**Margin.** ε = **0.01** (one percentage point of pairwise accuracy,
-raw units, fixed here). Below ε a change in CDPA or WDPA is declared
+**Margin.** ε = **0.005** (half a percentage point of pairwise
+accuracy, raw units; PI decision of 2026-10-23, half the previous
+draft's 0.01). Below ε a change in CDPA or WDPA is declared
 practically negligible for the DR-4 record. It is a substantive
 choice, not derived from data; power against it is tabulated in §3.
 
@@ -198,34 +201,65 @@ A true effect exactly at the floor (d_av = 0.5) is confirmed at most
 about half the time at any n; this is a property of an observed-
 effect floor, stated here so it is not read as a design flaw later.
 
-The raw floor `mean(D) ≥ ε` only bites when arm SDs are small. With
-r = 0.5, n = 30 and power shown by true d_av:
+The raw floor `mean(D) ≥ ε` (ε = 0.005) only bites when arm SDs are
+small. With r = 0.5, n = 30 and power shown by true d_av:
 
 | arm SD | d_av = 0.5 | 0.6 | 0.8 | 1.0 |
 |---|---|---|---|---|
-| 0.01 | 0.00 | 0.01 | 0.14 | 0.50 |
-| 0.02 | 0.44 | 0.66 | 0.93 | 0.99 |
-| 0.04 | 0.48 | 0.68 | 0.94 | 0.99 |
+| 0.005 | 0.00 | 0.01 | 0.14 | 0.50 |
+| 0.01 | 0.44 | 0.66 | 0.93 | 0.99 |
+| 0.02 | 0.48 | 0.68 | 0.94 | 0.99 |
 
-When the seed SD of CDPA is ≈ 0.01, a standardised effect of 0.5-0.8
-is only 0.005-0.008 accuracy points, i.e. below ε, and is by design
-not confirmable.
+When the seed SD of CDPA is ≈ 0.005, a standardised effect of 0.5-0.8
+is only 0.0025-0.004 accuracy points, i.e. below ε, and is by design
+not confirmable. From an arm SD of 0.01 upwards the raw floor barely
+changes the complete-rule power.
 
-**H12-C TOST** (true difference 0, ε = 0.01), power by SD of the
-paired WDPA difference:
+**"No practical effect" rules at ε = 0.005** (true difference 0):
+H12-C EQUIVALENT (paired TOST) and H12-A/B BOUNDED-NO-GAIN
+(`U < ε`; exact noncentral t), power by SD of the paired difference
+SD_D:
 
-| n | SD_D = 0.005 | 0.0075 | 0.01 | 0.015 | 0.02 |
-|---|---|---|---|---|---|
-| 30 | 1.00 | 1.00 | 1.00 | 0.83 | 0.39 |
-| 95 | 1.00 | 1.00 | 1.00 | 1.00 | 0.99 |
+| rule, n | SD_D = 0.0025 | 0.005 | 0.0075 | 0.01 | 0.015 | 0.02 |
+|---|---|---|---|---|---|---|
+| EQUIVALENT, 30 | 1.00 | 1.00 | 0.83 | 0.39 | 0.01 | 0.00 |
+| EQUIVALENT, 95 | 1.00 | 1.00 | 1.00 | 0.99 | 0.72 | 0.22 |
+| BOUNDED-NO-GAIN, 30 | 1.00 | 1.00 | 0.92 | 0.69 | 0.35 | 0.21 |
+| BOUNDED-NO-GAIN, 95 | 1.00 | 1.00 | 1.00 | 1.00 | 0.86 | 0.61 |
 
-**r and SD_D are unknown.** No ladder milestone stores per-seed
-paired differences for CDPA or WDPA (these metrics are new). The
-within-seed correlation is plausibly high (shared initialisation,
-data order and the first five tasks), but this is an assumption.
-It is recorded as PI open decision §10.1 together with N. The
-pre-filing smoke (§9, seeds 900-902, outside the confirmatory list)
-records r and SD_D; those three seeds are not used for inference.
+Largest SD_D with 80 % power: at n = 30, 0.0077 (EQUIVALENT) and
+0.0089 (BOUNDED-NO-GAIN); at n = 95, 0.0141 and 0.0162. Seeds needed
+for 80 %: 49 / 38 at SD_D = 0.01, and **108 / 82 at SD_D = 0.015**.
+
+**Sample size and escalation rule (PI decision, 2026-10-23).**
+N = 30. The pre-filing smoke (§9, seeds 900-902, outside the
+confirmatory list, never used for inference) computes from its three
+seeds: (i) r̂, the Pearson correlation across the smoke seeds between
+the two cells of each confirmatory contrast (CDPA `cross`/`none`,
+CDPA `cross`/`within`, WDPA `within`/`none`); an undefined r̂ (a cell
+with zero variance) counts as below 0.5; and (ii) SD̂_D, the
+sd (ddof = 1) of the three per-seed differences
+`WDPA(within) − WDPA(none)`. **N is raised to 95 if and only if
+min r̂ < 0.5 or SD̂_D > 0.015.** The rule is applied once; its inputs
+and outcome are written into the filed version, and N is fixed from
+then on. With three seeds both estimates are very imprecise (r̂ has
+one degree of freedom): the rule is a pre-stated deterministic
+trigger, not an estimate of the population r or SD_D. No ladder
+milestone stores per-seed paired CDPA or WDPA differences (the
+metrics are new), so there is no prior estimate; the planning value
+for SD_D is the escalation threshold, 0.015.
+
+**What the registered N can and cannot establish (stated plainly).**
+At ε = 0.005 the registered N is **insufficient** for an 80 %-powered
+"no practical effect" conclusion at the planning SD_D = 0.015: power
+is 0.01 (EQUIVALENT) and 0.35 (BOUNDED-NO-GAIN) at N = 30, and 0.72
+and 0.86 at N = 95; EQUIVALENT would need N = 108. More generally,
+N = 30 is adequate for EQUIVALENT only if SD_D ≤ 0.0077, so whenever
+the true SD_D lies between 0.0077 and 0.015 and the smoke does not
+trigger escalation, EQUIVALENT is under-powered; and N = 95 is
+adequate only if SD_D ≤ 0.0141, just below the threshold that
+triggers it. Under-power makes INCONCLUSIVE more likely; it does not
+change the error rates of §2.
 
 ## §4 Exclusions, replacement and retained-N inference
 
@@ -264,8 +298,9 @@ records r and SD_D; those three seeds are not used for inference.
 
 ## §5 Stream, substrate and driver (executable specification)
 
-- **Seeds.** Confirmatory seeds `0..29` (N = 30) or `0..94` if the PI
-  picks N = 95 (§10.1). Smoke seeds `900..902` (never analysed).
+- **Seeds.** Confirmatory seeds `0..29` (N = 30), or `0..94` (N = 95)
+  if the §3 escalation rule fires. Smoke seeds `900..902` (never
+  analysed).
 - **Domains** (fixed; CIFAR-100 coarse label id in brackets):
   - Domain A (animals): aquatic_mammals [0], fish [1], insects [7],
     large_carnivores [8], large_omnivores_and_herbivores [11],
@@ -423,13 +458,13 @@ carry a universality claim in either direction.
   (b) every item of the §5 fidelity checklist has a passing test,
   (c) the aggregator has been run on synthetic paired data covering
   every §2 state and every §7 row, and (d) the smoke results below
-  (wall time, r, SD_D, manipulation-check pass rate) are written into
-  the filed version. The lock commit is the commit that contains all
-  four.
+  (wall time, r̂, SD̂_D, manipulation-check pass rate) and the N
+  fixed by the §3 escalation rule are written into the filed version.
+  The lock commit is the commit that contains all four.
 - **Pre-filing smoke:** seeds 900-902, all 8 cells, on the filing
   hardware. It verifies the driver, the checklist tests and per-cell
-  wall time, and records r and SD_D. Its numbers are reported but
-  never pooled with confirmatory seeds.
+  wall time, and records r̂ and SD̂_D for the §3 escalation rule. Its
+  numbers are reported but never pooled with confirmatory seeds.
 - Known deviation envelopes:
   a. CIFAR-100 SHA-256 mismatch: abort and amend with the new pin.
   b. Manipulation-check failure on most seeds: abort per §4, raise
@@ -447,14 +482,10 @@ Everything above is the complete default protocol. The items below
 are genuine choices; changing one requires editing the named section
 before the lock commit.
 
-1. **N and the r assumption (§3, §5).** N = 30 (default,
-   ladder-comparable) or N = 95. If the smoke shows r < 0.5 or
-   SD_D(WDPA) > 0.015, N = 95 is recommended: at N = 30 the complete
-   rule then has < 0.70 power at d_av = 0.6 and the H12-C TOST
-   < 0.83.
-2. **Margin ε (§2).** 0.01 pairwise-accuracy points (default) or
-   another fixed value chosen before any confirmatory data.
-3. **Domain split (§5).** Animals / non-animals (default) or a
+Decided by the PI on 2026-10-23 and no longer open: N = 30 with the
+§3 escalation rule to N = 95; ε = 0.005.
+
+1. **Domain split (§5).** Animals / non-animals (default) or a
    stronger shift (second corpus; needs a new loader and pin).
-4. **Hardware.** M1 Max or Studio. The protocol does not change; R1
+2. **Hardware.** M1 Max or Studio. The protocol does not change; R1
    run_ids are per machine.

@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """Item-disjoint tuning / confirmatory partition of the E1 fixtures.
 
-Pre-registration: docs/osf-prereg-e1-replay-controls-2026-10-23.md §5.
+Pre-registration: docs/osf-prereg-e1-replay-controls-2026-10-23.md §5.3.
+Since revision 3 these fixtures are the E1 pilot / smoke set only; the
+tuning and confirmatory items come from the fact corpus of §5.1.
 
 Each fixture row is assigned to exactly one partition. Rows are
 grouped before assignment so near-duplicates cannot straddle the

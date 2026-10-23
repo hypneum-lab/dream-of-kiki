@@ -1,7 +1,8 @@
 # DR-3 global relational probe pre-registration
 
 **Status:** DRAFT — not yet filed on OSF (to be filed by the PI).
-**Date:** 2026-10-23 (revision 2 after independent review)
+**Date:** 2026-10-23 (revision 3: PI decisions of 2026-10-23 on δ
+and n applied)
 **Parent OSF:** 10.17605/OSF.IO/Q6JYN
 **c_version at drafting:** C-v0.25.0+PARTIAL
 **Claim under test:** the DR-3 anchoring sentence in Paper 1 §8.4
@@ -20,7 +21,7 @@ next to the filed registration), reproduced through
 `experiments/g5_cross_substrate/` (§7, last paragraph).
 **Design:** matched trained / untrained pairs per seed, paired
 analysis on calibrated differences.
-**Compute:** CPU only; 10 seeds × (trained pair + untrained pair).
+**Compute:** CPU only; 20 seeds × (trained pair + untrained pair).
 Minutes per seed (800 training steps per substrate, d = 16).
 **Power script:** `scripts/prereg_power_2026_10.py` (§3).
 **Lock commit:** *(filled by introducing commit hash at filing)*
@@ -87,10 +88,13 @@ Primary test call: `scipy.stats.ttest_1samp(D, 0,
 alternative="greater")` (equivalently `ttest_rel(trained, null,
 alternative="greater")`).
 
-**SESOI.** δ = **0.05** in score units for all four statistics. All
-four scores lie in [0, 1] and share the denominators k (mKNN) or
-n − 1 (H₀). 0.05 is the absolute floor the v1.9.0 script already
-used for a "signal" (`max(3 × random, 0.05)`), and the same δ for
+**SESOI.** δ = **0.025** in score units for all four statistics (PI
+decision of 2026-10-23: half the absolute floor `0.05` that the
+v1.9.0 script uses for a "signal", `max(3 × random, 0.05)`, so that
+FAILS bounds the calibrated gain more tightly). All four scores lie
+in [0, 1] and share the denominators k (mKNN) or n − 1 (H₀); at
+k = 10, δ = 0.025 is a quarter of one shared neighbour per input on
+average, and for H₀ it is ≈ 26 of the 1023 MST edges. The same δ for
 structure and geometry keeps the 2 × 2 comparable.
 
 **Per-statistic states** (exhaustive, non-overlapping):
@@ -136,34 +140,49 @@ no confirmatory weight.
 
 ## §3 Power analysis
 
-n = 10 seeds. Reproduced by `scripts/prereg_power_2026_10.py`.
+n = **20** seeds (PI decision of 2026-10-23). Reproduced by
+`scripts/prereg_power_2026_10.py` (section 6).
 
 - Test-only MDE at 80 % power, paired one-sided α = 0.0125:
-  **d_z = 1.139** (g_z ≈ 1.041). (An independent-groups design at
-  n = 10 per group would need d = 1.484, Hedges' g ≈ 1.421.)
-- Complete rules, in units of SD(D):
+  **d_z = 0.739** (g_z ≈ 0.710). (An independent-groups design at
+  n = 20 per group would need d = 1.009, Hedges' g ≈ 0.989.)
+- Complete rules, in units of SD(D) (SURVIVES: Monte Carlo; FAILS at
+  μ = 0: exact noncentral t):
 
 | δ / SD(D) | SURVIVES, μ/SD = 0.5 | 1.0 | 1.5 | 2.0 | 3.0 | FAILS, μ = 0 |
 |---|---|---|---|---|---|---|
-| 0.25 | 0.19 | 0.68 | 0.96 | 1.00 | 1.00 | 0.06 |
-| 0.5 | 0.19 | 0.68 | 0.96 | 1.00 | 1.00 | 0.19 |
-| 1.0 | 0.05 | 0.47 | 0.93 | 1.00 | 1.00 | 0.68 |
+| 0.25 | 0.44 | 0.97 | 1.00 | 1.00 | 1.00 | 0.12 |
+| 0.5 | 0.40 | 0.97 | 1.00 | 1.00 | 1.00 | 0.44 |
+| 1.0 | 0.01 | 0.50 | 0.99 | 1.00 | 1.00 | 0.97 |
+| 1.5 | 0.00 | 0.01 | 0.50 | 0.99 | 1.00 | 1.00 |
 
-SURVIVES is well powered when the true calibrated difference is at
-least about 1.5 SD(D). FAILS is well powered only when SD(D) is
-small relative to δ (δ ≥ SD(D) gives 0.68 at μ = 0; δ = 2 SD(D)
-gives > 0.99). SD(D) is unknown. The v1.9.0 trained mKNN values
-over 3 seeds (0.174, 0.170, 0.203; SD ≈ 0.018) suggest SD(D) of a
-few hundredths if the null varies comparably, but this is an
-assumption, not evidence. The 18.8× figure is a ratio against a
-different (Gaussian) baseline and carries no seed variance, so it
-does **not** establish power for this design. Geometry FAILS and
-structure-survives verdicts that come out INDETERMINATE are reported
-as such (§7, row 5).
+SURVIVES has ≥ 0.97 power when the true calibrated difference is at
+least 1 SD(D) and exceeds δ by at least 0.5 SD(D); at μ = δ it is
+0.50 by construction (observed-mean floor).
+
+**Planning SD and the FAILS rule ("no practical effect").** SD(D) is
+unknown. The v1.9.0 trained mKNN values over 3 seeds (0.174, 0.170,
+0.203) have SD ≈ 0.018; if the untrained null varies comparably and
+independently, SD(D) ≈ 0.018 × √2 ≈ **0.025**, the planning value.
+This is an assumption, not evidence: the 18.8× figure is a ratio
+against a different (Gaussian) baseline and carries no seed variance.
+At δ = 0.025 and μ = 0, FAILS has power:
+
+| SD(D) | 0.0125 | 0.018 | 0.025 | 0.035 | 0.05 |
+|---|---|---|---|---|---|
+| power at n = 20 | 1.00 | 1.00 | 0.97 | 0.77 | 0.44 |
+| n for 80 % | 6 | 8 | 13 | 22 | 41 |
+
+At the planning SD, n = 20 is sufficient (13 seeds would give 80 %).
+n = 20 reaches 80 % only if SD(D) ≤ 0.034; **if SD(D) is larger, the
+registered n is insufficient** for an 80 %-powered FAILS and a
+bounded statistic will more often come out INDETERMINATE (§7,
+row 5). The same SD(D) applies to the structure statistics, whose
+FAILS state matters for rows 3-4.
 
 ## §4 Exclusions, replacement and retained-N inference
 
-- **Seeds.** Confirmatory seeds `100..109` (disjoint from the v1.9.0
+- **Seeds.** Confirmatory seeds `100..119` (disjoint from the v1.9.0
   seeds 0-2, which are reused only for the descriptive direct
   replication).
 - **Learning gate (seed level).** Each trained substrate is scored
@@ -184,7 +203,7 @@ as such (§7, row 5).
 - Exclusions are seed-level and apply to all four statistics. No
   replacement seeds. Inference uses the retained n; all exclusions
   are reported with reasons.
-- **Abort.** If more than 3 of 10 seeds are excluded, abort and
+- **Abort.** If more than 6 of 20 seeds are excluded, abort and
   amend. All dumps, hashes and logs are preserved in
   `docs/milestones/dr3-relational-probe-ABORTED-<date>.{json,md}`.
 
@@ -279,7 +298,7 @@ applies. Every combination of states reaches a row.
 | 2 | A = SURVIVES ∧ B = SURVIVES ∧ (C = SURVIVES ∨ D = SURVIVES) | Structure survives at both scales and some distance-weighted overlap gain also survives. Re-anchor to **"null-calibrated relational structure (local and global)"** with no statement about geometry. | unchanged |
 | 3 | A = SURVIVES ∧ B = FAILS | The current **"local, not global"** anchor is supported: global structure is bounded below δ. | unchanged |
 | 4 | A = FAILS | The §7.4 local claim does **not** hold under this protocol. File a dated correction note in `docs/milestones/` and qualify Paper 1 §7.4 / §8.4. | unchanged |
-| 5 | Any other combination (some needed state is INDETERMINATE) | Inconclusive at n = 10. Anchor wording unchanged; Paper 1 §8.4 gains one sentence citing the probe as inconclusive, with the four states. | unchanged |
+| 5 | Any other combination (some needed state is INDETERMINATE) | Inconclusive at n = 20. Anchor wording unchanged; Paper 1 §8.4 gains one sentence citing the probe as inconclusive, with the four states. | unchanged |
 
 The secondary G5 pair (MLX MLP vs E-SNN, penultimate layer,
 Split-FMNIST test inputs, same statistics and preprocessing) is
@@ -287,8 +306,8 @@ Split-FMNIST test inputs, same statistics and preprocessing) is
 
 ## §8 Reporting commitment and stopping rule
 
-- **Fixed n = 10 seeds, no optional stopping.** No statistic is
-  computed on any trained pair before all 10 seeds and their nulls
+- **Fixed n = 20 seeds, no optional stopping.** No statistic is
+  computed on any trained pair before all 20 seeds and their nulls
   are dumped and hashed.
 - All four statistics, all states, L / U, both nulls, all
   sensitivity pipelines and sweeps are reported regardless of
@@ -319,9 +338,8 @@ Split-FMNIST test inputs, same statistics and preprocessing) is
 The protocol above is complete with these defaults; changing one
 requires editing the named section before the lock commit.
 
-1. **SESOI δ (§2).** 0.05 (default) or another fixed value.
-2. **τ (§5).** 0.1 (default) or another single value from You et
+Decided by the PI on 2026-10-23 and no longer open: δ = 0.025;
+n = 20 seeds.
+
+1. **τ (§5).** 0.1 (default) or another single value from You et
    al.'s grid.
-3. **n (§3).** 10 seeds (default). If SD(D) for the geometry scores
-   is expected near δ, FAILS has ≈ 0.68 power; 20 seeds would raise
-   it. CPU cost is negligible either way.

@@ -18,6 +18,17 @@ Two kinds of numbers are produced:
    the sufficient statistics (mean, variance) directly when the rule
    only needs the paired differences, and draw full bivariate-normal
    samples when the rule needs the per-arm SDs (g_av floor).
+3. *"No practical effect" rules* at the margins fixed by the PI on
+   2026-10-23 (G4 eps = 0.005, DR-3 delta = 0.025, E1 delta = 0.01):
+   power at true difference 0, the largest SD of the paired
+   difference at which the registered n still reaches 80 %, and the
+   n needed for 80 % at the planning SD. One-sided bound rules
+   (U < margin, or L > -margin) at mu = 0 are exact: the event is
+   {noncentral t(df = n - 1, ncp = margin sqrt(n) / SD) > t_crit}.
+   TOST powers are Monte Carlo (fixed seeds).
+4. *E1 corpus size*: the minimum number of eval items per seed that
+   keeps the item-sampling part of SD_D within half of the variance
+   budget that N = 141 allows at delta = 0.01.
 
 numpy + scipy only. Deterministic (fixed seeds). Runs in < 1 min.
 
@@ -141,6 +152,51 @@ def power_paired_gav_floor(d_av, r, n, alpha, floor, seed=5,
     return float(np.mean(ok))
 
 
+# --------------------------------------- "no practical effect" helpers
+def power_bound_exact(margin_over_sd: float, n: int, alpha: float) -> float:
+    """Exact P(U < margin) at mu = 0 (= P(L > -margin) at mu = 0)."""
+    df = n - 1
+    crit = stats.t.ppf(1 - alpha, df)
+    return float(stats.nct.sf(crit, df, margin_over_sd * np.sqrt(n)))
+
+
+def max_sd_bound(margin: float, n: int, alpha: float) -> float:
+    """Largest SD_D at which the one-sided bound rule has 80 % power."""
+    return float(optimize.brentq(
+        lambda sd: power_bound_exact(margin / sd, n, alpha) - POWER,
+        margin / 100, margin * 100))
+
+
+def n_needed_bound(margin: float, sd: float, alpha: float) -> int:
+    n = 3
+    while power_bound_exact(margin / sd, n, alpha) < POWER:
+        n += 1
+    return n
+
+
+def _tost_std(ratio: float, n: int, alpha: float, seed: int = 11) -> float:
+    """TOST power at mu = 0 with margin / SD = ratio (Monte Carlo)."""
+    return power_tost(0.0, 1.0, n, alpha, ratio, seed=seed)
+
+
+def max_sd_tost(margin: float, n: int, alpha: float) -> float:
+    return float(margin / optimize.brentq(
+        lambda q: _tost_std(q, n, alpha) - POWER, 1e-3, 10))
+
+
+def n_needed_tost(margin: float, sd: float, alpha: float) -> int:
+    lo, hi = 3, 3
+    while _tost_std(margin / sd, hi, alpha) < POWER:
+        lo, hi = hi, hi * 2
+    while hi - lo > 1:
+        mid = (lo + hi) // 2
+        if _tost_std(margin / sd, mid, alpha) >= POWER:
+            hi = mid
+        else:
+            lo = mid
+    return hi
+
+
 def _fmt_row(cells) -> str:
     return "| " + " | ".join(cells) + " |"
 
@@ -152,7 +208,7 @@ def main() -> None:
 
     print("## 1. Test-rejection MDE at 80 % power (exact noncentral t)\n")
     for label, n, a, sided in [
-        ("DR3 independent, n=10/group, one-sided a=.0125", 10, a_dr3, 1),
+        ("DR3 independent, n=20/group, one-sided a=.0125", 20, a_dr3, 1),
         ("G4 independent, n=30/group, one-sided a=1/60", 30, a_g4, 1),
         ("G4 independent, n=95/group, one-sided a=1/60", 95, a_g4, 1),
     ]:
@@ -160,7 +216,7 @@ def main() -> None:
         print(f"- {label}: d = {d:.3f}, Hedges g = "
               f"{d * hedges_j(2 * n - 2):.3f}")
     for label, n, a in [
-        ("DR3 paired, n=10, one-sided a=.0125", 10, a_dr3),
+        ("DR3 paired, n=20, one-sided a=.0125", 20, a_dr3),
         ("G4 paired, n=30, one-sided a=1/60", 30, a_g4),
         ("G4 paired, n=95, one-sided a=1/60", 95, a_g4),
         ("E1 paired, n=141, one-sided a=1/60", 141, a_e1),
@@ -202,59 +258,97 @@ def main() -> None:
                      for d in d_grid]
             print(_fmt_row([str(r), *cells]))
 
-    print("\n### 4b. Same rule plus raw floor mean(D) >= 0.01 (n = 30, r = 0.5)\n")
-    sigmas = (0.01, 0.02, 0.04)
+    eps = 0.005
+    print("\n### 4b. Same rule plus raw floor mean(D) >= eps = 0.005"
+          " (n = 30, r = 0.5)\n")
+    sigmas = (0.005, 0.01, 0.02)
     print(_fmt_row(["arm SD", *[f"d_av={d}" for d in d_grid]]))
     print(_fmt_row(["---"] * (len(d_grid) + 1)))
     for sg in sigmas:
-        cells = [f"{power_paired_gav_floor(d, 0.5, 30, a_g4, 0.5, sigma=sg, raw_floor=0.01):.2f}"
+        cells = [f"{power_paired_gav_floor(d, 0.5, 30, a_g4, 0.5, sigma=sg, raw_floor=eps):.2f}"
                  for d in d_grid]
         print(_fmt_row([str(sg), *cells]))
 
-    print("\n## 5. G4-nono H12-C paired TOST, raw margin 0.01, true diff 0\n")
-    sds = (0.005, 0.0075, 0.01, 0.015, 0.02)
-    print(_fmt_row(["n", *[f"SD_D={s}" for s in sds]]))
+    print("\n## 5. G4-nono 'no practical effect' rules, eps = 0.005,"
+          " true diff 0\n")
+    sds = (0.0025, 0.005, 0.0075, 0.01, 0.015, 0.02)
+    print("H12-C TOST (EQUIVALENT) and H12-A/B BOUNDED-NO-GAIN (U < eps),"
+          " by SD of the paired difference:\n")
+    print(_fmt_row(["rule, n", *[f"SD_D={x}" for x in sds]]))
     print(_fmt_row(["---"] * (len(sds) + 1)))
     for n in (30, 95):
-        print(_fmt_row([str(n), *[f"{power_tost(0, s, n, a_g4, 0.01):.2f}"
-                                  for s in sds]]))
+        print(_fmt_row([f"TOST, n={n}",
+                        *[f"{power_tost(0, x, n, a_g4, eps):.2f}" for x in sds]]))
+    for n in (30, 95):
+        print(_fmt_row([f"U<eps, n={n}",
+                        *[f"{power_bound_exact(eps / x, n, a_g4):.2f}"
+                          for x in sds]]))
+    print()
+    for n in (30, 95):
+        print(f"- n = {n}: 80 % needs SD_D <= {max_sd_tost(eps, n, a_g4):.4f}"
+              f" (TOST), <= {max_sd_bound(eps, n, a_g4):.4f} (U < eps)")
+    for x in (0.0075, 0.01, 0.015):
+        print(f"- SD_D = {x}: n for 80 % = {n_needed_tost(eps, x, a_g4)}"
+              f" (TOST), {n_needed_bound(eps, x, a_g4)} (U < eps)")
 
-    print("\n## 6. DR3 paired complete rules (units of SD of D)\n")
+    print("\n## 6. DR3 paired complete rules (units of SD of D), n = 20\n")
     print("SURVIVES = lower bound > 0 AND mean(D) >= delta;"
-          " FAILS = upper bound < delta. n = 10, a = .0125.\n")
-    ratios = (0.25, 0.5, 1.0)
+          " FAILS = upper bound < delta. a = .0125.\n")
+    n_dr3 = 20
+    ratios = (0.25, 0.5, 1.0, 1.5)
     mus = (0.0, 0.5, 1.0, 1.5, 2.0, 3.0)
     print(_fmt_row(["delta/SD", *[f"SURV mu={m}" for m in mus[1:]],
                     "FAILS mu=0"]))
     print(_fmt_row(["---"] * (len(mus) + 1)))
     for q in ratios:
-        cells = [f"{power_superiority_floor(m, 1.0, 10, a_dr3, q):.2f}"
+        cells = [f"{power_superiority_floor(m, 1.0, n_dr3, a_dr3, q):.2f}"
                  for m in mus[1:]]
-        cells.append(f"{power_upper_bound_below(0.0, 1.0, 10, a_dr3, q):.2f}")
+        cells.append(f"{power_bound_exact(q, n_dr3, a_dr3):.2f}")
         print(_fmt_row([str(q), *cells]))
+    d3 = 0.025
+    print(f"\nRaw delta = {d3}. FAILS (U < delta) power at mu = 0, n = 20:")
+    for x in (0.0125, 0.018, 0.025, 0.035, 0.05):
+        print(f"- SD(D) = {x}: {power_bound_exact(d3 / x, n_dr3, a_dr3):.2f};"
+              f" n for 80 % = {n_needed_bound(d3, x, a_dr3)}")
+    print(f"- n = 20 reaches 80 % iff SD(D) <= "
+          f"{max_sd_bound(d3, n_dr3, a_dr3):.4f}")
 
-    print("\n## 7. E1 (n = 141, a = 1/60)\n")
+    print("\n## 7. E1 (n = 141, a = 1/60), delta = 0.01\n")
     print("Standardised check, margin = 0.29 SD, true diff 0:"
           f" NI = {power_noninferiority(0, 1, 141, a_e1, 0.29):.3f},"
           f" TOST = {power_tost(0, 1, 141, a_e1, 0.29):.3f}\n")
-    delta = 0.02
-    sds = (0.03, 0.05, 0.069, 0.10)
-    print(f"Raw SESOI delta = {delta} composite accuracy.\n")
-    print(_fmt_row(["SD_D", "delta/SD_D", "SUP mu=0.02", "SUP mu=0.03",
-                    "SUP mu=0.04", "BOUNDED<delta mu=0", "NI mu=0",
-                    "TOST mu=0"]))
-    print(_fmt_row(["---"] * 8))
-    for s in sds:
+    delta = 0.01
+    sds = (0.015, 0.02, 0.028, 0.035, 0.05, 0.069)
+    print(f"Raw SESOI delta = {delta} (fact-corpus accuracy).\n")
+    print(_fmt_row(["SD_D", "delta/SD_D", "SUP mu=0.01", "SUP mu=0.015",
+                    "SUP mu=0.02", "BOUNDED / NI mu=0", "TOST mu=0"]))
+    print(_fmt_row(["---"] * 7))
+    for x in sds:
         print(_fmt_row([
-            str(s), f"{delta / s:.2f}",
-            f"{power_superiority_floor(0.02, s, 141, a_e1, delta):.2f}",
-            f"{power_superiority_floor(0.03, s, 141, a_e1, delta):.2f}",
-            f"{power_superiority_floor(0.04, s, 141, a_e1, delta):.2f}",
-            f"{power_upper_bound_below(0.0, s, 141, a_e1, delta):.2f}",
-            f"{power_noninferiority(0.0, s, 141, a_e1, delta):.2f}",
-            f"{power_tost(0.0, s, 141, a_e1, delta):.2f}",
+            str(x), f"{delta / x:.2f}",
+            f"{power_superiority_floor(0.01, x, 141, a_e1, delta):.2f}",
+            f"{power_superiority_floor(0.015, x, 141, a_e1, delta):.2f}",
+            f"{power_superiority_floor(0.02, x, 141, a_e1, delta):.2f}",
+            f"{power_bound_exact(delta / x, 141, a_e1):.2f}",
+            f"{power_tost(0.0, x, 141, a_e1, delta):.2f}",
         ]))
+    sd_star = max_sd_bound(delta, 141, a_e1)
+    print(f"\n- n = 141 reaches 80 % iff SD_D <= {sd_star:.4f}"
+          f" (BOUNDED-NO-GAIN / NI), <= {max_sd_tost(delta, 141, a_e1):.4f}"
+          " (TOST)")
+    for x in (0.028, 0.035, 0.05, 0.069):
+        print(f"- SD_D = {x}: n for 80 % = {n_needed_bound(delta, x, a_e1)}"
+              f" (BOUNDED / NI), {n_needed_tost(delta, x, a_e1)} (TOST)")
 
+    print("\n## 8. E1 fact-corpus size (item-sampling budget)\n")
+    budget = sd_star / np.sqrt(2)
+    print(f"Item-sampling SD budget = SD* / sqrt(2) = {budget:.4f}"
+          " (half of the variance SD*^2).")
+    print("n_eval_min = ceil(p_disc / budget^2), p_disc = fraction of eval"
+          " items on which the two post-checkpoints differ in correctness.\n")
+    for pdisc in (0.05, 0.10, 0.15, 0.20):
+        print(f"- p_disc = {pdisc:.2f}: n_eval_min = "
+              f"{int(np.ceil(pdisc / budget ** 2))}")
 
 if __name__ == "__main__":
     main()
