@@ -16,6 +16,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import sqlite3
 import subprocess
 import sys
 import time
@@ -355,6 +356,37 @@ def _commit_sha() -> str:
     return "unknown"
 
 
+def claim_run_id(
+    db_path: Path, *, c_version: str, profile: str, seed: int,
+    commit_sha: str,
+) -> bool:
+    """Atomically claim the cell's run_id; True iff this caller won.
+
+    One plain ``INSERT`` on the ``runs`` PRIMARY KEY inside a
+    ``BEGIN IMMEDIATE`` transaction: a concurrent claimant gets
+    ``IntegrityError`` (or waits for the write lock, then fails), so
+    there is no lookup-then-register window.
+    """
+    registry = RunRegistry(db_path)  # creates / migrates the schema
+    run_id = registry._compute_run_id(c_version, profile, seed, commit_sha)
+    conn = sqlite3.connect(db_path, timeout=60, isolation_level=None)
+    try:
+        conn.execute("BEGIN IMMEDIATE")
+        try:
+            conn.execute(
+                "INSERT INTO runs (run_id, c_version, profile, seed, "
+                "commit_sha) VALUES (?, ?, ?, ?, ?)",
+                (run_id, c_version, profile, seed, commit_sha),
+            )
+        except sqlite3.IntegrityError:
+            conn.execute("ROLLBACK")
+            return False
+        conn.execute("COMMIT")
+        return True
+    finally:
+        conn.close()
+
+
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(description="G4-nono: run one cell")
     p.add_argument("--seed", type=int, required=True)
@@ -376,14 +408,14 @@ def main(argv: list[str] | None = None) -> int:
 
     profile_key = f"g4-nono/{args.arm}/{args.strategy}"
     sha = _commit_sha()
-    registry = RunRegistry(args.registry_db)
-    run_id = registry._compute_run_id(C_VERSION, profile_key, args.seed, sha)
-    try:
-        registry.get(run_id)
-        exists = True
-    except KeyError:
-        exists = False
-    if exists:
+    run_id = RunRegistry(args.registry_db)._compute_run_id(
+        C_VERSION, profile_key, args.seed, sha
+    )
+    # Atomic claim before executing; the loser aborts explicitly.
+    if not claim_run_id(
+        args.registry_db, c_version=C_VERSION, profile=profile_key,
+        seed=args.seed, commit_sha=sha,
+    ):
         args.out.parent.mkdir(parents=True, exist_ok=True)
         args.out.write_text(json.dumps({
             "status": "aborted",
@@ -394,12 +426,6 @@ def main(argv: list[str] | None = None) -> int:
         }, indent=2, sort_keys=True))
         print(f"ABORT: run_id {run_id} already registered; wrote {args.out}")
         return EXIT_RUN_ID_COLLISION
-    # Claim the run_id before executing (INSERT OR IGNORE alone would
-    # silently reuse it on a rerun).
-    registry.register(
-        c_version=C_VERSION, profile=profile_key, seed=args.seed,
-        commit_sha=sha,
-    )
     stream = load_stream(args.data_dir)
     rec = run_cell(
         arm=args.arm, strategy=args.strategy, seed=args.seed,

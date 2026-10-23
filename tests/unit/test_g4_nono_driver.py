@@ -310,3 +310,38 @@ def test_main_refuses_to_overwrite_existing_record(
         drv.main(["--seed", "0", "--arm", "baseline", "--strategy", "na",
                   "--out", str(out), "--epochs", "1"])
     assert out.read_text() == "{}"
+
+
+def test_concurrent_claim_has_exactly_one_winner(tmp_path: Path) -> None:
+    """Racing claims on one sqlite registry: a single UNIQUE-checked
+    INSERT makes the claim atomic (no lookup-then-register window)."""
+    import threading
+
+    db = tmp_path / "race.sqlite"
+    n = 8
+    barrier = threading.Barrier(n)
+    results: list[bool] = []
+    lock = threading.Lock()
+
+    def worker() -> None:
+        barrier.wait()
+        won = drv.claim_run_id(
+            db, c_version=drv.C_VERSION, profile="g4-nono/P_min/na",
+            seed=1, commit_sha="abc",
+        )
+        with lock:
+            results.append(won)
+
+    threads = [threading.Thread(target=worker) for _ in range(n)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+    assert len(results) == n and results.count(True) == 1
+
+
+def test_claim_then_second_claim_loses(tmp_path: Path) -> None:
+    db = tmp_path / "c.sqlite"
+    kw = dict(c_version=drv.C_VERSION, profile="p", seed=0, commit_sha="x")
+    assert drv.claim_run_id(db, **kw) is True
+    assert drv.claim_run_id(db, **kw) is False
