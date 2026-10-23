@@ -26,7 +26,9 @@ N = 95 (760 cells) if the pre-stated escalation rule fires (§3).
 ## §1 Background
 
 The G4 escalation ladder (G4-quater → G4-septimo) confirmed the
-"RECOMBINE-empty" finding across {Split-FMNIST, Split-CIFAR-10,
+"RECOMBINE-empty" finding (here and below, "confirmed" and "refuted"
+are the locked decision labels; those non-rejections did not
+establish equivalence) across {Split-FMNIST, Split-CIFAR-10,
 Split-CIFAR-100, Split-Tiny-ImageNet} × {3-layer MLP, 5-layer MLP,
 small CNN, medium CNN} (H6-C CONFIRMED, G4-septimo, Welch
 p = 0.9247, g = −0.0246). DR-4's prediction "richer ops yield richer
@@ -90,6 +92,11 @@ one-sided (1 − α) lower and upper confidence bounds for the mean of
   `J = 1 − 3 / (4(n − 1) − 1)` (Lakens 2013 average-SD form).
 - **g_z** (reported): `mean(D) / sd(D) × J`.
 
+**Degenerate case.** If every retained D is identical (`sd(D) = 0`),
+the t statistic is undefined; then `L = U = mean(D)` and the state
+follows from these bounds. An undefined g_z or g_av (zero denominator) is
+reported as undefined and does **not** meet the `g_av ≥ 0.5` floor.
+
 **Margin.** ε = **0.005** (half a percentage point of pairwise
 accuracy, raw units; PI decision of 2026-10-23, half the previous
 draft's 0.01). Below ε a change in CDPA or WDPA is declared
@@ -101,7 +108,8 @@ choice, not derived from data; power against it is tabulated in §3.
   alternative="greater")`) at α = 1/60.
 - **H12-B (cross-domain specificity)** —
   `CDPA(cross) − CDPA(within) > 0`. Same test.
-- **H12-C (within-domain null replicates, bounded)** —
+- **H12-C (new within-domain equivalence check, bounded)** — tests
+  WDPA under latent mixing, not the ladder's retention endpoint —
   `|WDPA(within) − WDPA(none)| < ε`. Paired TOST at α = 1/60 per
   side: equivalence iff `L > −ε` and `U < ε`.
 
@@ -279,6 +287,10 @@ change the error rates of §2.
   S1, S2, S3, K1, K4) is violated
   (`docs/osf-preregistration-draft.md` §4). A contrast uses the seeds
   for which **both** of its cells are retained (pairwise deletion).
+  The estimand is therefore the mean paired difference over seeds
+  whose two cells both complete, and the error rates of §2 are
+  conditional on that set; the guard below limits, but does not
+  remove, selection by treatment-dependent failures.
 - **No replacement.** The seed list is fixed (§5). Excluded seeds are
   not replaced. Inference uses the retained n; the achieved n and
   every excluded seed with its reason are reported.

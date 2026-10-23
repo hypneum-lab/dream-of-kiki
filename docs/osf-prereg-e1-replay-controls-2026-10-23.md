@@ -115,6 +115,10 @@ convention only if SD_D = 0.0345 (§3).
 - Non-inferiority (margin δ): reject iff `(D̄ + δ) / se > q`, i.e.
   `L > −δ`.
 - Paired TOST (bounds ±δ): equivalence iff `L > −δ` and `U < δ`.
+- **Degenerate case.** If every retained D is identical (`sd(D) = 0`),
+  the t statistic is undefined; then `L = U = mean(D)` and the state
+  follows from these bounds. g_z is then reported as
+  undefined.
 - Effect sizes reported: raw D̄ with the (1 − 2α) interval [L, U],
   and `g_z = D̄ / s × (1 − 3/(4(n − 1) − 1))`.
 
@@ -256,7 +260,10 @@ reduced BOUNDED / NI power before any confirmatory seed runs.
   The distribution of OPR corpus sizes (1-40 items) is reported.
 - **Differential-exclusion gate.** If a confirmatory contrast loses
   more than 7 of 141 seeds to cell-level exclusions, its state is
-  UNINTERPRETABLE.
+  UNINTERPRETABLE. Below that, the estimand is the mean paired
+  difference over seeds whose two cells both complete, and the error
+  rates of §2 are conditional on that set; the gate limits, but does
+  not remove, selection by treatment-dependent failures.
 - **Incomplete run.** If compute ends before 141 seeds are complete,
   **all** H14 hypotheses become exploratory (§8).
 
@@ -271,7 +278,9 @@ Required properties:
 1. **Format.** Four-choice items (`question`, `choices[4]`, `answer`
    index), scored by `_score_choice` exactly like the pilot MMLU
    rows. One gold answer per item; the three distractors are of the
-   same type as the answer.
+   same type as the answer. Question plus gold answer is at most 256
+   tokens under the pinned tokenizer, which keeps the ≤ 512-token
+   memory assumption of §9.
 2. **Independence.** One fact per item. Items are written or sourced
    individually, never produced by a fill-in template generator.
    Masking named entities, numbers and dates in the question gives a
@@ -282,7 +291,10 @@ Required properties:
    lower-casing and whitespace collapse of question + gold answer)
    are removed. Near-duplicates (character 5-gram Jaccard ≥ 0.6 on
    the normalised question, or an identical gold answer string with
-   Jaccard ≥ 0.4) are merged into one fact group. Any item that is a
+   Jaccard ≥ 0.4) are merged into one fact group. Each fact group is
+   then reduced to one item (the one with the lowest item SHA-256),
+   so every retained item is its own fact group and the row-level
+   `_cell_split` is fact-disjoint within a seed. Any item that is a
    near-duplicate of a row of `mmlu_real.jsonl`,
    `hellaswag_sanity.jsonl` or the 20 hand-authored mega_v2 facts is
    removed.
@@ -294,7 +306,7 @@ Required properties:
    the corpus is not used (too little room for a gain of δ) and is
    extended or replaced before filing. Confirmatory items are never
    scored before the first confirmatory seed.
-6. **Size.** After deduplication: confirmatory partition ≥ **300**
+6. **Size.** After deduplication and reduction: confirmatory partition ≥ **300**
    items and tuning partition ≥ **120** items. The confirmatory
    minimum is `n_replay + n_eval` = 40 + 255 = 295, rounded up to
    300, where 255 is the `n_eval` the §5.2 rule requires for a
@@ -321,14 +333,14 @@ from the tuning partition: `n_replay = 40`, `n_eval` = the rest.
 Seed-level inference is **conditional on the frozen corpus**; it
 does not generalise to other item sets.
 
-**Rule for `n_eval`.** Write SD* = 0.0397, the largest SD_D at which
+**Rule for `n_eval`.** Write SD* = 0.039661, the largest SD_D at which
 N = 141 still has 80 % power for BOUNDED-NO-GAIN / NI at δ = 0.01
 (§3). Item sampling contributes about `p_disc / n_eval` to the
 variance of D, where `p_disc` is the fraction of eval items on which
 the two post-checkpoints of a contrast differ in correctness. The
 item part is allowed half of the variance budget:
-`n_eval = max(130, ceil(p̂_disc / (SD*/√2)²)) = max(130,
-ceil(p̂_disc / 0.0280²))`, where `p̂_disc` is measured on the tuning
+`n_eval = max(130, ceil(p̂_disc / (SD*² / 2)))`, computed with the
+exact SD* printed by the power script (`SD* / √2 ≈ 0.0280`), where `p̂_disc` is measured on the tuning
 data (the mean over the 10 tuning seeds, for the two selected
 configurations) and frozen in the tuning amendment. The planning
 value `p_disc = 0.10` gives 128, hence the floor of 130; 0.20 gives
@@ -412,8 +424,14 @@ seeds; ties (within 1e-9) go to the lower LR, then the smaller m.
 10 × 6 × 2 = 120 tuning cells. **`p_equ` is not tuned separately**:
 it uses selection (i), so `p_equ` and `p_ctrl_vanilla_replay_tuned`
 share LR, m and the update sequence and differ only by DOWNSCALE
-(this is what makes H14-B a DOWNSCALE ablation). The two selections
-the SD_D proxy, `p̂_disc` and the resulting `n_eval` (§5.2) are
+(this is what makes H14-B a DOWNSCALE ablation). OPR's corpus
+depends only on the pre-replay (base) checkpoint, so it is the same
+for every configuration of a tuning seed. A tuning seed whose OPR
+corpus is empty is dropped, for all configurations alike, from the
+OPR selection, the SD_D proxy and `p̂_disc`, and is reported; if more
+than 2 of the 10 tuning seeds are dropped, OPR keeps the default
+configuration (LR 1e-4, m = 5) and the amendment says so. The two
+selections, the SD_D proxy, `p̂_disc` and the resulting `n_eval` (§5.2) are
 frozen in a dated amendment **before** the first confirmatory seed
 runs. `p_min`, `p_max` and the other
 controls keep the defaults (LR 1e-4, m = 5); `p_equ` uses selection

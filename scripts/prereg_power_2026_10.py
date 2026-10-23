@@ -342,7 +342,8 @@ def main() -> None:
 
     print("\n## 8. E1 fact-corpus size (item-sampling budget)\n")
     budget = sd_star / np.sqrt(2)
-    print(f"Item-sampling SD budget = SD* / sqrt(2) = {budget:.4f}"
+    print(f"SD* = {sd_star:.6f}; item-sampling SD budget ="
+          f" SD* / sqrt(2) = {budget:.4f}"
           " (half of the variance SD*^2).")
     print("n_eval_min = ceil(p_disc / budget^2), p_disc = fraction of eval"
           " items on which the two post-checkpoints differ in correctness.\n")

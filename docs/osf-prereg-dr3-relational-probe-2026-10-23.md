@@ -86,7 +86,9 @@ For each statistic, `L` and `U` are the one-sided (1 − α) lower and
 upper confidence bounds for mean(D) (paired t, df = n − 1).
 Primary test call: `scipy.stats.ttest_1samp(D, 0,
 alternative="greater")` (equivalently `ttest_rel(trained, null,
-alternative="greater")`).
+alternative="greater")`). **Degenerate case.** If every retained D is identical (`sd(D) = 0`),
+the t statistic is undefined; then `L = U = mean(D)` and the state
+follows from these bounds.
 
 **SESOI.** δ = **0.025** in score units for all four statistics (PI
 decision of 2026-10-23: half the absolute floor `0.05` that the
@@ -198,8 +200,10 @@ FAILS state matters for rows 3-4.
   12-class chance of 0.083). v1.9.0 has no accuracy gate, so this
   gate is new and fixed here.
 - **Representation check.** A seed is excluded if any representation
-  (trained or null) has a non-finite entry, or a row with zero norm
-  (L2 normalisation undefined).
+  (trained or null) has a non-finite entry, a row with zero norm
+  (L2 normalisation undefined), or no positive pairwise distance
+  after normalisation (all rows coincide, so the geometry quantile
+  of §5 is undefined).
 - Exclusions are seed-level and apply to all four statistics. No
   replacement seeds. Inference uses the retained n; all exclusions
   are reported with reasons.
@@ -244,7 +248,9 @@ Sensitivity pipelines (reported only, never change a verdict):
   minimum-spanning-tree edge set (= the H₀ death-edge set of the
   Vietoris-Rips filtration) of the Euclidean distance matrix,
   computed with Prim's algorithm from input 0, updating a parent only
-  on a strictly smaller weight (You et al.'s deterministic tie rule).
+  on a strictly smaller weight and, among vertices with equal
+  minimum key, adding the lowest index next (You et al.'s
+  deterministic tie rule, their Appendix C.3).
   Edges are unordered pairs. Normalised by n − 1, not Jaccard.
 - *Geometry weights* (You et al. Eq. 3): per representation,
   `D̃ = D / Q_0.9({D_ij : D_ij > 0})`;
@@ -296,8 +302,8 @@ applies. Every combination of states reaches a row.
 | 0 | Abort (§4) | No reading; amend. | n/a |
 | 1 | A = SURVIVES ∧ B = SURVIVES ∧ C = FAILS ∧ D = FAILS | Re-anchor to **"null-calibrated relational structure (local and global)"**, adding that the calibrated gain in distance-weighted overlap is bounded below δ at both scales (wording: "structure survives calibration; distance-weighted agreement adds less than δ"). The stronger phrase "not metric geometry" is not used unless the exploratory `S^τ / S` analysis agrees, and then only as a hedged reading. Prose change in Paper 1 §8.4 (EN + FR, same PR). | unchanged |
 | 2 | A = SURVIVES ∧ B = SURVIVES ∧ (C = SURVIVES ∨ D = SURVIVES) | Structure survives at both scales and some distance-weighted overlap gain also survives. Re-anchor to **"null-calibrated relational structure (local and global)"** with no statement about geometry. | unchanged |
-| 3 | A = SURVIVES ∧ B = FAILS | The current **"local, not global"** anchor is supported: global structure is bounded below δ. | unchanged |
-| 4 | A = FAILS | The §7.4 local claim does **not** hold under this protocol. File a dated correction note in `docs/milestones/` and qualify Paper 1 §7.4 / §8.4. | unchanged |
+| 3 | A = SURVIVES ∧ B = FAILS | Local calibrated gain detected; global calibrated gain bounded below δ = 0.025. The current "local, not global" anchor is kept, qualified as "global calibrated gain below 0.025". No local-versus-global difference is tested. | unchanged |
+| 4 | A = FAILS | Local calibrated gain bounded below δ = 0.025 under this protocol: the §7.4 local claim is not supported at that margin. This does not disprove a positive alignment or the historical Gaussian-baseline figure. File a dated note in `docs/milestones/` and qualify Paper 1 §7.4 / §8.4 accordingly. | unchanged |
 | 5 | Any other combination (some needed state is INDETERMINATE) | Inconclusive at n = 20. Anchor wording unchanged; Paper 1 §8.4 gains one sentence citing the probe as inconclusive, with the four states. | unchanged |
 
 The secondary G5 pair (MLX MLP vs E-SNN, penultimate layer,
