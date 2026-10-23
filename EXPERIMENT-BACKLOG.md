@@ -63,7 +63,7 @@ before the PI files it and fills the lock commit / timestamp.
 
 | Draft | Hypotheses | Question |
 |---|---|---|
-| `docs/osf-prereg-g4-nono-cross-domain-2026-10-23.md` | H12-A..D | Is the DR-4 "RECOMBINE-empty" refutation scoped to within-domain streams? |
+| `docs/osf-prereg-g4-nono-cross-domain-2026-10-23.md` | H12-A..C | Is the DR-4 "RECOMBINE-empty" refutation scoped to within-domain streams? |
 | `docs/osf-prereg-dr3-relational-probe-2026-10-23.md` | H13-A..D | Does DR-3 anchor to local structure, or to relational structure (local + global) rather than metric geometry? |
 | `docs/osf-prereg-e1-replay-controls-2026-10-23.md` | H14-A..C | Extends E1 above: does dream replay survive template, tuned-vanilla-replay and on-policy-replay controls at matched compute? |
 

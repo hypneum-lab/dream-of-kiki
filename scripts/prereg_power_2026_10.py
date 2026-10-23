@@ -113,18 +113,20 @@ def power_tost(mu, sd, n, alpha, margin, seed=4) -> float:
 
 
 # ------------------------------------------- full-sample g_av floor (G4)
-def power_paired_gav_floor(d_av, r, n, alpha, floor, seed=5) -> float:
-    """P(paired one-sided t rejects AND Hedges g_av >= floor).
+def power_paired_gav_floor(d_av, r, n, alpha, floor, seed=5,
+                           sigma=1.0, raw_floor=None) -> float:
+    """P(paired one-sided t rejects AND Hedges g_av >= floor [AND
+    mean(D) >= raw_floor]).
 
-    Unit-variance bivariate normal arms with correlation r; true mean
-    difference d_av (so the population d_av equals the argument).
-    g_av = mean(D) / sqrt((s1^2 + s2^2) / 2) * J(n - 1).
+    Bivariate normal arms with SD sigma and correlation r; true mean
+    difference d_av * sigma (so the population d_av equals the
+    argument). g_av = mean(D) / sqrt((s1^2 + s2^2) / 2) * J(n - 1).
     """
     rng = np.random.default_rng(seed)
     cov = np.array([[1.0, r], [r, 1.0]])
     chol = np.linalg.cholesky(cov)
-    z = rng.standard_normal((N_SIM_FULL, n, 2)) @ chol.T
-    x = z[..., 0] + d_av
+    z = sigma * (rng.standard_normal((N_SIM_FULL, n, 2)) @ chol.T)
+    x = z[..., 0] + d_av * sigma
     y = z[..., 1]
     diff = x - y
     m = diff.mean(axis=1)
@@ -133,7 +135,10 @@ def power_paired_gav_floor(d_av, r, n, alpha, floor, seed=5) -> float:
     crit = stats.t.ppf(1 - alpha, n - 1)
     s_av = np.sqrt((x.var(axis=1, ddof=1) + y.var(axis=1, ddof=1)) / 2)
     g_av = m / s_av * hedges_j(n - 1)
-    return float(np.mean((t > crit) & (g_av >= floor)))
+    ok = (t > crit) & (g_av >= floor)
+    if raw_floor is not None:
+        ok &= m >= raw_floor
+    return float(np.mean(ok))
 
 
 def _fmt_row(cells) -> str:
@@ -196,6 +201,15 @@ def main() -> None:
             cells = [f"{power_paired_gav_floor(d, r, n, a_g4, 0.5):.2f}"
                      for d in d_grid]
             print(_fmt_row([str(r), *cells]))
+
+    print("\n### 4b. Same rule plus raw floor mean(D) >= 0.01 (n = 30, r = 0.5)\n")
+    sigmas = (0.01, 0.02, 0.04)
+    print(_fmt_row(["arm SD", *[f"d_av={d}" for d in d_grid]]))
+    print(_fmt_row(["---"] * (len(d_grid) + 1)))
+    for sg in sigmas:
+        cells = [f"{power_paired_gav_floor(d, 0.5, 30, a_g4, 0.5, sigma=sg, raw_floor=0.01):.2f}"
+                 for d in d_grid]
+        print(_fmt_row([str(sg), *cells]))
 
     print("\n## 5. G4-nono H12-C paired TOST, raw margin 0.01, true diff 0\n")
     sds = (0.005, 0.0075, 0.01, 0.015, 0.02)
