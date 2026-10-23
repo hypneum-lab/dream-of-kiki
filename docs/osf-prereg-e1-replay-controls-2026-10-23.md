@@ -1,7 +1,7 @@
 # E1 35B matched-compute replay controls pre-registration
 
 **Status:** DRAFT — not yet filed on OSF (to be filed by the PI).
-**Date:** 2026-10-23
+**Date:** 2026-10-23 (revision 2 after independent review)
 **Parent OSF:** 10.17605/OSF.IO/Q6JYN
 **Parent backlog item:** `EXPERIMENT-BACKLOG.md` E1 (powered TOST,
 35B run pending).
@@ -15,15 +15,17 @@ non-adjudicable candidate, confounded by template / format transfer.
 **Substrate:** Qwen3.6-35B-A3B, bf16, HF transformers
 (`HL_MODEL=Qwen/Qwen3.6-35B-A3B`, revision hash pinned at filing).
 **Harness:** `scripts/pilot_cycle3_cuda.py` (load-once + restore) and
-`scripts/run_e1_cuda_35b.sh`, extended with the three new profiles in
-§5. Analysis: `scripts/analyze_e1_cuda.py`, extended with the paired
-tests in §2.
-**Benchmarks:** `tests/fixtures/mmlu_real.jsonl` (114 rows) and
-`tests/fixtures/hellaswag_sanity.jsonl` (200 rows). There is no
-`mega_v2`: the CUDA harness omits it.
-**Compute:** 141 confirmatory seeds × 9 profiles = 1269 cells, plus
-10 tuning seeds × the tuning grid (§5). Hardware is an open decision
-(§10).
+`scripts/run_e1_cuda_35b.sh`, extended as listed in §9 (required
+pre-filing code tasks). Analysis: `scripts/analyze_e1_cuda.py`,
+extended with the paired procedures of §2.
+**Benchmarks:** `tests/fixtures/mmlu_real.jsonl` (114 rows, SHA-256
+`4d881827…a09dd`) and `tests/fixtures/hellaswag_sanity.jsonl`
+(200 rows, SHA-256 `2ab581dc…0a979`), split into item-disjoint
+tuning and confirmatory partitions (§5). There is no `mega_v2`.
+**Compute:** 141 confirmatory seeds × 9 profiles = 1,269 cells, plus
+10 tuning seeds × 6 configurations × 3 tuned arms = 180 tuning
+cells; **1,449 cells** in total (§5, §9).
+**Power script:** `scripts/prereg_power_2026_10.py` (§3).
 **Lock commit:** *(filled by introducing commit hash at filing)*
 **Lock timestamp:** *(filled at filing, pre-run)*
 
@@ -41,144 +43,289 @@ Two 2026 results raise the bar further:
 
 - Chen et al. (2026), *On-Policy Replay for Continual Supervised
   Fine-Tuning* (arXiv:2605.29495). Replaying the current checkpoint's
-  own reward-filtered outputs on past prompts cuts forgetting by
-  42-46 % versus **tuned vanilla replay** on TRACE (7-8B).
-  Low-score on-policy replay is worse than vanilla. A surviving
-  dream-replay residual must therefore be compared against tuned
-  vanilla replay and against on-policy replay (OPR) at matched
-  compute, not only against neutral SGD.
+  own reward-filtered **generated** responses on past prompts cuts
+  forgetting by 42-46 % versus **tuned vanilla replay** on TRACE
+  (7-8B). Low-score on-policy replay is worse than vanilla.
 - Wang et al. (2026), *Denser ≠ Better: Limits of On-Policy
   Self-Distillation for Continual Post-Training* (arXiv:2607.01763).
-  On-policy self-distillation can forget more than RL and can
-  **collapse**, with drift amplified by the teacher–student loop.
-  Any self-generated replay arm, OPR included, needs a pre-specified
-  drift / collapse diagnostic (§6).
+  On-policy self-distillation can **collapse**, with drift amplified
+  by the teacher–student loop. Any self-generated replay arm needs a
+  pre-specified drift / collapse diagnostic (§6).
 
-In this harness `p_min` **is** SGD replay of held-out facts at the
-default hyperparameters (`HL_LR = 1e-4`, `HL_INNER = 5`). It is
-vanilla replay, untuned. The framework-specific part is what
-`p_equ` (replay + DOWNSCALE) and `p_max` (+ RESTRUCTURE) add. In the
-CUDA harness RECOMBINE is a weight-neutral no-op.
+In this harness `p_min` **is** SGD replay at default hyperparameters
+(`HL_LR = 1e-4`, `HL_INNER = 5`): vanilla, untuned replay. The
+framework-specific part is what `p_equ` (replay + DOWNSCALE) and
+`p_max` (+ RESTRUCTURE) add. RECOMBINE is a weight-neutral no-op in
+the CUDA harness.
+
+**What "content" means here.** Replay items are row-disjoint from
+the items each seed is scored on (`_cell_split`), and in this
+revision also come from the same item-disjoint partition (§5). Any
+eval gain from replay is therefore transfer from **other** items: it
+can come from answer-format adaptation, domain text, or learning to
+emit correct answers in general. H14-A isolates the last of these
+from the first two; it does not test recall of the scored facts.
 
 ## §2 Hypotheses (confirmatory)
 
-Unit = seed. The same seed gives the same replay / eval split for
-every profile (`_cell_split`), so all contrasts are **paired by
-seed**. Per-cell outcome: Δ = post − pre on the composite (mean of
-the two benchmarks). Effect size: Hedges' g_z on the paired
-differences. SESOI = **g = 0.29**, the pre-registered floor already
-used by the E1 TOST harness. Family: 3 tests, Bonferroni
-α = 0.05 / 3 = **0.0167** (same α as the E1 harness).
+**Unit and pairing.** Unit = seed. Within a seed every profile uses
+the same replay / eval split, the same eval items for pre and post,
+and starts from the same restored base weights. All contrasts are
+**paired by seed**: for contrast (X, Y) the analysed quantity is
+`D_s = Δ_s(X) − Δ_s(Y)`, with `Δ = post − pre` on the composite.
 
-- **H14-A (content specificity over format)** — `p_min` >
-  `p_ctrl_template`. Paired one-sided t-test at α = 0.0167.
-  Confirmed iff H0 is rejected **and** g_z ≥ 0.29. This adjudicates
-  the 2026-06-19 candidate: replaying the actual fact content must
-  beat replaying the same template with uninformative answers.
-- **H14-B (dream ops beyond tuned replay)** — `p_equ` >
-  `p_ctrl_vanilla_replay_tuned`. Same test and floor. This asks
-  whether DOWNSCALE adds anything to an HP-tuned vanilla replay at
-  matched compute.
-- **H14-C (non-inferiority to on-policy replay)** — `p_equ` ≥
-  `p_ctrl_onpolicy_replay` − SESOI. This is the lower one-sided test
-  of a TOST with margin g_z = 0.29, at α = 0.0167. Confirmed iff the
-  lower test rejects. The full two-sided TOST
-  (`kiki_oniric.eval.statistics.tost_equivalence`, ε = 0.29 SD of
-  the paired differences) is reported next to it.
+**Composite.** The unweighted mean of the two benchmark accuracies,
+`(acc_MMLU + acc_HellaSwag) / 2`, each over that seed's 50 eval items
+(not pooled over 100 items; the two are equal here only because both
+eval sets have 50 items).
 
-Secondary (reported, outside the family): every dream profile
-(`p_min`, `p_equ`, `p_max`) against every control. This keeps the
-`analyze_e1_cuda.py` defensibility signature:
-`dream > p_ctrl_sft > p_ctrl_shuffle ≈ p_noise`.
+**SESOI and margins.** δ = **0.02** composite-accuracy points, a
+fixed raw margin (one item out of 50 on each benchmark; one fifth of
+the 1.5B residual of +0.10). It is used as the superiority floor, the
+bound for "no effect of practical size", and the non-inferiority
+margin. It is not rescaled by any observed SD. For reference, it
+equals the old 0.29-SD convention only if SD(D) = 0.069 (§3).
+
+**Paired procedures (exact).** For a contrast with retained n:
+`D̄ = mean(D)`, `s = sd(D, ddof=1)`, `se = s / √n`,
+`q = t_{1−α, n−1}`, `L = D̄ − q·se`, `U = D̄ + q·se`.
+- Superiority: reject iff `t = D̄ / se > q`
+  (`ttest_rel(X, Y, alternative="greater")`), i.e. `L > 0`.
+- Non-inferiority (margin δ): reject iff `(D̄ + δ) / se > q`, i.e.
+  `L > −δ`.
+- Paired TOST (bounds ±δ): equivalence iff `L > −δ` and `U < δ`.
+- Effect sizes reported: raw D̄ with the (1 − 2α) interval [L, U],
+  and `g_z = D̄ / s × (1 − 3/(4(n − 1) − 1))`.
+
+`kiki_oniric.eval.statistics.tost_equivalence` is **not** used: it
+computes an independent-samples standard error with
+`df = n₁ + n₂ − 2`, which is wrong for paired data. Implementing a
+paired helper with tests is a required pre-filing task (§9).
+
+**Family.** Three hypotheses, Bonferroni α = 0.05 / 3 = **1/60
+≈ 0.0167** (same α as the E1 harness).
+
+- **H14-A (answer-supervision specificity over format)** —
+  `p_min` vs `p_ctrl_template` (format-only control, §5).
+  Primary claim: superiority.
+- **H14-B (dream ops beyond tuned replay)** — `p_equ` vs
+  `p_ctrl_vanilla_replay_tuned`. Primary claim: superiority.
+- **H14-C (non-inferiority to on-policy replay)** — `p_equ` vs
+  `p_ctrl_onpolicy_replay`. Primary claim: non-inferiority at δ.
+
+**Per-hypothesis states** (evaluated in order; first match; the list
+is exhaustive):
+
+For H14-A and H14-B:
+
+| State | Rule |
+|---|---|
+| UNINTERPRETABLE | a validity gate of §4 / §6 fails for this contrast |
+| SUPERIOR | `L > 0` and `D̄ ≥ δ` |
+| POSITIVE-BELOW-SESOI | `L > 0` and `D̄ < δ` |
+| BOUNDED-NO-GAIN | `U < δ` (gain below δ; includes negative estimates) |
+| INCONCLUSIVE | none of the above |
+
+For H14-C:
+
+| State | Rule |
+|---|---|
+| UNINTERPRETABLE | a validity gate of §4 / §6 fails for this contrast |
+| NON-INFERIOR | `L > −δ` |
+| INFERIOR | `U < −δ` (worse than OPR by more than δ) |
+| INCONCLUSIVE | neither |
+
+`U < 0` in H14-A/B, and the paired TOST in H14-C, are reported as
+secondary results; no harm or equivalence conclusion is part of the
+confirmatory family. A non-significant superiority test never
+establishes absence: only BOUNDED-NO-GAIN does (and only below δ).
+INFERIOR is a positive finding with its own bound; failing to show
+non-inferiority alone is INCONCLUSIVE, not inferiority.
+
+Secondary (reported, outside the family, nominal α = 0.05, same
+state rules): every dream profile (`p_min`, `p_equ`, `p_max`)
+against every control, which keeps the `analyze_e1_cuda.py`
+defensibility signature `dream > p_ctrl_sft > p_ctrl_shuffle ≈
+p_noise`.
 
 ## §3 Power analysis
 
-n = 141 paired seeds is the E1 harness's powered count. At
-α = 0.0167 and SESOI g_z = 0.29:
+n = 141 paired seeds; reproduced by `scripts/prereg_power_2026_10.py`
+(sufficient-statistic Monte Carlo, 200 000 draws).
 
-- one-sided superiority (H14-A, H14-B) detects g_z ≥ 0.25 at 80 %
-  power;
-- the non-inferiority test (H14-C) has ≈ 0.90 power when the true
-  difference is 0;
-- the full two-sided TOST has ≈ 0.80 power when the true difference
-  is 0.
+- Test-only superiority MDE at 80 % power, one-sided α = 1/60:
+  **d_z = 0.252** (g_z ≈ 0.251).
+- Standardised check (margin fixed at 0.29 population SD, true
+  difference 0): NI ≈ **0.901**, paired TOST ≈ **0.802** (≈ 80 %).
 
-This meets the multi-seed-first-class rule (≥ 5) by a wide margin.
+The confirmatory margins are raw (δ = 0.02), so power depends on the
+unknown SD of the paired composite difference, SD_D:
 
-## §4 Exclusion criteria
+| SD_D | δ/SD_D | SUPERIOR at μ = 0.02 | μ = 0.03 | μ = 0.04 | BOUNDED-NO-GAIN at μ = 0 | NI at μ = 0 | TOST at μ = 0 |
+|---|---|---|---|---|---|---|---|
+| 0.03 | 0.67 | 0.50 | 1.00 | 1.00 | 1.00 | 1.00 | 1.00 |
+| 0.05 | 0.40 | 0.50 | 0.99 | 1.00 | 1.00 | 0.99 | 0.99 |
+| 0.069 | 0.29 | 0.50 | 0.96 | 1.00 | 0.90 | 0.90 | 0.80 |
+| 0.10 | 0.20 | 0.50 | 0.88 | 0.99 | 0.59 | 0.59 | 0.18 |
 
-- Any BLOCKING invariant violation, or a non-finite pre/post score:
-  exclude the cell and log it.
-- `p_ctrl_onpolicy_replay` cells where the pre-dream checkpoint
-  answers **zero** replay prompts correctly (empty OPR corpus) are
-  excluded **from H14-C only**, and the count is reported.
-- Seeds are excluded as whole pairs. If a seed loses a cell needed
-  for a contrast, that seed is dropped from that contrast only.
-- If, after exclusions, a contrast has n < 141, it is reported with
-  its achieved n and the hypothesis is downgraded to exploratory
-  (§8).
+The complete SUPERIOR rule has ≈ 0.50 power when the true effect
+equals δ (the observed-mean floor), whatever SD_D is. No prior run
+reports SD_D for these contrasts at 35B. The tuning-partition cells
+(§5) estimate SD_D for the tuned contrasts; that estimate is
+recorded in the frozen tuning amendment. **N stays 141 whatever the
+estimate**: if SD_D > 0.069, the amendment states the reduced
+NI/TOST power before any confirmatory seed runs.
 
-## §5 Profiles and matched compute
+## §4 Exclusions, replacement and retained-N inference
 
-**Token budget.** For each seed, T = (tokens in the `p_min` replay
-corpus) × `inner`. Every replaying profile truncates or cycles its
-own corpus to reach T gradient-update tokens (±5 %). This is a
-change from the current harness, where `p_ctrl_sft` is matched on
-**record count**, not tokens. It must ship before filing.
+- **Cell-level.** A cell is excluded if a BLOCKING invariant is
+  violated, or pre/post scores are non-finite. A contrast uses the
+  seeds where **both** of its cells are retained (pairwise deletion).
+- **No replacement.** Confirmatory seeds are exactly 0-140. Excluded
+  seeds are not replaced; inference uses the retained n, and every
+  exclusion is reported with its reason.
+- **OPR feasibility.** If the pre-replay checkpoint answers **zero**
+  of a seed's 40 replay prompts correctly, the OPR corpus is empty.
+  This is a **feasibility** failure determined before any treatment
+  is applied, not a selective removal of hard seeds: that seed is
+  dropped from H14-C only, and the count is reported. If more than
+  7 seeds (> 5 %) are dropped this way, H14-C is UNINTERPRETABLE.
+  The distribution of OPR corpus sizes (1-40 items) is reported.
+- **Differential-exclusion gate.** If a confirmatory contrast loses
+  more than 7 of 141 seeds to cell-level exclusions, its state is
+  UNINTERPRETABLE.
+- **Incomplete run.** If compute ends before 141 seeds are complete,
+  **all** H14 hypotheses become exploratory (§8).
 
-Existing profiles, unchanged except for token matching: `p_min`,
-`p_equ`, `p_max`, `p_ctrl_sft`, `p_ctrl_shuffle`, `p_noise`.
+## §5 Partitions, profiles and matched compute
 
-New profiles:
-- **`p_ctrl_template`** — the same replay items with the same
-  `prompt + choice` template, but the answer is a choice drawn
-  uniformly at random among the 4 (seeded by cell seed). Format is
-  identical; fact content is uninformative on average. This is the
-  template-matched control requested by the 2026-06-19 correction
-  (item c).
-- **`p_ctrl_vanilla_replay_tuned`** — `p_min`'s corpus with LR and
-  `inner` selected on a tuning grid (below).
-- **`p_ctrl_onpolicy_replay`** (OPR, multiple-choice form) — for each
-  replay prompt, the **pre-dream** checkpoint scores the choices with
-  `_score_choice`. Reward = 1 iff its argmax equals the gold answer.
-  The corpus is `prompt + model's own argmax choice` for reward-1
-  items only (high-score on-policy replay, per Chen et al.), cycled
-  to budget T.
+**Item-disjoint partitions.** `scripts/e1_fixture_partition.py`
+assigns every fixture row to one partition, grouping rows by MMLU
+`subject` and HellaSwag `activity_label` so that related items never
+straddle the split. Manifest:
+`tests/fixtures/e1_partition_2026-10.json` (per-row SHA-256 and
+partition; `--check` verifies it).
 
-**Tuning (equal budget for every tuned arm).** Grid
-LR ∈ {3e-5, 1e-4, 3e-4} × `inner` ∈ {2, 5}, evaluated on tuning seeds
-1000-1009, which are disjoint from the confirmatory seeds 0-140. The
-selection metric is the mean composite Δ. The **same grid and
-selection** are applied to `p_ctrl_vanilla_replay_tuned`, `p_equ`
-and `p_ctrl_onpolicy_replay`. The selected configurations are frozen
-in a dated amendment **before** the first confirmatory seed runs.
-`HL_SHRINK = 0.99` (DOWNSCALE factor) is not tuned.
+| Benchmark | Partition | Rows | Groups | Partition SHA-256 |
+|---|---|---|---|---|
+| MMLU | confirmatory | 70 | 34 | `c9c3706054352dcdcaa5287384c3f4d135092a1e773f8612f2d9a740ace449a2` |
+| MMLU | tuning | 44 | 19 | `abfdd75c8d5cc7b4bb19c1d4151889172bf0ad0e46b62943d37eae05b9d8323a` |
+| HellaSwag | confirmatory | 140 | 43 | `26149930b89b5fc8c930ef512bd4a73e11543b9b344520dbdec667c88f173da4` |
+| HellaSwag | tuning | 60 | 19 | `cfad7e5150c1f49c362ae39cc2aad1a35ce721a2e6302cdadfe5411c527e2688` |
 
-**Fixed run knobs:** `HL_NSAMPLES = 50`, `HL_NREPLAY = 20` (the
-`run_e1_cuda_35b.sh` defaults), seeds 0-140. The per-seed replay and
-eval items are row-disjoint (`_cell_split`).
+Confirmatory seeds (0-140) draw replay and eval items only from the
+confirmatory partition: per benchmark `n_replay = 20`,
+`n_eval = 50` (all 70 confirmatory MMLU rows are used by every seed;
+only the replay/eval split varies). Tuning seeds (1000-1009) draw
+only from the tuning partition: `n_replay = 20`, `n_eval` = the rest
+(24 MMLU, 40 HellaSwag). Seed-level inference is **conditional on
+these fixed item sets**; it does not generalise over items.
 
-## §6 Drift and collapse diagnostics (reported, not tested)
+**Token budget T (independent of any tuned value).** For seed s,
+`T_s = 5 × tok(p_min corpus of seed s)`, where `tok` counts loss
+tokens (sequence length − 1, pinned tokenizer) and **5 is a fixed
+constant** (the harness default `inner`), not the tuned `inner`.
 
-Wang et al. (arXiv:2607.01763) motivate these diagnostics:
-- per cell: relative weight drift ‖w_post − w_pre‖ / ‖w_pre‖;
-- per cell: **collapse flag** = post composite < pre composite − 0.10,
-  **or** post accuracy below chance (0.25) on either benchmark;
-- per profile: collapse rate over seeds.
+**Update schedule (all replaying profiles).** Given a profile corpus
+in `_cell_split` order and an inner-repeat count m (default 5, or the
+tuned value), the update sequence repeats each record m times
+consecutively, cycles from the start of the corpus when exhausted,
+and stops at the first update after which cumulative loss tokens are
+≥ T_s. Records with < 2 tokens are skipped. Each update is one
+sequence (batch size 1), momentumless SGD, as in `_replay`. Achieved
+tokens must lie in [T_s, 1.05 T_s]; otherwise the last update is
+dropped. Tokens are matched; optimizer-step counts differ across
+profiles and are reported. DOWNSCALE (`HL_SHRINK = 0.99`, untuned)
+and RESTRUCTURE are applied after replay and are not charged.
+Pre/post scoring passes are identical across profiles and not
+charged. OPR's extra scoring passes (4 choices × 40 prompts = 160
+forward passes per cell) are **not** charged against T and are
+reported separately. This restricts "matched compute" to matched
+gradient-update tokens.
 
-Collapse is an outcome, not an exclusion. If the OPR collapse rate
-exceeds 20 %, H14-C is reported as "OPR baseline unstable at this
-scale", and its verdict is not used to rank dream replay.
+**Ties.** `_score_choice` argmax ties resolve to the lowest choice
+index (`torch.argmax`); this rule applies to eval and to OPR reward.
+
+**Profiles** (9 per confirmatory seed):
+- Existing, token-matched: `p_min`, `p_equ`, `p_max`, `p_ctrl_sft`,
+  `p_ctrl_shuffle`, `p_noise` (no updates; the noise floor).
+- **`p_ctrl_template` (format-only control)** — the same replay
+  items, but each replay text is the **prompt only** (MMLU
+  `question + "\nAnswer:"`; HellaSwag `ctx`), with no answer tokens.
+  It trains on the identical template and question text without any
+  answer supervision, true or false. It is cycled to T_s. (A
+  random-answer control was rejected: three times out of four it
+  teaches a false answer, so beating it could reflect avoiding
+  harmful updates rather than content.)
+- **`p_ctrl_vanilla_replay_tuned`** — `p_min`'s corpus with LR and m
+  set by tuning.
+- **`p_ctrl_onpolicy_replay` (OPR)** — for each replay prompt, the
+  **pre-replay** checkpoint scores the choices with `_score_choice`;
+  reward = 1 iff its argmax equals the gold answer. The corpus is
+  `prompt + model's argmax choice` for reward-1 items only, cycled to
+  T_s. This is a **restricted multiple-choice adaptation** of Chen et
+  al.'s OPR: no free generation, a binary exact-match reward, and a
+  scoring pass instead of sampling. It is a selection of the
+  checkpoint's own correct choices, not their generated-response
+  method. Claims about OPR in this study are limited to this form.
+
+**Tuning.** Grid LR ∈ {3e-5, 1e-4, 3e-4} × m ∈ {2, 5} (6
+configurations), tuning seeds 1000-1009 on the tuning partition.
+**Per-arm** selection: each of `p_ctrl_vanilla_replay_tuned`,
+`p_equ` and `p_ctrl_onpolicy_replay` independently selects the
+configuration with the highest mean composite Δ over the 10 tuning
+seeds; ties (within 1e-9) go to the lower LR, then the smaller m.
+10 × 6 × 3 = 180 tuning cells. The three selections and the SD_D
+estimates are frozen in a dated amendment **before** the first
+confirmatory seed runs. `p_min`, `p_max` and the other controls keep
+the defaults (LR 1e-4, m = 5); `p_equ` uses its tuned configuration
+in every confirmatory cell, including secondary contrasts.
+
+**Fixed run knobs:** `HL_NSAMPLES = 50`, `HL_NREPLAY = 20`, seeds
+0-140, tuning seeds 1000-1009, smoke seeds 2000-2002 (tuning
+partition, never analysed).
+
+## §6 Drift and collapse diagnostics
+
+Per cell: relative weight drift ‖w_post − w_pre‖ / ‖w_pre‖ (over all
+floating-point parameters), and a **collapse flag** = post composite
+< pre composite − 0.10, **or** post accuracy below 0.25 (4-way
+chance) on either benchmark. Per profile: collapse rate over seeds.
+
+Collapse is an outcome, not an exclusion. **Validity gate:** if the
+collapse rate of **either** profile in a confirmatory contrast
+exceeds 20 %, that hypothesis's state is UNINTERPRETABLE (the
+contrast is reported, but it is not used to rank methods). This gate
+precedes every substantive state, so a collapsing arm can never
+produce a SUPERIOR, NON-INFERIOR or BOUNDED reading.
 
 ## §7 Outcome rules
 
-| Outcome | Reading | EC / FC |
+Each hypothesis is read through its state (§2), so every outcome
+has a reading:
+
+| Hypothesis | State | Reading |
 |---|---|---|
-| Row 1 — H14-A ∧ H14-B ∧ H14-C | First non-artefact LLM-tier framework-C signal: content-specific, beyond tuned replay, competitive with OPR. Candidate evidence that needs replication before any EC promotion. | EC stays PARTIAL ; FC unchanged |
-| Row 2 — H14-A ∧ ¬H14-B ∧ H14-C | Replay content matters, but DOWNSCALE adds nothing over tuned vanilla replay. Consistent with a REPLAY-only active core. No DR-4 support at the LLM tier. | unchanged |
-| Row 3 — H14-A ∧ ¬H14-C | Dream replay is inferior to on-policy replay by more than the SESOI. It is not a competitive replay method at this scale. | unchanged |
-| Row 4 — ¬H14-A | The 2026-06-19 residual is attributed to template / format transfer. **Clean null**: close the candidate with a dated milestone. | unchanged |
-| Row 5 — OPR collapse rate > 20 % | H14-C is uninterpretable (§6). H14-A and H14-B are read as above. | unchanged |
+| H14-A | SUPERIOR | Correct-answer supervision transfers beyond format and question exposure by ≥ δ. The 2026-06-19 residual is not only format. |
+| H14-A | POSITIVE-BELOW-SESOI | Detectable but below δ; reported, no claim. |
+| H14-A | BOUNDED-NO-GAIN | Answer supervision adds less than δ over format-only replay: the residual is attributed to format / question exposure (bounded). Candidate closed with a dated milestone. |
+| H14-B | SUPERIOR | DOWNSCALE (with tuned replay) beats tuned vanilla replay by ≥ δ at matched tokens. |
+| H14-B | POSITIVE-BELOW-SESOI | Detectable but below δ; reported, no claim. |
+| H14-B | BOUNDED-NO-GAIN | DOWNSCALE adds less than δ over tuned vanilla replay. Consistent with a REPLAY-only active core at the LLM tier. |
+| H14-C | NON-INFERIOR | `p_equ` is not worse than restricted MC-OPR by δ or more. |
+| H14-C | INFERIOR | `p_equ` is worse than restricted MC-OPR by more than δ. |
+| any | INCONCLUSIVE | Inconclusive at n = 141 for this contrast; no claim either way. |
+| any | UNINTERPRETABLE | Validity gate failed; reported descriptively only. |
+
+**Joint headline** (first matching row; the last row catches every
+other combination):
+
+| # | Condition | Headline | EC / FC |
+|---|---|---|---|
+| J1 | A = SUPERIOR ∧ B = SUPERIOR ∧ C = NON-INFERIOR | First non-artefact LLM-tier framework-C signal: answer-specific, beyond tuned replay, not worse than restricted OPR. Candidate evidence needing replication. | EC stays PARTIAL ; FC unchanged |
+| J2 | A = SUPERIOR ∧ B = BOUNDED-NO-GAIN | Replay content matters; DOWNSCALE adds < δ over tuned replay. No DR-4 support at the LLM tier. | unchanged |
+| J3 | A = BOUNDED-NO-GAIN | The 2026-06-19 residual is format / question exposure within δ. Candidate closed. | unchanged |
+| J4 | any other combination | No joint headline; per-hypothesis readings only. | unchanged |
 
 ## §8 Reporting commitment and stopping rule
 
@@ -191,29 +338,69 @@ scale", and its verdict is not used to rank dream replay.
 - The CUDA backend is a different backend from the MLX runs. Numbers
   are never pooled across backends (R1 note in
   `pilot_cycle3_cuda.py`).
-- All per-profile, per-benchmark scalars are reported regardless of
-  outcome.
+- All per-profile, per-benchmark scalars, token and step counts,
+  drift and collapse diagnostics are reported regardless of outcome.
 
-## §9 Audit trail and deviations
+## §9 Feasibility, required pre-filing tasks, audit trail
 
-- Milestones: `docs/milestones/e1-35b-replay-controls-<date>.{json,md}`,
-  including the frozen tuning amendment and the HF revision hash.
-- Deviations: an amendment commit before the affected seeds run, or
-  post-hoc disclosure marking the affected hypotheses exploratory
-  (per `docs/osf-preregistration-draft.md` §5).
+**Memory (arithmetic, bf16, full-parameter SGD).** Weights ≈ 35 B ×
+2 B ≈ 70 GB on GPU; gradients up to the same ≈ 70 GB (only routed
+experts receive gradients with `zero_grad(set_to_none=True)`, so this
+is an upper bound); momentumless SGD keeps no optimizer state;
+activations for ≤ 512-token sequences at batch 1 are a few GB. Peak
+GPU ≈ 145 GB, sharded with `device_map="auto"`: at least 2 × H200
+(141 GB each); the turnkey script targets 4 × H200. The CPU restore
+snapshot holds another ≈ 70 GB of host RAM, and every cell restores
+≈ 70 GB host → device.
+
+**Runtime (to be measured; required before filing).** Per cell:
+≈ 800 scoring forward passes (pre + post, 2 × 100 items × 4 choices),
++ 160 for OPR, + U forward/backward updates (U ≈ T_s / mean record
+length; ≈ 100-200 for fact corpora at m = 5, more for the short
+`p_ctrl_sft` texts), + one 70 GB restore. Wall per cell and peak
+memory are unmeasured at 35B. The smoke on the filing hardware
+(seeds 2000-2002, all 9 profiles, tuning partition) must record
+per-cell wall, `torch.cuda.max_memory_allocated` per device and host
+RSS, and project the 1,449-cell total. The projection goes into the
+filed version. If it exceeds the available budget, the PI changes
+hardware or amends the design **before filing**; N is never reduced
+after filing.
+
+**Required pre-filing code tasks** (each with unit tests):
+1. Paired NI / TOST / bound helper (e.g.
+   `kiki_oniric.eval.statistics.paired_bounds`) implementing §2
+   exactly, tested against a hand-computed example and against
+   `scipy.stats.ttest_rel`. The existing `tost_equivalence` is left
+   unchanged and unused here.
+2. Partition loader: `pilot_cycle3_cuda.py` reads the §5 manifest,
+   verifies its hashes, and restricts `_cell_split` to the requested
+   partition.
+3. Token-budget update schedule (§5), with achieved tokens and step
+   counts written to each cell.
+4. New profiles `p_ctrl_template` (prompt-only), tuned arms and
+   restricted MC-OPR, with OPR corpus size per cell.
+5. Drift (full-norm) and collapse fields per cell.
+6. `analyze_e1_cuda.py`: §2 states, §7 tables, validity gates.
+
+**Audit trail.** Milestones:
+`docs/milestones/e1-35b-replay-controls-<date>.{json,md}`, including
+the frozen tuning amendment, SD_D estimates and the HF revision hash.
+Deviations: an amendment commit before the affected seeds run, or
+post-hoc disclosure marking the affected hypotheses exploratory (per
+`docs/osf-preregistration-draft.md` §5).
 
 ## §10 Open decisions for the PI (resolve before filing)
 
-1. **Compute accounting for OPR:** charge only gradient-update tokens
-   (default, above), or also charge the OPR scoring forward passes
-   against the budget T.
-2. **OPR form:** multiple-choice argmax (default; it keeps the harness
-   and fixtures) or free-generation OPR closer to Chen et al. Free
-   generation needs a generation step and a correctness judge.
-3. **Primary dream arm:** `p_equ` (default; canonical P_equ as in the
-   parent H1) or `p_max`.
-4. **Hardware and model revision:** multi-H200 node vs Mac Studio,
-   and the exact HF revision hash of Qwen3.6-35B-A3B.
-5. **Fixture size:** keep the 114-row MMLU fixture (row-disjoint at
-   `n_replay = 20`, `n_samples = 50`) or ship a larger
-   independent-fact corpus first, as the correction note recommends.
+The protocol above is complete with these defaults (previous
+revision's choices are resolved: scoring passes are not charged, OPR
+is the restricted MC form, `p_equ` is the primary dream arm, the
+current fixtures are kept and partitioned). Changing an item below
+requires editing the named section before the lock commit.
+
+1. **SESOI δ (§2).** 0.02 composite-accuracy points (default) or
+   another fixed raw value.
+2. **Hardware and model revision (§9).** Multi-H200 node vs Mac
+   Studio, and the exact HF revision hash of Qwen3.6-35B-A3B.
+3. **Larger fact corpus.** Keep the partitioned fixtures (default) or
+   ship a larger independent-fact corpus first, as the correction
+   note recommends; the latter replaces §5's partition table.
