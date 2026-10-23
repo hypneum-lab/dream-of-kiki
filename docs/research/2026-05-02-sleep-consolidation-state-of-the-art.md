@@ -257,12 +257,14 @@ in a deep network**, and the natural Paper 2 ablation comparator.
 ### 3.4 ICLR 2026 / 2026 concurrent proposals
 
 - **"Language Models Need Sleep: Learning to Self Modify and Consolidate
-  Memories"** — anonymous ICLR 2026 submission
-  ([openreview.net/forum?id=iiZy6xyVVE](https://openreview.net/forum?id=iiZy6xyVVE)).
+  Memories"** — ICLR 2026 submission
+  ([openreview.net/forum?id=iiZy6xyVVE](https://openreview.net/forum?id=iiZy6xyVVE)),
+  de-anonymised as Behrouz, Hashemi, Javanmard, Mirrokni,
+  [arXiv:2606.03979](https://arxiv.org/abs/2606.03979) (update 2026-10-23).
   Proposes RL-based upward distillation + intentional forgetting.
-- **Self-Distillation Enables Continual Learning** — Shenfeld, Damani et al.,
-  arXiv 2026 (`[unverified primary]`, arXiv ID forward-dated, verify before
-  citing). Self-distillation on ~200 K-token synthetic Wikipedia-style
+- **Self-Distillation Enables Continual Learning** — Shenfeld, Damani,
+  Hübotter, Agrawal, [arXiv:2601.19897](https://arxiv.org/abs/2601.19897)
+  (identifier verified 2026-10-23). Self-distillation on ~200 K-token synthetic Wikipedia-style
   corpora as a "synthetic dream" replay proxy.
 
 Concurrent independent proposals strengthen the novelty argument: framework
@@ -498,8 +500,8 @@ bridge.
 16. [Sleep-time Compute — Berkeley 2025](https://arxiv.org/abs/2504.13171) — +13–18 % accuracy, 5× compute amortisation.
 17. [Wake-Sleep Consolidated Learning — IEEE TNNLS 2024](https://arxiv.org/abs/2401.08623) — closest NREM/REM dual-phase analog.
 18. [Stateful Replay for Streaming Generative Learning — arXiv 2511.17936 `[unverified primary]`](https://arxiv.org/abs/2511.17936)
-19. [Self-Distillation Enables CL — arXiv 2026 `[unverified primary, ID forward-dated]`](https://arxiv.org/pdf/2601.19897)
-20. [Language Models Need Sleep — ICLR 2026 submission](https://openreview.net/forum?id=iiZy6xyVVE) — concurrent proposal.
+19. [Self-Distillation Enables CL — Shenfeld et al., arXiv 2601.19897 (2026)](https://arxiv.org/abs/2601.19897)
+20. [Language Models Need Sleep — ICLR 2026 submission](https://openreview.net/forum?id=iiZy6xyVVE) — concurrent proposal ; arXiv version [2606.03979](https://arxiv.org/abs/2606.03979) (Behrouz et al. 2026).
 
 ### Artificial substrates (SQ4)
 21. [CLP-SNN on Loihi 2 — Hajizada et al. arXiv 2511.01553 (Nov 2025)](https://arxiv.org/abs/2511.01553) — 70× speed, 5,600× energy.

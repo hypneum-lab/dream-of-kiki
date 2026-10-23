@@ -103,7 +103,7 @@ cet écart — *Wake-Sleep Consolidated Learning* [Alfarano et al.
 2024] est, à notre connaissance, l'analogue dual-phase NREM/REM
 publié le plus proche, et la proposition contemporaine *Language
 Models Need Sleep* couple une distillation ascendante par RL avec
-un oubli intentionnel [ICLR 2026 LM-sleep]. Les substrats
+un oubli intentionnel [Behrouz et al. 2026]. Les substrats
 neuromorphiques montrent la même convergence : CLP-SNN sur Loihi 2
 rapporte un facteur 70× de vitesse et 5 600× d'efficacité
 énergétique sur des baselines GPU pour la réactivation hors ligne
@@ -116,8 +116,8 @@ aucune ne tient encore le pont axiomatique. Le Framework C se
 positionne sur ce pont, avec les quatre piliers ci-dessus comme
 ancrages conceptuels, l'analogue empirique le plus proche
 [Alfarano et al. 2024] retenu comme comparateur d'ablation
-primaire du Paper 2, et les propositions concurrentes [ICLR 2026
-LM-sleep ; Berkeley 2025 sleep-time compute] lues comme
+primaire du Paper 2, et les propositions concurrentes [Behrouz
+et al. 2026 ; Berkeley 2025 sleep-time compute] lues comme
 corroboration indépendante du besoin sous-jacent plutôt que
 comme antériorité sur la contribution formelle.
 
