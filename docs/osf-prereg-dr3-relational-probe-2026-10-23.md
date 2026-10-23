@@ -11,8 +11,11 @@ mutual-kNN = 0.174 at k = 10, N = 1024, 3 seeds, 18.8× a random
 baseline; `nerve-wml` v1.9.0).
 **Primary substrate pair:** `MlpWML` vs `LifWML` from `nerve-wml`
 tag `v1.9.0` (commit `95ac6b78477c3ce999b31bca775769041e082b46`;
-the tag exists on the lab Gitea mirror), reproduced through
-`scripts/platonic_rh_alignment.py` at that tag.
+the tag is on the lab Gitea mirror `git.saillant.cc/hypneum-lab/
+nerve-wml` but **not yet on the GitHub repository**; the filing gate
+(§9) requires the tag, or an archive of that commit, to be public
+next to the filed registration), reproduced through
+`scripts/platonic_rh_alignment.py` at that commit.
 **Secondary substrate pair (exploratory):** MLX MLP vs E-SNN from
 `experiments/g5_cross_substrate/` (§7, last paragraph).
 **Design:** matched trained / untrained pairs per seed, paired
@@ -115,11 +118,21 @@ bounded by 4α = 0.05.
 
 - **H13-A (local structure survives)** — S_mKNN state = SURVIVES.
 - **H13-B (global structure survives)** — S_H0 state = SURVIVES.
-- **H13-C (local geometry fails)** — S_mKNN^τ state = FAILS.
-- **H13-D (global geometry fails)** — S_H0^τ state = FAILS.
+- **H13-C (local distance-weighted overlap bounded)** — S_mKNN^τ
+  state = FAILS.
+- **H13-D (global distance-weighted overlap bounded)** — S_H0^τ
+  state = FAILS.
 
-"Fails" therefore means a calibrated geometry difference **bounded
-below δ**, never a mere non-rejection.
+"Fails" therefore means only: **the calibrated gain in
+distance-weighted overlap is bounded below δ**, never a mere
+non-rejection, and never "metric geometry is absent". The τ-weighted
+scores multiply shared-support membership by distance agreement, so
+a small gain can come from limited structural overlap as well as
+from poor distance agreement. The conditional quantity that
+isolates distance agreement, the mean weight over shared supports
+(`S^τ / S`, per seed, trained minus null), is reported as an
+exploratory secondary statistic only; it is not powered and carries
+no confirmatory weight.
 
 ## §3 Power analysis
 
@@ -262,8 +275,8 @@ applies. Every combination of states reaches a row.
 | # | Condition | DR-3 §8.4 anchor | FC / EC |
 |---|---|---|---|
 | 0 | Abort (§4) | No reading; amend. | n/a |
-| 1 | A = SURVIVES ∧ B = SURVIVES ∧ C = FAILS ∧ D = FAILS | Re-anchor to **"null-calibrated relational structure (local and global), not metric geometry"**. Prose change in Paper 1 §8.4 (EN + FR, same PR). | unchanged |
-| 2 | A = SURVIVES ∧ B = SURVIVES ∧ (C = SURVIVES ∨ D = SURVIVES) | Structure survives at both scales and some geometry also survives. Re-anchor to **"null-calibrated relational structure (local and global)"** without the "not metric geometry" clause. | unchanged |
+| 1 | A = SURVIVES ∧ B = SURVIVES ∧ C = FAILS ∧ D = FAILS | Re-anchor to **"null-calibrated relational structure (local and global)"**, adding that the calibrated gain in distance-weighted overlap is bounded below δ at both scales (wording: "structure survives calibration; distance-weighted agreement adds less than δ"). The stronger phrase "not metric geometry" is not used unless the exploratory `S^τ / S` analysis agrees, and then only as a hedged reading. Prose change in Paper 1 §8.4 (EN + FR, same PR). | unchanged |
+| 2 | A = SURVIVES ∧ B = SURVIVES ∧ (C = SURVIVES ∨ D = SURVIVES) | Structure survives at both scales and some distance-weighted overlap gain also survives. Re-anchor to **"null-calibrated relational structure (local and global)"** with no statement about geometry. | unchanged |
 | 3 | A = SURVIVES ∧ B = FAILS | The current **"local, not global"** anchor is supported: global structure is bounded below δ. | unchanged |
 | 4 | A = FAILS | The §7.4 local claim does **not** hold under this protocol. File a dated correction note in `docs/milestones/` and qualify Paper 1 §7.4 / §8.4. | unchanged |
 | 5 | Any other combination (some needed state is INDETERMINATE) | Inconclusive at n = 10. Anchor wording unchanged; Paper 1 §8.4 gains one sentence citing the probe as inconclusive, with the four states. | unchanged |
