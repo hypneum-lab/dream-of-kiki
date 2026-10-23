@@ -43,9 +43,47 @@ strategies (`mog`, `ae`) sample per-class synthetic latents; they
 never mix classes from different domains.
 
 Zahn, Evans & Eagleman (2026), *Discovery by Dreaming: Cross-Domain
-Recombination in Artificial Memory* (arXiv:2607.16256), report that
-recombinatory replay **across** domains helps both a LoRA pipeline
-and a symbolic engine, while **within-domain** rehearsal does not.
+Recombination in Artificial Memory* (arXiv:2607.16256, **version 2,
+21 July 2026**; v1 was 28 June 2026), report that recombinatory
+replay **across** domains helps both a LoRA pipeline and a symbolic
+engine, while **within-domain** rehearsal does not. G4-nono is framed
+as a **vision generality test** of that claim (class-incremental
+Split-CIFAR-100-coarse, small CNN), not as a new hypothesis: the
+cross- versus within-domain idea is published for LLM and symbolic
+systems, the vision test is not.
+
+**What v2 retains, and what it does not.** The v2 full text retracts
+several numbers that the v1 abstract carried, and the abstract text
+still shown on the arXiv listing page predates that revision. Only
+the following v2 evidence is relied on here, as read in the v2 full
+text (table "Provenance audit", §3.3-§3.5, §5.1, §5.3):
+- Neural arm, Llama-3.1-8B, LoRA rank 256, matched conditions:
+  +5.64 ± 2.31 pp (5 of 5 seeds positive, paired t p = 0.0055,
+  bootstrap 95 % CI [+3.56, +6.81] pp). The authors state the gain is
+  averaged over a task mix only partly cross-domain; on subtasks
+  requiring cross-domain transfer (e.g. unseen GSM8K reasoning) the
+  gain is reported as +14.5 pp.
+- At rank 128 the neural arm is null across three base models, which
+  the authors attribute to capacity under-saturation; the
+  within-domain null they cite (−1.8 ± 4.4 pp, n = 3 × 150,
+  p > 0.30) is a rank-128 matched-condition result. At 70B/72B scale
+  the results are inconclusive within a ±5 pp floor.
+- Symbolic arm: replay-surfaced bridges lie farther apart in
+  embedding space than within-domain pairs (Spearman ρ = 0.54,
+  n = 32, bootstrap 95 % CI [0.24, 0.77]) and survive a matched
+  scramble control (5 of 5 true domain-pairs versus 0-1 of 5
+  re-paired; Fisher exact p ≈ 0.05). The authors describe the
+  external OpenAlex placement as consistent with, not proof of, the
+  mechanism.
+- Weights, not prompt: prepending cross-domain material in-context to
+  a ~671B model gave −9.2 pp (5 seeds). This is a different control
+  from this study's.
+- **Retracted in v2 and not used here:** the LLM-judged symbolic
+  accuracy headline (85.7 %, +21 pp over baseline; the authors state
+  judged connection rates are ceilinged near 100 % in all
+  conditions), the single-seed +26.8 % / +19.5 % neural gains, the
+  57.5 → 74.4 % sequential figure, and the magnitude of the +7.2 %
+  component-synergy figure.
 
 G4-nono asks a narrower, operational question: on a two-domain
 CIFAR-100-coarse stream, does mixing buffer latents **across** the
@@ -60,6 +98,18 @@ al. A confirmed H12 supports the statement "cross-domain latent
 mixing improves cross-domain class discrimination on this stream",
 and only that statement can be used to re-scope the DR-4 evidence
 record. No transfer endpoint is pre-registered here.
+
+**Domain-shortcut confound (Zhang et al., arXiv:2607.22994).**
+Zhang, Fan, Liang et al., *Breaking the Synthetic-Real Domain
+Shortcut for Training-Free Generative Replay-based Class Incremental
+Learning*, show that mixing synthetic old-class data with real
+new-class data lets a model rely on domain-discriminative features
+instead of class cues. CDPA is an A-versus-B discrimination score,
+so a `cross` gain could reflect a domain shortcut or head
+recalibration (the `fc2` soft-target step is a logit-rebalancing step
+between domains, which may counteract recency bias toward domain B)
+rather than recombination. A confirmed H12-A does not exclude these
+mechanisms; the domain-only probe of §6 is the check.
 
 The LLM-tier variant (LoRA math → code) is out of scope: in the CUDA
 E1 harness (`scripts/pilot_cycle3_cuda.py`, `_apply_dream_ops`)
@@ -437,6 +487,19 @@ All metrics are computed after task 10 training (end of stream).
   100 pairs.
 - **WDPA (H12-C).** Same computation over the 45 + 45 within-domain
   pairs; unweighted mean over the 90 pairs.
+- **Domain-only probe, DOA (secondary, exploratory).** For each of
+  the 20000 test images of the 20 classes (1000 per class), predict
+  the *domain* by comparing the maximum logit over the 10 domain-A
+  classes with the maximum over the 10 domain-B classes (tie counts
+  0.5); DOA is the accuracy against the true domain. It uses no
+  within-pair class information. The paired contrasts `cross − none`
+  and `cross − within` on DOA are reported with the same state rules
+  at nominal α = 0.05, outside the confirmatory family, spending no
+  α. Reading rule (descriptive): if the `cross` gain in DOA is of
+  the same size as the gain in CDPA, the CDPA gain cannot be
+  separated from a domain-shortcut or head-recalibration mechanism
+  (Zhang et al., arXiv:2607.22994) and H12-A / H12-B are reported with
+  that qualification. Nothing in §2 or §7 changes.
 - **Retention (secondary, ladder-comparable).** Accuracy on domain-A
   test images after task 10, restricted to the 10 domain-A logits.
 - **Final 20-way accuracy (secondary).**
@@ -514,7 +577,22 @@ before the lock commit.
 Decided by the PI on 2026-10-23 and no longer open: ε = 0.01; N
 by the §3 N-selection rule (30, 95 or 108).
 
+**Within-domain equivalence margin (check, no change).** The
+pre-registered within-domain margin already exists: H12-C is a
+paired TOST on WDPA with ε = 0.01 (§2), consistent with the G4
+decision; a non-significant within-domain result is never read as
+"no effect" (§2, §8). No new margin is introduced. The
+domain × recombination interaction is read from H12-B (`cross` vs
+`within`), and retention versus cross-domain discrimination are
+reported as separate endpoints (§6).
+
 1. **Domain split (§5).** Animals / non-animals (default) or a
    stronger shift (second corpus; needs a new loader and pin).
-2. **Hardware.** M1 Max or Studio. The protocol does not change; R1
+2. **Un-mixed control arm (not registered).** An exploratory arm that
+   replays the same domain-A and domain-B latents with hard labels
+   and the same number of `fc2` steps would separate recombination
+   from logit rebalancing (a design suggestion from the literature
+   check, not a result in the cited paper). It adds cells and compute
+   beyond §3, so it is left to the PI.
+3. **Hardware.** M1 Max or Studio. The protocol does not change; R1
    run_ids are per machine.

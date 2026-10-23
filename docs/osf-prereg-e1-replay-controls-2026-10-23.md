@@ -59,6 +59,41 @@ Two 2026 results raise the bar further:
   by the teacher–student loop. Any self-generated replay arm needs a
   pre-specified drift / collapse diagnostic (§6).
 
+Three further 2026 works frame the design:
+
+- Behrouz, Hashemi, Javanmard & Mirrokni, *Language Models Need
+  Sleep: Learning to Self-Modify and Consolidate Memories*
+  (arXiv:2606.03979; also an ICLR 2027 submission, OpenReview
+  `4BIMcGrZjq`). A "Sleep" paradigm with (1) memory consolidation by
+  upward distillation (Knowledge Seeding: on-policy distillation
+  combined with RL-based imitation learning) and (2) "Dreaming", an
+  RL-driven generation of synthetic curricula, evaluated on
+  long-horizon, continual-learning, knowledge-incorporation and
+  few-shot tasks. **Differentiation:** that work proposes a
+  sleep/dream method; E1 does not. E1 is a controlled,
+  token-matched comparison at one fixed 35B-A3B checkpoint of the
+  existing GENIAL dream arm (`p_equ`) against tuned vanilla replay,
+  restricted on-policy replay and a same-checkpoint prompt-only
+  control, with the DOWNSCALE contribution isolated by ablation
+  (H14-B). No claim here is novel because of the words "sleep" or
+  "dream", and E1 does not reproduce or test the Behrouz et al.
+  method.
+- Marek, Cho, Qiu, Chunara, Izmailov & Wilson, *Forgetting in
+  Language Models: Capacity, Optimization, and Self-Generated
+  Replay* (arXiv:2605.26097). Self-generated samples serve as
+  effective replay data, nearly eliminating forgetting; low learning
+  rates reduce forgetting but need substantially more training
+  steps, and replay breaks that trade-off. Learning rate and step
+  count therefore change the outcome directly, which is why the
+  controls are tuned (§5), and it motivates the DOWNSCALE caveat in
+  §7.
+- Peng, Li, Ouyang, Yuan & Ding, *Diagnosing and Mitigating Thinking
+  Collapse in On-Policy Self-Distillation* (arXiv:2607.10805),
+  reports a collapse of native intermediate reasoning under
+  on-policy self-distillation and a mitigation that anchors to a
+  reference derived from the frozen base model. It motivates the
+  frozen-reference diagnostic of §6.
+
 In this harness `p_min` **is** SGD replay at default hyperparameters
 (`HL_LR = 1e-4`, `HL_INNER = 5`): vanilla, untuned replay. The
 framework-specific part is what `p_equ` (replay + DOWNSCALE) and
@@ -447,6 +482,23 @@ Per cell: relative weight drift ‖w_post − w_pre‖ / ‖w_pre‖ (over all
 floating-point parameters), and a **collapse flag** = post `acc`
 < pre `acc` − 0.10, **or** post `acc` below 0.25 (4-way chance). Per profile: collapse rate over seeds.
 
+**Frozen-reference monitoring (secondary, descriptive).** Motivated
+by Peng et al. (arXiv:2607.10805) and Khamis et al., *iSDFT:
+Information-Proximal Self-Distillation for Continual Learning in
+LLMs* (arXiv:2609.24646), which anchor to the frozen base model.
+The frozen reference is the pre-replay checkpoint of the same seed
+(no extra model). Per cell, on a fixed held-out probe set drawn from
+the confirmatory eval partition's prompts (no gold answers used):
+(i) the mean KL divergence from the frozen reference's
+next-token distribution to the post-replay model's over the 4 answer
+choices, and (ii) the fraction of items the pre-replay model
+answered correctly that the post-replay model answers wrongly
+("previously correct, now lost"). Both are reported per profile with
+means and 95 % intervals. They are **not** gates, enter no state
+rule and do not alter the 20 % collapse gate below; each cell scores a single
+pre/post replay phase, so collapse over repeated consolidation
+cycles is not observed; this is a stated limitation.
+
 Collapse is an outcome, not an exclusion. **Validity gate:** if the
 collapse rate of **either** profile in a confirmatory contrast
 exceeds 20 %, that hypothesis's state is UNINTERPRETABLE (the
@@ -471,6 +523,18 @@ has a reading:
 | H14-C | INFERIOR (exploratory) | Exploratory: `p_equ` appears worse than restricted MC-OPR by more than δ. |
 | any | INCONCLUSIVE | Inconclusive at n = 141 for this contrast; no claim either way. |
 | any | UNINTERPRETABLE | Validity gate failed; reported descriptively only. |
+
+**DOWNSCALE caveat (H14-B SUPERIOR).** DOWNSCALE is a weight shrink
+(`HL_SHRINK = 0.99`, untuned) applied after replay. Marek et al.
+(arXiv:2605.26097) show that learning rate and step count directly
+trade off forgetting against learning, so a shrink of the weights
+may act as an **implicit learning-rate reduction or regularisation**.
+An H14-B SUPERIOR reading is therefore compatible with that
+mechanism and is **not** evidence of a sleep-specific one. Only the
+registered contrast (tuned replay with versus without DOWNSCALE,
+same configuration and updates) is tested; an LR-matched replay arm
+that reproduces the weight-norm change of DOWNSCALE would separate
+the two readings and is **not** registered here (see §10).
 
 **Joint headline** (first matching row; the last row catches every
 other combination):
@@ -579,7 +643,11 @@ named section before the lock commit.
    revision hash of Qwen3.6-35B-A3B. Running on Apple MLX instead
    would be a different backend and requires a protocol revision
    before filing, not a hardware swap.
-2. **Fact-corpus source (§5.1).** Where the items come from (the
+2. **LR-matched replay arm (exploratory, not registered).** Replay
+   with the learning rate scaled to match the norm change that
+   DOWNSCALE produces (Marek et al., arXiv:2605.26097). It adds
+   cells beyond the cell count in the header, so it is left to the PI.
+3. **Fact-corpus source (§5.1).** Where the items come from (the
    FineFab mega-v2 corpus named in the 2026-06-19 correction, a
    public fact set, or newly authored items). The §5.1 properties
    apply whatever the source.

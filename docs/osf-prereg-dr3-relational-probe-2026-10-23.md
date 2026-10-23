@@ -48,6 +48,27 @@ Two later results bear on that wording:
   normalisation change measured alignment, so preprocessing must be
   fixed in advance.
 
+Three further results bound what the probe can claim:
+
+- Shi, Han, Li, Thompson & Hernández-Lobato (2026), *From Plato to
+  Aristotle: Toward a General Theory of Representation Hypotheses*
+  (arXiv:2610.20286). Places neighbour overlap, spanning-tree overlap
+  and distance-based criteria on one lattice, and states that You et
+  al.'s spanning-tree overlap mostly repeats one-nearest-neighbour
+  overlap. A spanning-tree score such as S_H0 therefore cannot, on
+  its own, establish a *global* structure that is independent of
+  local 1-NN structure (see the comparator in §5 and the wording
+  rule in §7). The same paper argues that the loss of global
+  convergence reported elsewhere can be an artefact of calibrating a
+  maximum over layers; this probe uses one pre-registered layer
+  (§5, departure 2).
+- Koepke, Zverev, Ginosar & Efros, *Back into Plato's Cave*
+  (arXiv:2604.18572). Mutual-kNN on a small sample captures only
+  coarse structure (k must grow with n) and bijective input pairing
+  inflates alignment. See the scope limits in §5.
+- Gröger et al. (arXiv:2602.14486) calibrate with a permutation of
+  sample correspondences; see the attribution note in §5.
+
 This probe asks which wording the DR-3 anchor should carry: "local,
 not global" or "relational structure, not metric geometry". It
 changes no axiom; DR-3's statement and the Conformance Criterion
@@ -268,15 +289,46 @@ Sensitivity pipelines (reported only, never change a verdict):
 - Sensitivity (reported, not tested): k ∈ {5, 20}; linear CKA and
   the Mantel-style Pearson correlation of full distance matrices.
 
+**1-NN comparator for S_H0 (exploratory, descriptive).** Motivated
+by Shi et al. (arXiv:2610.20286). Computed on the same dumps, with
+the same preprocessing, the same trained / null pairing and the same
+calibrated difference D_s = trained − null as above:
+- *S_mKNN(k=1)*: `(1/n) Σ_i 1[nn_X(i) = nn_Y(i)]`, with the same
+  tie rule (lower index).
+- *S_H0^res* (S_H0 beyond 1-NN edges): let `E_NN(R)` be the set of
+  unordered pairs `{i, nn_R(i)}` for representation R. Then
+  `S_H0^res = |(T_X ∩ T_Y) \ (E_NN(X) ∪ E_NN(Y))| / (n − 1)`, i.e.
+  the shared MST edges that are 1-NN edges in neither representation.
+These two scores are **not** members of the Bonferroni family of §2,
+spend no α, carry no SURVIVES / FAILS state, and cannot change any
+state in §2. They are reported as the mean of D with a two-sided 95 %
+paired-t interval, as description only. They add no confirmatory
+test, so no power computation is changed.
+
+**Scope limits (Koepke et al., arXiv:2604.18572).** n = 1024 inputs
+and k = 10 capture coarse neighbourhood structure only, and the
+pairing is bijective by construction (both substrates see the same
+inputs), which inflates absolute alignment. Results describe coarse
+neighbourhood structure at n = 1024; the k ∈ {5, 20} sensitivity
+above is the only check on neighbourhood size, and gallery density
+is not varied. The bijective pairing is inherent to a
+same-input comparison and is named here as a scope limit, not
+corrected.
+
 **Departures from You et al., and why.**
 1. *Null.* You et al. calibrate with a permutation null over sample
    correspondences and a rescaled score
-   `max{(T_obs − c_α)/(1 − c_α), 0}`. The claim under test (Paper 1
-   §8.4) is about convergence beyond what architecture alone
-   induces, which is Gröger et al.'s capacity-matched untrained null.
-   That null is primary here. Their permutation calibration
-   (K = 500, same statistic, their T_cal) is computed and reported as
-   a secondary analysis.
+   `max{(T_obs − c_α)/(1 − c_α), 0}`. Gröger et al.
+   (arXiv:2602.14486) also use a permutation null over sample
+   correspondences (plus synthetic random matrices); neither paper
+   uses an untrained network as the null. The matched **untrained-pair
+   null is this study's own choice**, made because the claim under
+   test (Paper 1 §8.4) is about convergence beyond what architecture
+   alone induces; it is not attributed to Gröger et al. or You et
+   al. That null is primary here. The permutation calibration
+   (K = 500, same statistic, You et al.'s T_cal; the
+   Gröger/You-comparable form) is computed and reported as a
+   secondary analysis.
 2. *Layer selection.* They take a maximum over layer pairs. Here
    there is one pre-registered layer per substrate, so no maximum.
 3. *Clipping.* Their 95th-percentile clipping targets outlier
@@ -288,6 +340,7 @@ Sensitivity pipelines (reported only, never change a verdict):
 ## §6 Secondary analyses (reported, not tested)
 
 - Permutation null and You et al.'s T_cal (§5, departure 1).
+- 1-NN comparator for S_H0 (S_mKNN(k=1), S_H0^res; §5), descriptive.
 - Direct v1.9.0 replication: script unchanged, seeds 0-2, Gaussian
   baseline, reported next to Paper 1's 0.174 / 18.8×.
 - Sensitivity pipelines, k sweep, τ sweep, CKA, Mantel.
@@ -305,6 +358,18 @@ applies. Every combination of states reaches a row.
 | 3 | A = SURVIVES ∧ B = FAILS | Local calibrated gain detected; global calibrated gain bounded below δ = 0.025. The current "local, not global" anchor is kept, qualified as "global calibrated gain below 0.025". No local-versus-global difference is tested. | unchanged |
 | 4 | A = FAILS | Local calibrated gain bounded below δ = 0.025 under this protocol: the §7.4 local claim is not supported at that margin. This does not disprove a positive alignment or the historical Gaussian-baseline figure. File a dated note in `docs/milestones/` and qualify Paper 1 §7.4 / §8.4 accordingly. | unchanged |
 | 5 | Any other combination (some needed state is INDETERMINATE) | Inconclusive at n = 20. Anchor wording unchanged; Paper 1 §8.4 gains one sentence citing the probe as inconclusive, with the four states. | unchanged |
+
+**Wording rule for "global" (applies to rows 1 and 2).** H13-B
+SURVIVES establishes a positive calibrated S_H0 gain; S_H0 shares
+most of its edges with 1-NN overlap (Shi et al.,
+arXiv:2610.20286). The words "global" or "(local and global)" are
+therefore used in the new anchor **only if** the descriptive S_H0^res
+of §5 shows a point estimate of mean(D) ≥ δ and a 95 % interval that
+excludes 0. Otherwise rows 1 and 2 are written with "relational
+structure, in which the global (spanning-tree) score is not
+separable from one-nearest-neighbour overlap" in place of "(local
+and global)". This is a wording rule applied to prose only; it is
+not a fifth confirmatory test and changes no state.
 
 The secondary G5 pair (MLX MLP vs E-SNN, penultimate layer,
 Split-FMNIST test inputs, same statistics and preprocessing) is
@@ -329,7 +394,8 @@ Split-FMNIST test inputs, same statistics and preprocessing) is
   been run on synthetic D vectors covering every §2 state and §7 row.
 - New script `scripts/dr3_relational_probe.py` (to be written and
   unit-tested before filing: mKNN on a hand-built example, Prim tie
-  rule, H₀ normalisation, τ → ∞ limit equals the structure score).
+  rule, H₀ normalisation, τ → ∞ limit equals the structure score,
+  S_mKNN(k=1) and S_H0^res on a hand-built example).
   It consumes dumps exported from `nerve-wml` at v1.9.0 by an export
   helper that imports the v1.9.0 training functions unchanged.
 - Milestones: `docs/milestones/dr3-relational-probe-<date>.{json,md}`.
