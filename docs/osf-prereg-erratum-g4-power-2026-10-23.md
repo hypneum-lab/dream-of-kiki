@@ -7,6 +7,10 @@ should be filed on OSF next to them by the PI.
 **Reproduction:** `scripts/prereg_power_2026_10.py`, section 2
 (exact noncentral t, equal-variance two-sample design, equal n per
 arm, 80 % power). Values are Cohen's d; Hedges' g = d × J(2n − 2).
+The locked runs used Welch tests; the equal-variance noncentral t is
+the standard planning approximation for them (as the locked text
+itself states for quinto / sexto) and is exact only under equal
+variances.
 
 ## What is wrong
 

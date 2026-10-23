@@ -101,6 +101,18 @@ structure and geometry keeps the 2 × 2 comparable.
 SURVIVES requires `mean(D) ≥ δ`, FAILS implies `mean(D) < U < δ`, so
 the two cannot co-occur.
 
+**What SURVIVES means.** `L > 0` establishes a positive calibrated
+difference at level α; `mean(D) ≥ δ` is a filter on the **point
+estimate**. SURVIVES reads "positive, with an estimate at or above
+δ", not "the population difference is at least δ". FAILS, by
+contrast, does bound the population difference below δ.
+
+**Error accounting.** SURVIVES can only be false if the true mean
+difference μ ≤ 0; FAILS can only be false if μ ≥ δ. As δ > 0, at
+most one of the two is false for any μ, so each statistic spends α
+once whichever state is reached, and the four-statistic family is
+bounded by 4α = 0.05.
+
 - **H13-A (local structure survives)** — S_mKNN state = SURVIVES.
 - **H13-B (global structure survives)** — S_H0 state = SURVIVES.
 - **H13-C (local geometry fails)** — S_mKNN^τ state = FAILS.
@@ -142,8 +154,12 @@ as such (§7, row 5).
   seeds 0-2, which are reused only for the descriptive direct
   replication).
 - **Learning gate (seed level).** Each trained substrate is scored
-  on a held-out draw `HardFlowProxyTask(dim=16, n_classes=12,
-  seed=s + 5000).sample(batch=1024)` with its own readout
+  on 1024 held-out examples of **its own task**: build
+  `task = HardFlowProxyTask(dim=16, n_classes=12, seed=s)` (same
+  centres and XOR hyperplanes as training), then replace only its
+  sampling stream, `task._gen = torch.Generator().manual_seed(s +
+  5000)`, and draw `task.sample(batch=1024)`. The task parameters are
+  unchanged; only the examples are new. Readout
   (`MlpWML`: argmax of `emit_head_pi(core(x))[:, :12]`; `LifWML`:
   argmax of `emit_head_pi(spike(input_proj(encoder(x))))[:, :12]`).
   The seed is excluded if either accuracy is below **0.25** (3× the
@@ -201,6 +217,9 @@ Sensitivity pipelines (reported only, never change a verdict):
 - *Geometry weights* (You et al. Eq. 3): per representation,
   `D̃ = D / Q_0.9({D_ij : D_ij > 0})`;
   `w_ij = exp(−|log D̃_X(i,j) − log D̃_Y(i,j)| / τ)`.
+  Zero distances (duplicate rows after normalisation): `w_ij = 1` if
+  `D_X(i,j) = D_Y(i,j) = 0`, and `w_ij = 0` if exactly one is zero.
+  The number of zero-distance pairs per matrix is reported.
 - *S_mKNN^τ* (Eq. 4): `(1/n) Σ_i (1/k) Σ_{j ∈ N_k^X(i) ∩ N_k^Y(i)}
   w_ij`.
 - *S_H0^τ* (Eq. 5): `(1/(n − 1)) Σ_{(i,j) ∈ T_X ∩ T_Y} w_ij`.
@@ -264,6 +283,12 @@ Split-FMNIST test inputs, same statistics and preprocessing) is
 
 ## §9 Audit trail and deviations
 
+- **Filing gate.** This draft is not filed until the export helper
+  and `scripts/dr3_relational_probe.py` exist at a pinned commit with
+  passing tests (below), the learning gate has been run on one smoke
+  seed (seed 900, not analysed) to confirm trained substrates pass
+  it and untrained ones are unaffected, and the decision code has
+  been run on synthetic D vectors covering every §2 state and §7 row.
 - New script `scripts/dr3_relational_probe.py` (to be written and
   unit-tested before filing: mKNN on a hand-built example, Prim tie
   rule, H₀ normalisation, τ → ∞ limit equals the structure score).
