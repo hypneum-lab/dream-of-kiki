@@ -109,10 +109,17 @@ For H12-A and H12-B:
 
 | State | Rule |
 |---|---|
-| CONFIRMED | `L > 0` and `g_av ≥ 0.5` (the G4-octavo H7-A / G6 H9-A floor) |
+| CONFIRMED | `L > 0` and observed `g_av ≥ 0.5` (the G4-octavo H7-A / G6 H9-A floor) |
 | DETECTED-BELOW-FLOOR | `L > 0` and `g_av < 0.5` |
 | BOUNDED-NO-GAIN | `U < ε` (no gain of ε or more; includes negative estimates) |
 | INCONCLUSIVE | none of the above |
+
+**What CONFIRMED means.** `L > 0` establishes a positive population
+difference at level α; the observed `g_av ≥ 0.5` is a magnitude
+filter on the **point estimate**. CONFIRMED is therefore read as "a
+positive effect whose estimate reaches the floor", never as "the
+population effect is at least 0.5". The same applies to every
+observed-floor rule in this document.
 
 If `U < 0`, the state is BOUNDED-NO-GAIN and the negative direction
 is reported as an **exploratory** harm signal. No harm conclusion is
@@ -120,20 +127,32 @@ confirmatory in this family.
 
 For H12-C:
 
-| State | Rule |
-|---|---|
-| EQUIVALENT | `L > −ε` and `U < ε` |
-| DIFFERENT | `L > 0` or `U < 0` (and not EQUIVALENT) |
-| INCONCLUSIVE | none of the above |
+| State | Rule | Status |
+|---|---|---|
+| EQUIVALENT | `L > −ε` and `U < ε` | confirmatory |
+| MEANINGFULLY-DIFFERENT | `L > ε` or `U < −ε` | exploratory |
+| INCONCLUSIVE | none of the above (includes a difference from 0 whose interval still overlaps ±ε) | — |
+
+**Error accounting.** Each hypothesis spends α once. For H12-A/B the
+two confirmatory conclusions are CONFIRMED (false only if the true
+difference μ ≤ 0) and BOUNDED-NO-GAIN (false only if μ ≥ ε). Because
+ε > 0, at most one of them can be false for any μ, so the
+probability of a false confirmatory conclusion is ≤ α per
+hypothesis. For H12-C only EQUIVALENT is confirmatory (TOST, α);
+MEANINGFULLY-DIFFERENT is exploratory and spends no α. The family
+bound is therefore 3α = 0.05.
 
 A non-significant test never establishes a null in this document.
 Only BOUNDED-NO-GAIN and EQUIVALENT, which rest on confidence bounds
-against ε, support "no effect of practical size".
+against ε, support "no effect of practical size". A difference from
+zero that is smaller than ε does not count as non-replication.
 
 Secondary contrasts (reported, outside the family, same state rules
 at nominal α = 0.05): `CDPA(P_max, cross)` vs `CDPA(P_equ, cross)`,
-`CDPA(P_max, cross)` vs `CDPA(P_min)`, and the same three contrasts
-on retention and final 20-way accuracy.
+`CDPA(P_max, cross)` vs `CDPA(P_min)`, `CDPA(P_max, within)` vs
+`CDPA(P_max, none)` (needed before any "generic synthetic-SGD"
+reading), and the same contrasts on retention and final 20-way
+accuracy.
 
 ## §3 Power analysis
 
@@ -147,7 +166,7 @@ at n = 95. Converted to the g_av scale with
 `d_av = d_z × sqrt(2(1 − r))`, where r is the within-seed
 correlation between the two strategies' outcomes:
 
-| n | r = 0 | r = 0.3 | r = 0.5 | r = 0.7 | r = 0.9 |
+| n (d_av MDE) | r = 0 | r = 0.3 | r = 0.5 | r = 0.7 | r = 0.9 |
 |---|---|---|---|---|---|
 | 30 | 0.798 | 0.668 | 0.564 | 0.437 | 0.252 |
 | 95 | 0.436 | 0.365 | 0.308 | 0.239 | 0.138 |
@@ -352,13 +371,13 @@ The table is exhaustive: every combination of states reaches a row.
 | # | Condition | Reading | EC | FC |
 |---|---|---|---|---|
 | 0 | Abort condition of §4 | Abort and amend; artifacts preserved as ABORTED. No reading. | n/a | n/a |
-| 1 | H12-C = DIFFERENT | The ladder's within-domain null does not replicate on this stream. H12-A/B states are reported but read as exploratory until the discrepancy is explained. | stays PARTIAL | stays |
-| 2 | H12-A = CONFIRMED ∧ H12-B = CONFIRMED ∧ H12-C = EQUIVALENT | **DR-4 refutation re-scoped (operationally).** Cross-domain latent mixing improves cross-domain class discrimination beyond no mixing and beyond within-domain mixing, while within-domain mixing changes WDPA by less than ε. DR-4 evidence gets a G4-nono addendum restating the refutation as "refuted for within-domain retention; not refuted for cross-domain discrimination on one CIFAR stream". | stays PARTIAL | stays |
+| 1 | H12-C = MEANINGFULLY-DIFFERENT | Exploratory signal that within-domain mixing changes WDPA by more than ε on this stream (the ladder's within-domain null may not carry over). H12-A/B states are reported but read as exploratory until this is explained. | stays PARTIAL | stays |
+| 2 | H12-A = CONFIRMED ∧ H12-B = CONFIRMED ∧ H12-C = EQUIVALENT | **DR-4 refutation re-scoped (operationally).** Cross-domain latent mixing gives a positive CDPA difference over no mixing and over within-domain mixing (point estimates at or above the floor), while within-domain mixing changes WDPA by less than ε. DR-4 evidence gets a G4-nono addendum restating the refutation as "refuted for within-domain retention; not refuted for cross-domain discrimination on one CIFAR stream". | stays PARTIAL | stays |
 | 3 | H12-A = CONFIRMED ∧ H12-B = CONFIRMED ∧ H12-C = INCONCLUSIVE | Cross-domain-specific CDPA gain, but the within-domain null is not bounded. Addendum records the gain; the re-scoping of row 2 is **not** made. | stays PARTIAL | stays |
-| 4 | H12-A = CONFIRMED ∧ H12-B = BOUNDED-NO-GAIN | CDPA gain is generic synthetic-SGD: `cross` beats `none` but not `within` by ε or more. DR-4 refutation stands; no cross-domain specificity. | stays PARTIAL | stays |
+| 4 | H12-A = CONFIRMED ∧ H12-B = BOUNDED-NO-GAIN | Gain over `none`; the cross-domain-**specific** advantage over `within` is bounded below ε. No cross-domain specificity is claimed; the DR-4 refutation stands for this endpoint. Whether the gain is generic synthetic SGD is read only from the secondary `within` vs `none` CDPA contrast, not concluded here. | stays PARTIAL | stays |
 | 5 | H12-A = CONFIRMED ∧ H12-B ∈ {DETECTED-BELOW-FLOOR, INCONCLUSIVE} | Gain over `none`; specificity unresolved. No re-scoping. | stays PARTIAL | stays |
 | 6 | H12-A = BOUNDED-NO-GAIN | No CDPA gain of ε or more from cross-domain mixing. The DR-4 refutation is **extended** to this two-domain stream for the CDPA endpoint. | stays PARTIAL | stays |
-| 7 | H12-A = DETECTED-BELOW-FLOOR | A positive CDPA difference below the g_av floor. Reported; no re-scoping, no extension. | stays PARTIAL | stays |
+| 7 | H12-A = DETECTED-BELOW-FLOOR | A positive CDPA difference whose g_av estimate is below the floor. Reported; no re-scoping, no extension. | stays PARTIAL | stays |
 | 8 | H12-A = INCONCLUSIVE | Inconclusive at this N: neither a gain ≥ floor nor a bound below ε. DR-4 record unchanged; no extension is claimed. | stays PARTIAL | stays |
 
 No row promotes EC to STABLE. A single two-domain CNN stream cannot
@@ -383,6 +402,14 @@ carry a universality claim in either direction.
   keys `g4-nono/<arm>/<strategy>` (`<strategy>` = `na` for `baseline`
   and `P_min`) and R1 bit-stable run_ids.
 - Milestones: `docs/milestones/g4-nono-cross-domain-<date>.{json,md}`.
+- **Filing gate.** This draft is not filed until (a) the driver,
+  `recombine_cross.py` and the aggregator exist at a pinned commit,
+  (b) every item of the §5 fidelity checklist has a passing test,
+  (c) the aggregator has been run on synthetic paired data covering
+  every §2 state and every §7 row, and (d) the smoke results below
+  (wall time, r, SD_D, manipulation-check pass rate) are written into
+  the filed version. The lock commit is the commit that contains all
+  four.
 - **Pre-filing smoke:** seeds 900-902, all 8 cells, on the filing
   hardware. It verifies the driver, the checklist tests and per-cell
   wall time, and records r and SD_D. Its numbers are reported but
