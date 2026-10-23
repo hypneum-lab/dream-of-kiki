@@ -83,6 +83,25 @@ def test_parquet_with_coarse_matches_column(tmp_path: Path) -> None:
     assert np.array_equal(x[0], imgs[0])
 
 
+def test_legacy_image_label_schema_without_coarse(tmp_path: Path) -> None:
+    """Regression: the legacy ``image`` / ``label`` schema still loads
+    through the fine-label decoder and is rejected by the coarse one."""
+    pd = pytest.importorskip("pandas")
+    pytest.importorskip("pyarrow")
+    from experiments.g4_sexto_test.cifar100_dataset import (
+        _decode_parquet_shard,
+    )
+
+    img = np.full((32, 32, 3), 7, np.uint8)
+    df = pd.DataFrame({"image": [{"bytes": _png(img)}], "label": [42]})
+    p = tmp_path / "legacy.parquet"
+    df.to_parquet(p)
+    x, fine = _decode_parquet_shard(p)
+    assert fine.tolist() == [42] and x.shape == (1, 32, 32, 3)
+    with pytest.raises(ValueError, match="coarse_label"):
+        decode_parquet_shard_with_coarse(p)
+
+
 def test_parquet_without_coarse_column_raises(tmp_path: Path) -> None:
     pd = pytest.importorskip("pandas")
     pytest.importorskip("pyarrow")
@@ -105,10 +124,22 @@ _REAL = Path("experiments/g4_sexto_test/data")
     reason="pinned CIFAR-100 files not present locally (no download in tests)",
 )
 def test_pinned_bin_coarse_matches_parquet_first_1000() -> None:
+    import hashlib
+
+    from experiments.g4_sexto_test.cifar100_dataset import (
+        CIFAR100_HF_TRAIN_SHA256,
+    )
+
+    pq_path = _REAL / "cifar100-train.parquet"
+    assert (
+        hashlib.sha256(pq_path.read_bytes()).hexdigest()
+        == CIFAR100_HF_TRAIN_SHA256
+    ), "parquet is not the pinned file"
     _x, _f, c_bin = decode_cifar100_bin_with_coarse(
         _REAL / "cifar-100-binary" / "train.bin"
     )
     _x2, _f2, c_pq = decode_parquet_shard_with_coarse(
         _REAL / "cifar100-train.parquet"
     )
+    assert len(c_bin) >= 1000 and len(c_pq) >= 1000
     assert c_bin[:1000].tolist() == c_pq[:1000].tolist()

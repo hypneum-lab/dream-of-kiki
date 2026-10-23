@@ -197,13 +197,76 @@ def test_baseline_cell_has_na_strategy(stream) -> None:
     assert rec["strategy"] == "na"
 
 
-def test_none_equals_no_recombine_bitwise(stream) -> None:
-    """P_max/none run twice -> identical metrics (determinism)."""
+def test_none_matches_independently_disabled_recombine(
+    stream, monkeypatch
+) -> None:
+    """P_max/none equals P_max with the RECOMBINE step patched out."""
     a = drv.run_cell(arm="P_max", strategy="none", seed=4, stream=stream,
                      epochs=1, batch_size=64, lr=0.01)
-    b = drv.run_cell(arm="P_max", strategy="none", seed=4, stream=stream,
+    monkeypatch.setattr(drv, "recombine", lambda *a, **k: None)
+    b = drv.run_cell(arm="P_max", strategy="cross", seed=4, stream=stream,
                      epochs=1, batch_size=64, lr=0.01)
-    assert a["cdpa"] == b["cdpa"] and a["acc20"] == b["acc20"]
+    assert a["cdpa"] == b["cdpa"] and a["wdpa"] == b["wdpa"]
+    assert a["acc20"] == b["acc20"]
+
+
+def test_run_cell_non_finite_logits_marks_exclusion(
+    stream, monkeypatch
+) -> None:
+    def nan_logits(cnn, x):
+        return np.full((len(x), 20), np.nan, np.float32)
+
+    monkeypatch.setattr(drv, "_logits_chunked", nan_logits)
+    rec = drv.run_cell(arm="baseline", strategy="na", seed=6, stream=stream,
+                       epochs=1, batch_size=64, lr=0.01)
+    assert rec["finite"] is False
+    assert rec["excluded"] is True
+    assert rec["exclusion_reason"] == "non_finite_logits"
+    assert rec["cdpa"] is None and rec["wdpa"] is None
+
+
+def test_run_cell_non_finite_manip_marks_exclusion(
+    stream, monkeypatch
+) -> None:
+    real = drv.G4SmallCNN.predict_logits
+
+    def bad(self, x):
+        out = real(self, x).copy()
+        out[0, 0] = np.nan
+        return out
+
+    monkeypatch.setattr(drv.G4SmallCNN, "predict_logits", bad)
+    rec = drv.run_cell(arm="baseline", strategy="na", seed=6, stream=stream,
+                       epochs=1, batch_size=64, lr=0.01)
+    assert rec["finite"] is False
+    assert rec["exclusion_reason"] == "non_finite_logits"
+
+
+def test_clean_cell_not_excluded(stream) -> None:
+    rec = drv.run_cell(arm="baseline", strategy="na", seed=6, stream=stream,
+                       epochs=1, batch_size=64, lr=0.01)
+    assert rec["excluded"] is False and rec["exclusion_reason"] is None
+
+
+def test_duplicate_cell_different_out_aborts(
+    stream, tmp_path: Path, monkeypatch
+) -> None:
+    monkeypatch.setattr(drv, "load_stream", lambda data_dir: stream)
+    db = tmp_path / "r.sqlite"
+    base = ["--seed", "7", "--arm", "P_min", "--strategy", "na",
+            "--registry-db", str(db), "--epochs", "1"]
+    out1 = tmp_path / "a.json"
+    assert drv.main(base + ["--out", str(out1)]) == 0
+    first = json.loads(out1.read_text())
+    out2 = tmp_path / "b.json"
+    rc = drv.main(base + ["--out", str(out2), "--lr", "0.02"])
+    assert rc == drv.EXIT_RUN_ID_COLLISION
+    rec = json.loads(out2.read_text())
+    assert rec["status"] == "aborted"
+    assert rec["abort_reason"] == "run_id_collision"
+    assert rec["run_id"] == first["run_id"]
+    assert "cdpa" not in rec
+    assert json.loads(out1.read_text()) == first
 
 
 def test_main_writes_outcome_record(stream, tmp_path: Path, monkeypatch) -> None:

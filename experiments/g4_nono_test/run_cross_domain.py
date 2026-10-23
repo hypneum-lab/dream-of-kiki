@@ -15,7 +15,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import math
 import os
 import subprocess
 import sys
@@ -30,6 +29,7 @@ if str(REPO_ROOT) not in sys.path:
 import numpy as np  # noqa: E402
 
 from experiments.g4_nono_test.metrics import (  # noqa: E402
+    NonFiniteLogitsError,
     compute_cdpa,
     compute_final_accuracy,
     compute_retention_domain_a,
@@ -80,6 +80,7 @@ SMOKE_SEEDS: tuple[int, ...] = (900, 901, 902)
 DEFAULT_DATA_DIR = REPO_ROOT / "experiments" / "g4_sexto_test" / "data"
 DEFAULT_REGISTRY_DB = REPO_ROOT / ".run_registry.sqlite"
 EVAL_CHUNK = 2000
+EXIT_RUN_ID_COLLISION = 3
 
 
 def cells_for_seed() -> list[tuple[str, str]]:
@@ -274,30 +275,7 @@ def run_cell(
             epochs=epochs, batch_size=batch_size, lr=lr,
         )
 
-    _train(stream[0])
-    manip_acc = manipulation_accuracy(
-        cnn.predict_logits(stream[0]["x_test_nhwc"]),
-        stream[0]["y_test"],
-        TASK_CLASS_PAIRS[0],
-    )
-    push_task(buffer, cnn, stream[0], fill_rng)
-    profile = None if arm == "baseline" else build_profile(arm, seed=seed)
-    for k in range(1, len(stream)):
-        if profile is not None:
-            dream_episode(
-                cnn, profile, seed + k, beta_buffer=buffer, combo=combo,
-                strategy=strategy if strategy != "na" else "none",  # type: ignore[arg-type]
-            )
-        _train(stream[k])
-        push_task(buffer, cnn, stream[k], fill_rng)
-
-    x_test = np.concatenate([t["x_test_nhwc"] for t in stream])
-    y_test = np.concatenate([t["y_test"] for t in stream])
-    logits = _logits_chunked(cnn, x_test)
-    cdpa = compute_cdpa(logits, y_test)
-    wdpa = compute_wdpa(logits, y_test)
-    acc20 = compute_final_accuracy(logits, y_test)
-    return {
+    rec: dict[str, Any] = {
         "arm": arm,
         "strategy": strategy,
         "seed": seed,
@@ -307,15 +285,52 @@ def run_cell(
         "batch_size": batch_size,
         "lr": lr,
         "hp_combo_id": combo.combo_id,
-        "cdpa": cdpa,
-        "wdpa": wdpa,
-        "retention_a": compute_retention_domain_a(logits, y_test),
-        "acc20": acc20,
-        "manip_acc": manip_acc,
-        "manip_pass": bool(manip_acc >= MANIP_THRESHOLD),
-        "finite": bool(all(math.isfinite(v) for v in (cdpa, wdpa, acc20))),
-        "wall_time_s": time.time() - start,
+        "cdpa": None,
+        "wdpa": None,
+        "retention_a": None,
+        "acc20": None,
+        "manip_acc": None,
+        "manip_pass": False,
+        "finite": True,
+        "excluded": False,
+        "exclusion_reason": None,
     }
+    try:
+        _train(stream[0])
+        manip_acc = manipulation_accuracy(
+            cnn.predict_logits(stream[0]["x_test_nhwc"]),
+            stream[0]["y_test"],
+            TASK_CLASS_PAIRS[0],
+        )
+        rec["manip_acc"] = manip_acc
+        rec["manip_pass"] = bool(manip_acc >= MANIP_THRESHOLD)
+        push_task(buffer, cnn, stream[0], fill_rng)
+        profile = None if arm == "baseline" else build_profile(arm, seed=seed)
+        for k in range(1, len(stream)):
+            if profile is not None:
+                dream_episode(
+                    cnn, profile, seed + k, beta_buffer=buffer,
+                    combo=combo,
+                    strategy=strategy if strategy != "na" else "none",  # type: ignore[arg-type]
+                )
+            _train(stream[k])
+            push_task(buffer, cnn, stream[k], fill_rng)
+
+        x_test = np.concatenate([t["x_test_nhwc"] for t in stream])
+        y_test = np.concatenate([t["y_test"] for t in stream])
+        logits = _logits_chunked(cnn, x_test)
+        rec["cdpa"] = compute_cdpa(logits, y_test)
+        rec["wdpa"] = compute_wdpa(logits, y_test)
+        rec["acc20"] = compute_final_accuracy(logits, y_test)
+        rec["retention_a"] = compute_retention_domain_a(logits, y_test)
+    except NonFiniteLogitsError:
+        for key in ("cdpa", "wdpa", "retention_a", "acc20"):
+            rec[key] = None
+        rec["finite"] = False
+        rec["excluded"] = True
+        rec["exclusion_reason"] = "non_finite_logits"
+    rec["wall_time_s"] = time.time() - start
+    return rec
 
 
 def load_stream(data_dir: Path) -> list[DomainTask]:
@@ -359,20 +374,42 @@ def main(argv: list[str] | None = None) -> int:
     if args.out.exists():
         p.error(f"refusing to overwrite existing outcome record {args.out}")
 
+    profile_key = f"g4-nono/{args.arm}/{args.strategy}"
+    sha = _commit_sha()
+    registry = RunRegistry(args.registry_db)
+    run_id = registry._compute_run_id(C_VERSION, profile_key, args.seed, sha)
+    try:
+        registry.get(run_id)
+        exists = True
+    except KeyError:
+        exists = False
+    if exists:
+        args.out.parent.mkdir(parents=True, exist_ok=True)
+        args.out.write_text(json.dumps({
+            "status": "aborted",
+            "abort_reason": "run_id_collision",
+            "arm": args.arm, "strategy": args.strategy, "seed": args.seed,
+            "profile_key": profile_key, "commit_sha": sha,
+            "run_id": run_id, "c_version": C_VERSION,
+        }, indent=2, sort_keys=True))
+        print(f"ABORT: run_id {run_id} already registered; wrote {args.out}")
+        return EXIT_RUN_ID_COLLISION
+    # Claim the run_id before executing (INSERT OR IGNORE alone would
+    # silently reuse it on a rerun).
+    registry.register(
+        c_version=C_VERSION, profile=profile_key, seed=args.seed,
+        commit_sha=sha,
+    )
     stream = load_stream(args.data_dir)
     rec = run_cell(
         arm=args.arm, strategy=args.strategy, seed=args.seed,
         stream=stream, epochs=args.epochs, batch_size=args.batch_size,
         lr=args.lr,
     )
-    profile_key = f"g4-nono/{args.arm}/{args.strategy}"
-    sha = _commit_sha()
+    rec["status"] = "ok"
     rec["profile_key"] = profile_key
     rec["commit_sha"] = sha
-    rec["run_id"] = RunRegistry(args.registry_db).register(
-        c_version=C_VERSION, profile=profile_key, seed=args.seed,
-        commit_sha=sha,
-    )
+    rec["run_id"] = run_id
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(rec, indent=2, sort_keys=True))
     print(f"Wrote {args.out}")

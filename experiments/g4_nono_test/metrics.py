@@ -12,6 +12,16 @@ import numpy as np
 from experiments.g4_nono_test.stream import DOMAIN_A, DOMAIN_B
 
 
+class NonFiniteLogitsError(ValueError):
+    """Logits contain NaN / Inf: the cell is excluded (section 4)."""
+
+
+def check_finite(logits: np.ndarray) -> None:
+    """Raise :class:`NonFiniteLogitsError` on any non-finite logit."""
+    if not np.isfinite(logits).all():
+        raise NonFiniteLogitsError("non-finite logits")
+
+
 def cdpa_pairs() -> list[tuple[int, int]]:
     """The 100 (a in A, b in B) class pairs."""
     return [(a, b) for a in DOMAIN_A for b in DOMAIN_B]
@@ -35,6 +45,7 @@ def pairwise_accuracy(
     predict the class with the larger of the two logits; an exact
     tie counts 0.5 (section 6).
     """
+    check_finite(logits)
     per_pair: list[float] = []
     for a, b in pairs:
         mask = (labels == a) | (labels == b)
@@ -64,6 +75,7 @@ def compute_retention_domain_a(
     logits: np.ndarray, labels: np.ndarray
 ) -> float:
     """Accuracy on domain-A test images, restricted to the 10 A logits."""
+    check_finite(logits)
     mask = np.isin(labels, DOMAIN_A)
     cols = np.asarray(DOMAIN_A)
     pred = cols[logits[mask][:, cols].argmax(axis=1)]
@@ -74,6 +86,7 @@ def compute_final_accuracy(
     logits: np.ndarray, labels: np.ndarray
 ) -> float:
     """Plain 20-way accuracy."""
+    check_finite(logits)
     return float((logits.argmax(axis=1) == labels).mean())
 
 
@@ -82,6 +95,7 @@ def compute_two_way_accuracy(
 ) -> float:
     """Accuracy restricted to the logits of ``classes`` (manipulation
     check of section 4: task-1 test images, the two task-1 logits)."""
+    check_finite(logits)
     cols = np.asarray(classes)
     pred = cols[logits[:, cols].argmax(axis=1)]
     return float((pred == labels).mean())

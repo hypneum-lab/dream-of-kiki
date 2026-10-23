@@ -5,6 +5,7 @@ import numpy as np
 import pytest
 
 from experiments.g4_nono_test.metrics import (
+    NonFiniteLogitsError,
     compute_cdpa,
     compute_final_accuracy,
     compute_retention_domain_a,
@@ -117,3 +118,26 @@ def test_two_way_accuracy_uses_only_first_two_logits() -> None:
     z[:, 1] = [1, 1, 1, 1]
     z[:, 5] = 99.0  # untrained unit must be ignored
     assert compute_two_way_accuracy(z, y, (0, 1)) == pytest.approx(0.75)
+
+
+@pytest.mark.parametrize("bad", [np.nan, np.inf, -np.inf])
+@pytest.mark.parametrize(
+    "fn",
+    [compute_cdpa, compute_wdpa, compute_final_accuracy,
+     compute_retention_domain_a],
+)
+def test_non_finite_logits_raise(fn, bad) -> None:
+    y = _labels()
+    z = _onehot_logits(y)
+    z[3, 4] = bad
+    with pytest.raises(NonFiniteLogitsError):
+        fn(z, y)
+
+
+def test_all_nan_logits_do_not_score_half() -> None:
+    y = _labels()
+    z = np.full((len(y), 20), np.nan, np.float32)
+    with pytest.raises(NonFiniteLogitsError):
+        compute_cdpa(z, y)
+    with pytest.raises(NonFiniteLogitsError):
+        compute_two_way_accuracy(z, y, (0, 1))
