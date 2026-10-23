@@ -70,13 +70,16 @@ def test_mutual_knn_k2_hand_count() -> None:
     x = _line(0, 1, 2, 3, 4)
     # y = x with the last two swapped: positions 0,1,2,4,3
     y = _line(0, 1, 2, 4, 3)
-    # y neighbour sets: 0:{1,2} 1:{0,2} 2:{1,0 or 3?}
-    # d(2,1)=1, d(2,0)=2, d(2,4)=2 (pos 3 is index 4), d(2,3)=2 -> tie
-    # among indices 0,3,4 at 2; stable order picks 1 then 0.
+    # y neighbour sets: 0:{1,2} 1:{0,2}
+    # 2 (pos 2): idx 1 (pos 1) d1, idx 4 (pos 3) d1 -> {1,4}
+    #   (idx 0 and idx 3 are at d2, so they are not neighbours)
     # 3 (pos 4): nearest index 4 (pos 3) d1, then index 2 (pos 2) d2
     # 4 (pos 3): nearest index 3 (pos 4) d1, then index 2 (pos 2) d1
-    ny = {0: {1, 2}, 1: {0, 2}, 2: {1, 0}, 3: {4, 2}, 4: {3, 2}}
+    ny = {0: {1, 2}, 1: {0, 2}, 2: {1, 4}, 3: {4, 2}, 4: {3, 2}}
     nx = {0: {1, 2}, 1: {0, 2}, 2: {1, 3}, 3: {2, 4}, 4: {3, 2}}
+    for ref, pts in ((nx, x), (ny, y)):
+        nn = knn_indices(pairwise_distances(pts), 2)
+        assert {i: set(nn[i].tolist()) for i in range(5)} == ref
     expected = np.mean([len(nx[i] & ny[i]) / 2 for i in range(5)])
     assert mutual_knn(x, y, k=2, preprocess="raw") == pytest.approx(expected)
 
