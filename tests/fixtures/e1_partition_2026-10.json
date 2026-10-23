@@ -1,0 +1,1929 @@
+{
+ "benchmarks": {
+  "hellaswag": {
+   "confirmatory_quota": 140,
+   "fixture": "tests/fixtures/hellaswag_sanity.jsonl",
+   "fixture_sha256": "2ab581dc2e50fc5f5fdca9e306a4bf1fae5efaba704725819000bf63e230a979",
+   "group_key": "activity_label",
+   "items": [
+    {
+     "group": "Roof shingle removal",
+     "partition": "tuning",
+     "row": 0,
+     "sha256": "ba80d20f2c55416aed810d67601b880b2fb557ff5d2da1556997da35478187f4"
+    },
+    {
+     "group": "Clean and jerk",
+     "partition": "tuning",
+     "row": 1,
+     "sha256": "e409b4e89a18360d6e806d1151b039c13adff7b9436c1e17468b1bd0f8035d76"
+    },
+    {
+     "group": "Canoeing",
+     "partition": "confirmatory",
+     "row": 2,
+     "sha256": "545aa600cea38e9d02c2cc2f8a8297e5cd1bcf645089313f21fbbaa2a4687c08"
+    },
+    {
+     "group": "High jump",
+     "partition": "tuning",
+     "row": 3,
+     "sha256": "bdaa7e797dbd1246b0da5708ab31a25c847c4deeb82084d287038af6d463d3e4"
+    },
+    {
+     "group": "High jump",
+     "partition": "tuning",
+     "row": 4,
+     "sha256": "7f51c572034cbf9d6e27b326991d48c3d33b6edd3fc5f7e2009ef9116f055bed"
+    },
+    {
+     "group": "High jump",
+     "partition": "tuning",
+     "row": 5,
+     "sha256": "436e66707a0b73feef348192867001cc88bff1a76bf39fd34aff02a540076849"
+    },
+    {
+     "group": "Playing harmonica",
+     "partition": "tuning",
+     "row": 6,
+     "sha256": "e26dc58b430daaaaedb6da0899779d9f5349b1fb4ecc42623b27dc5f56d47de6"
+    },
+    {
+     "group": "Sumo",
+     "partition": "tuning",
+     "row": 7,
+     "sha256": "0094941cf95a27b14a73c28f348096dd79f6ab07aebdae848ec9fcbb046f1ee0"
+    },
+    {
+     "group": "Sharpening knives",
+     "partition": "confirmatory",
+     "row": 8,
+     "sha256": "eabcae7182694b75a722655c30a9db2f599898d326b92b3d3e5c39cbed3dc0e0"
+    },
+    {
+     "group": "Sharpening knives",
+     "partition": "confirmatory",
+     "row": 9,
+     "sha256": "113a1605ae93a6f50b5870cb774564bea75aa9da652b95640522002cdffa73f1"
+    },
+    {
+     "group": "Sharpening knives",
+     "partition": "confirmatory",
+     "row": 10,
+     "sha256": "aa8ffed11bbbca8be2da55be607a05664eafde2be802a7bc73c476c2c2c09274"
+    },
+    {
+     "group": "Sharpening knives",
+     "partition": "confirmatory",
+     "row": 11,
+     "sha256": "0da99cae92d382286a838166e0f76cee41b099e1ae8a0378d19d31bac9b5382f"
+    },
+    {
+     "group": "Sharpening knives",
+     "partition": "confirmatory",
+     "row": 12,
+     "sha256": "25369edc1fe26acb58fa67cc9d6d2e0a9022af9f7dca5a175ed929f1e77a491a"
+    },
+    {
+     "group": "Sharpening knives",
+     "partition": "confirmatory",
+     "row": 13,
+     "sha256": "3676f638227c9053a0557b7b537ea6de281443263eea345539ae5df0eb59ee58"
+    },
+    {
+     "group": "Playing bagpipes",
+     "partition": "confirmatory",
+     "row": 14,
+     "sha256": "80c8d72128bca0034db23cbedafecb1ef7f6e2549588bd2be8b31689b2d00f43"
+    },
+    {
+     "group": "Playing water polo",
+     "partition": "confirmatory",
+     "row": 15,
+     "sha256": "4b246ad506284844557fdab6306757cd7215931aae0d7132f07b6dad611310a0"
+    },
+    {
+     "group": "Having an ice cream",
+     "partition": "confirmatory",
+     "row": 16,
+     "sha256": "3ec58bd9b4cb4d6023fead5e5a93b53ac29a6dcc8735153a0f662fc41bb61c0e"
+    },
+    {
+     "group": "Cheerleading",
+     "partition": "tuning",
+     "row": 17,
+     "sha256": "304deb1b6c18b73a7dd3aac2e26abbe539fd1dc45bf5a212e01a00e752cc795c"
+    },
+    {
+     "group": "Cheerleading",
+     "partition": "tuning",
+     "row": 18,
+     "sha256": "266c4493d4fdcab2f1679c6c82b14e788813745213a8925a9c932259717f259c"
+    },
+    {
+     "group": "Cheerleading",
+     "partition": "tuning",
+     "row": 19,
+     "sha256": "04d6853c32ed3f756cbe2b140e87b0d69d26eafd10939fc36eebe46223786a0e"
+    },
+    {
+     "group": "Sharpening knives",
+     "partition": "confirmatory",
+     "row": 20,
+     "sha256": "b753c30875f8a16e96b765fb5585acc2115e00e3c131ce0d15fc68681e932426"
+    },
+    {
+     "group": "Cutting the grass",
+     "partition": "tuning",
+     "row": 21,
+     "sha256": "e9e0d5bf5d46d27387727836ce9931422a65fb284fd90b124cffd956adaa3c64"
+    },
+    {
+     "group": "Having an ice cream",
+     "partition": "confirmatory",
+     "row": 22,
+     "sha256": "1c3632343c494591c58f54d4a15ac9797ea2dff0ec97d4a4f99f9185058bdb05"
+    },
+    {
+     "group": "Having an ice cream",
+     "partition": "confirmatory",
+     "row": 23,
+     "sha256": "762ca110d0e77236410935af38c92fee084b7a27a740d2fad3348c6a23f923de"
+    },
+    {
+     "group": "Washing face",
+     "partition": "confirmatory",
+     "row": 24,
+     "sha256": "581d9a2da1b4fe04ba4f109ad1ec644ffc5573799277d5678951f21e325a990e"
+    },
+    {
+     "group": "Washing face",
+     "partition": "confirmatory",
+     "row": 25,
+     "sha256": "ec6d2879b25c2e10a9122f39ae201b90c0b80c1519d60f57dac8ba2d8be1ebe1"
+    },
+    {
+     "group": "Paintball",
+     "partition": "confirmatory",
+     "row": 26,
+     "sha256": "911a0ce808024e867d8c463850c3964281217abf8d0c8976ee827e3ea14ab671"
+    },
+    {
+     "group": "Gargling mouthwash",
+     "partition": "confirmatory",
+     "row": 27,
+     "sha256": "2c632161cb5f06628fc2fc2391e9df6598d9ee9eca01af175eb85089c3d7db5a"
+    },
+    {
+     "group": "Gargling mouthwash",
+     "partition": "confirmatory",
+     "row": 28,
+     "sha256": "e1943bac476dd8de5be91a128600e9c7bf0f4fe53adfad5dff0fb4514a9dde75"
+    },
+    {
+     "group": "Gargling mouthwash",
+     "partition": "confirmatory",
+     "row": 29,
+     "sha256": "ac53603c8b5a2c465268685cb6e1f16fdd292a16f654fbfbe7d1affdd29c7a3f"
+    },
+    {
+     "group": "Gargling mouthwash",
+     "partition": "confirmatory",
+     "row": 30,
+     "sha256": "57a7f581cb3d1ef1334e39884c2af87831440ff0066d4162e876207349c0aec5"
+    },
+    {
+     "group": "Washing face",
+     "partition": "confirmatory",
+     "row": 31,
+     "sha256": "e36b8fb4355481ca711eab5870bd5b2d63e24d47aa7c8ae22d7f3aa17ff729ea"
+    },
+    {
+     "group": "Archery",
+     "partition": "confirmatory",
+     "row": 32,
+     "sha256": "26ac97e764af396a33987ab5f1b029932a5f8424bf6a84d807d1db858712f179"
+    },
+    {
+     "group": "Cutting the grass",
+     "partition": "tuning",
+     "row": 33,
+     "sha256": "fbab3ae57db8c1c20d6a1d9d78667486f049405708ccb42d9a7b9f04b90c35f1"
+    },
+    {
+     "group": "Cutting the grass",
+     "partition": "tuning",
+     "row": 34,
+     "sha256": "29bb379d70dbe73d1f017b8ac94023292c103adc5c15317999a5360905afa68a"
+    },
+    {
+     "group": "Cutting the grass",
+     "partition": "tuning",
+     "row": 35,
+     "sha256": "4e5965382403ff691f34e8abef1e9f3981cf4bb116971197d6e37a1e7f3fbcc3"
+    },
+    {
+     "group": "Surfing",
+     "partition": "confirmatory",
+     "row": 36,
+     "sha256": "9155869104d41a761d7296b3dc00cd804909c3ac631b974eff974a1f021532dd"
+    },
+    {
+     "group": "Washing face",
+     "partition": "confirmatory",
+     "row": 37,
+     "sha256": "f52fbe16bc9739f610bf9fd6dd49c74c891d81e7ee67422b69fcd7fdc5574782"
+    },
+    {
+     "group": "Washing face",
+     "partition": "confirmatory",
+     "row": 38,
+     "sha256": "8a0f932aaa93693a5163cf6b9e6de39d15eccc0df6c1c7b529d5c23e0d4d7b98"
+    },
+    {
+     "group": "Plastering",
+     "partition": "confirmatory",
+     "row": 39,
+     "sha256": "e1f830006f912015ba6258e330b989a196310e30e09ba4309ab6278e3c5f91c0"
+    },
+    {
+     "group": "Applying sunscreen",
+     "partition": "confirmatory",
+     "row": 40,
+     "sha256": "d453133fa054931624caf3e82f2b49397c2cdf4212b99ca6c8b24fd169eec7de"
+    },
+    {
+     "group": "Beer pong",
+     "partition": "tuning",
+     "row": 41,
+     "sha256": "f9d3a408f4fc7f857013646129725229b3d2d7a3c5a7c083019e798861a3bdcd"
+    },
+    {
+     "group": "Beer pong",
+     "partition": "tuning",
+     "row": 42,
+     "sha256": "b4c460ccf4f7a5f74c7cedeaa7baa9d594d63890d823c195ec60df3940573f8e"
+    },
+    {
+     "group": "Beer pong",
+     "partition": "tuning",
+     "row": 43,
+     "sha256": "776ecdea5209ae44fdf263cf86a9a17a8f87eae5e8ae780ce357896a9019e565"
+    },
+    {
+     "group": "Grooming dog",
+     "partition": "confirmatory",
+     "row": 44,
+     "sha256": "fb85c198ca1a24c548ad6f0c09486cf09889983f8a1725e8015fab6685036f9a"
+    },
+    {
+     "group": "Grooming dog",
+     "partition": "confirmatory",
+     "row": 45,
+     "sha256": "becee99104d31b9cd57263fd80495d7a59a1df66f80191b6e562e8b3d5968ac1"
+    },
+    {
+     "group": "Having an ice cream",
+     "partition": "confirmatory",
+     "row": 46,
+     "sha256": "a898b2c3ff4c3c0fa1ed5b952876d3641e6c4a17b549f8e707f0745bbd419371"
+    },
+    {
+     "group": "Having an ice cream",
+     "partition": "confirmatory",
+     "row": 47,
+     "sha256": "17adff7abc656696a1b841fd19f9b174fff868cf9aad5c3f556dcc8d6708cee5"
+    },
+    {
+     "group": "Clean and jerk",
+     "partition": "tuning",
+     "row": 48,
+     "sha256": "b7f90588da3a4af83cddbb910006c6148b82f624d0f09e13e91944fa365541be"
+    },
+    {
+     "group": "Grooming dog",
+     "partition": "confirmatory",
+     "row": 49,
+     "sha256": "5942f138598e40885f716afc5fdde2a43bf933d8f0a22ef3cede783ef366e595"
+    },
+    {
+     "group": "Polishing shoes",
+     "partition": "tuning",
+     "row": 50,
+     "sha256": "35b01402ebada3bb65b51b23065c9db972506fc62fd23298806fe51b3b8edb35"
+    },
+    {
+     "group": "Zumba",
+     "partition": "confirmatory",
+     "row": 51,
+     "sha256": "60ee727d2a4c7ad196ed3c00da42a013a70adcf0e235b88eb62dcff5c2bfe60f"
+    },
+    {
+     "group": "Sharpening knives",
+     "partition": "confirmatory",
+     "row": 52,
+     "sha256": "7fbf4ccd6b8b50e97b16d3b45b3ca14edaccd786997c16ead3a10991eb5366d2"
+    },
+    {
+     "group": "Playing harmonica",
+     "partition": "tuning",
+     "row": 53,
+     "sha256": "feb9475b61b9d5ca31a73e2416e99924ae3461c1419528efe34d997b2f39ba4a"
+    },
+    {
+     "group": "Playing harmonica",
+     "partition": "tuning",
+     "row": 54,
+     "sha256": "1a658336c0e05e54f3b06b3235a6ac64253891ee2da2517f92950f5a591c25b5"
+    },
+    {
+     "group": "Running a marathon",
+     "partition": "confirmatory",
+     "row": 55,
+     "sha256": "48d69981b969f342735eab6dfcded75852525b894e916b4e0f2c2fab723dda0a"
+    },
+    {
+     "group": "Running a marathon",
+     "partition": "confirmatory",
+     "row": 56,
+     "sha256": "c4e00d59b7aa6d6c02bdeec0e48bc3bdcefffff387621e0a1a9e612a09973263"
+    },
+    {
+     "group": "Using the pommel horse",
+     "partition": "tuning",
+     "row": 57,
+     "sha256": "c190beaeb6621923f3cd0415e39424dafe6a562246e1a5261696ad074ff94383"
+    },
+    {
+     "group": "Using the pommel horse",
+     "partition": "tuning",
+     "row": 58,
+     "sha256": "5114203cb02f250fce884d43aed6e7a375908f550a8c0ec71a9372f81f217329"
+    },
+    {
+     "group": "Kayaking",
+     "partition": "confirmatory",
+     "row": 59,
+     "sha256": "27234882046d8228eaffa1492ac4597b04af0a19c398a88e4e2db47d7749f3aa"
+    },
+    {
+     "group": "Kayaking",
+     "partition": "confirmatory",
+     "row": 60,
+     "sha256": "9e62a4154d7020f10e5ce760ebdbf4dba0824eeea77a72e993220e7031997295"
+    },
+    {
+     "group": "Playing harmonica",
+     "partition": "tuning",
+     "row": 61,
+     "sha256": "e8a2491ae79cfde04cf30cea2bc115b96b078d7e712458739a57c81d98992de3"
+    },
+    {
+     "group": "Playing harmonica",
+     "partition": "tuning",
+     "row": 62,
+     "sha256": "38be29ea96c47a2e65c9919f680608bd8978f5be2edcbb0044f234fee8846e2f"
+    },
+    {
+     "group": "Playing harmonica",
+     "partition": "tuning",
+     "row": 63,
+     "sha256": "c95def99e90766c882bf105a8c13b35590c1f041e0d4863436a6c03f3c3094d4"
+    },
+    {
+     "group": "Cleaning windows",
+     "partition": "tuning",
+     "row": 64,
+     "sha256": "62f9a81d1f60d36ca522c58e0f2610943d2c7cc002a6ceb7603146ef2ebfefd0"
+    },
+    {
+     "group": "Cleaning windows",
+     "partition": "tuning",
+     "row": 65,
+     "sha256": "4eafe5e93b9a5e15dc4563b7993a7327db06e24274319f9147f51a428904b2d9"
+    },
+    {
+     "group": "Ice fishing",
+     "partition": "confirmatory",
+     "row": 66,
+     "sha256": "d95390f61513a1119c96194152e93edfd548b81c79321218711c5693ce10e414"
+    },
+    {
+     "group": "Ice fishing",
+     "partition": "confirmatory",
+     "row": 67,
+     "sha256": "0c9ef76bb9f021a31ce1debc5a6e620210b0468a03e124678fd900eec784a6d5"
+    },
+    {
+     "group": "Washing face",
+     "partition": "confirmatory",
+     "row": 68,
+     "sha256": "f9cf75c975484fe49b6bec60ef79c8c39044462a1f49fa8dd90dc062651a5a4e"
+    },
+    {
+     "group": "Hitting a pinata",
+     "partition": "confirmatory",
+     "row": 69,
+     "sha256": "16d4c82ae0d2d6e4fac5ac33dade761e688375dcb734056960716e0ed95d260d"
+    },
+    {
+     "group": "Hitting a pinata",
+     "partition": "confirmatory",
+     "row": 70,
+     "sha256": "7cd24989526a6561d1e4d4d6762732cb48769255c11d78d5ce761eac359ed81c"
+    },
+    {
+     "group": "Playing violin",
+     "partition": "confirmatory",
+     "row": 71,
+     "sha256": "4460ce507c0bc35c7ed09f5f804a40b375eee1da7ac7698e8b0ac7d5089c8a98"
+    },
+    {
+     "group": "Making a sandwich",
+     "partition": "confirmatory",
+     "row": 72,
+     "sha256": "48b60b8d06b4ae31bfbcf41ab43f1210d5805941d6a98f00ae93e93d08be25b1"
+    },
+    {
+     "group": "Making a lemonade",
+     "partition": "confirmatory",
+     "row": 73,
+     "sha256": "54f2c77722dd6eef3b610aba9804f2b904747ae7d7bf149ad4cd5c484cdeb009"
+    },
+    {
+     "group": "Hitting a pinata",
+     "partition": "confirmatory",
+     "row": 74,
+     "sha256": "7e70633557fd052f0c244905bbb81bdbad2f85b44e0163a1bce9152b4cdcc345"
+    },
+    {
+     "group": "Ironing clothes",
+     "partition": "confirmatory",
+     "row": 75,
+     "sha256": "038ee36537294184bdd5f177c20babebeab864a1d4e4ef2adc9738db0ae5a3b1"
+    },
+    {
+     "group": "Ironing clothes",
+     "partition": "confirmatory",
+     "row": 76,
+     "sha256": "1ddd2bfd527c3b24f40cf0456579e8b893bd04a778292e007c27f9a47bcc3ad1"
+    },
+    {
+     "group": "Ironing clothes",
+     "partition": "confirmatory",
+     "row": 77,
+     "sha256": "f0b2e1a610bc22f980183a9960d0609608f8fbe9dfa396a051c05902768cfb16"
+    },
+    {
+     "group": "Clipping cat claws",
+     "partition": "confirmatory",
+     "row": 78,
+     "sha256": "dd8b999035cff2c70e698d240168a8c5b943c3e30c1c680461d2d28c55dc940f"
+    },
+    {
+     "group": "Clipping cat claws",
+     "partition": "confirmatory",
+     "row": 79,
+     "sha256": "607e9c43b67eb2246c002de8d24899e8dd7a0823944ce7350c2fde344c9dd0a4"
+    },
+    {
+     "group": "Clipping cat claws",
+     "partition": "confirmatory",
+     "row": 80,
+     "sha256": "d2b6f86fe09ef41e00a6585ebc37de9bce1e198e8e0ee3ec2dbb7255039a142e"
+    },
+    {
+     "group": "Baton twirling",
+     "partition": "confirmatory",
+     "row": 81,
+     "sha256": "62a57c9fb695059a1faf5558096552fd667ca39f6c146954806450c6c15d7b6b"
+    },
+    {
+     "group": "Baton twirling",
+     "partition": "confirmatory",
+     "row": 82,
+     "sha256": "a91e5c11e9b8cdfb8678dc3ae32a4d953ce3655944f155eca8dee4cecf533500"
+    },
+    {
+     "group": "Baton twirling",
+     "partition": "confirmatory",
+     "row": 83,
+     "sha256": "86e420c26a4e0c9569a3a497bfb61c0865775e00837a050261bb5dcdb7e3c28c"
+    },
+    {
+     "group": "Removing ice from car",
+     "partition": "confirmatory",
+     "row": 84,
+     "sha256": "610f72f8a77fda6a1cdb53015a40ea2f33cefdc5e574c278c3f84dd4631aaf74"
+    },
+    {
+     "group": "Removing ice from car",
+     "partition": "confirmatory",
+     "row": 85,
+     "sha256": "4950925dd2494031e6d8a3698e0a1742ece056083e9ff2581c9083e7ea07d856"
+    },
+    {
+     "group": "Removing ice from car",
+     "partition": "confirmatory",
+     "row": 86,
+     "sha256": "155474de8bb6bc69458c48f65c046df267a84c10f3258f46358e072dfd6a6f9d"
+    },
+    {
+     "group": "Clean and jerk",
+     "partition": "tuning",
+     "row": 87,
+     "sha256": "98a8ea160bf1648861380ff8c0b28268e0b72b210d9cab9e7610de3723be6964"
+    },
+    {
+     "group": "Throwing darts",
+     "partition": "confirmatory",
+     "row": 88,
+     "sha256": "25ab91d18a63b76411f36f4c3e0e2f6eba3b19d961c8cc7a537d18ea56f0d1a7"
+    },
+    {
+     "group": "Surfing",
+     "partition": "confirmatory",
+     "row": 89,
+     "sha256": "9eded886f7bac22ea5742f7db72b012aa1514bbac089334562d078a32a3a652f"
+    },
+    {
+     "group": "Surfing",
+     "partition": "confirmatory",
+     "row": 90,
+     "sha256": "fe6e57700642a114a4e627c1fd4145261a5fe413e0825a55142857d061cd906a"
+    },
+    {
+     "group": "Cutting the grass",
+     "partition": "tuning",
+     "row": 91,
+     "sha256": "80f8f1a38db4a9af5db86f9cb4cd35da5a73731899e3278c796b8bd61a68d679"
+    },
+    {
+     "group": "Rollerblading",
+     "partition": "tuning",
+     "row": 92,
+     "sha256": "bf56c903e48901ae5272ab572932b8ed1272addbfe5b79e5a14f211b4909b4f2"
+    },
+    {
+     "group": "Sharpening knives",
+     "partition": "confirmatory",
+     "row": 93,
+     "sha256": "a5236cbea174daa2fb20f3cbd3cc91adfe6369cae51fdf111dc49b47b63f1ec4"
+    },
+    {
+     "group": "Sharpening knives",
+     "partition": "confirmatory",
+     "row": 94,
+     "sha256": "f1f86a5f361f6736ec50024b0a4af6660913218fbd15394f975f5327e708837c"
+    },
+    {
+     "group": "Sharpening knives",
+     "partition": "confirmatory",
+     "row": 95,
+     "sha256": "73d18132430645ed56df970a082be831ff3528861be175f9164bb2603fbc0b3a"
+    },
+    {
+     "group": "Sharpening knives",
+     "partition": "confirmatory",
+     "row": 96,
+     "sha256": "1694dbfe5bbcdd036fd86697c09f3c698d2de070cbf671feac527b191393288b"
+    },
+    {
+     "group": "Sharpening knives",
+     "partition": "confirmatory",
+     "row": 97,
+     "sha256": "c132163757e0f6449a233d266ffc0f50229ce296bb7f288332d822c1b35f7d9e"
+    },
+    {
+     "group": "Sharpening knives",
+     "partition": "confirmatory",
+     "row": 98,
+     "sha256": "da9eda5eea821a94877ab5a1dcc07dcf043d1aefe541ec8442df424cde2ab8ca"
+    },
+    {
+     "group": "Layup drill in basketball",
+     "partition": "tuning",
+     "row": 99,
+     "sha256": "d5efda2318357cf3e319f222adeaddefe7c6329e389e67b1d90bb42b777a9352"
+    },
+    {
+     "group": "Washing face",
+     "partition": "confirmatory",
+     "row": 100,
+     "sha256": "ed054fcac197007de01ee7a99d4df50f4998304d4f5ede9d2ee54994439f1b2b"
+    },
+    {
+     "group": "Using parallel bars",
+     "partition": "confirmatory",
+     "row": 101,
+     "sha256": "69049a156b194a1b4940bd67dd65a1bd6a1e3153148ba5754da51ae7a8e91679"
+    },
+    {
+     "group": "Clean and jerk",
+     "partition": "tuning",
+     "row": 102,
+     "sha256": "aba62106697f086f60437973781bd88e5537dbc95c72858b00d0c459b192b71f"
+    },
+    {
+     "group": "Clean and jerk",
+     "partition": "tuning",
+     "row": 103,
+     "sha256": "71544a236a2343293d5ed5c62bc6e16593d09001a2df464a9846084e91349a60"
+    },
+    {
+     "group": "Doing a powerbomb",
+     "partition": "confirmatory",
+     "row": 104,
+     "sha256": "ab9a8ba3d4dda67d4eafd55fd86fa274432de09e8cb37008e90b0ac4a16576b9"
+    },
+    {
+     "group": "Paintball",
+     "partition": "confirmatory",
+     "row": 105,
+     "sha256": "439f641a04605521c93a1e8d8636b870be1563d3a9a3fd5ce41c233c58929364"
+    },
+    {
+     "group": "Paintball",
+     "partition": "confirmatory",
+     "row": 106,
+     "sha256": "72ad51afa865505530c39e958b70f3548d57fa3d8641819c52ecb813ca6aab8c"
+    },
+    {
+     "group": "Scuba diving",
+     "partition": "confirmatory",
+     "row": 107,
+     "sha256": "f7e8a24d9e9fe95cbdc38ba02c432236eebd7be4befc365173f23e80ed01e377"
+    },
+    {
+     "group": "Scuba diving",
+     "partition": "confirmatory",
+     "row": 108,
+     "sha256": "ce3590fb043cc01743c2e698511dbcfc6e544596689afc39f4d6c0c45eed59ba"
+    },
+    {
+     "group": "Scuba diving",
+     "partition": "confirmatory",
+     "row": 109,
+     "sha256": "4578886b0bc68e2fbd5572e93dd0c68dff08ee4faae481240f0fa24a9ecc0f4a"
+    },
+    {
+     "group": "Scuba diving",
+     "partition": "confirmatory",
+     "row": 110,
+     "sha256": "b441be8b734c4ea9dbb75b5e71c49aab6d042e0924ca02a2d52de53b615e5553"
+    },
+    {
+     "group": "Cleaning sink",
+     "partition": "tuning",
+     "row": 111,
+     "sha256": "05ba8405fa792e3c8c824606187702a5abe5132d417ebd24d4b70fb60d0fc317"
+    },
+    {
+     "group": "Playing polo",
+     "partition": "tuning",
+     "row": 112,
+     "sha256": "1c8858768bd12e51104ec0a6317114b8b476c11d3e862e8ee2cabaf52f61752f"
+    },
+    {
+     "group": "Playing polo",
+     "partition": "tuning",
+     "row": 113,
+     "sha256": "f1f883db7c722f732e9c5c2e6106f4949f6f3d0f26ec6d9cb507f0dcf3b2875c"
+    },
+    {
+     "group": "Doing fencing",
+     "partition": "confirmatory",
+     "row": 114,
+     "sha256": "dccb6275e1e0f899d4c09238816446ac56575f6cdc79054a9d03531b0948c9cb"
+    },
+    {
+     "group": "Doing fencing",
+     "partition": "confirmatory",
+     "row": 115,
+     "sha256": "24ca2356d048695b9a8f5f13a3d9961cdfd71e97d95d3fe9f5b0a7ec160a85b7"
+    },
+    {
+     "group": "Surfing",
+     "partition": "confirmatory",
+     "row": 116,
+     "sha256": "8b65e609baf45f64f8605d50fd433fef1e49fa4a2c7fd417339c6d28aaa90730"
+    },
+    {
+     "group": "Surfing",
+     "partition": "confirmatory",
+     "row": 117,
+     "sha256": "844555a86bd209355983dd4e30900ebc1d015d065712d73e99979fcbdf110928"
+    },
+    {
+     "group": "Ice fishing",
+     "partition": "confirmatory",
+     "row": 118,
+     "sha256": "8a281f9c8bdb56ec1e439d40a9fcb519e74c8e2a1283536399096f6fc9761677"
+    },
+    {
+     "group": "Putting on shoes",
+     "partition": "tuning",
+     "row": 119,
+     "sha256": "2d1da0292f2fcce3a9e9b31f6249efc48f759a3015ea222eeb8c5b0fb9c16367"
+    },
+    {
+     "group": "Playing violin",
+     "partition": "confirmatory",
+     "row": 120,
+     "sha256": "4aba68f10ad671d834bbe8ec441c65a934886f30f227da46ce19afe545dba8e6"
+    },
+    {
+     "group": "Layup drill in basketball",
+     "partition": "tuning",
+     "row": 121,
+     "sha256": "c71cc4c4526269a1429f66cbf6d9b482801697818d128499eb7bbde4d781d519"
+    },
+    {
+     "group": "Mooping floor",
+     "partition": "tuning",
+     "row": 122,
+     "sha256": "b8f35bd52f635f791515a46b909e63f7c68ec9358ec592163f18f220d21fbd31"
+    },
+    {
+     "group": "Mooping floor",
+     "partition": "tuning",
+     "row": 123,
+     "sha256": "c5dd79e010d3863d88146d6c531250e4a01d4c01215fbd34092cffd75bf20665"
+    },
+    {
+     "group": "Mooping floor",
+     "partition": "tuning",
+     "row": 124,
+     "sha256": "08c9db74d476bf8b298a5a83b848b609f3cd362c2a4465f979ddfc7aac0a9081"
+    },
+    {
+     "group": "Mooping floor",
+     "partition": "tuning",
+     "row": 125,
+     "sha256": "4b649ebd72090310c390cc9218a38535a69a69f2faf344670b8540e78f4975e5"
+    },
+    {
+     "group": "Tennis serve with ball bouncing",
+     "partition": "confirmatory",
+     "row": 126,
+     "sha256": "26a97a61190b64465f3d52b3bcd70ea088adc01a7f83f7228ed374db1f46fed5"
+    },
+    {
+     "group": "Tennis serve with ball bouncing",
+     "partition": "confirmatory",
+     "row": 127,
+     "sha256": "7ea36547841a5a2b910fc8a3f1505e9975264724d16acd804481fef4d25369c1"
+    },
+    {
+     "group": "Tennis serve with ball bouncing",
+     "partition": "confirmatory",
+     "row": 128,
+     "sha256": "9f87279cf55ddaf6fb9712bd8a7214d93ed0e9c1c9e968261a139f23ab3cbd18"
+    },
+    {
+     "group": "Playing harmonica",
+     "partition": "tuning",
+     "row": 129,
+     "sha256": "bdb3a550832d1ffb0cd98e77f0cfb05a1ba03ab7629587589cd9d6110ae1c9d9"
+    },
+    {
+     "group": "Running a marathon",
+     "partition": "confirmatory",
+     "row": 130,
+     "sha256": "6850b92967d2a01613bd7f05411a75230490909615edb2448c92afc6637d6583"
+    },
+    {
+     "group": "Running a marathon",
+     "partition": "confirmatory",
+     "row": 131,
+     "sha256": "538bfcec6a4b4727052e0bebb4dafc761b303025abc99960f20134434558fdf5"
+    },
+    {
+     "group": "Running a marathon",
+     "partition": "confirmatory",
+     "row": 132,
+     "sha256": "ffa93b3cdf0798256e9a987a846336d892d173977478755345ed61838f128dc1"
+    },
+    {
+     "group": "Running a marathon",
+     "partition": "confirmatory",
+     "row": 133,
+     "sha256": "65d923dc79a23ef90d18cb3eb18e8d04d41e329af44e6e403f3c36945d950a5e"
+    },
+    {
+     "group": "Ice fishing",
+     "partition": "confirmatory",
+     "row": 134,
+     "sha256": "d4454c205b7ea7c0cfd02b8ab451852ad85ab2ee3cce860bc743c9d6d29a46ca"
+    },
+    {
+     "group": "Sharpening knives",
+     "partition": "confirmatory",
+     "row": 135,
+     "sha256": "f408201098c51c3a4990b8fa092b230d361702b459a1f3cb8119016ffb5547a5"
+    },
+    {
+     "group": "Sharpening knives",
+     "partition": "confirmatory",
+     "row": 136,
+     "sha256": "660e5a10b163f31d47dd560f8c53dfde59195cf64e2ab28e6739367d7fa5fb6d"
+    },
+    {
+     "group": "Blowing leaves",
+     "partition": "confirmatory",
+     "row": 137,
+     "sha256": "aa283e395eca294f3cb3cfeae05bb3f5e5a45fa2453b35417a18ab6a2a029125"
+    },
+    {
+     "group": "Drinking beer",
+     "partition": "confirmatory",
+     "row": 138,
+     "sha256": "80f448072a6febc49e83ac7dc4f1eeeabc42fdd4fc3063690297d02d5e288a75"
+    },
+    {
+     "group": "Drinking beer",
+     "partition": "confirmatory",
+     "row": 139,
+     "sha256": "76ab81bda3e84795989dbcd0a894b74501890626ee582c7a45535f32c44c3391"
+    },
+    {
+     "group": "Ice fishing",
+     "partition": "confirmatory",
+     "row": 140,
+     "sha256": "315d520024d6f9ed49b977a2d8e2043c35608ea3dbfe0391780e8c230008a446"
+    },
+    {
+     "group": "Ice fishing",
+     "partition": "confirmatory",
+     "row": 141,
+     "sha256": "d424273f0ba11224890ce814ae8104f258a16c250b8b5fe6c25f21de3fb16104"
+    },
+    {
+     "group": "Playing water polo",
+     "partition": "confirmatory",
+     "row": 142,
+     "sha256": "d3fbc33c8597266e77fb30232cefc1065d00e6a3421d46f9082905108ced9710"
+    },
+    {
+     "group": "Playing guitarra",
+     "partition": "confirmatory",
+     "row": 143,
+     "sha256": "f062a7174a4a38d772ea8bfcdb755814d572d6c94435bdc1ae1b7289291553a4"
+    },
+    {
+     "group": "Canoeing",
+     "partition": "confirmatory",
+     "row": 144,
+     "sha256": "4749d6aeef357d5bf180182c68dff330f82ba51bc7bd6fe47e8945940d5f7340"
+    },
+    {
+     "group": "Canoeing",
+     "partition": "confirmatory",
+     "row": 145,
+     "sha256": "87b043b1bdca253f98aa4b0800ebf0430a31608fd0569cfacc050eabff9c2fec"
+    },
+    {
+     "group": "Skiing",
+     "partition": "confirmatory",
+     "row": 146,
+     "sha256": "9daec38d1e5158597c0ce3d0395f5582e000ae58597dd9b0ead02844b4cc7157"
+    },
+    {
+     "group": "Skiing",
+     "partition": "confirmatory",
+     "row": 147,
+     "sha256": "7a069544eecc80f967bf2591af742d1f4703c8a30b30eb6540a72aced8d057b3"
+    },
+    {
+     "group": "Skiing",
+     "partition": "confirmatory",
+     "row": 148,
+     "sha256": "3e273a678bf425d516d9d95296b0d5fd4ca5c8db6b38d5b571e8bed7a43ff432"
+    },
+    {
+     "group": "Layup drill in basketball",
+     "partition": "tuning",
+     "row": 149,
+     "sha256": "a6676ea225f8307027860dd9bd50aaf2ffe8e80f5e30b9fd974b97aa739a543c"
+    },
+    {
+     "group": "Layup drill in basketball",
+     "partition": "tuning",
+     "row": 150,
+     "sha256": "72cb6c903fc9e63df22628d6953de789212a73bab0bf620035a1e99cb421fe83"
+    },
+    {
+     "group": "Tennis serve with ball bouncing",
+     "partition": "confirmatory",
+     "row": 151,
+     "sha256": "da5a84a7029585822b97e5b596e1ad518fde73d5ca1e6552405102095f691fa4"
+    },
+    {
+     "group": "Tennis serve with ball bouncing",
+     "partition": "confirmatory",
+     "row": 152,
+     "sha256": "15c89fc1f51693ae5e838f138d502abab1291c5b52c59161ea55c643dedcd142"
+    },
+    {
+     "group": "Playing violin",
+     "partition": "confirmatory",
+     "row": 153,
+     "sha256": "cddc41d60643e9e457c8851667baee7cb800514ccc84506fe7ad619fc4e50973"
+    },
+    {
+     "group": "Playing violin",
+     "partition": "confirmatory",
+     "row": 154,
+     "sha256": "6755c57c42625458febbc032827b036191f97e536a4ed6006a18a1083eb59d41"
+    },
+    {
+     "group": "Playing harmonica",
+     "partition": "tuning",
+     "row": 155,
+     "sha256": "82f94ae46ec6d2155b0a14bed01b6759b06cd39efe42ce4717713cd5fb515f38"
+    },
+    {
+     "group": "Playing harmonica",
+     "partition": "tuning",
+     "row": 156,
+     "sha256": "7d0591f181d70163453cd09fb35060a6e8b9ca1da932d6c6636f6a8616efac51"
+    },
+    {
+     "group": "Playing violin",
+     "partition": "confirmatory",
+     "row": 157,
+     "sha256": "de89363700bb008927e7d9e2aa25ea42b224fb627e783e8b1e87af9dec5e4fe5"
+    },
+    {
+     "group": "Hand car wash",
+     "partition": "confirmatory",
+     "row": 158,
+     "sha256": "7e5b337d4d022725a516f3fdaf4b93dad48c59e95aa5d6da44454e06ef8e343a"
+    },
+    {
+     "group": "Hand car wash",
+     "partition": "confirmatory",
+     "row": 159,
+     "sha256": "50a80e00dd064ddb99c020038517cb4a2cd41658a1c949d6d480bbb16a1334a6"
+    },
+    {
+     "group": "Using the rowing machine",
+     "partition": "tuning",
+     "row": 160,
+     "sha256": "6813abc74946d7ef47ee93503a5ee8a8547aeb66005c9d317abf4edc072e6fe4"
+    },
+    {
+     "group": "Kite flying",
+     "partition": "confirmatory",
+     "row": 161,
+     "sha256": "f6b9b5f43e408ae733ceac3f75ccc9983837087270bfc636b4c9ce906cd5516d"
+    },
+    {
+     "group": "Washing face",
+     "partition": "confirmatory",
+     "row": 162,
+     "sha256": "c2fb7989acd5cd510176769f4de201fdc377cfbcc3f96528ba4a84a688185d03"
+    },
+    {
+     "group": "Hand car wash",
+     "partition": "confirmatory",
+     "row": 163,
+     "sha256": "7d6fe2c9ac72e1e67fb604c2f058db0723f94639eeb91993013701f1400099a0"
+    },
+    {
+     "group": "Hand car wash",
+     "partition": "confirmatory",
+     "row": 164,
+     "sha256": "22b581e627fd5da66acf5abbf1715c6da9a0a1de0fefc5a3ef0acbb6a1784398"
+    },
+    {
+     "group": "Hand car wash",
+     "partition": "confirmatory",
+     "row": 165,
+     "sha256": "2e897775d8fdae8d9b465994d94f3a018af74e43b4be0df13095a472b83c01c3"
+    },
+    {
+     "group": "Putting on makeup",
+     "partition": "confirmatory",
+     "row": 166,
+     "sha256": "393851982ce39502bdf12ade34e97d0687b6a0793f1ac4a433e5a6ae77076a28"
+    },
+    {
+     "group": "Having an ice cream",
+     "partition": "confirmatory",
+     "row": 167,
+     "sha256": "2c497ceba38b9d368f707f97d4eafb9cb81863ad97035091cbf2091f679bb666"
+    },
+    {
+     "group": "Having an ice cream",
+     "partition": "confirmatory",
+     "row": 168,
+     "sha256": "9cad659547d2628335f10a3dd494e1ff4f4a9019b19374c6175454c7953c838c"
+    },
+    {
+     "group": "Playing harmonica",
+     "partition": "tuning",
+     "row": 169,
+     "sha256": "a6b5b579a328e55c05d19c32f3ae6441d1f688a7d34d233876558765642138d6"
+    },
+    {
+     "group": "Playing violin",
+     "partition": "confirmatory",
+     "row": 170,
+     "sha256": "86dbdd8b302953f5ecefda38ea4f04c43ae1873e37d5f4e98d96d3fc67a49357"
+    },
+    {
+     "group": "Putting in contact lenses",
+     "partition": "confirmatory",
+     "row": 171,
+     "sha256": "6c2e6fae03cf0a96c3e3f99c09fa83ecbd0f4ab403049e570189d487b131bce8"
+    },
+    {
+     "group": "Putting in contact lenses",
+     "partition": "confirmatory",
+     "row": 172,
+     "sha256": "81c4d3e7ec281baab8ac9bf0461caf2c73f2e386a01040ddcec5a83a2f4cbdba"
+    },
+    {
+     "group": "Running a marathon",
+     "partition": "confirmatory",
+     "row": 173,
+     "sha256": "78e579aa716dc2d91aa74d2d7abddcb530a82727621cbc85902b7fcfaf106e0b"
+    },
+    {
+     "group": "Having an ice cream",
+     "partition": "confirmatory",
+     "row": 174,
+     "sha256": "80aa77cfdcaff6bfba864b706885011612781e43c6728533d5888292c85864ac"
+    },
+    {
+     "group": "Having an ice cream",
+     "partition": "confirmatory",
+     "row": 175,
+     "sha256": "9c01c7da835a0cc32eb476f15ae6b154e719dc2a1c181dd6d4ad40943f5a00fb"
+    },
+    {
+     "group": "Rollerblading",
+     "partition": "tuning",
+     "row": 176,
+     "sha256": "89f198bcdc2b3b53c5fe2be7d64efd21317544648bf3c45c3efc6493ea1da592"
+    },
+    {
+     "group": "Rollerblading",
+     "partition": "tuning",
+     "row": 177,
+     "sha256": "774ebeba6f24bb70ee3eeb5658dcdc36291829c46dcb997525241d4ee9c08331"
+    },
+    {
+     "group": "BMX",
+     "partition": "confirmatory",
+     "row": 178,
+     "sha256": "627c938401e9ed5a51d7ed7124f1b045e66f0db5efcfb05aa42911f990faa74c"
+    },
+    {
+     "group": "Ice fishing",
+     "partition": "confirmatory",
+     "row": 179,
+     "sha256": "598bfc447bca51348b40c6e1558f1fc3cd859acbe48a5dcc5261c8356c4416f7"
+    },
+    {
+     "group": "Ice fishing",
+     "partition": "confirmatory",
+     "row": 180,
+     "sha256": "0033f4e4d2aadd652894fbb5cdb1142371dee8be152783db711ff1241ada7fa3"
+    },
+    {
+     "group": "Playing water polo",
+     "partition": "confirmatory",
+     "row": 181,
+     "sha256": "64b72a9fae68fc3894b3992e49b5eed7c1ffd0bb2cfe20e9175e0cc4a5b98c37"
+    },
+    {
+     "group": "Playing water polo",
+     "partition": "confirmatory",
+     "row": 182,
+     "sha256": "833b589a250b236c43f1fd1a042ee040844efda90f78dbe3110c09366c83015c"
+    },
+    {
+     "group": "Layup drill in basketball",
+     "partition": "tuning",
+     "row": 183,
+     "sha256": "21f58c8c38c107ff75170bd4fca04c4fa30f5d389f110676b6597463f11b36b4"
+    },
+    {
+     "group": "Layup drill in basketball",
+     "partition": "tuning",
+     "row": 184,
+     "sha256": "f6a67673b9ac98c4247dbef46f4791164100b1452122397e4e53c0f33bd86223"
+    },
+    {
+     "group": "Playing violin",
+     "partition": "confirmatory",
+     "row": 185,
+     "sha256": "871d4d00fc833bd24c86b2dcc1c1c36d3299909bc0695e1ebdd492663ae74b55"
+    },
+    {
+     "group": "Longboarding",
+     "partition": "confirmatory",
+     "row": 186,
+     "sha256": "9204fb163aa76cda4e981896b0d0ea8ed48b184abe00dc59a18d6406c955c1f8"
+    },
+    {
+     "group": "Longboarding",
+     "partition": "confirmatory",
+     "row": 187,
+     "sha256": "e6a369b9d7e6446fc054bd5da6edd5046b9e387da677bf2a831459420ba5339a"
+    },
+    {
+     "group": "Getting a piercing",
+     "partition": "confirmatory",
+     "row": 188,
+     "sha256": "efc4b32d274d3f29029cc8a1cdc339a642c50c05b037542c9c0420876f6d0dc8"
+    },
+    {
+     "group": "Hand washing clothes",
+     "partition": "tuning",
+     "row": 189,
+     "sha256": "fe7a8d79e9608896a287e54e53753567e420b2f88ff3fa9e8137980ba835a09f"
+    },
+    {
+     "group": "Hand washing clothes",
+     "partition": "tuning",
+     "row": 190,
+     "sha256": "a967253168460243cb56a2839f94b325a5cb874ad1ed9f68c6b1e591da995130"
+    },
+    {
+     "group": "Hand washing clothes",
+     "partition": "tuning",
+     "row": 191,
+     "sha256": "5a1968381c018e88e6008993f626c6771b5ceea074af142cbe9a1cc00e7880fd"
+    },
+    {
+     "group": "Cutting the grass",
+     "partition": "tuning",
+     "row": 192,
+     "sha256": "ad13f2e93f1e754e27718440350934d8ac2ed735515220345e7e487e00bbffcf"
+    },
+    {
+     "group": "Disc dog",
+     "partition": "confirmatory",
+     "row": 193,
+     "sha256": "f210ca99d4b8be3d09354e8284146c63b2aeb0cb678ef745e00744a53f08920a"
+    },
+    {
+     "group": "Disc dog",
+     "partition": "confirmatory",
+     "row": 194,
+     "sha256": "e39db3cbfa5a76b7232773df0b8fe315dcfeed143507581cf5ddc0eb2b39fd36"
+    },
+    {
+     "group": "Disc dog",
+     "partition": "confirmatory",
+     "row": 195,
+     "sha256": "b7baff1e0dc6d7a6765da91338d826bbf251c40ca424887842f46eb303cb6c1d"
+    },
+    {
+     "group": "Disc dog",
+     "partition": "confirmatory",
+     "row": 196,
+     "sha256": "65ce8f50aaa4a3d552da3b9c78f4d3db8e953ecd57dd912372ba2f815f1e9355"
+    },
+    {
+     "group": "Disc dog",
+     "partition": "confirmatory",
+     "row": 197,
+     "sha256": "ae46b48e7ebcf7e7388feafc76a0fdae41928ef54fc9cd9d2efb1d7a8628234b"
+    },
+    {
+     "group": "Cutting the grass",
+     "partition": "tuning",
+     "row": 198,
+     "sha256": "6e46057d3ae635947ab8e9dcee41de80e040d223e3df0b3ff233fc2834a7e902"
+    },
+    {
+     "group": "Cutting the grass",
+     "partition": "tuning",
+     "row": 199,
+     "sha256": "bc946c090784a295e81a08e316b5b81cdf9cc371bd822331eb3cd5012cdbd691"
+    }
+   ],
+   "partitions": {
+    "confirmatory": {
+     "n_groups": 43,
+     "n_rows": 140,
+     "sha256": "26149930b89b5fc8c930ef512bd4a73e11543b9b344520dbdec667c88f173da4"
+    },
+    "tuning": {
+     "n_groups": 19,
+     "n_rows": 60,
+     "sha256": "cfad7e5150c1f49c362ae39cc2aad1a35ce721a2e6302cdadfe5411c527e2688"
+    }
+   }
+  },
+  "mmlu": {
+   "confirmatory_quota": 70,
+   "fixture": "tests/fixtures/mmlu_real.jsonl",
+   "fixture_sha256": "4d881827081e575e97f9bcd5cb85f2dcc15ea8ef3946c2fb870364addc9a09dd",
+   "group_key": "subject",
+   "items": [
+    {
+     "group": "abstract_algebra",
+     "partition": "tuning",
+     "row": 0,
+     "sha256": "4dda39b402e9120225057cbac639ea4b382bf64c7329435425ab3404e459dbe4"
+    },
+    {
+     "group": "anatomy",
+     "partition": "tuning",
+     "row": 1,
+     "sha256": "73586ced5e34d7525a87b3bdc034969651e46a22e985c7e7f119a60bd03a84ab"
+    },
+    {
+     "group": "astronomy",
+     "partition": "confirmatory",
+     "row": 2,
+     "sha256": "812f2ea03f2e9ad7354b68d005699814b7f9901997e1312e65b1ef739a2cd75c"
+    },
+    {
+     "group": "astronomy",
+     "partition": "confirmatory",
+     "row": 3,
+     "sha256": "17c3792e0662adff8817b032acc15c936ee3369b25d54db4d77650f2a8305067"
+    },
+    {
+     "group": "clinical_knowledge",
+     "partition": "tuning",
+     "row": 4,
+     "sha256": "0635fc5baaa5093614c9419ce10f743b4ea31510e3c0c2f045905142653ad5ee"
+    },
+    {
+     "group": "clinical_knowledge",
+     "partition": "tuning",
+     "row": 5,
+     "sha256": "2b319ab65b0fd27301eb0b1775999ee99fa3b9f53327720940f817d806fd48e1"
+    },
+    {
+     "group": "clinical_knowledge",
+     "partition": "tuning",
+     "row": 6,
+     "sha256": "0f4f9535fe1f58064f49408494c58449fcf0db4ff81661792e6cce7641a09111"
+    },
+    {
+     "group": "college_biology",
+     "partition": "confirmatory",
+     "row": 7,
+     "sha256": "26f8e76f98e99221e91ebef5737f4389ce325169e9517b4d65ee1877ce5d8e11"
+    },
+    {
+     "group": "college_chemistry",
+     "partition": "confirmatory",
+     "row": 8,
+     "sha256": "cb97e027c4ddb8500eb20a472c3953d4657b3f282272a03842276c10d6aa07ef"
+    },
+    {
+     "group": "college_mathematics",
+     "partition": "confirmatory",
+     "row": 9,
+     "sha256": "2a51e9d3ab112c3663735704d71bd6ddabc0da3537a5cb24072f17f7a0f62370"
+    },
+    {
+     "group": "college_medicine",
+     "partition": "confirmatory",
+     "row": 10,
+     "sha256": "178092ddc36067c96c5a8c9bde9f1dd91076b29238f08a6b0bd742d165cd9c7e"
+    },
+    {
+     "group": "college_medicine",
+     "partition": "confirmatory",
+     "row": 11,
+     "sha256": "c971ceed339045f8e8a56ead21fcf57250014cdeb72b24c7ebfbdbb66a5b1e1f"
+    },
+    {
+     "group": "computer_security",
+     "partition": "confirmatory",
+     "row": 12,
+     "sha256": "5ec869a29954d6af2f762bb9b4ae2c96d801d0d0b28bd760bb3fe09d3616bb41"
+    },
+    {
+     "group": "conceptual_physics",
+     "partition": "tuning",
+     "row": 13,
+     "sha256": "6dc65e9654b349c76aff6c9a2a4963f08176a293e14be750af4602275e1c546e"
+    },
+    {
+     "group": "conceptual_physics",
+     "partition": "tuning",
+     "row": 14,
+     "sha256": "456c8186a5a244d0f59213fdda9ad99fd79595e1558fc984a667c95db7f87990"
+    },
+    {
+     "group": "econometrics",
+     "partition": "confirmatory",
+     "row": 15,
+     "sha256": "1c7fed2adf133a848310c007f2e731b0958a383ae6d7be5fa35819bf1e140704"
+    },
+    {
+     "group": "electrical_engineering",
+     "partition": "tuning",
+     "row": 16,
+     "sha256": "52dbec201d0e4309ef70c68600cc8075c7df33d146703d43d9abc767d5fbd9d7"
+    },
+    {
+     "group": "elementary_mathematics",
+     "partition": "tuning",
+     "row": 17,
+     "sha256": "4f17e94e79baa9835944fca721ada49610f092199d28ac2c51238f14d95bb7fc"
+    },
+    {
+     "group": "elementary_mathematics",
+     "partition": "tuning",
+     "row": 18,
+     "sha256": "453bfdf7b4948cde5bc575b7c79042fe32b41727b602764249ca698606a3e31c"
+    },
+    {
+     "group": "elementary_mathematics",
+     "partition": "tuning",
+     "row": 19,
+     "sha256": "c10132597dc923ae34c775f104bf458d62b5470e7c9b533894d6d221199ad615"
+    },
+    {
+     "group": "formal_logic",
+     "partition": "confirmatory",
+     "row": 20,
+     "sha256": "ac18f018205eb6ebf1981404e9ac63ef310b5c7c6cbdd4ebf745ad42801f2a90"
+    },
+    {
+     "group": "global_facts",
+     "partition": "confirmatory",
+     "row": 21,
+     "sha256": "e6b618b4f5ec9819e2bfdbdb5d2fe4aabaab86961cc65571a71ca563762c9b52"
+    },
+    {
+     "group": "high_school_biology",
+     "partition": "confirmatory",
+     "row": 22,
+     "sha256": "4d557c1ef9e3483e97c0febfe52da7c638b8c42a60cb236fc8c58bd01f330189"
+    },
+    {
+     "group": "high_school_biology",
+     "partition": "confirmatory",
+     "row": 23,
+     "sha256": "d688fbb0ead34c2a13837d09f5dc135324e3f2f701f58ad04ca33de998e5179d"
+    },
+    {
+     "group": "high_school_biology",
+     "partition": "confirmatory",
+     "row": 24,
+     "sha256": "e84ef5c9542d2ca8cf057a74831ab65146d625dc664a8cb971b236d5bc14a570"
+    },
+    {
+     "group": "high_school_chemistry",
+     "partition": "tuning",
+     "row": 25,
+     "sha256": "bdb480cf69ab6d64c05f4ed86c5b0dfc5dbd4a6ea6283bf74debee545d830fbc"
+    },
+    {
+     "group": "high_school_computer_science",
+     "partition": "confirmatory",
+     "row": 26,
+     "sha256": "1fb19956f6cf075bff1dbe57691e92e53a112ab9f253bf1cd3995294f241afed"
+    },
+    {
+     "group": "high_school_european_history",
+     "partition": "confirmatory",
+     "row": 27,
+     "sha256": "4dcbbfc01261917e97d0aa2b98ed8f3ea32b1e5826b3a6dbd88b3aa1d88978d9"
+    },
+    {
+     "group": "high_school_european_history",
+     "partition": "confirmatory",
+     "row": 28,
+     "sha256": "126d10f8d5b6a7d93502cc39d9978a002095c703027c0699956b8c148418e8b3"
+    },
+    {
+     "group": "high_school_geography",
+     "partition": "confirmatory",
+     "row": 29,
+     "sha256": "6b0989f755f3d73d49ed49ca3da8d1112c2bc72affed0000a0a5bcdb3ad3280a"
+    },
+    {
+     "group": "high_school_government_and_politics",
+     "partition": "tuning",
+     "row": 30,
+     "sha256": "905a5f13f4538e11c439eaf442913feb0e7c8ddbce6a1ffe0fef95c7e0ae8821"
+    },
+    {
+     "group": "high_school_government_and_politics",
+     "partition": "tuning",
+     "row": 31,
+     "sha256": "8b0c05dcf222952b885dab3ee7dcc2199daaeb21cd08d15b5d55c4c555715aa6"
+    },
+    {
+     "group": "high_school_macroeconomics",
+     "partition": "confirmatory",
+     "row": 32,
+     "sha256": "c037db91f0a21575eb10a5a8f29de4f32d0df8e9af10191d53eb34b619c7a740"
+    },
+    {
+     "group": "high_school_macroeconomics",
+     "partition": "confirmatory",
+     "row": 33,
+     "sha256": "f2a5acd74abd2e39641f70ffa3bd49a7deb07d862a89f3e9c0251e4eed923f57"
+    },
+    {
+     "group": "high_school_macroeconomics",
+     "partition": "confirmatory",
+     "row": 34,
+     "sha256": "60395c4a94359cf80c7d26c5288e72ae14056a030e5445a3a8f1db40eb1b2fe7"
+    },
+    {
+     "group": "high_school_mathematics",
+     "partition": "confirmatory",
+     "row": 35,
+     "sha256": "5ae2bde7838d6f1df40b9a9f1857acf0de88c7fc577c58f201a23defe4acd387"
+    },
+    {
+     "group": "high_school_mathematics",
+     "partition": "confirmatory",
+     "row": 36,
+     "sha256": "1ac732f8b50ae56876bc9f1aca5416a11aa7b5a2a08e9de938949fa0b3f528bf"
+    },
+    {
+     "group": "high_school_microeconomics",
+     "partition": "confirmatory",
+     "row": 37,
+     "sha256": "8ab627b7a469d6cad322ec4e623fab38bdd03c74e51aa0d555e2cdb000417eb8"
+    },
+    {
+     "group": "high_school_microeconomics",
+     "partition": "confirmatory",
+     "row": 38,
+     "sha256": "304040c8084a6d30ec90d99966d0a416c3cbc6f915faba5ee6431ad69e7dea7d"
+    },
+    {
+     "group": "high_school_physics",
+     "partition": "tuning",
+     "row": 39,
+     "sha256": "cd79e7f259b5418f0037c114c23184943dcb2f5f353ac6b85d67fcd2db55a63a"
+    },
+    {
+     "group": "high_school_psychology",
+     "partition": "confirmatory",
+     "row": 40,
+     "sha256": "926936e2ae051b1e81656ac344ea004e31bc1eb6261df994499838587cf36a30"
+    },
+    {
+     "group": "high_school_psychology",
+     "partition": "confirmatory",
+     "row": 41,
+     "sha256": "629ca41b1827df622eee7ff71bb601e9925536151eb91fef4ebc27027c6bd4a8"
+    },
+    {
+     "group": "high_school_psychology",
+     "partition": "confirmatory",
+     "row": 42,
+     "sha256": "440382efbea95d7a6fbe4457b7a00c7ff5c3aa025b1dd05bedc438f0ed67b59a"
+    },
+    {
+     "group": "high_school_psychology",
+     "partition": "confirmatory",
+     "row": 43,
+     "sha256": "8e64f4df924fa4a9d8d8bbd401cf010ab014f9eeb53f51355489a0b8ca4e444a"
+    },
+    {
+     "group": "high_school_psychology",
+     "partition": "confirmatory",
+     "row": 44,
+     "sha256": "a6d2421fb517bfa852b4e93b495aa8cb036c67af0a69adfa2dbdc035c4f7a544"
+    },
+    {
+     "group": "high_school_statistics",
+     "partition": "tuning",
+     "row": 45,
+     "sha256": "f90c6e2ac8fa51c3c632b0c46c824edac9f99696105b88717a09124b76e5717e"
+    },
+    {
+     "group": "high_school_us_history",
+     "partition": "confirmatory",
+     "row": 46,
+     "sha256": "922b105dc1f7a77ab8a39b5f4891df75b42a396ecd0cc9f88c49c42be29f71ac"
+    },
+    {
+     "group": "high_school_us_history",
+     "partition": "confirmatory",
+     "row": 47,
+     "sha256": "2217c2d49986ebaa28cad9e9e581b4f7b088cd078ba110d152f9c145101d22e2"
+    },
+    {
+     "group": "high_school_world_history",
+     "partition": "confirmatory",
+     "row": 48,
+     "sha256": "032a2bd333fedb2b8e2a34517e2ab105704f56649a13f425dd365b0d46e16d58"
+    },
+    {
+     "group": "high_school_world_history",
+     "partition": "confirmatory",
+     "row": 49,
+     "sha256": "7e907b33087e74fb25f2e51ad9bf787a24268074d1c111714306dbf5e5948ce0"
+    },
+    {
+     "group": "human_aging",
+     "partition": "confirmatory",
+     "row": 50,
+     "sha256": "ab677167d35790dd606314ab6eceb82ff0a2fc6d3d9201f98273e3136073114c"
+    },
+    {
+     "group": "human_aging",
+     "partition": "confirmatory",
+     "row": 51,
+     "sha256": "831f4dada0032d97db638331652a062ad9c37338f172bd6730395cec87b0d7f2"
+    },
+    {
+     "group": "human_sexuality",
+     "partition": "tuning",
+     "row": 52,
+     "sha256": "d6e9af6d0bd01569516791329d6ff2024d7d92e15f014d3ab0a21e1d7422802f"
+    },
+    {
+     "group": "international_law",
+     "partition": "confirmatory",
+     "row": 53,
+     "sha256": "4380f7bde3b7ffa635ce4c2a125f18ac78ab4b2a32ff80df1d863a2283486b24"
+    },
+    {
+     "group": "jurisprudence",
+     "partition": "confirmatory",
+     "row": 54,
+     "sha256": "11e452aed0138a47bf5fc7077a363aa11b050c003c802a97dd65e3cdf37e471d"
+    },
+    {
+     "group": "logical_fallacies",
+     "partition": "confirmatory",
+     "row": 55,
+     "sha256": "36cf5ea7069e8615ebba9430d261316dc962c8daa15f910b4e11100519399f46"
+    },
+    {
+     "group": "machine_learning",
+     "partition": "confirmatory",
+     "row": 56,
+     "sha256": "052be322b556410505af3be7782bac8b0552c6b7cb24b300f06e4aec48ce9e35"
+    },
+    {
+     "group": "management",
+     "partition": "confirmatory",
+     "row": 57,
+     "sha256": "91577017729e15a0a28c040865eacad14f38d9a08300b45bc3ea84a8fd587789"
+    },
+    {
+     "group": "marketing",
+     "partition": "tuning",
+     "row": 58,
+     "sha256": "4c0a6278eb6ad6c11b2b9f63e4276726a80d5a98ea2f2798ff5fc13b027a5056"
+    },
+    {
+     "group": "marketing",
+     "partition": "tuning",
+     "row": 59,
+     "sha256": "4b28ff32016a63bb53362aa871e5eb37c9f23a43c0d919985f2cc966693df065"
+    },
+    {
+     "group": "medical_genetics",
+     "partition": "tuning",
+     "row": 60,
+     "sha256": "f4f8a2561c3c72546bb843f77e65135c8b615cd5f0de902d673f75e67e751cac"
+    },
+    {
+     "group": "miscellaneous",
+     "partition": "tuning",
+     "row": 61,
+     "sha256": "bd8631e7854eea3ff2e278c17ba1bf42a409a6972e03a7afa627d717d360f43a"
+    },
+    {
+     "group": "miscellaneous",
+     "partition": "tuning",
+     "row": 62,
+     "sha256": "1f2e6c93869420cf790296c4ff2de0fb40ff5212ff4decf70482a4961ccaca90"
+    },
+    {
+     "group": "miscellaneous",
+     "partition": "tuning",
+     "row": 63,
+     "sha256": "ec50c8ac6f144698fb1138bf531b7410095bbda8c0647ffe4a0c12047b55d5ad"
+    },
+    {
+     "group": "miscellaneous",
+     "partition": "tuning",
+     "row": 64,
+     "sha256": "e12ad0dfed2e60b7bdd18989862e8007998d275e0a3a92dfad16b479f1f6a597"
+    },
+    {
+     "group": "miscellaneous",
+     "partition": "tuning",
+     "row": 65,
+     "sha256": "88b3da604052ee79853bb18be283c5ac7692d6d4f9df8b99bd8489a4b12750bc"
+    },
+    {
+     "group": "miscellaneous",
+     "partition": "tuning",
+     "row": 66,
+     "sha256": "f185071b7691ec5a68c0b185b521373685429deaf1e84c77230d0854fd4fa833"
+    },
+    {
+     "group": "moral_disputes",
+     "partition": "confirmatory",
+     "row": 67,
+     "sha256": "ce5425461195d1c43862cdacd713ec33b8e9086053bc390dc01875bf1021f55a"
+    },
+    {
+     "group": "moral_disputes",
+     "partition": "confirmatory",
+     "row": 68,
+     "sha256": "55138fd810845d9e4a75a6436bec0bd37d63dc8fc7461e291e8dec78a9c0c109"
+    },
+    {
+     "group": "moral_disputes",
+     "partition": "confirmatory",
+     "row": 69,
+     "sha256": "a070fd711b55b3ce806f9a2b3aa7263a4f2703a0f41fb3e009a41b544d4fc337"
+    },
+    {
+     "group": "moral_scenarios",
+     "partition": "confirmatory",
+     "row": 70,
+     "sha256": "91c8d020c3b0c7322161e478618d1824f817bee47ab030685efba55288762c80"
+    },
+    {
+     "group": "moral_scenarios",
+     "partition": "confirmatory",
+     "row": 71,
+     "sha256": "2de4f5cd7394a61957994d355325125967e28c77c387db5fb76d82173e7331a9"
+    },
+    {
+     "group": "moral_scenarios",
+     "partition": "confirmatory",
+     "row": 72,
+     "sha256": "1f98982892d77350aebe5da05ccc3398ae9f62fb9cbec75ce9e1642a0e3edc50"
+    },
+    {
+     "group": "moral_scenarios",
+     "partition": "confirmatory",
+     "row": 73,
+     "sha256": "16aeb2741174eadaf106ab2f0d499dcbce2bdfbc7d91160ba6542afb56f36a88"
+    },
+    {
+     "group": "moral_scenarios",
+     "partition": "confirmatory",
+     "row": 74,
+     "sha256": "ebc240eff8007d3487900e422b0702c54d9c31c9b903a9e3d273ccd187abcbb1"
+    },
+    {
+     "group": "moral_scenarios",
+     "partition": "confirmatory",
+     "row": 75,
+     "sha256": "b0a99dcf8abd40e72c04a52207426a5d646871ff1220166d5029c0d49dd7317d"
+    },
+    {
+     "group": "moral_scenarios",
+     "partition": "confirmatory",
+     "row": 76,
+     "sha256": "dd78946ca06d54208e0ebfa35a9ec52f07a3e98ce0791a54ca50838666e8cdc3"
+    },
+    {
+     "group": "nutrition",
+     "partition": "confirmatory",
+     "row": 77,
+     "sha256": "7c411126eeb6252edf17449d3b468096d8b1d827e35233f3f30ef8558cd951cd"
+    },
+    {
+     "group": "nutrition",
+     "partition": "confirmatory",
+     "row": 78,
+     "sha256": "d490fded944053ef65bfda7381fb36e3601b890347136b9a6b21d9019a583291"
+    },
+    {
+     "group": "philosophy",
+     "partition": "confirmatory",
+     "row": 79,
+     "sha256": "d15dabc183c6867f2291ea671c9edb6775be0c100016aaf4cbaffc0e54343f1c"
+    },
+    {
+     "group": "philosophy",
+     "partition": "confirmatory",
+     "row": 80,
+     "sha256": "eec5649d87c9af4e07d00fdaefd410a378b9d6bb5352cb7a981242d19aefe1ff"
+    },
+    {
+     "group": "philosophy",
+     "partition": "confirmatory",
+     "row": 81,
+     "sha256": "d4f79ddeca7a9b082d8a37b4d1f52963a80bfe2d3c4c40ae6bb4c7ab30c27243"
+    },
+    {
+     "group": "prehistory",
+     "partition": "confirmatory",
+     "row": 82,
+     "sha256": "fd5035971912496c344d6a835d8e8112af01fda13bc287cbd68d722bf70a944e"
+    },
+    {
+     "group": "prehistory",
+     "partition": "confirmatory",
+     "row": 83,
+     "sha256": "2178121944bd9904327540f4f9f06c5d4f0dfa6e64f13745112ace04e0afabc8"
+    },
+    {
+     "group": "prehistory",
+     "partition": "confirmatory",
+     "row": 84,
+     "sha256": "f3ba6deeff5e9c33c90980aa63400cb8296bc5fb892f85b06018dd95c7e5684f"
+    },
+    {
+     "group": "professional_accounting",
+     "partition": "tuning",
+     "row": 85,
+     "sha256": "32d4d7cba56cd747a6aaf8ecfd83c743cee9a418f692289a7a1a8704af3ecaa6"
+    },
+    {
+     "group": "professional_accounting",
+     "partition": "tuning",
+     "row": 86,
+     "sha256": "f4ec178fc2a07c967ab871be0cf76053dc0cbd65ec47ec9b052d4f85ec0dae0c"
+    },
+    {
+     "group": "professional_law",
+     "partition": "tuning",
+     "row": 87,
+     "sha256": "9e50ec03f0160283c8ee02db102586722d2e5906f82c069487086d82290cc672"
+    },
+    {
+     "group": "professional_law",
+     "partition": "tuning",
+     "row": 88,
+     "sha256": "9eb7e696d24d58365cd31b9d574aeda63972dda87a4830f646f01aec78ad57c4"
+    },
+    {
+     "group": "professional_law",
+     "partition": "tuning",
+     "row": 89,
+     "sha256": "75626d1990cdfb20cd5e5d14000a9d91dc8c1e390cddf84fc6471fcfa196cebb"
+    },
+    {
+     "group": "professional_law",
+     "partition": "tuning",
+     "row": 90,
+     "sha256": "d77ba61ff8cbdccb7f908797148db2c7d7c7ae7e9db362b93b5443eb2c894c7f"
+    },
+    {
+     "group": "professional_law",
+     "partition": "tuning",
+     "row": 91,
+     "sha256": "ef1268f81eeba78ed8e9963b1dda01451c4fca0043cc7e0ecc13b637a7275d58"
+    },
+    {
+     "group": "professional_law",
+     "partition": "tuning",
+     "row": 92,
+     "sha256": "499eadd2e57573d98ffb9bdc0ad36840794972e5aba7497cc86bd95f8fe5bc8f"
+    },
+    {
+     "group": "professional_law",
+     "partition": "tuning",
+     "row": 93,
+     "sha256": "1dca82aa2cd8f24c557b028c61a64d95dbb157afdc9d1e200cd822f600865362"
+    },
+    {
+     "group": "professional_law",
+     "partition": "tuning",
+     "row": 94,
+     "sha256": "2b2c98cafd42b08c6cd03255500f29aa6e1e26cc28422a1b0560ec9a3e6435c5"
+    },
+    {
+     "group": "professional_law",
+     "partition": "tuning",
+     "row": 95,
+     "sha256": "d0175bc6305eb92a9209d258ec531c92dd0c5edc383f7776af2a214828718ccf"
+    },
+    {
+     "group": "professional_law",
+     "partition": "tuning",
+     "row": 96,
+     "sha256": "fa851657aac6c70afe238a7002aca68a27461f5e706175bafa136de31157cc90"
+    },
+    {
+     "group": "professional_law",
+     "partition": "tuning",
+     "row": 97,
+     "sha256": "f02fb3a3fa927095c7d27b583d576fda4c756a09a0f488fe857c8e0fa94ad723"
+    },
+    {
+     "group": "professional_law",
+     "partition": "tuning",
+     "row": 98,
+     "sha256": "5d8fed87f235cc77a9aee870cf53508e62d602c0d6321901f0df91bfd8d7ea26"
+    },
+    {
+     "group": "professional_medicine",
+     "partition": "confirmatory",
+     "row": 99,
+     "sha256": "eb7b9e9eaf5185c6f629b145c888c995a0df6d6612072e5e298c60303183a3a2"
+    },
+    {
+     "group": "professional_medicine",
+     "partition": "confirmatory",
+     "row": 100,
+     "sha256": "780d8f29e26eb4b6f800092bb9632194845a557e56da6027d43d10aa9ab7ea6c"
+    },
+    {
+     "group": "professional_medicine",
+     "partition": "confirmatory",
+     "row": 101,
+     "sha256": "5eaadfb73b2f9b3c335c96401fff66168d8a00e4795e439d018c59763bb936a2"
+    },
+    {
+     "group": "professional_psychology",
+     "partition": "confirmatory",
+     "row": 102,
+     "sha256": "7cf61812dad07ef633b4111415a108b50db747fed70dc9d5740e5cc00e6afe78"
+    },
+    {
+     "group": "professional_psychology",
+     "partition": "confirmatory",
+     "row": 103,
+     "sha256": "e143098e03243dfae0833355d095e4ab32d45bd612d41bbcc1356400d2b48442"
+    },
+    {
+     "group": "professional_psychology",
+     "partition": "confirmatory",
+     "row": 104,
+     "sha256": "d2499bc40e6a9236c554d7644d8b0cdb2e1aeca1139099a23ab99ff50eec06e7"
+    },
+    {
+     "group": "professional_psychology",
+     "partition": "confirmatory",
+     "row": 105,
+     "sha256": "2ddffffc9cbdcad02b944f2392a25b79d73871e91657694646f1f4c2d4928e6d"
+    },
+    {
+     "group": "professional_psychology",
+     "partition": "confirmatory",
+     "row": 106,
+     "sha256": "b7439baddd4f8face24411284f3d4220abc0f75438bf34bf9a6f66f73e7afaee"
+    },
+    {
+     "group": "security_studies",
+     "partition": "tuning",
+     "row": 107,
+     "sha256": "54fb47441f26d418d77ef430ca77ec563c62c3e901ebe3fcc010e3ea5ae182b3"
+    },
+    {
+     "group": "security_studies",
+     "partition": "tuning",
+     "row": 108,
+     "sha256": "eab98fbd059269b29fd839c40bc1ab3489f1c408671016f5b339438ffc417b92"
+    },
+    {
+     "group": "sociology",
+     "partition": "confirmatory",
+     "row": 109,
+     "sha256": "afd47ae980476e904deba62b9c47c3afade9662d1cc57a4da209be0d9f47a24a"
+    },
+    {
+     "group": "sociology",
+     "partition": "confirmatory",
+     "row": 110,
+     "sha256": "fab34c71d882d4bccebea6137b75d9faad3adc21e4c4f80f6b865b271a5b1d00"
+    },
+    {
+     "group": "us_foreign_policy",
+     "partition": "confirmatory",
+     "row": 111,
+     "sha256": "d10eeae80d7b07a401c1a90659b08687207219b444e2bb0ee8a0db8c6eda39b5"
+    },
+    {
+     "group": "virology",
+     "partition": "tuning",
+     "row": 112,
+     "sha256": "24a19a3e3099af3792f81e0c20af2485dfed38922eb62d46404f2a1e686fe4e8"
+    },
+    {
+     "group": "world_religions",
+     "partition": "tuning",
+     "row": 113,
+     "sha256": "3afb42f11c7a3d5f228255d0a18fc4eef82e758eccbcd9fe7e44d0f88e8ade37"
+    }
+   ],
+   "partitions": {
+    "confirmatory": {
+     "n_groups": 34,
+     "n_rows": 70,
+     "sha256": "c9c3706054352dcdcaa5287384c3f4d135092a1e773f8612f2d9a740ace449a2"
+    },
+    "tuning": {
+     "n_groups": 19,
+     "n_rows": 44,
+     "sha256": "abfdd75c8d5cc7b4bb19c1d4151889172bf0ad0e46b62943d37eae05b9d8323a"
+    }
+   }
+  }
+ },
+ "schema": "e1-partition/1"
+}
