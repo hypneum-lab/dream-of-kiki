@@ -1414,6 +1414,18 @@ reclassification en catégorie (a) tient. Voir
 `docs/proofs/dream2learn-dr3-separation.md` §5 pour les
 trois déclencheurs qui forceraient une révision.
 
+Une mise en garde voisine vaut pour le replay par générateur figé
+en général, et pour le substrat de diffusion latente en cours de
+développement (Wave 3b) lorsque son ablation sera disponible : mélanger des échantillons synthétiques d'anciennes
+classes issus d'un modèle texte-image figé avec des données
+réelles de nouvelles classes peut amener le classifieur à
+apprendre un *raccourci de domaine* synthétique-versus-réel
+plutôt que les anciennes classes [@zhang2026domainshortcut]. Tout
+gain de rétention futur obtenu par replay généré par diffusion
+devra donc être rapporté avec une sonde synthétique-versus-réel
+sur les représentations du classifieur. Aucune exécution de ce
+type n'existe encore ; ce paragraphe n'ajoute aucun résultat.
+
 ---
 
 ## Notes pour révision

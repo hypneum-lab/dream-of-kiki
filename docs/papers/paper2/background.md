@@ -65,7 +65,14 @@ demonstrate brain-inspired replay on artificial neural
 networks but on a single architecture. [@kirkpatrick2017overcoming]
 introduce EWC as a SHY-adjacent regularizer but do not pursue
 substrate-agnosticism. [@rebuffi2017icarl] and
-[@shin2017continual] are architecture-specific. No prior work,
+[@shin2017continual] are architecture-specific. A 2026 survey
+of continual learning in the LLM and agentic era
+[@hou2026cltransition] organises the field by *how* models are
+updated (off-policy, on-policy, non-gradient), *when*
+(pre-training, post-training, inference) and *where* (parameters
+versus external memory) ; framework C sits in its offline,
+parameter-space cell, as a layer that composes operations. No
+prior work,
 to our knowledge, ships a **reusable conformance test suite**
 binding a formal framework to operational substrates across
 qualitatively distinct hardware models (dense-tensor MLX vs
