@@ -19,7 +19,8 @@ Two kinds of numbers are produced:
    only needs the paired differences, and draw full bivariate-normal
    samples when the rule needs the per-arm SDs (g_av floor).
 3. *"No practical effect" rules* at the margins fixed by the PI on
-   2026-10-23 (G4 eps = 0.005, DR-3 delta = 0.025, E1 delta = 0.01):
+   2026-10-23 (G4 eps = 0.01, reverted from 0.005 by a later PI
+   decision the same day; DR-3 delta = 0.025, E1 delta = 0.01):
    power at true difference 0, the largest SD of the paired
    difference at which the registered n still reaches 80 %, and the
    n needed for 80 % at the planning SD. One-sided bound rules
@@ -258,10 +259,10 @@ def main() -> None:
                      for d in d_grid]
             print(_fmt_row([str(r), *cells]))
 
-    eps = 0.005
-    print("\n### 4b. Same rule plus raw floor mean(D) >= eps = 0.005"
+    eps = 0.01
+    print("\n### 4b. Same rule plus raw floor mean(D) >= eps = 0.01"
           " (n = 30, r = 0.5)\n")
-    sigmas = (0.005, 0.01, 0.02)
+    sigmas = (0.01, 0.02, 0.04)
     print(_fmt_row(["arm SD", *[f"d_av={d}" for d in d_grid]]))
     print(_fmt_row(["---"] * (len(d_grid) + 1)))
     for sg in sigmas:
@@ -269,25 +270,26 @@ def main() -> None:
                  for d in d_grid]
         print(_fmt_row([str(sg), *cells]))
 
-    print("\n## 5. G4-nono 'no practical effect' rules, eps = 0.005,"
+    print("\n## 5. G4-nono 'no practical effect' rules, eps = 0.01,"
           " true diff 0\n")
-    sds = (0.0025, 0.005, 0.0075, 0.01, 0.015, 0.02)
+    sds = (0.0075, 0.01, 0.015, 0.02, 0.025, 0.03, 0.04)
+    g4_ns = (30, 95, 108)
     print("H12-C TOST (EQUIVALENT) and H12-A/B BOUNDED-NO-GAIN (U < eps),"
           " by SD of the paired difference:\n")
     print(_fmt_row(["rule, n", *[f"SD_D={x}" for x in sds]]))
     print(_fmt_row(["---"] * (len(sds) + 1)))
-    for n in (30, 95):
+    for n in g4_ns:
         print(_fmt_row([f"TOST, n={n}",
                         *[f"{power_tost(0, x, n, a_g4, eps):.2f}" for x in sds]]))
-    for n in (30, 95):
+    for n in g4_ns:
         print(_fmt_row([f"U<eps, n={n}",
                         *[f"{power_bound_exact(eps / x, n, a_g4):.2f}"
                           for x in sds]]))
     print()
-    for n in (30, 95):
+    for n in g4_ns:
         print(f"- n = {n}: 80 % needs SD_D <= {max_sd_tost(eps, n, a_g4):.4f}"
               f" (TOST), <= {max_sd_bound(eps, n, a_g4):.4f} (U < eps)")
-    for x in (0.0075, 0.01, 0.015):
+    for x in (0.015, 0.02, 0.025, 0.03, 0.04):
         print(f"- SD_D = {x}: n for 80 % = {n_needed_tost(eps, x, a_g4)}"
               f" (TOST), {n_needed_bound(eps, x, a_g4)} (U < eps)")
 
