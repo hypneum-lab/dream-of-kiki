@@ -260,11 +260,15 @@ constant** (the harness default `inner`), not the tuned `inner`.
 in `_cell_split` order and an inner-repeat count m (default 5, or the
 tuned value), the update sequence repeats each record m times
 consecutively, cycles from the start of the corpus when exhausted,
-and stops at the first update after which cumulative loss tokens are
-≥ T_s. Records with < 2 tokens are skipped. Each update is one
-sequence (batch size 1), momentumless SGD, as in `_replay`. Achieved
-tokens must lie in [T_s, 1.05 T_s]; otherwise the last update is
-dropped. Tokens are matched; optimizer-step counts differ across
+and ends with exactly T_s loss tokens. Records with < 2 tokens are
+skipped. Each update is one sequence (batch size 1), momentumless
+SGD, as in `_replay`. **Terminal update:** if the next full record
+would take the cumulative count past T_s, with r tokens remaining
+(1 ≤ r), the record is truncated to its first r + 1 input tokens, so
+it contributes exactly r loss tokens; its loss is the mean over those
+r positions, like every other update. Achieved loss tokens therefore
+equal T_s exactly for every replaying profile (a unit test covers
+unequal record lengths and r = 1). Tokens are matched; optimizer-step counts differ across
 profiles and are reported. DOWNSCALE (`HL_SHRINK = 0.99`, untuned)
 and RESTRUCTURE are applied after replay and are not charged.
 Pre/post scoring passes are identical across profiles and not
@@ -443,8 +447,12 @@ requires editing the named section before the lock commit.
 
 1. **SESOI δ (§2).** 0.02 composite-accuracy points (default) or
    another fixed raw value.
-2. **Hardware and model revision (§9).** Multi-H200 node vs Mac
-   Studio, and the exact HF revision hash of Qwen3.6-35B-A3B.
+2. **CUDA node and model revision (§9).** The registered backend is
+   CUDA / HF transformers only; the choice is which multi-GPU node
+   (at least 2 × H200-class, 4 × H200 default) and the exact HF
+   revision hash of Qwen3.6-35B-A3B. Running on Apple MLX instead
+   would be a different backend and requires a protocol revision
+   before filing, not a hardware swap.
 3. **Larger fact corpus.** Keep the partitioned fixtures (default) or
    ship a larger independent-fact corpus first, as the correction
    note recommends; the latter replaces §5's partition table.
