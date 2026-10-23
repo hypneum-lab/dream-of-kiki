@@ -1,5 +1,7 @@
 # M6 — Paper 2 §7.9 + DR-3 evidence v1.0 + OSF amendment design
 
+> **Status (2026-10-23):** historical record. M7 has since shipped on main (#39, DR-3 conformance); the M7-first sequencing is complete. The M6 paper §7.9 / OSF amendment work described here is still open. Merged as a design record, not as current plan.
+
 > **Parent decision** : `2026-05-21-m6-m7-sequencing.md` — M6 runs
 > *after* M7. The cited bench is the post-M7 v3 dump
 > (`docs/milestones/wave3b-bench-2026-05-2X.{json,md,cells.jsonl}`),

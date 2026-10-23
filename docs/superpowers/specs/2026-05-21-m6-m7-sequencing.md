@@ -1,5 +1,7 @@
 # M6 + M7 sequencing decision
 
+> **Status (2026-10-23):** historical record. M7 has since shipped on main (#39, DR-3 conformance); the M7-first sequencing is complete. Merged as a design record, not as current plan.
+
 > **Context** : Wave 3b M5 shipped 2026-05-21 (PR #35, squash `ffe0aeb`)
 > with a known DR-3 gap : `mlx_latent_diffusion.execute_profile` does
 > not branch on `request.profile`. Issue [#36](https://github.com/hypneum-lab/dream-of-kiki/issues/36).

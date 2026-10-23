@@ -1,5 +1,7 @@
 # M7 — Substrate DR-3 conformance fix design
 
+> **Status (2026-10-23):** historical record. M7 has since shipped on main (#39, DR-3 conformance); the M7-first sequencing is complete. Merged as a design record, not as current plan.
+
 > **Closes** : issue [#36](https://github.com/hypneum-lab/dream-of-kiki/issues/36).
 > **Parent decision** : `2026-05-21-m6-m7-sequencing.md` — M7 first.
 > **DualVer impact** : FC MINOR `C-v0.14.0 → C-v0.15.0`, EC stays `+PARTIAL`
