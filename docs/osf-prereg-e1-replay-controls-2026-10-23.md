@@ -196,11 +196,15 @@ unknown SD of the paired composite difference, SD_D:
 
 The complete SUPERIOR rule has ≈ 0.50 power when the true effect
 equals δ (the observed-mean floor), whatever SD_D is. No prior run
-reports SD_D for these contrasts at 35B. The tuning-partition cells
-(§5) estimate SD_D for the tuned contrasts; that estimate is
-recorded in the frozen tuning amendment. **N stays 141 whatever the
-estimate**: if SD_D > 0.069, the amendment states the reduced
-NI/TOST power before any confirmatory seed runs.
+reports SD_D for these contrasts at 35B. The only pre-confirmatory
+proxy is the 10-seed tuning data: the SD over tuning seeds of the
+paired difference between the two selected configurations (vanilla
+vs OPR) on the tuning partition. It is a rough, item-shifted proxy
+for the H14-C SD_D and none exists for H14-A/B. It is recorded in
+the frozen tuning amendment for information only. **N stays 141
+whatever the proxy shows**; if it exceeds 0.069, the amendment states
+the correspondingly reduced NI/TOST power before any confirmatory
+seed runs.
 
 ## §4 Exclusions, replacement and retained-N inference
 
@@ -306,7 +310,7 @@ seeds; ties (within 1e-9) go to the lower LR, then the smaller m.
 it uses selection (i), so `p_equ` and `p_ctrl_vanilla_replay_tuned`
 share LR, m and the update sequence and differ only by DOWNSCALE
 (this is what makes H14-B a DOWNSCALE ablation). The two selections
-and the SD_D estimates are frozen in a dated amendment **before** the
+and the SD_D proxy are frozen in a dated amendment **before** the
 first confirmatory seed runs. `p_min`, `p_max` and the other
 controls keep the defaults (LR 1e-4, m = 5); `p_equ` uses selection
 (i) in every confirmatory cell, including secondary contrasts.
@@ -424,7 +428,7 @@ HF revision hash are written into the filed version.
 
 **Audit trail.** Milestones:
 `docs/milestones/e1-35b-replay-controls-<date>.{json,md}`, including
-the frozen tuning amendment, SD_D estimates and the HF revision hash.
+the frozen tuning amendment, the SD_D proxy and the HF revision hash.
 Deviations: an amendment commit before the affected seeds run, or
 post-hoc disclosure marking the affected hypotheses exploratory (per
 `docs/osf-preregistration-draft.md` §5).
