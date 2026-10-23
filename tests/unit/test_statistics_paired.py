@@ -248,7 +248,7 @@ def test_identical_differences_nonzero_y() -> None:
     # Same exact D from non-trivial x and y (0.3 - 0.2 repeated).
     x = [0.3, 0.3, 0.3, 0.3]
     y = [0.2, 0.2, 0.2, 0.2]
-    t = paired_tost(x, y, 0.2)
+    t = paired_tost(x, y, 0.05)
     assert t.degenerate is True
     assert t.mean_diff == 0.3 - 0.2
     assert t.t_lower is None and t.g_z is None
