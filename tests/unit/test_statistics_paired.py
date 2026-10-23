@@ -90,23 +90,29 @@ def test_ni_matches_scipy_both_directions() -> None:
     assert lo.p_value == pytest.approx(ref2.pvalue, rel=1e-9)
 
 
+@pytest.mark.parametrize("alpha", [0.05, 1 / 60])
 @pytest.mark.parametrize("seed", range(25))
-def test_ci_tost_equivalence_property(seed: int) -> None:
-    """TOST at alpha  <=>  (1-2alpha) CI inside (-delta, delta);
-    NI at alpha  <=>  lower bound > -delta (and mirrored)."""
+def test_ci_tost_equivalence_property(seed: int, alpha: float) -> None:
+    """Decisions agree with independently computed SciPy p-values
+    (ttest_1samp with alternative) and with the (1-2alpha) CI."""
     rng = np.random.default_rng(seed)
     n = int(rng.integers(3, 60))
     x = rng.normal(0.5, 0.05, n)
     y = x - rng.normal(rng.uniform(-0.02, 0.02), rng.uniform(0.005, 0.05), n)
-    delta, alpha = 0.01, 0.05
+    delta = 0.01
     xs, ys = x.tolist(), y.tolist()
+    d = x - y
+    p_lo = float(stats.ttest_1samp(d, -delta, alternative="greater").pvalue)
+    p_up = float(stats.ttest_1samp(d, delta, alternative="less").pvalue)
     t = paired_tost(xs, ys, delta, alpha)
+    assert t.equivalent == (max(p_lo, p_up) < alpha)
     assert t.equivalent == (t.ci_lower > -delta and t.ci_upper < delta)
     g = paired_noninferiority(xs, ys, delta, alpha, "greater")
-    assert g.noninferior == (t.ci_lower > -delta)
+    assert g.noninferior == (p_lo < alpha)
     assert g.noninferior == (g.bound > -delta)
     lo = paired_noninferiority(xs, ys, delta, alpha, "less")
-    assert lo.noninferior == (t.ci_upper < delta)
+    assert lo.noninferior == (p_up < alpha)
+    assert lo.noninferior == (lo.bound < delta)
 
 
 def test_equivalent_and_not_equivalent_cases() -> None:
@@ -186,3 +192,70 @@ def test_does_not_mutate_inputs_and_existing_tost_unchanged() -> None:
     from kiki_oniric.eval.statistics import tost_equivalence
 
     assert tost_equivalence(X, Y, 0.05).test_name == "TOST equivalence"
+
+
+# --- identical differences: exact detection (review follow-up) -------
+# With repeated decimals, mean(D) and std(D) accumulate float error
+# (SD ~ 1e-17), so degeneracy must be detected on exact equality of D
+# before computing mean / SD (E1 pre-reg section 2).
+
+@pytest.mark.parametrize(
+    ("value", "delta", "equiv", "ni_greater", "ni_less"),
+    [
+        (0.1, 0.1, False, True, False),    # D == +delta: strict
+        (-0.1, 0.1, False, False, True),   # D == -delta: strict
+        (0.0, 0.1, True, True, True),
+        (0.3, 0.1, False, True, False),
+        (0.05, 0.1, True, True, True),
+        (-0.3, 0.1, False, False, True),
+        (0.7, 0.7, False, True, False),
+        (0.1, 0.3, True, True, True),
+    ],
+)
+@pytest.mark.parametrize("n", [3, 7])
+def test_identical_differences_collapse(
+    value: float, delta: float, equiv: bool,
+    ni_greater: bool, ni_less: bool, n: int,
+) -> None:
+    x = [value] * n
+    y = [0.0] * n
+    t = paired_tost(x, y, delta)
+    assert t.degenerate is True
+    assert t.sd_diff == 0.0
+    assert t.se_diff == 0.0
+    assert t.mean_diff == value
+    assert t.ci_lower == value
+    assert t.ci_upper == value
+    assert t.t_lower is None
+    assert t.t_upper is None
+    assert t.g_z is None
+    assert t.equivalent is equiv
+    assert {t.p_lower, t.p_upper} <= {0.0, 1.0}
+    g = paired_noninferiority(x, y, delta, 0.05, "greater")
+    assert g.degenerate is True
+    assert g.sd_diff == 0.0
+    assert g.t_stat is None
+    assert g.bound == value
+    assert g.noninferior is ni_greater
+    lo = paired_noninferiority(x, y, delta, 0.05, "less")
+    assert lo.degenerate is True
+    assert lo.t_stat is None
+    assert lo.bound == value
+    assert lo.noninferior is ni_less
+
+
+def test_identical_differences_nonzero_y() -> None:
+    # Same exact D from non-trivial x and y (0.3 - 0.2 repeated).
+    x = [0.3, 0.3, 0.3, 0.3]
+    y = [0.2, 0.2, 0.2, 0.2]
+    t = paired_tost(x, y, 0.2)
+    assert t.degenerate is True
+    assert t.mean_diff == 0.3 - 0.2
+    assert t.t_lower is None and t.g_z is None
+    assert not t.equivalent
+
+
+def test_near_identical_differences_not_degenerate() -> None:
+    t = paired_tost([0.1, 0.1, 0.1 + 1e-9], [0.0, 0.0, 0.0], 0.5)
+    assert t.degenerate is False
+    assert t.t_lower is not None

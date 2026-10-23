@@ -308,7 +308,8 @@ def compute_hedges_g(
 #
 # Defined states (consistent with the pre-registration):
 #   * n < 2  -> ValueError (df = 0, no variance estimate).
-#   * sd(D) == 0 exactly ("degenerate": every D identical) -> no
+#   * every D exactly equal ("degenerate", detected on D itself
+#     before mean/SD; the common value is D_bar, SD = 0) -> no
 #     error; L = U = D_bar, t statistics are None, g_z is None, and
 #     each p-value is 0.0 if the corresponding bound test passes
 #     (strict inequality on D_bar) else 1.0.
@@ -414,8 +415,16 @@ def _paired_summary(
     if not (np.isfinite(x_arr).all() and np.isfinite(y_arr).all()):
         raise ValueError("x and y must contain only finite values")
     d = x_arr - y_arr
-    mean = float(d.mean())
-    sd = float(d.std(ddof=1))
+    if bool((d == d[0]).all()):
+        # Identical differences: use the common value and SD = 0
+        # exactly; mean/std of repeated decimals would otherwise
+        # leave float noise (SD ~ 1e-17) and defeat the degenerate
+        # branch.
+        mean = float(d[0])
+        sd = 0.0
+    else:
+        mean = float(d.mean())
+        sd = float(d.std(ddof=1))
     se = sd / math.sqrt(n)
     q = float(stats.t.ppf(1.0 - alpha, n - 1))
     return _PairedSummary(
