@@ -52,6 +52,12 @@ operation : multiplicative shrinkage of weights by a factor in
 downscale is **commutative but not idempotent** (shrink_f ∘
 shrink_f gives factor², not factor) — a property that constrains
 canonical ordering choices.
+A 2026 sleep-inspired replay model shows that a single
+unsupervised sleep phase scheduled after *several* sequential
+tasks restores all of them, with most synapses weakened and a
+minority strengthened [@bazhenov2026notjustafterone] — a
+computational instance of the replay-plus-downscale coupling
+that Pillars A and B jointly describe.
 
 ## 3.3 Pillar C — Hobson / Solms creative dreaming
 
@@ -72,7 +78,13 @@ already enhances emotional-item memory with REM contributing
 complementarily [@commsbio2025emotional], and the 2025
 *Nature Reviews Neuroscience* synthesis supports a **sequential**
 SWS-then-REM model rather than a competitive split
-[@robertson2025nrn]. In our framework, this maps to the
+[@robertson2025nrn]. Human high-density EEG adds stage-specific
+evidence : reactivation time-locked to NREM slow-oscillation–
+spindle complexes and reactivation during phasic REM are
+dissociable, the former supporting memory consolidation and the
+latter emotional dissipation [@zhang2026nremremreactivation] —
+consistent with distinct operators per stage rather than a single
+"integration" process. In our framework, this maps to the
 `recombine` operation : sample latents from the δ snapshot,
 apply a VAE-light or interpolation kernel, emit new latent
 samples on canal 2.

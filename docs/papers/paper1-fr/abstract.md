@@ -57,8 +57,9 @@ sœur Nerve-WML (§7.4) : l'indépendance au substrat tient sur les
 tâches linéairement séparables (écart 0 %), l'écart en régime non
 linéaire (12,1 %) s'avère un artefact de tête de lecture qui
 s'inverse sous des têtes symétriques, et l'alignement
-représentationnel est corroboré au niveau local (voisinage), borné
-par la tâche et l'objectif partagés plutôt que par un code universel. **Aucune décision d'hypothèse d'apprentissage
+représentationnel est corroboré pour la structure relationnelle
+(voisinage), non pour la géométrie métrique, et borné par la tâche et
+l'objectif partagés plutôt que par un code universel. **Aucune décision d'hypothèse d'apprentissage
 continu sur H1–H4 n'est annoncée dans cet article** ; l'évaluation
 empirique de H1–H4 est rapportée dans le Paper 2.
 

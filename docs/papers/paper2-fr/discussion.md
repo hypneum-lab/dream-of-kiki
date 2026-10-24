@@ -109,6 +109,21 @@ ne sont actuellement verrouillés
 (`docs/milestones/g9-cycle2-publication.md` § actions
 externes).
 
+**Note de portée sur RECOMBINE-empty.** L'échelle d'ablation DR-4
+(§7.1) porte sur des flux class-incrémentaux mono-domaine. Un
+preprint de 2026 (arXiv v2) rapporte un gain du replay recombinatoire
+puisant *entre* domaines dans un pipeline LoRA de rang 256 sur un
+modèle 8B (nuls aux rangs inférieurs, non concluant à 70B/72B) et un
+résultat nul pour la répétition intra-domaine dans une condition
+appariée de rang 128 ; la v2 rétracte son résultat phare
+d'exactitude jugée et ses gains à graine unique, et l'évidence
+provient d'un seul groupe sans réplication indépendante
+[@zahn2026discoverydreaming]. Le verdict
+RECOMBINE-empty est rapporté sans changement ; cette note
+consigne seulement que le régime testé est celui où l'on attend
+le moins d'effet de `recombine`, si bien que le verdict ne dit
+rien des flux inter-domaines.
+
 ## 8.4 Le pivot T-Col vers des données IRMf réelles
 
 L'Article 1 §6.4 a verrouillé Studyforrest comme fallback IRMf

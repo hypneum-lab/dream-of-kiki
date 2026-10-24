@@ -58,6 +58,13 @@ dans notre analyse des paires d'opérations (voir
 downscale est **commutative mais non idempotente** (shrink_f ∘
 shrink_f donne facteur², pas facteur) — propriété qui contraint
 les choix d'ordonnancement canonique.
+Un modèle de replay inspiré du sommeil publié en 2026 montre
+qu'une unique phase de sommeil non supervisée, programmée après
+*plusieurs* tâches séquentielles, les restaure toutes, la plupart
+des synapses étant affaiblies et une minorité renforcée
+[Bazhenov et al. 2026] — une instance computationnelle du couplage
+replay-plus-downscale que décrivent conjointement les piliers A
+et B.
 
 ## 3.3 Pilier C — Rêve créatif Hobson / Solms
 
@@ -79,7 +86,14 @@ NREM renforce déjà la mémoire des items émotionnels, le REM
 contribuant de manière complémentaire [CommsBio 2025
 emotional], et la synthèse 2025 de *Nature Reviews Neuroscience*
 soutient un modèle **séquentiel** SWS-puis-REM plutôt qu'une
-partition compétitive [Robertson 2025 NRN]. Dans notre
+partition compétitive [Robertson 2025 NRN]. L'EEG haute densité
+chez l'humain apporte une preuve propre à chaque stade : la
+réactivation verrouillée sur les complexes oscillation lente–
+fuseau en NREM et la réactivation pendant le REM phasique sont
+dissociables, la première soutenant la consolidation mnésique et
+la seconde la dissipation émotionnelle [Zhang et al. 2026] — ce
+qui va dans le sens d'opérateurs distincts par stade plutôt que
+d'un processus unique d'« intégration ». Dans notre
 framework, ceci se projette sur l'opération `recombine` :
 échantillonner les latents du snapshot δ, appliquer un VAE allégé
 ou un noyau d'interpolation, émettre de nouveaux échantillons

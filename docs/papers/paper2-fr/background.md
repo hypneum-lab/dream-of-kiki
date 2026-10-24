@@ -71,7 +71,14 @@ sur des réseaux neuronaux artificiels mais sur une seule
 architecture. [@kirkpatrick2017overcoming] introduisent EWC
 comme régularisateur adjacent SHY mais ne poursuivent pas
 l'indépendance du substrat. [@rebuffi2017icarl] et
-[@shin2017continual] sont spécifiques à l'architecture. Aucun
+[@shin2017continual] sont spécifiques à l'architecture. Une
+revue de 2026 sur l'apprentissage continu à l'ère des LLM et de
+l'IA agentique [@hou2026cltransition] organise le domaine selon
+*comment* les modèles sont mis à jour (off-policy, on-policy,
+sans gradient), *quand* (pré-entraînement, post-entraînement,
+inférence) et *où* (paramètres versus mémoire externe) ; le
+framework C se situe dans sa case hors ligne, dans l'espace des
+paramètres, comme couche qui compose des opérations. Aucun
 travail antérieur, à notre connaissance, n'expédie une
 **suite de tests de conformité réutilisable** liant un
 framework formel à des substrats opérationnels à travers des

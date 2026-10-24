@@ -101,6 +101,9 @@ requiert le câblage réel de P_max (cycle 2).
 | @liu2024hybrid (Advancing brain-inspired computing with hybrid neural networks, National Science Review 2024) | Revue soutenant que les systèmes hybrides ANN/SNN sont la voie vers l'informatique bio-inspirée | Ancre canonique réseau-neuronal-hybride pour notre revendication cross-substrat : notre validation cycle-1 sur un substrat MLX dense et un substrat LIF spiking est précisément une configuration de réseau neuronal hybride, et le Critère de Conformité exécutable fournit le contrat dont de tels hybrides manquent actuellement |
 | Sorrenti et al. 2023 (WSCL) | Cycle veille/sommeil CLS avec phases NREM/REM explicites; transfert direct REM positif | Nous axiomatisons les opérations de phase de façon agnostique au substrat (DR-0..DR-4 + Conformance Criterion) plutôt que de figer une architecture veille-sommeil; comparaison empirique reportée au Paper 2 |
 | Robinson et al. 2022 | Replay NREM + replay génératif REM + downscaling synaptique réduisent conjointement l'oubli catastrophique | Nos quatre opérations typées généralisent ce triplet en primitives composables sous un Conformance Criterion exécutable; recombine est un générateur sémantiquement indépendant absent de ce triplet |
+| Zahn, Evans & Eagleman 2026 (arXiv v2) [@zahn2026discoverydreaming] | Effet de recombinaison inter-domaines conditionné par la capacité dans un pipeline LoRA de rang 256 (8B) et indices de distance d'embedding dans un moteur symbolique ; répétition intra-domaine rapportée nulle dans une condition appariée de rang 128 ; la v2 rétracte son résultat phare d'exactitude jugée et ses gains à graine unique | Soutien préliminaire, d'un seul groupe, à `recombine` comme générateur distinct ; son effet attendu est le transfert inter-domaines, pas la rétention intra-domaine |
+| Dey et al. 2026 (SHARP) [@dey2026sharp] ; Bazhenov et al. 2026 [@bazhenov2026notjustafterone] | Replay accéléré fusionné en représentations de plus haut niveau ; une phase de sommeil après plusieurs tâches les restaure toutes | Instances de `replay` → `restructure` (ordre admissible sous DR-2) et du couplage `replay` + `downscale` |
+| Zhang, Zhang & Xu 2026 [@zhang2026silentreplay] | Replay dans les synapses silencieuses, sans phase hors ligne | Question ouverte : conformité avec des frontières d'épisode de rêve logiques (journal DR-0) plutôt que temporelles |
 
 Nos traits distinctifs : **(a)** framework formel unifié couvrant
 les quatre piliers, **(b)** Critère de Conformité exécutable
@@ -116,6 +119,14 @@ transfert de conformité entre les substrats MLX, E-SNN et LoRA est
 *attendu* plutôt qu'un heureux accident. La sonde PRH cross-repo
 dans `nerve-wml` (expérience GammaThetaMultiplexer, v1.9.0) est le
 complément empirique de la matrice de conformité rapportée ici.
+Des travaux récents précisent ce que ce plancher doit prédire : une
+fois l'alignement calibré, c'est la *structure relationnelle* des
+représentations qui converge, aux échelles locale et globale, et
+non leur géométrie métrique ponctuelle [@you2026prhstructure] (la convergence globale reste ouverte [@shi2026platotoaristotle] ; des directions de déplacement partagées pourraient subsister [@shang2026displacement]) ; l'alignement
+inter-modèles repose en grande partie sur des relations encodées
+linéairement et reste sensible au centrage et à la normalisation
+[@bangachev2026alignmentlinear]. DR-3 est donc ancré à la structure
+relationnelle, et non à la géométrie métrique.
 
 ## 8.5 Réplication cross-substrat préliminaire (cycle 2)
 

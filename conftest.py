@@ -31,6 +31,8 @@ if sys.platform != "darwin":
         "tests/unit/scripts/test_ablation_cycle3_*.py",
         "tests/unit/test_esnn_norse.py",
         "tests/unit/test_g4_quinto_*.py",
+        "tests/unit/test_g4_nono_driver.py",
+        "tests/unit/test_g4_nono_recombine_cross.py",
         "tests/unit/test_micro_kiki_*.py",
         "tests/unit/test_qwen_mlx_*.py",
         "tests/unit/test_real_eval.py",
