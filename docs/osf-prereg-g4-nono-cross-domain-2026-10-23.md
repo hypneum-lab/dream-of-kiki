@@ -322,7 +322,8 @@ to the smoke: a run_id collision, or a manipulation-check failure on
 2 or 3 of the 3 smoke seeds, refuses the selection (the cause is
 investigated and the amendment path of §4 applies). A single seed
 failing the manipulation check is dropped and SD̂_D is computed from
-the other two (ddof = 1); this is reported. Any other missing or
+the other two (ddof = 1); this is reported. All 24 cells are
+validated first, including those of a dropped seed. Any other missing or
 unusable cell (no record, non-finite metric, excluded cell) also
 refuses the selection: the cause is fixed and the full smoke is
 rerun in a fresh output directory and registry, and both smoke runs
@@ -443,7 +444,11 @@ error rates of §2.
   H12-A/B, `P_max/within` for H12-C) takes the lowest value observed
   for that cell over the retained seeds, and the comparator cell the
   highest. The §2 states and the §7 row are recomputed on the imputed
-  data and reported next to the primary ones. This analysis never
+  data and reported next to the primary ones. The observed-extrema
+  imputation is a directional sensitivity analysis, not an absolute
+  worst-case bound (the true lost values could lie outside the
+  observed range, and for the H12-C equivalence claim the
+  unfavourable direction is not unique). This analysis never
   changes a decided state, the row or its confirmatory status; a
   disagreement with the primary reading is reported in the
   milestone and in Paper 2.
@@ -684,11 +689,29 @@ carry a universality claim in either direction.
     seeds (below 0.015, so the rule would have given 95); r̂ = 0.93
     (CDPA cross/none), 0.99 (CDPA cross/within), 0.98 (WDPA
     within/none).
-  - Final 20-way accuracy (`acc20`) is 0.05, the 20-class chance
-    level, in every `baseline` and `P_max` cell, and CDPA / WDPA sit
-    at 0.50-0.52. Together with the manipulation check, this says the
-    substrate barely learns task 1 at the registered 3 epochs on this
-    stream.
+  - Final 20-way accuracy (`acc20`) is 0.05 in every `baseline` and
+    `P_max` cell, DOA exactly 0.5, and CDPA / WDPA sit at 0.50-0.52.
+    **Diagnosis (2026-10-24, short CPU reruns on macM1): not a
+    pipeline bug.** The 10 000 test images are balanced (500 per
+    coarse class) and labelled with the coarse ids used by the
+    20-way head. After the stream, the shared head predicts almost
+    only the last task's classes (seed 901: all 10 000 predictions
+    on class 18; seed 900: 9 978 on class 19), the usual
+    class-incremental collapse onto the most recent task. acc20 is
+    then at most 0.1 × the last task's 2-way accuracy, and that pair
+    (18 vs 19) stays at 0.50-0.503 2-way accuracy even at 10 epochs,
+    so acc20 = 500 / 10 000 = 0.05. DOA is exactly 0.5 because every
+    prediction falls in domain B (the last domain). At 10 epochs
+    acc20 is 0.0503: more epochs do not move it. acc20 and DOA are
+    therefore near-degenerate on this stream by construction (they
+    are secondary endpoints). The manipulation-check failures are
+    genuine under-fitting of a hard first pair (aquatic mammals vs
+    fish, small CNN, plain SGD): test and train 2-way accuracy are
+    equal (0.50-0.63), the cross-entropy ends near ln 2, and seed
+    901 predicts a single class after 3 epochs. 2-way task-1
+    accuracy by epochs (seed 900 / 901): 3 epochs 0.609 / 0.500,
+    8 epochs 0.601 / 0.613, 10 epochs 0.615 / 0.639; lr 0.05 at 3
+    epochs 0.586 / 0.500.
   - Per the deviation envelope (b) below, this needs an amendment
     before any confirmatory cell runs (for example more epochs per
     G4-sexto §9.1); the choice is left to the PI. The smoke records
