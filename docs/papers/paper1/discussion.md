@@ -95,7 +95,7 @@ cycle 1. Real H2 evaluation requires P_max real wiring (cycle 2).
 | @liu2024hybrid (Advancing brain-inspired computing with hybrid neural networks, National Science Review 2024) | Survey arguing hybrid ANN/SNN systems are the path to brain-inspired computing | Canonical hybrid-neural-network anchor for our cross-substrate claim : our cycle-1 validation across an MLX dense substrate and a LIF spiking substrate is precisely a hybrid-neural-network configuration, and the executable Conformance Criterion supplies the contract such hybrids currently lack |
 | Sorrenti et al. 2023 (WSCL) | CLS wake/sleep with explicit NREM/REM phases; reports positive REM forward-transfer | We axiomatise the phase operations substrate-agnostically (DR-0..DR-4 + Conformance Criterion) instead of fixing one wake-sleep architecture; empirical comparison deferred to Paper 2 |
 | Robinson et al. 2022 | NREM replay + generative REM replay + synaptic downscaling jointly reduce catastrophic forgetting | Our four typed operations generalise this triplet as composable primitives under an executable Conformance Criterion; recombine is a semantically independent generator absent from it |
-| Zahn, Evans & Eagleman 2026 [@zahn2026discoverydreaming] | Cross-domain recombinatory replay helps ; within-domain rehearsal does not | Independent support for `recombine` as a distinct generator ; its predicted effect is cross-domain transfer, not within-domain retention |
+| Zahn, Evans & Eagleman 2026 (arXiv v2) [@zahn2026discoverydreaming] | Capacity-gated cross-domain recombinatory-replay effect in a rank-256 LoRA pipeline (8B) and embedding-distance evidence in a symbolic engine ; within-domain rehearsal reported null in a matched rank-128 condition ; v2 retracts its earlier judged-accuracy headline and single-seed gains | Preliminary, single-group support for `recombine` as a distinct generator ; its predicted effect is cross-domain transfer, not within-domain retention |
 | Dey et al. 2026 (SHARP) [@dey2026sharp] ; Bazhenov et al. 2026 [@bazhenov2026notjustafterone] | Accelerated replay merged into higher-level representations ; one sleep phase after several tasks restores all of them | Instances of `replay` → `restructure` (DR-2-admissible order) and of the `replay` + `downscale` coupling |
 | Zhang, Zhang & Xu 2026 [@zhang2026silentreplay] | Replay into silent synapses, no offline phase | Open question : conformance with logical (DR-0 log) rather than temporal dream-episode boundaries |
 
@@ -115,7 +115,9 @@ experiment, v1.9.0) is the empirical complement to the conformance
 matrix reported here. Recent work refines what this floor should
 predict : once alignment is calibrated, it is the *relational
 structure* of representations that converges, at local and global
-scales, while metric geometry does not [@you2026prhstructure], and
+scales according to [@you2026prhstructure] (global convergence remains
+open [@shi2026platotoaristotle]), while pointwise metric geometry does not
+(shared displacement directions may [@shang2026displacement]), and
 cross-model alignment is carried largely by linearly encoded
 relations and is sensitive to centering and normalisation
 [@bangachev2026alignmentlinear]. DR-3 is accordingly anchored to

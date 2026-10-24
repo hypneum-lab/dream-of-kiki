@@ -63,8 +63,9 @@ portability measurements from the sibling Nerve-WML work (§7.4) :
 substrate-agnosticism holds on linearly separable tasks (gap 0 %),
 the earlier non-linear gap (12.1 %) is shown to be a decoder-readout
 artefact that inverts under symmetric readouts, and representational
-alignment is corroborated at the local (neighbourhood) level, bounded
-by shared task and objective rather than a universal code. A pilot run of the
+alignment is corroborated for relational (neighbourhood) structure, not
+for metric geometry, and is bounded by shared task and objective rather
+than a universal code. A pilot run of the
 pre-registered pipeline on PermutedMNIST-5 (§7.5) produces
 Bonferroni-compliant statistics (t = 2.524, p = 0.01216 < α =
 0.0125) consistent with the pre-registered H1 signal direction
@@ -809,8 +810,9 @@ articulated here as DR-3. These measurements are **companion, not
 independent** : both substrates share task, data, and the Protocol
 objective, so a low gap is *expected* under that shared structure
 (the Aristotelian critique of the Platonic Representation Hypothesis
-[@aristotelianprh2026]) and corroborates DR-3 only at the *local*
-(neighbourhood) level, not as a task-independent universal code. We
+[@aristotelianprh2026]) and corroborates DR-3 only for relational
+(neighbourhood) structure, not for metric geometry or as a
+task-independent universal code. We
 summarise the reported numbers — full details in the cited preprint
 and the archived Zenodo record.
 
@@ -834,17 +836,22 @@ substrate-intrinsic but a readout-parity artefact.
 
 **Representational alignment (mutual-kNN and mutual information).**
 Neighbourhood overlap between the `MlpWML` and `LifWML` codes is
-mutual-kNN = 0.174 at k = 10 (N = 1024, 3 seeds), 18.8× a
-label-matched random baseline. Discrete (post-VQ) mutual
+mutual-kNN = 0.174 at k = 10 (N = 1024, 3 seeds), 18.8× the
+median mutual-kNN of two independent i.i.d. standard-Gaussian matrices of
+the same shape (1024 × 16), the `random` baseline of the nerve-wml v1.9.0
+script `scripts/platonic_rh_alignment.py` (ratio of medians over seeds
+0-2 ; not a label-matched or untrained-network null). Discrete (post-VQ) mutual
 information is MI/H = 0.931 (Panzeri–Treves bias-corrected ;
 plug-in 0.932 at N = 5000 ; permutation null ≈ 0.005, p < 0.01).
 **Caveat (mandatory on this figure)** : the high discrete MI/H is
 amplified ≈ 10× by vector quantisation ; the pre-VQ continuous
 estimate (Kraskov–KSG) is MI/H ≈ 0.095, and a frozen-encoder
 control gives a shared-encoder ceiling of 0.949 against a
-distinct-encoder floor of 0.762. The defensible claim is *local*
-neighbourhood alignment beyond a capacity-matched baseline, not
-global representational identity.
+distinct-encoder floor of 0.762. The defensible claim is neighbourhood
+(relational) alignment beyond an i.i.d. Gaussian baseline, not global
+representational identity or metric geometry. Mutual-kNN at N = 1024
+and k = 10 on one-to-one paired inputs captures coarse neighbourhood
+structure only [@platoscave2026].
 
 **Gate M (merge test).** An `MlpWML` trained against a mock Nerve
 and deployed against a real Nerve retains **1.000** of its
@@ -856,8 +863,8 @@ substrate-agnosticism principle of DR-3 is empirically tractable
 and demonstrated on linearly separable tasks in a sibling system ;
 (b) the earlier 12.1 % non-linear gap was a readout artefact, not a
 substrate limitation, and disappears — indeed inverts — under
-symmetric readouts ; (c) the alignment evidence is *local*
-(neighbourhood-level, capacity-baseline-calibrated) and bounded by
+symmetric readouts ; (c) the alignment evidence is relational
+(neighbourhood-level, measured against a Gaussian baseline) and bounded by
 shared task, data, and objective : we therefore claim only that the
 Protocol extends measured alignment from shared- to
 heterogeneous-encoder conditions on these substrates, not a
@@ -1049,7 +1056,7 @@ claim empirical parity.
 | @liu2024hybrid (Advancing brain-inspired computing with hybrid neural networks, National Science Review 2024) | Survey arguing hybrid ANN/SNN systems are the path to brain-inspired computing | Canonical hybrid-neural-network anchor for our cross-substrate claim : our cycle-1 validation across an MLX dense substrate and a LIF spiking substrate is precisely a hybrid-neural-network configuration, and the executable Conformance Criterion supplies the contract such hybrids currently lack |
 | @alfarano2024wakesleep (WSCL, Sorrenti et al. 2023) | Complementary Learning System wake/sleep with explicit NREM consolidation and REM dreaming; reports positive REM forward-transfer | We axiomatise the phase operations substrate-agnostically (DR-0..DR-4 + Conformance Criterion + DR-3) rather than committing to a single wake-sleep architecture; empirical ablation deferred to Paper 2 |
 | @robinson2022continual (NREM/REM + synaptic downscaling) | Three mammalian sleep mechanisms — veridical NREM replay, generative REM replay, synaptic downscaling — jointly reduce catastrophic forgetting | Our four typed operations (replay, downscale, restructure, recombine) generalise this triplet as composable primitives under an executable Conformance Criterion; recombine is a semantically independent generator absent from the triplet |
-| @zahn2026discoverydreaming (cross-domain recombination, 2026) | Recombinatory replay across domains improves downstream performance in both a LoRA fine-tuning pipeline and a symbolic engine ; within-domain rehearsal does not | Independent support for `recombine` as a distinct generator, and a scope marker for its predicted effect : cross-domain transfer rather than within-domain retention (the Paper 2 DR-4 ablation ladder uses single-domain class-incremental streams) |
+| @zahn2026discoverydreaming (cross-domain recombination, 2026, arXiv v2) | Reports a capacity-gated cross-domain effect in a LoRA pipeline (Llama-3.1-8B, rank 256 : +5.64 pp, 5 of 5 seeds ; null at rank 128, inconclusive at 70B/72B) and embedding-distance evidence for surfaced bridges in a symbolic engine ; within-domain rehearsal is reported null in a matched rank-128 condition. v2 retracts the earlier judged-accuracy headline and single-seed gains | Preliminary, single-group support for `recombine` as a distinct generator, and a scope marker for its predicted effect : cross-domain transfer rather than within-domain retention (the Paper 2 DR-4 ablation ladder uses single-domain class-incremental streams) |
 | @dey2026sharp (SHARP) ; @bazhenov2026notjustafterone | Offline phases that replay traces at high speed and merge them into higher-level representations ; a single sleep phase after several sequential tasks that restores all of them through mostly-weakening plasticity | Concrete instances of `replay` followed by a hierarchy-modifying `restructure` (the DR-2-admissible order) and of the `replay` + `downscale` coupling, respectively |
 | @zhang2026silentreplay (replay in silent degrees of freedom) | Replay written into synapses that the current input leaves silent ; matches offline rehearsal on split-MNIST with no offline phase | Challenges the assumption that consolidation needs a temporally separate phase ; such a substrate would need dream-episode boundaries that are logical (DR-0 log) rather than temporal — an open conformance question, not addressed here |
 
@@ -1081,17 +1088,26 @@ matrix reported here (cycle 2 + 3) is the dreamOfkiki side of the
 same empirical bet.
 
 **The 2026 critiques and a structure-versus-geometry refinement.** The PRH
-has since been contested. @platoscave2026 report that cross-model
-representational alignment is fragile and degrades as model scale
-grows, and @aristotelianprh2026 show that the *global* convergence
-originally claimed is substantially a width/depth confounder : once
-alignment is null-calibrated against capacity-matched random baselines,
-only *local* neighbourhood structure survives as a genuine
-cross-substrate signal. @you2026prhstructure refine this split : after
+has since been contested. @platoscave2026 report that the mutual-kNN
+evidence on 1024 text-image pairs captures only coarse structure (k must
+grow with the sample size to keep alignment from collapsing, and
+one-to-one pairing favours alignment), and @aristotelianprh2026 show that
+similarity metrics are confounded by network scale : once calibrated with
+a permutation-based null, the apparent convergence of global spectral
+measures largely disappears, while local neighbourhood similarity, but not
+local distances, retains significant agreement across modalities. @you2026prhstructure refine this split : after
 calibration, the *relational structure* of representations converges at
 both local and global scales, whereas *metric geometry* does not, so the
 local-versus-global contrast partly confounds scale with
-structure-versus-geometry. @bangachev2026alignmentlinear further trace
+structure-versus-geometry. @shi2026platotoaristotle show, however, that
+global convergence remains open (the calibration result can come from
+calibrating a maximum over layers) and that the spanning-tree overlap used
+for the global structure score mostly repeats one-nearest-neighbour
+overlap ; we therefore do not rest on the global-scale half of that
+result. @shang2026displacement find that what models share is displacement
+directions under a single orthogonal alignment rather than absolute
+positions, so we do not claim that metric geometry is absent, only that
+DR-3 does not rest on it. @bangachev2026alignmentlinear further trace
 cross-model alignment to linearly encoded relations and show that it is
 sensitive to centering and normalisation, which an alignment probe must
 therefore fix in advance. We fold this into DR-3 rather than against it.
@@ -1103,8 +1119,10 @@ that the same consolidation operations, composed in the same order,
 produce neighbourhood-equivalent episode states. The companion nerve-wml
 probe [@saillant2026nervewml] is consistent with this reading : its
 mutual-kNN measurement is a relational, neighbourhood-level metric
-reported against a capacity-matched random baseline, the null-calibrated
-quantity these critiques treat as defensible. DR-3 is therefore anchored
+reported against an i.i.d. Gaussian baseline ; it has not been recomputed
+with the permutation-calibrated or untrained-pair nulls that these
+critiques treat as the defensible quantity, so it is consistent with this
+reading but does not test it. DR-3 is therefore anchored
 to relational structure, not metric geometry.
 
 ---

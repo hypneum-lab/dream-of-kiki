@@ -100,10 +100,14 @@ the HAL FR deposit is currently locked
 (`docs/milestones/g9-cycle2-publication.md` § external actions).
 
 **Scope note on RECOMBINE-empty.** The DR-4 ablation ladder
-(§7.1) runs on single-domain class-incremental streams. External
-2026 evidence finds that recombinatory replay helps when it
-draws *across* domains, and that within-domain rehearsal does not
-[@zahn2026discoverydreaming]. The RECOMBINE-empty verdict is
+(§7.1) runs on single-domain class-incremental streams. A 2026
+preprint (arXiv v2) reports a gain from recombinatory replay
+drawn *across* domains in a rank-256 LoRA pipeline on an 8B model
+(nulls at lower rank, inconclusive at 70B/72B) and a null for
+within-domain rehearsal in a matched rank-128 condition ; v2
+retracts its earlier judged-accuracy headline and single-seed gains,
+and the evidence comes from one group without independent
+replication [@zahn2026discoverydreaming]. The RECOMBINE-empty verdict is
 reported unchanged ; this note only records that the tested
 regime is the one in which `recombine` is least expected to act,
 so the verdict carries no evidence about cross-domain streams.
