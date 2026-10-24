@@ -27,7 +27,7 @@ Draw! (§5; PI decision 2026-10-24).
 exploratory un-mixed control) = 855 cells, or N = 108 (972 cells)
 under the pre-stated N-selection rule (§3); 760 / 864 confirmatory
 cells. Per-cell time at 10 epochs on macM1 under N10-C load: about
-48 s (≈ 11.4 h for 855 cells; second smoke, §9).
+41 s on the new corpus (≈ 10 h for 855 cells; third smoke, §9).
 **Domain corpus:** CIFAR-10 (domain A, grayscale) + Quick, Draw!
 (domain B), pinned (§5).
 **Power script:** `scripts/prereg_power_2026_10.py` (§3).
@@ -775,12 +775,13 @@ carry a universality claim in either direction.
   corpus is built (it must be rebuilt and pass on the filing host);
   (c) done:
   `tests/unit/test_g4_nono_aggregator.py` reaches every §2 state and
-  every §7 row end to end on synthetic paired records; (d) two
-  smokes ran on 2026-10-24 and both are reported (§3): the first, at
-  3 epochs, hit the registered abort condition; the second, after the
-  PI amendment (10 epochs, P_max recombine_full), passed and selected
-  **N = 95**. The CIFAR-100 domain split may still change with the
-  PI's corpus choice (§10 item 1), in which case the smoke is rerun.
+  every §7 row end to end on synthetic paired records; (d) three
+  smokes ran on 2026-10-24 and all are reported (§3): the first, at
+  3 epochs on CIFAR-100, hit the registered abort condition; the
+  second, after the PI amendment (10 epochs, P_max recombine_full),
+  passed and selected N = 95 on CIFAR-100; the third, on the new
+  CIFAR-10 + Quick, Draw! corpus, passed and selected **N = 95**, the
+  value to write into the filed version.
   **First smoke, 2026-10-24 (PI decision: pilot on macM1 now,
   campaign later).** Code at `28e18c5` (`DREAMOFKIKI_COMMIT_SHA`),
   macM1 (M1, 32 GB), CIFAR-100 from the pinned parquet mirror, one
@@ -860,6 +861,34 @@ carry a universality claim in either direction.
     cells): CDPA 0.5474 / 0.5257 / 0.5269, driver wall 24-46 s.
   - Records: macM1 `~/scratch/code/g4-pilot2-out/` (with
     `n-selection.json`) and `~/scratch/code/g4-pilot2-unmixed/`.
+  **Third smoke, 2026-10-24 (new corpus, PI decision; this is the
+  smoke whose N is filed).** Code at `6f11823` (CIFAR-10 grayscale +
+  Quick, Draw!, 10 epochs, P_max recombine_full), corpus
+  `qd-cifar10-v1.npz` (SHA-256 `4f7fdf1c…`), same host, `nice 19` and
+  guard, fresh output directory and registry, again **concurrently
+  with N10-C** (swap free ≥ 938 MB), so wall times may be inflated.
+  27 of 27 cells `ok` (24 confirmatory + 3 exploratory `unmixed`), no
+  exclusion, no non-finite metric; N10-C stayed alive.
+  - Wall time: driver-reported 23-48 s per cell (median 44 s; 957 s
+    for 27 cells); 1 094 s for the whole smoke, about 41 s per cell
+    with start-up. Campaign estimate at this load: ≈ 10 h for 855
+    cells (N = 95), ≈ 11 h for 972 (N = 108).
+  - Manipulation check: 0.771 / 0.603 / 0.609 on seeds 900 / 901 /
+    902; all pass (901 and 902 only just).
+  - **N selection: SD̂_D = 0.0015 < 0.015, so N = 95** (line 2).
+    r̂ (descriptive): 1.000 (CDPA cross/none), 1.000 (CDPA
+    cross/within), 0.729 (WDPA within/none).
+  - CDPA rises to 0.62-0.82 (baseline 0.62-0.66, dream arms
+    0.67-0.82), WDPA 0.60-0.64: the cross-domain pairs are far easier
+    to separate on this corpus (low-level cues other than colour
+    remain, §5). acc20 0.09-0.12 and DOA ≈ 0.5 except one baseline
+    cell (0.64), descriptive only.
+  - `P_equ` and `P_max` differ in `cross` / `within` and match in
+    `none`, as designed. Exploratory `unmixed` CDPA 0.795 / 0.687 /
+    0.810.
+  - Checklist item 5 passes on this host for the new corpus.
+  - Records: macM1 `~/scratch/code/g4-pilot3-out/` (with
+    `n-selection.json`).
 - **Pre-filing smoke:** seeds 900-902, all 8 cells, on the filing
   hardware. It verifies the driver, the checklist tests and per-cell
   wall time, and records SD̂_D for the §3 N-selection rule (and r̂,
