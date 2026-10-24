@@ -80,7 +80,15 @@ RECOMBINE_LR = 0.01
 RESTRUCTURE_FACTOR = 0.05
 MANIP_THRESHOLD = 0.60
 SMOKE_SEEDS: tuple[int, ...] = (900, 901, 902)
-DEFAULT_DATA_DIR = REPO_ROOT / "experiments" / "g4_sexto_test" / "data"
+# PI decision 2026-10-24: domain corpus = CIFAR-10 (A, grayscale) +
+# Quick, Draw! (B); the CIFAR-100 split stays available as "cifar100".
+CORPORA: tuple[str, ...] = ("qd-cifar10", "cifar100")
+DEFAULT_CORPUS = "qd-cifar10"
+DATA_DIRS: dict[str, Path] = {
+    "qd-cifar10": REPO_ROOT / "experiments" / "g4_nono_test" / "data",
+    "cifar100": REPO_ROOT / "experiments" / "g4_sexto_test" / "data",
+}
+DEFAULT_DATA_DIR = DATA_DIRS[DEFAULT_CORPUS]
 DEFAULT_REGISTRY_DB = REPO_ROOT / ".run_registry.sqlite"
 EVAL_CHUNK = 2000
 EXIT_RUN_ID_COLLISION = 3
@@ -360,9 +368,16 @@ def run_cell(
     return rec
 
 
-def load_stream(data_dir: Path) -> list[DomainTask]:
-    """Load the pinned CIFAR-100 files and build the two-domain stream."""
-    x_tr, c_tr, x_te, c_te = load_cifar100_coarse_arrays_auto(data_dir)
+def load_stream(data_dir: Path, corpus: str = DEFAULT_CORPUS) -> list[DomainTask]:
+    """Load the pinned corpus files and build the two-domain stream."""
+    if corpus == "qd-cifar10":
+        from experiments.g4_nono_test import qd_cifar10
+
+        x_tr, c_tr, x_te, c_te = qd_cifar10.load_qd_cifar10(data_dir)
+    elif corpus == "cifar100":
+        x_tr, c_tr, x_te, c_te = load_cifar100_coarse_arrays_auto(data_dir)
+    else:
+        raise ValueError(f"unknown corpus {corpus!r}")
     return build_domain_stream(x_tr, c_tr, x_te, c_te)
 
 
@@ -419,7 +434,9 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--arm", choices=ARMS, required=True)
     p.add_argument("--strategy", choices=("na",) + STRATEGIES + ("unmixed",), required=True)
     p.add_argument("--out", type=Path, required=True)
-    p.add_argument("--data-dir", type=Path, default=DEFAULT_DATA_DIR)
+    p.add_argument("--corpus", choices=CORPORA, default=DEFAULT_CORPUS)
+    p.add_argument("--data-dir", type=Path, default=None,
+                   help="default: the corpus's directory (DATA_DIRS)")
     p.add_argument("--registry-db", type=Path, default=DEFAULT_REGISTRY_DB)
     p.add_argument("--epochs", type=int, default=EPOCHS)
     p.add_argument("--batch-size", type=int, default=BATCH_SIZE)
@@ -452,7 +469,7 @@ def main(argv: list[str] | None = None) -> int:
         }, indent=2, sort_keys=True))
         print(f"ABORT: run_id {run_id} already registered; wrote {args.out}")
         return EXIT_RUN_ID_COLLISION
-    stream = load_stream(args.data_dir)
+    stream = load_stream(args.data_dir or DATA_DIRS[args.corpus], args.corpus)
     rec = run_cell(
         arm=args.arm, strategy=args.strategy, seed=args.seed,
         stream=stream, epochs=args.epochs, batch_size=args.batch_size,

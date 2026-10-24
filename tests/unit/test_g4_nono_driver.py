@@ -272,7 +272,7 @@ def test_clean_cell_not_excluded(stream: Stream) -> None:
 def test_duplicate_cell_different_out_aborts(
     stream: Stream, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    monkeypatch.setattr(drv, "load_stream", lambda data_dir: stream)
+    monkeypatch.setattr(drv, "load_stream", lambda data_dir, corpus="qd-cifar10": stream)
     db = tmp_path / "r.sqlite"
     base = ["--seed", "7", "--arm", "P_min", "--strategy", "na",
             "--registry-db", str(db), "--epochs", "1"]
@@ -293,7 +293,7 @@ def test_duplicate_cell_different_out_aborts(
 def test_main_writes_outcome_record(
     stream: Stream, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    monkeypatch.setattr(drv, "load_stream", lambda data_dir: stream)
+    monkeypatch.setattr(drv, "load_stream", lambda data_dir, corpus="qd-cifar10": stream)
     out = tmp_path / "cell.json"
     rc = drv.main([
         "--seed", "5", "--arm", "P_min", "--strategy", "na",
@@ -326,7 +326,7 @@ def test_manip_accuracy_is_two_way_restricted() -> None:
 def test_main_refuses_to_overwrite_existing_record(
     stream: Stream, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    monkeypatch.setattr(drv, "load_stream", lambda data_dir: stream)
+    monkeypatch.setattr(drv, "load_stream", lambda data_dir, corpus="qd-cifar10": stream)
     out = tmp_path / "cell.json"
     out.write_text("{}")
     with pytest.raises(SystemExit):

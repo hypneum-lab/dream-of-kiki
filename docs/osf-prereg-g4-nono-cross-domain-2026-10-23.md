@@ -20,17 +20,16 @@ are not edited).
 `experiments.g4_quinto_test.small_cnn`) with `n_classes = 20`,
 `latent_dim = 64`: one shared 20-way head over coarse labels
 (class-incremental, no per-task label remap).
-**Benchmark:** Split-CIFAR-100-coarse two-domain stream (§5).
+**Benchmark:** two-domain stream, CIFAR-10 (grayscale) then Quick,
+Draw! (§5; PI decision 2026-10-24).
 **Design:** matched-block (seed = block), paired analysis (§2, §6).
 **Compute:** N = 95 seeds × 9 cells per seed (8 confirmatory + 1
 exploratory un-mixed control) = 855 cells, or N = 108 (972 cells)
 under the pre-stated N-selection rule (§3); 760 / 864 confirmatory
 cells. Per-cell time at 10 epochs on macM1 under N10-C load: about
 48 s (≈ 11.4 h for 855 cells; second smoke, §9).
-**Domain corpus:** pending the PI's choice of a second corpus with a
-stronger domain shift (§10 item 1); the CIFAR-100 animals /
-non-animals split below is the current pipeline and stays in place
-until then.
+**Domain corpus:** CIFAR-10 (domain A, grayscale) + Quick, Draw!
+(domain B), pinned (§5).
 **Power script:** `scripts/prereg_power_2026_10.py` (§3).
 **Lock commit:** *(filled by introducing commit hash at filing)*
 **Lock timestamp:** *(filled at filing, pre-driver-run)*
@@ -477,24 +476,59 @@ error rates of §2.
 - **Seeds.** Confirmatory seeds `0..N − 1`, with N ∈ {95, 108}
   fixed by the §3 N-selection rule. Smoke seeds `900..902` (never
   analysed).
-- **Domains** (fixed; CIFAR-100 coarse label id in brackets):
-  - Domain A (animals): aquatic_mammals [0], fish [1], insects [7],
-    large_carnivores [8], large_omnivores_and_herbivores [11],
-    medium_mammals [12], non-insect_invertebrates [13], people [14],
-    reptiles [15], small_mammals [16].
-  - Domain B (plants, objects, scenes): flowers [2],
-    food_containers [3], fruit_and_vegetables [4],
-    household_electrical_devices [5], household_furniture [6],
-    large_man-made_outdoor_things [9],
-    large_natural_outdoor_scenes [10], trees [17], vehicles_1 [18],
-    vehicles_2 [19].
-- **Stream.** 10 tasks of 2 superclasses, consecutive in id order
-  within each domain: tasks 1-5 = A {0,1}, {7,8}, {11,12},
-  {13,14}, {15,16}; tasks 6-10 = B {2,3}, {4,5}, {6,9}, {10,17},
-  {18,19}. Each task uses all 5000 training images (2 × 2500) and
-  all 1000 test images (2 × 500) of its two superclasses. Labels are
-  the coarse ids (0-19) on the 20-way head. No per-seed reshuffle of
-  task composition.
+- **Domain corpus (PI decisions 2026-10-24; revision 8).** The
+  CIFAR-100 animals / non-animals split is replaced by two corpora with
+  a much stronger shift: **domain A = CIFAR-10** (natural photographs)
+  and **domain B = Quick, Draw!** (hand-drawn doodles). Module
+  `experiments/g4_nono_test/qd_cifar10.py`, build script
+  `scripts/g4_build_qd_cifar10.py`.
+  - Domain A: the 10 CIFAR-10 classes, HF `uoft-cs/cifar10` at
+    revision `0b2714987fa478483af9968de7c934580d0bb9a2`; parquet
+    SHA-256 train `8428b53a…d2ae883`, test `841389e6…645ce84de` (the
+    G4-quinto pins). CIFAR-10 states no licence; its page asks for a
+    citation (Krizhevsky 2009), the same exposure as CIFAR-100 before.
+  - Domain B: Quick, Draw! `numpy_bitmap` (28 × 28 grayscale, Google
+    Creative Lab, **CC BY 4.0**; attribution: "Quick, Draw! dataset,
+    Google, CC BY 4.0"), categories apple, banana, clock, cup, house,
+    key, ladder, moon, tree, umbrella (semantically disjoint from
+    CIFAR-10; no vehicle or animal category). No official SHA-256
+    exists: our SHA-256 of each `.npy`, its byte size and the GCS
+    md5 / crc32c are pinned in `QD_PINS` (downloaded 2026-10-24; the
+    md5s match GCS).
+  - **Colour shortcut neutralised.** CIFAR-10 images are converted to
+    grayscale (ITU-R BT.601 luma, rounded) and replicated to 3
+    channels; drawings are zero-padded 28 → 32 (2 px each side) and
+    replicated to 3 channels. Every image of both domains therefore
+    has three equal channels, so the domain cannot be read from
+    colour alone (tested). Other low-level cues remain (binary
+    strokes on a black background vs grey-level photographs); they
+    are part of the stronger shift the PI chose.
+  - **Subsampling.** Each class is cut to exactly **2 500 train / 500
+    test** images with `default_rng([20261024, corpus, class])`
+    (CIFAR-10: from its train and test splits; Quick, Draw!: disjoint
+    draws from the full file). The index lists are committed
+    (`experiments/g4_nono_test/qd_cifar10_indices.json`, SHA-256
+    `f4092ff2…eb11ae7`); the built corpus `qd-cifar10-v1.npz`
+    (60 000 images, SHA-256 `4f7fdf1c…bf381b`) is verified by the
+    loader and rebuilds bit-identically. Raw `.npy` files are deleted
+    after the build (about 1.2 GB downloaded once; 185 MB kept).
+    Per-task image counts equal the CIFAR-100 design (5 000 train /
+    1 000 test), so per-cell compute is unchanged.
+  - **Label map.** The coarse-id space is kept so the stream, metrics
+    and RECOMBINE code are unchanged: CIFAR-10 class k → id
+    `DOMAIN_A[k]` (airplane 0, automobile 1, bird 7, cat 8, deer 11,
+    dog 12, frog 13, horse 14, ship 15, truck 16); Quick, Draw! class
+    k → `DOMAIN_B[k]` (apple 2, banana 3, clock 4, cup 5, house 6,
+    key 9, ladder 10, moon 17, tree 18, umbrella 19).
+- **Stream.** 10 tasks of 2 classes, consecutive in id order within
+  each domain: tasks 1-5 = A {0,1}, {7,8}, {11,12}, {13,14},
+  {15,16} (airplane/automobile, bird/cat, deer/dog, frog/horse,
+  ship/truck); tasks 6-10 = B {2,3}, {4,5}, {6,9}, {10,17}, {18,19}
+  (apple/banana, clock/cup, house/key, ladder/moon, tree/umbrella).
+  Each task uses its 5 000 training and 1 000 test images. Labels are
+  the ids above on the 20-way head. No per-seed reshuffle of task
+  composition. The previous CIFAR-100 split remains selectable
+  (`--corpus cifar100`) only to reproduce the first two smokes.
 - **Training per task.** `train_task(epochs = 10, batch_size = 64,
   lr = 0.01)`, plain SGD, cross-entropy, no augmentation, input
   scaling as in `experiments.g4_sexto_test.cifar100_dataset` (G4-sexto
@@ -600,10 +634,10 @@ error rates of §2.
   `scipy.stats.ttest_rel(..., alternative="greater")` at α. Its
   `--select-n` mode applies the §3 N-selection rule to the smoke
   records.
-- **Data pin.** CIFAR-100 archive and SHA-256 pins from
-  `experiments.g4_sexto_test.cifar100_dataset`. That loader drops the
-  coarse-label byte; the driver adds a coarse-label decode path from
-  the same pinned files (no new download).
+- **Data pin.** `qd-cifar10-v1.npz` SHA-256 `4f7fdf1c…bf381b`,
+  built from the pinned CIFAR-10 parquet files and Quick, Draw!
+  `.npy` files (§5 domain corpus); the driver's default is
+  `--corpus qd-cifar10`.
 
 **Implementation fidelity checklist** (all items ticked in the filing
 commit; each has a unit test under `tests/`):
@@ -617,8 +651,12 @@ commit; each has a unit test under `tests/`):
    classes of one domain — test over 10⁴ draws.
 4. `cross` and `within` are no-ops at k ≤ 5 — test: weights after the
    DE before task 6 are bit-identical to `none`.
-5. Coarse-label decode matches the HF parquet `coarse_label` column
-   on the pinned files — test on the first 1000 rows.
+5. The corpus file matches its pinned SHA-256 and holds 2 500 /
+   500 images per class with three equal channels, and the index
+   file matches its pin — `test_checklist_item5_real_corpus` (passes
+   on macM1, where the corpus is built; skipped elsewhere). (The
+   former item 5, CIFAR-100 coarse-label decode, applies only to the
+   superseded split.)
 6. Buffer push is 16 + 16 per task, latents frozen at push — test.
 7. CDPA / WDPA tie rule (§6) — test with constructed equal logits.
 8. The aggregator reproduces a hand-computed paired example
@@ -726,8 +764,9 @@ carry a universality claim in either direction.
   **Status 2026-10-24:** (a) done: driver and `recombine_cross.py`
   (PR #44, three review rounds, APPROVE) and the aggregator (this PR),
   to be pinned by the lock commit; (b) done for items 1-4 and 6-8 on
-  synthetic data; item 5 needs the pinned CIFAR-100 binary and parquet
-  files on the filing host; (c) done:
+  synthetic data; item 5 (new corpus) done on macM1, where the pinned
+  corpus is built (it must be rebuilt and pass on the filing host);
+  (c) done:
   `tests/unit/test_g4_nono_aggregator.py` reaches every §2 state and
   every §7 row end to end on synthetic paired records; (d) two
   smokes ran on 2026-10-24 and both are reported (§3): the first, at
@@ -849,12 +888,8 @@ domain × recombination interaction is read from H12-B (`cross` vs
 `within`), and retention versus cross-domain discrimination are
 reported as separate endpoints (§6).
 
-1. **Domain corpus (§5) — partly decided on 2026-10-24.** The PI
-   chose a second corpus with a stronger domain shift instead of the
-   CIFAR-100 animals / non-animals split; the corpus itself is
-   **pending the PI's choice** among the proposed candidates (new
-   loader, SHA-256 pins and checklist item 5 follow). Until then the
-   CIFAR-100 pipeline stays as the working smoke pipeline.
+1. ~~Domain corpus~~ — decided by the PI on 2026-10-24: CIFAR-10
+   (grayscale) + Quick, Draw! (§5).
 2. ~~Un-mixed control arm~~ — decided by the PI on 2026-10-24:
    registered as an **exploratory** arm (§5), reported only.
 3. **Hardware.** Partly decided by the PI on 2026-10-24: the smoke
