@@ -32,6 +32,7 @@ import numpy as np  # noqa: E402
 from experiments.g4_nono_test.metrics import (  # noqa: E402
     NonFiniteLogitsError,
     compute_cdpa,
+    compute_doa,
     compute_final_accuracy,
     compute_retention_domain_a,
     compute_two_way_accuracy,
@@ -39,6 +40,7 @@ from experiments.g4_nono_test.metrics import (  # noqa: E402
 )
 from experiments.g4_nono_test.recombine_cross import (  # noqa: E402
     CrossStrategy,
+    RecombineVariant,
     sample_cross_domain_latents,
     soft_target_fc2_step,
 )
@@ -68,7 +70,7 @@ ARMS: tuple[str, ...] = ("baseline", "P_min", "P_equ", "P_max")
 STRATEGIES: tuple[str, ...] = ("cross", "within", "none")
 LATENT_DIM = 64
 N_CLASSES = 20
-EPOCHS = 3
+EPOCHS = 10  # PI amendment 2026-10-24 (was 3; G4-sexto section 9.1)
 BATCH_SIZE = 64
 LR = 0.01
 BUFFER_CAPACITY = 320
@@ -78,18 +80,35 @@ RECOMBINE_LR = 0.01
 RESTRUCTURE_FACTOR = 0.05
 MANIP_THRESHOLD = 0.60
 SMOKE_SEEDS: tuple[int, ...] = (900, 901, 902)
-DEFAULT_DATA_DIR = REPO_ROOT / "experiments" / "g4_sexto_test" / "data"
+# PI decision 2026-10-24: domain corpus = CIFAR-10 (A, grayscale) +
+# Quick, Draw! (B); the CIFAR-100 split stays available as "cifar100".
+CORPORA: tuple[str, ...] = ("qd-cifar10", "cifar100")
+DEFAULT_CORPUS = "qd-cifar10"
+DATA_DIRS: dict[str, Path] = {
+    "qd-cifar10": REPO_ROOT / "experiments" / "g4_nono_test" / "data",
+    "cifar100": REPO_ROOT / "experiments" / "g4_sexto_test" / "data",
+}
+DEFAULT_DATA_DIR = DATA_DIRS[DEFAULT_CORPUS]
 DEFAULT_REGISTRY_DB = REPO_ROOT / ".run_registry.sqlite"
 EVAL_CHUNK = 2000
 EXIT_RUN_ID_COLLISION = 3
 
 
-def cells_for_seed() -> list[tuple[str, str]]:
-    """The 8 (arm, strategy) cells of one seed."""
+EXPLORATORY_CELLS: tuple[tuple[str, str], ...] = (("P_max", "unmixed"),)
+
+
+def confirmatory_cells() -> list[tuple[str, str]]:
+    """The 8 registered (arm, strategy) cells of one seed."""
     cells: list[tuple[str, str]] = [("baseline", "na"), ("P_min", "na")]
     for arm in ("P_equ", "P_max"):
         cells += [(arm, s) for s in STRATEGIES]
     return cells
+
+
+def cells_for_seed() -> list[tuple[str, str]]:
+    """All 9 cells of one seed: the 8 confirmatory cells plus the
+    exploratory un-mixed control (PI decision 2026-10-24)."""
+    return confirmatory_cells() + list(EXPLORATORY_CELLS)
 
 
 def validate_cell(arm: str, strategy: str) -> None:
@@ -138,8 +157,10 @@ def recombine(
     strategy: CrossStrategy,
     beta_buffer: _BetaBufferCNN,
     seed: int,
+    variant: RecombineVariant = "light",
 ) -> None:
-    """RECOMBINE with the section 5 strategies (no-op for ``none``)."""
+    """RECOMBINE with the section 5 strategies (no-op for ``none``);
+    ``variant`` is ``light`` for P_equ and ``full`` for P_max."""
     populated = beta_buffer.latents()
     if not populated:
         return
@@ -147,7 +168,7 @@ def recombine(
     lab = np.asarray([c for _, c in populated], dtype=np.int64)
     batch = sample_cross_domain_latents(
         strategy=strategy, latents=lat, labels=lab,
-        n_synthetic=N_SYNTHETIC, seed=seed,
+        n_synthetic=N_SYNTHETIC, seed=seed, variant=variant,
     )
     if batch is None:
         return
@@ -230,8 +251,16 @@ def dream_episode(
     if Operation.RECOMBINE in ops:
         recombine(
             cnn, strategy=strategy, beta_buffer=beta_buffer,
-            seed=seed + 30_000,
+            seed=seed + 30_000, variant=recombine_variant_for(profile),
         )
+
+
+def recombine_variant_for(profile: object) -> RecombineVariant:
+    """Framework C section 3.1: P_max runs recombine_full, P_equ
+    recombine_light (the op sets otherwise coincide)."""
+    from kiki_oniric.profiles.p_max import PMaxProfile
+
+    return "full" if isinstance(profile, PMaxProfile) else "light"
 
 
 def manipulation_accuracy(
@@ -286,10 +315,14 @@ def run_cell(
         "batch_size": batch_size,
         "lr": lr,
         "hp_combo_id": combo.combo_id,
+        "recombine_variant": (
+            "full" if arm == "P_max" else "light" if arm == "P_equ" else None
+        ),
         "cdpa": None,
         "wdpa": None,
         "retention_a": None,
         "acc20": None,
+        "doa": None,
         "manip_acc": None,
         "manip_pass": False,
         "finite": True,
@@ -324,8 +357,9 @@ def run_cell(
         rec["wdpa"] = compute_wdpa(logits, y_test)
         rec["acc20"] = compute_final_accuracy(logits, y_test)
         rec["retention_a"] = compute_retention_domain_a(logits, y_test)
+        rec["doa"] = compute_doa(logits, y_test)
     except NonFiniteLogitsError:
-        for key in ("cdpa", "wdpa", "retention_a", "acc20"):
+        for key in ("cdpa", "wdpa", "retention_a", "acc20", "doa"):
             rec[key] = None
         rec["finite"] = False
         rec["excluded"] = True
@@ -334,9 +368,16 @@ def run_cell(
     return rec
 
 
-def load_stream(data_dir: Path) -> list[DomainTask]:
-    """Load the pinned CIFAR-100 files and build the two-domain stream."""
-    x_tr, c_tr, x_te, c_te = load_cifar100_coarse_arrays_auto(data_dir)
+def load_stream(data_dir: Path, corpus: str = DEFAULT_CORPUS) -> list[DomainTask]:
+    """Load the pinned corpus files and build the two-domain stream."""
+    if corpus == "qd-cifar10":
+        from experiments.g4_nono_test import qd_cifar10
+
+        x_tr, c_tr, x_te, c_te = qd_cifar10.load_qd_cifar10(data_dir)
+    elif corpus == "cifar100":
+        x_tr, c_tr, x_te, c_te = load_cifar100_coarse_arrays_auto(data_dir)
+    else:
+        raise ValueError(f"unknown corpus {corpus!r}")
     return build_domain_stream(x_tr, c_tr, x_te, c_te)
 
 
@@ -391,9 +432,11 @@ def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(description="G4-nono: run one cell")
     p.add_argument("--seed", type=int, required=True)
     p.add_argument("--arm", choices=ARMS, required=True)
-    p.add_argument("--strategy", choices=("na",) + STRATEGIES, required=True)
+    p.add_argument("--strategy", choices=("na",) + STRATEGIES + ("unmixed",), required=True)
     p.add_argument("--out", type=Path, required=True)
-    p.add_argument("--data-dir", type=Path, default=DEFAULT_DATA_DIR)
+    p.add_argument("--corpus", choices=CORPORA, default=DEFAULT_CORPUS)
+    p.add_argument("--data-dir", type=Path, default=None,
+                   help="default: the corpus's directory (DATA_DIRS)")
     p.add_argument("--registry-db", type=Path, default=DEFAULT_REGISTRY_DB)
     p.add_argument("--epochs", type=int, default=EPOCHS)
     p.add_argument("--batch-size", type=int, default=BATCH_SIZE)
@@ -426,7 +469,7 @@ def main(argv: list[str] | None = None) -> int:
         }, indent=2, sort_keys=True))
         print(f"ABORT: run_id {run_id} already registered; wrote {args.out}")
         return EXIT_RUN_ID_COLLISION
-    stream = load_stream(args.data_dir)
+    stream = load_stream(args.data_dir or DATA_DIRS[args.corpus], args.corpus)
     rec = run_cell(
         arm=args.arm, strategy=args.strategy, seed=args.seed,
         stream=stream, epochs=args.epochs, batch_size=args.batch_size,

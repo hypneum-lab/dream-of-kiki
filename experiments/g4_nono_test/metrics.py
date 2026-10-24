@@ -99,3 +99,21 @@ def compute_two_way_accuracy(
     cols = np.asarray(classes)
     pred = cols[logits[:, cols].argmax(axis=1)]
     return float((pred == labels).mean())
+
+
+def compute_doa(logits: np.ndarray, labels: np.ndarray) -> float:
+    """Domain-only probe (section 6, exploratory).
+
+    Predict the domain of each image by comparing the maximum logit
+    over the 10 domain-A classes with the maximum over the 10
+    domain-B classes (exact tie counts 0.5); accuracy against the true
+    domain. Uses no within-pair class information.
+    """
+    check_finite(logits)
+    max_a = logits[:, np.asarray(DOMAIN_A)].max(axis=1)
+    max_b = logits[:, np.asarray(DOMAIN_B)].max(axis=1)
+    is_a = np.isin(labels, DOMAIN_A)
+    score = np.where(
+        max_a == max_b, 0.5, np.where(max_a > max_b, is_a, ~is_a)
+    ).astype(np.float64)
+    return float(score.mean())

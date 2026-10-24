@@ -15,6 +15,24 @@ RNG stream (one ``default_rng(seed)``, in this order):
 3. one buffer record per class, pair by pair, first class then
    second class, uniform among that class's records.
 
+4. ``variant="full"`` only (``P_max``'s recombine_full, framework C
+   section 3.1; PI decision 2026-10-24): ``eps`` ~ N(0, I) of shape
+   ``(n_synthetic, d)``, drawn after step 3 so ``lam``, the pairs, the
+   records and the soft targets are identical to ``light``. The latent
+   becomes ``max(0, z + sigma * eps)``: a reparameterised Gaussian
+   sample around the interpolant ``z`` with ``sigma`` the per-dimension
+   SD (ddof 0) of all buffer latents (moment-matched encoder), decoded
+   by the ``fc1`` ReLU so it stays in the post-ReLU latent space.
+   ``light`` (``P_equ``'s recombine_light) is the plain interpolant.
+
+``unmixed`` (exploratory control, PI decision 2026-10-24) makes exactly
+the ``cross`` draws (same stream, same lambda, pairs and records) but
+replays the two records of each pair unmixed with hard one-hot labels:
+``2 * n_synthetic`` rows ordered a, b, a, b, ...; the ``full`` variant
+then draws ``eps`` of shape ``(2 * n_synthetic, d)``. It separates
+recombination from logit rebalancing (same latents, same single fc2
+step, no mixing).
+
 Both ``cross`` and ``within`` require at least one buffer record in
 each domain (so they are no-ops at the DEs before tasks 2-6) and
 ``within`` additionally needs two classes present in each domain.
@@ -31,7 +49,8 @@ from experiments.g4_quater_test.recombine_strategies import (
     SyntheticLatentBatch,
 )
 
-CrossStrategy = Literal["cross", "within", "none"]
+CrossStrategy = Literal["cross", "within", "none", "unmixed"]
+RecombineVariant = Literal["light", "full"]
 N_CLASSES = 20
 LAMBDA_LO = 0.2
 LAMBDA_HI = 0.8
@@ -43,6 +62,7 @@ class CrossBatch(SyntheticLatentBatch):
 
     lam: np.ndarray
     pairs: np.ndarray
+    records: np.ndarray
 
 
 def _present(labels: np.ndarray, domain: tuple[int, ...]) -> np.ndarray:
@@ -58,6 +78,7 @@ def sample_cross_domain_latents(
     labels: np.ndarray,
     n_synthetic: int,
     seed: int,
+    variant: RecombineVariant = "light",
 ) -> CrossBatch | None:
     """Return ``n_synthetic`` mixed latents with soft targets.
 
@@ -65,9 +86,11 @@ def sample_cross_domain_latents(
     buffer contents (latents frozen at push time). Returns ``None``
     for ``none`` or when the strategy is inactive (see module doc).
     """
+    if variant not in ("light", "full"):
+        raise ValueError(f"unknown recombine variant: {variant!r}")
     if strategy == "none":
         return None
-    if strategy not in ("cross", "within"):
+    if strategy not in ("cross", "within", "unmixed"):
         raise ValueError(f"unknown cross-domain strategy: {strategy!r}")
     if latents.shape[0] == 0:
         return None
@@ -82,7 +105,7 @@ def sample_cross_domain_latents(
     lam = rng.uniform(LAMBDA_LO, LAMBDA_HI, size=n_synthetic)
 
     pairs = np.empty((n_synthetic, 2), dtype=np.int64)
-    if strategy == "cross":
+    if strategy in ("cross", "unmixed"):
         ia = rng.integers(0, len(pres_a), size=n_synthetic)
         ib = rng.integers(0, len(pres_b), size=n_synthetic)
         pairs[:, 0] = pres_a[ia]
@@ -99,15 +122,25 @@ def sample_cross_domain_latents(
     }
     x = np.empty((n_synthetic, latents.shape[1]), dtype=np.float32)
     y = np.zeros((n_synthetic, N_CLASSES), dtype=np.float32)
+    records = np.empty((n_synthetic, 2), dtype=np.int64)
     for j in range(n_synthetic):
         a, b = int(pairs[j, 0]), int(pairs[j, 1])
         ra = by_class[a][int(rng.integers(0, len(by_class[a])))]
         rb = by_class[b][int(rng.integers(0, len(by_class[b])))]
+        records[j] = (ra, rb)
         lj = float(lam[j])
         x[j] = lj * latents[ra] + (1.0 - lj) * latents[rb]
         y[j, a] = lj
         y[j, b] = 1.0 - lj
-    return {"x": x, "y": y, "lam": lam, "pairs": pairs}
+    if strategy == "unmixed":
+        x = latents[records.ravel()].astype(np.float32)
+        y = np.zeros((2 * n_synthetic, N_CLASSES), dtype=np.float32)
+        y[np.arange(2 * n_synthetic), pairs.ravel()] = 1.0
+    if variant == "full":
+        sigma = latents.astype(np.float64).std(axis=0)
+        eps = rng.standard_normal(x.shape)
+        x = np.maximum(x + sigma * eps, 0.0).astype(np.float32)
+    return {"x": x, "y": y, "lam": lam, "pairs": pairs, "records": records}
 
 
 def soft_target_fc2_step(

@@ -49,7 +49,9 @@ def stream() -> Stream:
 
 def test_cell_grid_is_8_per_seed() -> None:
     cells = drv.cells_for_seed()
-    assert len(cells) == 8
+    assert len(cells) == 9  # 8 confirmatory + the exploratory un-mixed arm
+    assert drv.confirmatory_cells() == [c for c in cells if c != ("P_max", "unmixed")]
+    assert len(drv.confirmatory_cells()) == 8
     assert ("baseline", "na") in cells and ("P_min", "na") in cells
     for arm in ("P_equ", "P_max"):
         for s in ("cross", "within", "none"):
@@ -72,7 +74,7 @@ def test_constants_match_spec() -> None:
     assert drv.PUSH_PER_SUPERCLASS == 16
     assert drv.N_SYNTHETIC == 16
     assert drv.LATENT_DIM == 64 and drv.N_CLASSES == 20
-    assert drv.EPOCHS == 3 and drv.BATCH_SIZE == 64 and drv.LR == 0.01
+    assert drv.EPOCHS == 10 and drv.BATCH_SIZE == 64 and drv.LR == 0.01
     assert drv.MANIP_THRESHOLD == 0.60
     assert drv.RESTRUCTURE_FACTOR == 0.05
     assert drv.RECOMBINE_LR == 0.01
@@ -191,11 +193,12 @@ def test_run_cell_record_and_pairing(stream: Stream, tmp_path: Path) -> None:
     )
     for key in (
         "arm", "strategy", "seed", "cdpa", "wdpa", "retention_a",
-        "acc20", "manip_acc", "manip_pass", "finite", "wall_time_s",
+        "acc20", "doa", "manip_acc", "manip_pass", "finite", "wall_time_s",
         "c_version", "n_classes", "epochs",
     ):
         assert key in rec
     assert 0.0 <= rec["cdpa"] <= 1.0 and 0.0 <= rec["wdpa"] <= 1.0
+    assert 0.0 <= rec["doa"] <= 1.0
     assert rec["finite"] is True
     assert rec["manip_pass"] == (rec["manip_acc"] >= 0.60)
     # matched-block pairing: same seed, same task-1 manip accuracy
@@ -240,6 +243,7 @@ def test_run_cell_non_finite_logits_marks_exclusion(
     assert rec["excluded"] is True
     assert rec["exclusion_reason"] == "non_finite_logits"
     assert rec["cdpa"] is None and rec["wdpa"] is None
+    assert rec["doa"] is None
 
 
 def test_run_cell_non_finite_manip_marks_exclusion(
@@ -268,7 +272,7 @@ def test_clean_cell_not_excluded(stream: Stream) -> None:
 def test_duplicate_cell_different_out_aborts(
     stream: Stream, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    monkeypatch.setattr(drv, "load_stream", lambda data_dir: stream)
+    monkeypatch.setattr(drv, "load_stream", lambda data_dir, corpus="qd-cifar10": stream)
     db = tmp_path / "r.sqlite"
     base = ["--seed", "7", "--arm", "P_min", "--strategy", "na",
             "--registry-db", str(db), "--epochs", "1"]
@@ -289,7 +293,7 @@ def test_duplicate_cell_different_out_aborts(
 def test_main_writes_outcome_record(
     stream: Stream, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    monkeypatch.setattr(drv, "load_stream", lambda data_dir: stream)
+    monkeypatch.setattr(drv, "load_stream", lambda data_dir, corpus="qd-cifar10": stream)
     out = tmp_path / "cell.json"
     rc = drv.main([
         "--seed", "5", "--arm", "P_min", "--strategy", "na",
@@ -322,7 +326,7 @@ def test_manip_accuracy_is_two_way_restricted() -> None:
 def test_main_refuses_to_overwrite_existing_record(
     stream: Stream, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    monkeypatch.setattr(drv, "load_stream", lambda data_dir: stream)
+    monkeypatch.setattr(drv, "load_stream", lambda data_dir, corpus="qd-cifar10": stream)
     out = tmp_path / "cell.json"
     out.write_text("{}")
     with pytest.raises(SystemExit):
@@ -366,3 +370,107 @@ def test_claim_then_second_claim_loses(tmp_path: Path) -> None:
     )
     assert drv.claim_run_id(db, **kw) is True
     assert drv.claim_run_id(db, **kw) is False
+
+
+# --- P_equ vs P_max on the CNN path (PI decision 2026-10-24) ---------------
+
+
+def _de_arm(
+    cnn: G4SmallCNN, buf: _BetaBufferCNN, arm: str, strategy: CrossStrategy, k: int,
+    seed: int = 3,
+) -> None:
+    from experiments.g4_split_fmnist.dream_wrap import build_profile
+    from experiments.g4_ter_hp_sweep.hp_grid import representative_combo
+
+    drv.dream_episode(
+        cnn, build_profile(arm, seed=seed), seed + k,
+        beta_buffer=buf, combo=representative_combo(), strategy=strategy,
+    )
+
+
+@pytest.mark.parametrize("strategy", ["cross", "within"])
+def test_p_equ_and_p_max_give_different_updates(stream: Stream, strategy: CrossStrategy) -> None:
+    out = {}
+    for arm in ("P_equ", "P_max"):
+        cnn, buf = _state(stream, 6)
+        _de_arm(cnn, buf, arm, strategy, k=6)
+        out[arm] = _weights(cnn)
+    assert not np.array_equal(out["P_equ"][0], out["P_max"][0])
+
+
+def test_p_equ_and_p_max_identical_when_recombine_skipped(stream: Stream) -> None:
+    # the op sets differ only in recombine_light vs recombine_full
+    out = {}
+    for arm in ("P_equ", "P_max"):
+        cnn, buf = _state(stream, 6)
+        _de_arm(cnn, buf, arm, "none", k=6)
+        out[arm] = _weights(cnn)
+    for a, b in zip(out["P_equ"], out["P_max"]):
+        assert np.array_equal(a, b)
+
+
+# Metric hashes recorded with the code before the P_max change (macM1,
+# MLX on Metal; MLX tests are skipped off Darwin): baseline, P_min and
+# every P_equ cell, and P_max/none, must stay bit-identical.
+GOLDEN = {
+    ("baseline", "na"): "6499438bbb1f1839d27217b1962651539faddbd7f69af1a2d4f2a786170c8d19",
+    ("P_min", "na"): "5455952efad7b40b7c237f2a615a962022f4c111ec07a88fdd2dc39510c23caa",
+    ("P_equ", "cross"): "00794fcbeca11a33662a899999f40d822b7b186bbe13d13340e8d7ecca33d5fa",
+    ("P_equ", "within"): "e04d52dc6437c094590f1e77ef33cde6095c5f9debab066a00e5ec2e623260fa",
+    ("P_equ", "none"): "a1933467e61aacc785e89c80e7e12282f3aa400e4fb0a8dad3d8fcdc14060e9a",
+    ("P_max", "none"): "a1933467e61aacc785e89c80e7e12282f3aa400e4fb0a8dad3d8fcdc14060e9a",
+}
+
+
+@pytest.mark.parametrize(("arm", "strategy"), list(GOLDEN))
+def test_other_arms_bit_identical_to_pre_change(arm: str, strategy: str) -> None:
+    import hashlib
+
+    rec = drv.run_cell(arm=arm, strategy=strategy, seed=1, stream=_synthetic_stream(),
+                       epochs=1, batch_size=64, lr=0.01)
+    keys = ("cdpa", "wdpa", "acc20", "retention_a", "doa", "manip_acc")
+    blob = json.dumps({k: rec[k] for k in keys}, sort_keys=True)
+    assert hashlib.sha256(blob.encode()).hexdigest() == GOLDEN[(arm, strategy)]
+
+
+def test_p_max_cross_cell_differs_from_p_equ_cross() -> None:
+    s = _synthetic_stream()
+    a = drv.run_cell(arm="P_equ", strategy="cross", seed=1, stream=s, epochs=1, batch_size=64, lr=0.01)
+    b = drv.run_cell(arm="P_max", strategy="cross", seed=1, stream=s, epochs=1, batch_size=64, lr=0.01)
+    assert b["recombine_variant"] == "full" and a["recombine_variant"] == "light"
+
+
+def test_default_epochs_is_10() -> None:
+    # PI amendment 2026-10-24 (G4-sexto section 9.1 precedent)
+    assert drv.EPOCHS == 10
+
+
+# --- exploratory un-mixed arm (PI decision 2026-10-24) ---------------------
+
+
+def test_unmixed_only_on_p_max() -> None:
+    drv.validate_cell("P_max", "unmixed")
+    with pytest.raises(ValueError):
+        drv.validate_cell("P_equ", "unmixed")
+
+
+def test_unmixed_is_noop_before_task6(stream: Stream) -> None:
+    out = {}
+    strats: tuple[CrossStrategy, ...] = ("unmixed", "none")
+    for strat in strats:
+        cnn, buf = _state(stream, 5)
+        _de_arm(cnn, buf, "P_max", strat, k=5)
+        out[strat] = _weights(cnn)
+    for a, b in zip(out["unmixed"], out["none"]):
+        assert np.array_equal(a, b)
+
+
+def test_unmixed_differs_from_cross_and_none(stream: Stream) -> None:
+    out = {}
+    strats: tuple[CrossStrategy, ...] = ("unmixed", "cross", "none")
+    for strat in strats:
+        cnn, buf = _state(stream, 6)
+        _de_arm(cnn, buf, "P_max", strat, k=6)
+        out[strat] = _weights(cnn)
+    assert not np.array_equal(out["unmixed"][0], out["cross"][0])
+    assert not np.array_equal(out["unmixed"][0], out["none"][0])

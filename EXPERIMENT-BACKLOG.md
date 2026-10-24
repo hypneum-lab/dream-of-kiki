@@ -53,3 +53,24 @@ over-claim was confined to the paper prose about the *effect* structure). Path (
 compositional-semantics argument. Separately, **review ① §8.4** prior-art gap closed:
 added WSCL (Sorrenti et al. 2023, the entry previously mis-attributed to "Alfarano")
 and Robinson et al. 2022 to the differentiation tables.
+
+## Draft pre-registrations (2026-10-23) — DRAFT, not yet filed on OSF
+
+Drafted from the 2026-10 literature review. Each file carries the
+status header "DRAFT — not yet filed on OSF (to be filed by the PI)"
+and a §10 list of open decisions. None is locked; no run may start
+before the PI files it and fills the lock commit / timestamp.
+
+| Draft | Hypotheses | Question |
+|---|---|---|
+| `docs/osf-prereg-g4-nono-cross-domain-2026-10-23.md` | H12-A..C | Is the DR-4 "RECOMBINE-empty" refutation scoped to within-domain streams? |
+| `docs/osf-prereg-dr3-relational-probe-2026-10-23.md` | H13-A..D | Does DR-3 anchor to local structure, or to relational structure (local + global)? Distance-weighted overlap is only bounded below δ, never called absent. |
+| `docs/osf-prereg-e1-replay-controls-2026-10-23.md` | H14-A..C | Extends E1 above: does dream replay survive template, tuned-vanilla-replay and on-policy-replay controls at matched compute? |
+
+Supporting files: `docs/osf-prereg-erratum-g4-power-2026-10-23.md`
+(corrected power arithmetic for the locked G4-quinto / sexto and
+G5-bis sentences; locked files untouched),
+`scripts/prereg_power_2026_10.py` (reproduces every power number in
+the three drafts and the erratum), `scripts/e1_fixture_partition.py`
+and `tests/fixtures/e1_partition_2026-10.json` (item-disjoint E1
+tuning / confirmatory partitions with hashes).

@@ -21,6 +21,7 @@ from kiki_oniric.eval.relational_probe import (
     mutual_knn_tau,
     mst_edge_overlap,
     mst_edge_overlap_tau,
+    nn_comparator,
     pairwise_distances,
     preprocess,
     prim_mst_edges,
@@ -295,3 +296,35 @@ def test_calibrated_difference_is_a_difference_not_a_ratio() -> None:
     d = calibrated_difference(trained, null)
     assert d["S_mKNN"] == pytest.approx(0.2)  # null = 0 stays finite
     assert d["S_H0"] == pytest.approx(0.05)
+
+
+# --- 1-NN comparator (section 5, Shi et al. 2610.20286) ---------------------
+
+
+def test_nn_comparator_identical_lines() -> None:
+    # MST of 0,1,10,11: (0,1) (2,3) (1,2); 1-NN edges: (0,1) (2,3)
+    # shared MST edges outside the 1-NN edge sets: {(1,2)} -> 1/3
+    x = _line(0, 1, 10, 11)
+    out = nn_comparator(x, x.copy(), preprocess="raw")
+    assert out["S_mKNN_k1"] == 1.0
+    assert out["S_H0_res"] == pytest.approx(1 / 3)
+
+
+def test_nn_comparator_hand_example_residual_zero() -> None:
+    # x: NN 0->1 1->0 2->3 3->2 ; MST {(0,1),(1,2),(2,3)}
+    # y = 0,1,10,-10: NN 0->1 1->0 2->1 3->0 ; MST {(0,1),(1,2),(0,3)}
+    # shared MST {(0,1),(1,2)} all inside E_NN(X) | E_NN(Y) -> 0
+    x = _line(0, 1, 10, 11)
+    y = _line(0, 1, 10, -10)
+    out = nn_comparator(x, y, preprocess="raw")
+    assert out["S_mKNN_k1"] == pytest.approx(0.5)
+    assert out["S_H0_res"] == 0.0
+    assert out["S_mKNN_k1"] == mutual_knn(x, y, k=1, preprocess="raw")
+
+
+def test_nn_comparator_residual_bounded_by_h0() -> None:
+    rng = np.random.default_rng(3)
+    x = rng.normal(size=(60, 5))
+    y = x + 0.3 * rng.normal(size=x.shape)
+    out = nn_comparator(x, y)
+    assert 0.0 <= out["S_H0_res"] <= mst_edge_overlap(x, y)
