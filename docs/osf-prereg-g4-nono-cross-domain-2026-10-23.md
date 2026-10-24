@@ -25,7 +25,8 @@ are not edited).
 **Compute:** N = 95 seeds × 9 cells per seed (8 confirmatory + 1
 exploratory un-mixed control) = 855 cells, or N = 108 (972 cells)
 under the pre-stated N-selection rule (§3); 760 / 864 confirmatory
-cells. Per-cell time at 10 epochs: see §9 (second smoke).
+cells. Per-cell time at 10 epochs on macM1 under N10-C load: about
+48 s (≈ 11.4 h for 855 cells; second smoke, §9).
 **Domain corpus:** pending the PI's choice of a second corpus with a
 stronger domain shift (§10 item 1); the CIFAR-100 animals /
 non-animals split below is the current pipeline and stays in place
@@ -728,11 +729,13 @@ carry a universality claim in either direction.
   synthetic data; item 5 needs the pinned CIFAR-100 binary and parquet
   files on the filing host; (c) done:
   `tests/unit/test_g4_nono_aggregator.py` reaches every §2 state and
-  every §7 row end to end on synthetic paired records; (d) the smoke
-  ran on 2026-10-24 (below) and **hit the registered abort
-  condition**, so no N has been selected; open until the PI decides
-  the amendment.
-  **Smoke result, 2026-10-24 (PI decision: pilot on macM1 now,
+  every §7 row end to end on synthetic paired records; (d) two
+  smokes ran on 2026-10-24 and both are reported (§3): the first, at
+  3 epochs, hit the registered abort condition; the second, after the
+  PI amendment (10 epochs, P_max recombine_full), passed and selected
+  **N = 95**. The CIFAR-100 domain split may still change with the
+  PI's corpus choice (§10 item 1), in which case the smoke is rerun.
+  **First smoke, 2026-10-24 (PI decision: pilot on macM1 now,
   campaign later).** Code at `28e18c5` (`DREAMOFKIKI_COMMIT_SHA`),
   macM1 (M1, 32 GB), CIFAR-100 from the pinned parquet mirror, one
   process at `nice 19`, run **concurrently with the N10-C
@@ -783,6 +786,34 @@ carry a universality claim in either direction.
   - Checklist item 5 was not run: no host has both pinned CIFAR-100
     files (macM1 and Studio hold only the parquet mirror;
     electron-server holds neither).
+  **Second smoke, 2026-10-24 (after the PI amendment).** Code at
+  `c64bcee` (10 epochs, P_max recombine_full), same host, data,
+  `nice 19` and guard, a fresh output directory and registry, again
+  **concurrently with N10-C** (swap 7.0-7.3 of 8 GB), so wall times
+  may be inflated. 24 of 24 cells `ok`, no exclusion, no non-finite
+  metric; N10-C stayed alive and the guard never triggered.
+  - Wall time: driver-reported 22-48 s per cell (median 25 s; 803 s
+    for 24 cells); 40-61 s per cell including process start and data
+    loading; 1 164 s for the whole smoke. Campaign estimate on macM1
+    at this load: about 48 s per cell, so ≈ 11.4 h for 855 cells
+    (N = 95, 9 cells per seed; ≈ 10.2 h for the 760 confirmatory
+    cells), ≈ 13 h for 972 cells (N = 108); with the driver time
+    alone (median 25 s) about half of that.
+  - Manipulation check: 0.615 / 0.639 / 0.607 on seeds 900 / 901 /
+    902; all pass (margins over 0.60 are thin).
+  - **N selection: SD̂_D = 0.0022 < 0.015, so N = 95** (line 2).
+    r̂ (descriptive): 0.999 (CDPA cross/none), 0.996 (CDPA
+    cross/within), 0.992 (WDPA within/none).
+  - **P_equ and P_max now differ** in the `cross` and `within` cells
+    (for example CDPA 0.5465 vs 0.5426 at seed 900 `cross`, 0.5203 vs
+    0.5246 at seed 901 `within`) and are bit-identical in the `none`
+    cells, as designed (§5).
+  - CDPA / WDPA are 0.51-0.55; acc20 0.050-0.061 and DOA 0.5 in every
+    cell (descriptive only, §6).
+  - Exploratory `P_max/unmixed` (run separately at `0b2b48e`, 3
+    cells): CDPA 0.5474 / 0.5257 / 0.5269, driver wall 24-46 s.
+  - Records: macM1 `~/scratch/code/g4-pilot2-out/` (with
+    `n-selection.json`) and `~/scratch/code/g4-pilot2-unmixed/`.
 - **Pre-filing smoke:** seeds 900-902, all 8 cells, on the filing
   hardware. It verifies the driver, the checklist tests and per-cell
   wall time, and records SD̂_D for the §3 N-selection rule (and r̂,
