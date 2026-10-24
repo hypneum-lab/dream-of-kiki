@@ -93,7 +93,10 @@ Three further 2026 works frame the design:
   reports a collapse of native intermediate reasoning under
   on-policy self-distillation and a mitigation that anchors to a
   reference derived from the frozen base model. It motivates the
-  frozen-reference diagnostic of §6.
+  frozen-reference diagnostic of §6. A second report of collapse,
+  in latent on-policy distillation (LastOPD, arXiv:2609.28845), is
+  consistent with it; no newer result removes the need for the
+  diagnostic.
 
 In this harness `p_min` **is** SGD replay at default hyperparameters
 (`HL_LR = 1e-4`, `HL_INNER = 5`): vanilla, untuned replay. The
@@ -443,6 +446,12 @@ index (`torch.argmax`); this rule applies to eval and to OPR reward.
   "answer-containing vs prompt-only replay" (§1). (A random-answer
   control was rejected: three times out of four it teaches a false
   answer, so beating it could reflect avoiding harmful updates.)
+  A control for prompt artefacts is not a new idea: Zahn et al.
+  (arXiv:2607.16256, v2) ran an in-context analogue, prepending
+  cross-domain material in context to a different, ~671B model.
+  `p_ctrl_template` is a different control: a same-checkpoint,
+  question-without-answer replay arm under the same token budget and
+  update schedule. No novelty is claimed for the control concept.
 - **`p_ctrl_vanilla_replay_tuned`** — `p_min`'s corpus with LR and m
   set by tuning.
 - **`p_ctrl_onpolicy_replay` (OPR)** — for each replay prompt, the
@@ -454,6 +463,11 @@ index (`torch.argmax`); this rule applies to eval and to OPR reward.
   scoring pass instead of sampling. It is a selection of the
   checkpoint's own correct choices, not their generated-response
   method. Claims about OPR in this study are limited to this form.
+  It is also not current-policy replay in the sense of Continual
+  Prompt Replay (arXiv:2608.18574), which regenerates responses with
+  the model being trained: the OPR corpus is fixed once from the
+  pre-replay checkpoint and never regenerated, like every replay
+  corpus in this study (all arms replay frozen responses).
 
 **Tuning.** Grid LR ∈ {3e-5, 1e-4, 3e-4} × m ∈ {2, 5} (6
 configurations), tuning seeds 1000-1009 on the tuning partition.
@@ -503,6 +517,17 @@ means and 95 % intervals. They are **not** gates, enter no state
 rule and do not alter the 20 % collapse gate below; each cell scores a single
 pre/post replay phase, so collapse over repeated consolidation
 cycles is not observed; this is a stated limitation.
+
+**MoE drift (secondary, descriptive).** Qwen3.6-35B-A3B is a
+mixture-of-experts model, and replay can move the router as well as
+the experts (CP-MoE, arXiv:2605.20247; FINCH, arXiv:2605.20005).
+Per cell, on the same probe set: (i) relative drift of the router
+(gate) weights, ‖g_post − g_pre‖ / ‖g_pre‖, and (ii) the L1 distance
+between the pre- and post-replay expert-usage histograms (top-k
+routed token counts per expert, normalised, summed over layers);
+per profile, the mean replay loss over the update sequence. These are
+reported per profile with means and 95 % intervals. Like the
+frozen-reference measures, they are not gates and enter no state rule.
 
 Collapse is an outcome, not an exclusion. **Validity gate:** if the
 collapse rate of **either** profile in a confirmatory contrast
@@ -617,7 +642,8 @@ into the filed version.
    counts written to each cell.
 4. New profiles `p_ctrl_template` (prompt-only), tuned arms and
    restricted MC-OPR, with OPR corpus size per cell.
-5. Drift (full-norm) and collapse fields per cell.
+5. Drift (full-norm), collapse, frozen-reference and MoE-drift
+   (router drift, expert-usage histogram) fields per cell (§6).
 6. `analyze_e1_cuda.py`: §2 states, §7 tables, validity gates.
 7. Fact-corpus build and check script (§5.1): normalisation, exact
    and near-duplicate detection (including against the pilot
