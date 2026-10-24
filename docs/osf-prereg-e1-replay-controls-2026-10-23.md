@@ -3,7 +3,10 @@
 **Status:** DRAFT — not yet filed on OSF (to be filed by the PI).
 **Date:** 2026-10-23 (revision 3: PI decisions of 2026-10-23 on δ
 and the fact corpus applied; revision 4, 2026-10-24: pre-filing code
-status, no protocol change)
+status, no protocol change; revision 5, 2026-10-24: PI decisions —
+scoring passes counted in the compute budget, LR-matched replay
+registered as an exploratory arm, fact-corpus source = a public fact
+set pending the PI's choice of set)
 **Parent OSF:** 10.17605/OSF.IO/Q6JYN
 **Parent backlog item:** `EXPERIMENT-BACKLOG.md` E1 (powered TOST,
 35B run pending).
@@ -29,10 +32,13 @@ confirmatory items. The existing fixtures
 (200 rows, SHA-256 `2ab581dc…0a979`), with their partition manifest,
 are a **pilot / smoke set only** (§5.3); no confirmatory or tuning
 cell uses them. There is no `mega_v2`.
-**Compute:** 141 confirmatory seeds × 9 profiles = 1,269 cells, plus
-10 tuning seeds × 6 configurations × 2 tuned arms = 120 tuning
-cells, plus 3 smoke seeds × 9 profiles = 27 smoke cells;
-**1,416 cells** in total (§5, §9).
+**Compute:** 141 confirmatory seeds × 10 profiles (9 registered + 1
+exploratory LR-matched arm) = 1,410 cells, plus 120 tuning cells
+(10 tuning seeds × 6 configurations × 2 tuned arms) and 60
+LR-matching calibration cells (10 tuning seeds × (5 multipliers +
+1 `p_equ` reference)), plus 3 smoke seeds × 10 profiles = 30 smoke
+cells; **1,620 cells** in total (§5, §9). Without the exploratory
+arm: 1,416.
 **Power script:** `scripts/prereg_power_2026_10.py` (§3).
 **Lock commit:** *(filled by introducing commit hash at filing)*
 **Lock timestamp:** *(filled at filing, pre-run)*
@@ -421,20 +427,32 @@ would take the cumulative count past T_s, with r tokens remaining
 (1 ≤ r), the record is truncated to its first r + 1 input tokens, so
 it contributes exactly r loss tokens; its loss is the mean over those
 r positions, like every other update. Achieved loss tokens therefore
-equal T_s exactly for every replaying profile (a unit test covers
+equal the profile's update budget exactly (T_s, or U_OPR for OPR; see below) for every replaying profile (a unit test covers
 unequal record lengths and r = 1). Tokens are matched; optimizer-step counts differ across
 profiles and are reported. DOWNSCALE (`HL_SHRINK = 0.99`, untuned)
-and RESTRUCTURE are applied after replay and are not charged.
-Pre/post scoring passes are identical across profiles and not
-charged. OPR's extra scoring passes (4 choices × 40 prompts = 160
-forward passes per cell) are **not** charged against T and are
-reported separately. This restricts "matched compute" to matched
-gradient-update tokens.
+and RESTRUCTURE are applied after replay and are not charged (they
+are elementwise / permutation operations with no forward pass).
+**Scoring passes are counted (PI decision 2026-10-24).** Compute is
+counted in training-token equivalents: a forward-only scoring token
+costs 1/3 of a training token (about 2 N vs 6 N FLOPs per token for
+N active parameters). Pre/post evaluation passes are identical for
+every profile, so they are counted in every profile's total and
+cancel in the match. Scoring passes that only some profiles run are
+charged against those profiles' update tokens: OPR's 160 scoring
+passes (4 choices × 40 prompts) read S_OPR tokens (prompt + choice
+per pass), so OPR's update budget is
+`U_OPR = T_s − ceil(S_OPR / 3)` (floored at 0), and every other
+profile keeps `U = T_s`. The schedule then ends at U instead of T_s
+(same terminal-update rule). `scripts/e1_budget.py`
+(`scoring_pass_tokens`, `update_token_budget`) implements this, with
+tests; S_OPR, the charge and U are written to each cell. "Matched
+compute" therefore means matched total compute (updates plus
+profile-specific scoring), not only matched update tokens.
 
 **Ties.** `_score_choice` argmax ties resolve to the lowest choice
 index (`torch.argmax`); this rule applies to eval and to OPR reward.
 
-**Profiles** (9 per confirmatory seed):
+**Profiles** (9 registered + 1 exploratory per confirmatory seed):
 - Existing, token-matched: `p_min`, `p_equ`, `p_max`, `p_ctrl_sft`,
   `p_ctrl_shuffle`, `p_noise` (no updates; the noise floor).
 - **`p_ctrl_template` (prompt-only control)** — the same replay
@@ -475,7 +493,8 @@ Two independent selections: (i) vanilla replay (`p_min`'s corpus,
 no DOWNSCALE) and (ii) `p_ctrl_onpolicy_replay`. Each selects the
 configuration with the highest mean Δ of `acc` over the 10 tuning
 seeds; ties (within 1e-9) go to the lower LR, then the smaller m.
-10 × 6 × 2 = 120 tuning cells. **`p_equ` is not tuned separately**:
+10 × 6 × 2 = 120 tuning cells (plus the 60 LR-matching calibration
+cells of the exploratory arm, which select nothing else). **`p_equ` is not tuned separately**:
 it uses selection (i), so `p_equ` and `p_ctrl_vanilla_replay_tuned`
 share LR, m and the update sequence and differ only by DOWNSCALE
 (this is what makes H14-B a DOWNSCALE ablation). OPR's corpus
@@ -490,6 +509,22 @@ frozen in a dated amendment **before** the first confirmatory seed
 runs. `p_min`, `p_max` and the other
 controls keep the defaults (LR 1e-4, m = 5); `p_equ` uses selection
 (i) in every confirmatory cell, including secondary contrasts.
+
+- **`p_ctrl_lr_matched` (exploratory; PI decision 2026-10-24;
+  reported only).** Replay with the learning rate scaled to match the
+  norm change that DOWNSCALE produces (Marek et al.,
+  arXiv:2605.26097): `p_min`'s corpus with selection (i)'s m and
+  update sequence and **no DOWNSCALE**, at LR `c × LR_(i)`. c is
+  calibrated once on the tuning seeds 1000-1009 from
+  {1, 1.5, 2, 3, 5}: for each c, the median over tuning seeds of the
+  full-parameter norm change ‖θ_post − θ_pre‖ is compared with that
+  of `p_equ` (selection (i) + DOWNSCALE 0.99) on the same seeds; the
+  c with the smallest |log ratio| wins (ties to the smaller c). c is
+  frozen in the tuning amendment with the other selections (60
+  calibration cells). Contrast `Δacc(p_equ) − Δacc(p_ctrl_lr_matched)`
+  is reported with the §2 bounds at nominal α = 0.05; it is never
+  confirmatory, outside the family and §7, and never changes a
+  decided state.
 
 **Fixed run knobs:** `n_replay = 40`, `n_eval` per §5.2, seeds
 0-140, tuning seeds 1000-1009, smoke seeds 2000-2002 (pilot set,
@@ -609,11 +644,11 @@ OPR, + U forward/backward updates (U ≈ T_s / mean record
 length; ≈ 100-200 for fact corpora at m = 5, more for the short
 `p_ctrl_sft` texts), + one 70 GB restore. Wall per cell and peak
 memory are unmeasured at 35B. The smoke on the filing hardware
-(seeds 2000-2002, all 9 profiles = 27 cells, pilot set) must
+(seeds 2000-2002, all 10 profiles = 30 cells, pilot set) must
 record per-cell wall, `torch.cuda.max_memory_allocated` per device
 and host RSS, achieved tokens and update counts. Because the pilot
 set has different eval sizes and its own T_s, the projection to the
-1,416 cells scales each component by the actual confirmatory
+1,620 cells scales each component by the actual confirmatory
 workload (scoring forwards at the §5.2 `n_eval`, update tokens,
 restores), not by cell count. The projection goes into the
 filed version. If it exceeds the available budget, the PI changes
@@ -639,9 +674,12 @@ into the filed version.
    the hashes, and restricts `_cell_split` to the requested
    partition.
 3. Token-budget update schedule (§5), with achieved tokens and step
-   counts written to each cell.
-4. New profiles `p_ctrl_template` (prompt-only), tuned arms and
-   restricted MC-OPR, with OPR corpus size per cell.
+   counts written to each cell; the scoring-pass charge of §5.4 is
+   implemented in `scripts/e1_budget.py` (done, tested) and must be
+   wired into the schedule.
+4. New profiles `p_ctrl_template` (prompt-only), tuned arms,
+   restricted MC-OPR (with OPR corpus size and S_OPR per cell) and
+   the exploratory `p_ctrl_lr_matched` with its calibration.
 5. Drift (full-norm), collapse, frozen-reference and MoE-drift
    (router drift, expert-usage histogram) fields per cell (§6).
 6. `analyze_e1_cuda.py`: §2 states, §7 tables, validity gates.
@@ -661,7 +699,8 @@ post-hoc disclosure marking the affected hypotheses exploratory (per
 ## §10 Open decisions for the PI (resolve before filing)
 
 The protocol above is complete with these defaults (earlier
-revisions' choices are resolved: scoring passes are not charged, OPR
+revisions' choices are resolved: scoring passes are charged (§5.4,
+PI decision 2026-10-24), OPR
 is the restricted MC form, `p_equ` is the primary dream arm).
 Decided by the PI on 2026-10-23 and no longer open: δ = 0.01; E1 is
 gated on the independent fact corpus of §5.1, and the pilot
@@ -674,11 +713,12 @@ named section before the lock commit.
    revision hash of Qwen3.6-35B-A3B. Running on Apple MLX instead
    would be a different backend and requires a protocol revision
    before filing, not a hardware swap.
-2. **LR-matched replay arm (exploratory, not registered).** Replay
-   with the learning rate scaled to match the norm change that
-   DOWNSCALE produces (Marek et al., arXiv:2605.26097). It adds
-   cells beyond the cell count in the header, so it is left to the PI.
-3. **Fact-corpus source (§5.1).** Where the items come from (the
-   FineFab mega-v2 corpus named in the 2026-06-19 correction, a
-   public fact set, or newly authored items). The §5.1 properties
-   apply whatever the source.
+2. ~~LR-matched replay arm~~ — decided by the PI on 2026-10-24:
+   registered as an exploratory arm (§5.4), reported only.
+3. **Fact-corpus source (§5.1) — partly decided on 2026-10-24.** A
+   public fact set (not mega-v2, not newly authored items); **which
+   set is pending the PI's choice** among the proposed candidates.
+   The §5.1 properties apply to it unchanged (in particular the
+   template / stem-skeleton limit, deduplication, headroom ≤ 0.80 on
+   the tuning partition, and SHA-256 pins of the source files at a
+   fixed version).
