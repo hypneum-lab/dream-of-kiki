@@ -7,7 +7,9 @@ status, no protocol change; revision 5, 2026-10-24: PI decisions —
 scoring passes counted in the compute budget, LR-matched replay
 registered as an exploratory arm, fact-corpus sources = RealTime QA +
 Daily Oracle + MMLU-CF (§5.1a); node and HF revision deferred until
-the corpus exists)
+the corpus exists; revision 6, 2026-10-24: PI confirmed the pooled
+bank and the MMLU-CF cap; exact construction, hashes, quotas and
+rebalancing in §5.1b after an independent review)
 **Parent OSF:** 10.17605/OSF.IO/Q6JYN
 **Parent backlog item:** `EXPERIMENT-BACKLOG.md` E1 (powered TOST,
 35B run pending).
@@ -368,7 +370,9 @@ Required properties:
    `scripts/e1_fixture_partition.py`; no difficulty or model output
    is used. A fact group never straddles the partitions, so the two
    partitions are item- and fact-disjoint.
-8. **Hashing.** Per-item SHA-256 of the canonical JSON line, the
+8. **Hashing.** Per-item SHA-256 of the canonical JSON line (the
+   final hash `item_sha256` of §5.1b; the pre-permutation `src_hash`
+   is stored in the item and drives every random choice), the
    corpus file SHA-256, per-partition hashes (SHA-256 of sorted item
    hashes) and a manifest with a `--check` mode, as for the pilot
    manifest. The corpus and partition hashes are written into the
@@ -376,11 +380,11 @@ Required properties:
 
 ### §5.1a Sources (PI decision 2026-10-24: all three public sets)
 
-The PI chose to use all three proposed public fact sets. **Reading
-to be confirmed by the PI:** one pooled item bank, with `source`
-recorded on every item and pre-registered as a stratum; partitions
-are stratified by source; per-source results are reported
-descriptively; the primary analysis (§2) is pooled. The §5.1
+The PI chose to use all three proposed public fact sets and
+confirmed on 2026-10-24 (17:25) the design: one pooled item bank,
+with `source` recorded on every item and pre-registered as a
+stratum; partitions are stratified by source; per-source results are
+reported descriptively; the primary analysis (§2) is pooled. The §5.1
 properties apply to every item, whatever its source.
 
 | `source` | Set and pin | Licence | Role |
@@ -413,19 +417,20 @@ the §5.1 deduplication, and recorded per item):
    partition **and to each source**; a source above 0.80 is dropped
    before freezing and the drop is recorded.
 6. **Option order.** Choices are permuted per item with
-   `default_rng(int(item_sha256[:16], 16))` and the gold index is
-   updated, so position carries no information; the permutation is
-   part of the frozen item.
-7. **Balance (default, to be confirmed by the PI).** The dated
+   `default_rng(int(src_hash[:16], 16)).permutation(4)`, where
+   `src_hash` is the **source-item hash** of §5.1b (computed before
+   any permutation), and the gold index is updated; the permutation
+   is part of the frozen item, whose **final hash** is computed after
+   it (no circularity).
+7. **Balance (confirmed by the PI on 2026-10-24).** The dated
    sources give about 545 (`realtimeqa`) and 492 (`daily_oracle`)
    items after the cutoff, while `mmlu_cf` has about 5 400 after
-   rule 3. To keep the pool from being dominated by undated MMLU-style
-   items, `mmlu_cf` is subsampled (seeded by item hash) to the size of
-   the larger dated source. The confirmatory (≥ 300) and tuning
-   (≥ 120) minima of §5.1 apply to the pool.
-8. **Stratified partition.** The §5.1 group-key partition is applied
-   within each source, so each source contributes to the confirmatory
-   and tuning partitions in the same proportion.
+   rule 3. `mmlu_cf` is capped at the size of the largest dated
+   source, by the exact algorithm of §5.1b. The confirmatory (≥ 300)
+   and tuning (≥ 120) minima of §5.1 apply to the pool.
+8. **Stratified partition.** Fixed per-source quotas (§5.1b), so each
+   source contributes to the confirmatory and tuning partitions in
+   the same proportion.
 9. **Licences.** `realtimeqa` text is not redistributed: the repository
    and any publication carry only item IDs (source file, line, date),
    item SHA-256 and the build script; the item text is rebuilt from the
@@ -437,6 +442,78 @@ the §5.1 deduplication, and recorded per item):
 Only the pins and metadata above were fetched (the 2.2 MB MMLU-CF
 `val.csv` to compute its SHA-256, then deleted); the corpus is built
 by task 7 once the study gate is passed.
+
+### §5.1b Construction (exact; independent review round 4)
+
+Two hashes per item, so randomisation never depends on its own output:
+- **Source-item hash** `src_hash` = SHA-256 of the canonical JSON
+  (UTF-8, `sort_keys=True`, `separators=(",", ":")`,
+  `ensure_ascii=False`) of `{source, source_id, date, question,
+  choices, answer}` **after normalisation and before permutation**
+  (`choices` in source order, `answer` the source index; `date`
+  `YYYY-MM-DD` or `null`; `source_id` = `<file>:<line>` for
+  `realtimeqa`, `<csv row index>` for `daily_oracle`,
+  `val.csv:<row index>` for `mmlu_cf`, 0-based data rows). It drives
+  every random or ordered choice below.
+- **Final hash** `item_sha256` = SHA-256 of the canonical JSON of the
+  frozen item `{source, source_id, date, prompt, choices, answer,
+  src_hash}` **after** permutation (`prompt` includes the date
+  prefix). It is the §5.1 per-item hash used in the manifest and the
+  partition hashes.
+
+Construction order (each step logs its in / out counts per source):
+
+```
+1  load      verify every pin (§5.1a table); map rows to source items
+2  normalise strip question and options (rule 2); NFKC + lower-case +
+             whitespace collapse only inside dedup / skeleton keys
+3  exclude   drop: != 4 choices, empty field, "None of the other
+             choices" option (rule 3), question + gold > 256 tokens
+4  date      dated sources: keep date >= 2026-04-16 (rule 1); a kept
+             item that is a near-duplicate (§5.1 property 3) of any
+             dropped pre-cutoff item of the same source is dropped
+             too (recurring quiz questions)
+5  dedupe    §5.1 property 3 over the pooled survivors and against
+             the pilot fixtures / mega_v2 facts; each fact group keeps
+             its lowest src_hash; skeletons with > 5 items keep the 5
+             lowest src_hash
+6  cap       n_rt, n_do, n_cf = post-dedup counts; k = max(n_rt, n_do);
+             mmlu_cf: sort by src_hash ascending, keep the first
+             min(n_cf, k)
+7  split     per source s, items sorted by src_hash ascending;
+             t_s = ceil(0.30 * n_s) lowest go to TUNING, the other
+             n_s - t_s to CONFIRMATORY (each item is its own fact
+             group after step 5, so the split is fact-disjoint)
+8  permute   rule 6 with src_hash; add the date prefix (rule 4);
+             compute item_sha256; write corpus, manifest, hashes
+9  headroom  score the base checkpoint on TUNING only (§5.1
+             property 5), pooled and per source
+```
+
+Dedupe (5) comes after the date filter (4) so that an item removed for
+its date can never knock out a kept duplicate; step 4's second clause
+covers contamination through such duplicates.
+
+**Headroom drop and rebalancing.** If a source's tuning accuracy
+exceeds 0.80 (rule 5), that source is removed from both partitions.
+Quotas are **not** recomputed and no tuning item ever moves to the
+confirmatory partition (tuning items have been scored). If the dropped
+source is dated, k is recomputed from the remaining dated source and
+the `mmlu_cf` cap is re-applied by removing `mmlu_cf` **confirmatory**
+items from the end of the src_hash order until `mmlu_cf` holds at most
+k items in total; its tuning items are kept, and the resulting shares
+are reported. The check is then repeated once on the remaining pooled
+tuning partition; if it still exceeds 0.80, or if the confirmatory
+(≥ 300) or tuning (≥ 120) minima fail, the corpus is not used and is
+extended or replaced before filing (§5.1).
+
+**Pooled estimand and source weights.** `_cell_split` draws each
+seed's replay and eval items uniformly from the pooled confirmatory
+partition, without stratification. The pooled estimand therefore
+weights each source s by its share of the confirmatory partition,
+`w_s = c_s / Σ c` (with the cap, close to 1/3 each). The `w_s` are
+written to the manifest and the filed version; the realised per-seed
+shares are reported.
 
 ### §5.2 Per-seed item counts
 
@@ -798,5 +875,5 @@ named section before the lock commit.
 2. ~~LR-matched replay arm~~ — decided by the PI on 2026-10-24:
    registered as an exploratory arm (§5.4), reported only.
 3. ~~Fact-corpus source~~ — decided by the PI on 2026-10-24: all
-   three public sets (§5.1a). **To confirm:** the pooled-bank reading
-   with `source` as a stratum, and the default balance rule 7.
+   three public sets (§5.1a); the pooled-bank design with `source` as
+   a stratum and the `mmlu_cf` cap were confirmed the same day.

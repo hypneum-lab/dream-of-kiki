@@ -502,7 +502,12 @@ error rates of §2.
     has three equal channels, so the domain cannot be read from
     colour alone (tested). Other low-level cues remain (binary
     strokes on a black background vs grey-level photographs); they
-    are part of the stronger shift the PI chose.
+    are part of the stronger shift the PI chose. **Scope of the
+    claim.** On this corpus G4-nono is an operational CDPA test: it
+    can show whether cross-domain mixing changes cross-domain pairwise
+    discrimination, but it cannot establish semantic integration
+    across domains, nor exclude that a gain comes from recalibrating
+    on domain cues.
   - **Subsampling.** Each class is cut to exactly **2 500 train / 500
     test** images with `default_rng([20261024, corpus, class])`
     (CIFAR-10: from its train and test splits; Quick, Draw!: disjoint
