@@ -174,11 +174,12 @@ def test_run_cell_record_and_pairing(stream, tmp_path: Path) -> None:
     )
     for key in (
         "arm", "strategy", "seed", "cdpa", "wdpa", "retention_a",
-        "acc20", "manip_acc", "manip_pass", "finite", "wall_time_s",
+        "acc20", "doa", "manip_acc", "manip_pass", "finite", "wall_time_s",
         "c_version", "n_classes", "epochs",
     ):
         assert key in rec
     assert 0.0 <= rec["cdpa"] <= 1.0 and 0.0 <= rec["wdpa"] <= 1.0
+    assert 0.0 <= rec["doa"] <= 1.0
     assert rec["finite"] is True
     assert rec["manip_pass"] == (rec["manip_acc"] >= 0.60)
     # matched-block pairing: same seed, same task-1 manip accuracy
@@ -223,6 +224,7 @@ def test_run_cell_non_finite_logits_marks_exclusion(
     assert rec["excluded"] is True
     assert rec["exclusion_reason"] == "non_finite_logits"
     assert rec["cdpa"] is None and rec["wdpa"] is None
+    assert rec["doa"] is None
 
 
 def test_run_cell_non_finite_manip_marks_exclusion(

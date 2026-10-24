@@ -32,6 +32,7 @@ import numpy as np  # noqa: E402
 from experiments.g4_nono_test.metrics import (  # noqa: E402
     NonFiniteLogitsError,
     compute_cdpa,
+    compute_doa,
     compute_final_accuracy,
     compute_retention_domain_a,
     compute_two_way_accuracy,
@@ -290,6 +291,7 @@ def run_cell(
         "wdpa": None,
         "retention_a": None,
         "acc20": None,
+        "doa": None,
         "manip_acc": None,
         "manip_pass": False,
         "finite": True,
@@ -324,8 +326,9 @@ def run_cell(
         rec["wdpa"] = compute_wdpa(logits, y_test)
         rec["acc20"] = compute_final_accuracy(logits, y_test)
         rec["retention_a"] = compute_retention_domain_a(logits, y_test)
+        rec["doa"] = compute_doa(logits, y_test)
     except NonFiniteLogitsError:
-        for key in ("cdpa", "wdpa", "retention_a", "acc20"):
+        for key in ("cdpa", "wdpa", "retention_a", "acc20", "doa"):
             rec[key] = None
         rec["finite"] = False
         rec["excluded"] = True
