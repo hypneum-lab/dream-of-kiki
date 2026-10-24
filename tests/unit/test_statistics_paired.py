@@ -7,6 +7,7 @@ q = t_{1-alpha, n-1}, L = mean - q*se, U = mean + q*se.
 from __future__ import annotations
 
 import math
+from typing import Any
 
 import numpy as np
 import pytest
@@ -169,7 +170,7 @@ def test_n_less_than_two_raises() -> None:
     ],
 )
 def test_invalid_parameters_raise(kwargs: dict[str, float]) -> None:
-    params = {"delta": 0.01, "alpha": 0.05, **kwargs}
+    params: dict[str, Any] = {"delta": 0.01, "alpha": 0.05, **kwargs}
     with pytest.raises(ValueError):
         paired_tost(X, Y, **params)
     with pytest.raises(ValueError):
@@ -182,7 +183,7 @@ def test_invalid_inputs_raise() -> None:
     with pytest.raises(ValueError, match="finite"):
         paired_tost([0.1, float("nan"), 0.3], [0.1, 0.2, 0.3], 0.01)
     with pytest.raises(ValueError, match="direction"):
-        paired_noninferiority(X, Y, 0.01, 0.05, "sideways")  # type: ignore[arg-type]
+        paired_noninferiority(X, Y, 0.01, 0.05, "sideways")
 
 
 def test_does_not_mutate_inputs_and_existing_tost_unchanged() -> None:

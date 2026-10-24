@@ -27,7 +27,7 @@ def test_task_pairs_exact_order() -> None:
     assert all(domain_of(c) == "B" for p in TASK_CLASS_PAIRS[5:] for c in p)
 
 
-def _fake(n_per: int, seed: int):
+def _fake(n_per: int, seed: int) -> tuple[np.ndarray, np.ndarray]:
     rng = np.random.default_rng(seed)
     y = np.repeat(np.arange(20, dtype=np.uint8), n_per)
     x = rng.integers(0, 256, (len(y), 32, 32, 3), dtype=np.uint8)

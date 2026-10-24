@@ -1,6 +1,8 @@
 """Cross-domain RECOMBINE sampler (spec section 5 checklist 1-3)."""
 from __future__ import annotations
 
+from typing import Any, get_args
+
 import numpy as np
 import pytest
 
@@ -15,7 +17,9 @@ from experiments.g4_nono_test.stream import DOMAIN_A, DOMAIN_B
 D = 8
 
 
-def _buffer(classes: list[int], per_class: int = 16, seed: int = 0):
+def _buffer(
+    classes: list[int], per_class: int = 16, seed: int = 0
+) -> tuple[np.ndarray, np.ndarray]:
     rng = np.random.default_rng(seed)
     labels = np.repeat(np.asarray(classes, np.int64), per_class)
     # latent of every record encodes (class, index) so provenance is
@@ -29,7 +33,9 @@ def _buffer(classes: list[int], per_class: int = 16, seed: int = 0):
 FULL = list(DOMAIN_A[:3]) + list(DOMAIN_B[:3])
 
 
-def _draw(strategy: str, seed: int = 7, classes=None, n: int = 16):
+def _draw(
+    strategy: Any, seed: int = 7, classes: list[int] | None = None, n: int = 16
+) -> Any:
     lat, lab = _buffer(classes or FULL)
     return sample_cross_domain_latents(
         strategy=strategy, latents=lat, labels=lab, n_synthetic=n, seed=seed
@@ -44,7 +50,8 @@ def test_unknown_strategy_raises() -> None:
     lat, lab = _buffer(FULL)
     with pytest.raises(ValueError):
         sample_cross_domain_latents(
-            strategy="mog", latents=lat, labels=lab, n_synthetic=16, seed=1
+            strategy="mog",  # type: ignore[arg-type]
+            latents=lat, labels=lab, n_synthetic=16, seed=1
         )
 
 
@@ -106,6 +113,7 @@ def test_distinct_class_and_domain_constraints_1e4_draws() -> None:
         w = sample_cross_domain_latents(
             strategy="within", latents=lat, labels=lab, n_synthetic=16, seed=s
         )
+        assert c is not None and w is not None
         for a, b in c["pairs"].tolist():
             assert a in setA and b in setB
         for j, (a, b) in enumerate(w["pairs"].tolist()):
@@ -129,6 +137,7 @@ def test_exact_rng_stream_order() -> None:
     b = sample_cross_domain_latents(
         strategy="cross", latents=lat, labels=lab, n_synthetic=16, seed=seed
     )
+    assert b is not None
     rng = np.random.default_rng(seed)
     lam = rng.uniform(0.2, 0.8, size=16)
     pa = sorted(set(FULL) & set(DOMAIN_A))
@@ -170,4 +179,4 @@ def test_empty_buffer() -> None:
 def test_ladder_module_untouched() -> None:
     from experiments.g4_quater_test import recombine_strategies as r
 
-    assert r.RecombineStrategy.__args__ == ("mog", "ae", "none")
+    assert get_args(r.RecombineStrategy) == ("mog", "ae", "none")
