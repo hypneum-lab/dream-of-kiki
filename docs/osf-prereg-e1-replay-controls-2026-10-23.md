@@ -510,8 +510,15 @@ leaks the fact).
   gram; an empty key gives the empty set. `J(a, b)` = |a ∩ b| /
   |a ∪ b|, and 0 when both are empty (never a duplicate).
 - *Near-duplicate relation.* Items x, y are near-duplicates iff
-  `J(grams(q_x), grams(q_y)) ≥ 0.6`, or their normalised gold
-  options are equal and `J ≥ 0.4`.
+  `J(grams(q_x), grams(q_y)) ≥ 0.6`, or `J ≥ 0.4` and their
+  normalised gold options are equal; the gold is consulted only once
+  `J ≥ 0.4`. *Invalid gold (final review):* a row whose `choices` is
+  not a list or whose `answer` is not an integer index into it (an
+  empty list, an out-of-range or negative index, a non-integer) has
+  no gold. This can only happen among the pre-cutoff reference rows,
+  which keep rows that step 3 would exclude; such a row matches by
+  the question rule (`J ≥ 0.6`) only, never by the equal-gold rule.
+  Keys and gram sets are computed once per row.
 - *Grouping.* Union-find over **all pairs** of the step-5 survivors
   plus the reference rows (pilot fixtures, mega_v2 facts): every
   near-duplicate pair is joined. A connected component that contains
@@ -896,7 +903,7 @@ into the filed version.
    whitespace leak and the option permutation. **Partly done:** the
    deterministic core of §5.1b (hashes, union-find grouping, skeleton,
    contamination check, cap, quotas, split, headroom rebalancing) is
-   `scripts/e1_corpus_core.py` with 17 unit tests on synthetic items;
+   `scripts/e1_corpus_core.py` with 21 unit tests on synthetic items;
    loading the pinned sources, tokenisation and model scoring remain.
 
 **Audit trail.** Milestones:

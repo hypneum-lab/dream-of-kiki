@@ -226,3 +226,25 @@ def test_pooled_recheck_after_drop() -> None:
     parts = cap_and_split(_bank(545, 492, 5400))
     with pytest.raises(ValueError):
         headroom_rebalance(parts, {})  # every tuning item must be scored
+
+
+# --- review final pass: malformed reference rows -----------------------------
+
+
+@pytest.mark.parametrize(
+    ("choices", "answer"),
+    [([], 0), (["a", "b", "c", "d"], 7), (["a", "b", "c", "d"], -1), (["a", "b", "c", "d"], "x")],
+)
+def test_malformed_reference_row_matches_by_question_only(choices: list[str], answer: Any) -> None:
+    new = _item("realtimeqa", "past/2026/a.jsonl:0", "Which document was adopted on July 4?",
+                date="2026-07-04")
+    bad_dup = {"source": "realtimeqa", "source_id": "past/2025/b.jsonl:0", "date": "2025-07-04",
+               "question": "Which document was adopted on July 4 ?", "choices": choices,
+               "answer": answer}
+    bad_other = dict(bad_dup, question="Which team won the cup final this week?")
+    # question Jaccard >= 0.6: still a duplicate despite the invalid gold
+    assert contamination_drop([new], pre_cutoff=[bad_dup]) == []
+    # below 0.6 an invalid gold can never trigger the equal-gold rule
+    assert contamination_drop([new], pre_cutoff=[bad_other]) == [new]
+    kept, _ = dedupe([new], reference=[bad_other], answer_threshold=0.0)
+    assert kept == [new]

@@ -91,13 +91,33 @@ def jaccard(a: set[str], b: set[str]) -> float:
     return len(a & b) / len(union) if union else 0.0
 
 
-def _gold(item: Mapping[str, Any]) -> str:
-    return norm_key(str(item["choices"][int(item["answer"])]))
+def _gold(item: Mapping[str, Any]) -> str | None:
+    """Normalised gold option, or None when the gold is missing or
+    invalid (choices not a list, answer not an int in range). Such a
+    row (possible only among pre-cutoff reference rows) can match by
+    question similarity alone, never by the equal-gold rule."""
+    choices, ans = item.get("choices"), item.get("answer")
+    if not isinstance(choices, list) or isinstance(ans, bool) or not isinstance(ans, int):
+        return None
+    if not 0 <= ans < len(choices):
+        return None
+    return norm_key(str(choices[ans]))
 
 
-def _near_dup(a: Mapping[str, Any], b: Mapping[str, Any], q_t: float, a_t: float) -> bool:
-    j = jaccard(grams(norm_key(a["question"])), grams(norm_key(b["question"])))
-    return j >= q_t or (_gold(a) == _gold(b) and j >= a_t)
+Key = tuple[set[str], str | None]
+
+
+def _key(item: Mapping[str, Any]) -> Key:
+    return grams(norm_key(str(item.get("question") or ""))), _gold(item)
+
+
+def _near_dup_keys(ka: Key, kb: Key, q_t: float, a_t: float) -> bool:
+    j = jaccard(ka[0], kb[0])
+    if j >= q_t:
+        return True
+    # the gold is consulted only once the question similarity reaches a_t
+    return j >= a_t and ka[1] is not None and ka[1] == kb[1]
+
 
 
 def dedupe(
@@ -114,6 +134,7 @@ def dedupe(
     other component keeps its item with the lowest src_hash.
     """
     nodes = list(items) + list(reference)
+    keys = [_key(n) for n in nodes]  # computed once per row
     parent = list(range(len(nodes)))
 
     def find(i: int) -> int:
@@ -124,7 +145,7 @@ def dedupe(
 
     for i in range(len(nodes)):
         for j in range(i + 1, len(nodes)):
-            if _near_dup(nodes[i], nodes[j], q_threshold, answer_threshold):
+            if _near_dup_keys(keys[i], keys[j], q_threshold, answer_threshold):
                 ri, rj = find(i), find(j)
                 if ri != rj:
                     parent[max(ri, rj)] = min(ri, rj)
@@ -152,13 +173,14 @@ def contamination_drop(
     answer_threshold: float = ANSWER_THRESHOLD,
 ) -> list[Item]:
     """Drop kept items that near-duplicate a pre-cutoff row of their source."""
-    return [
-        it for it in items
-        if not any(
-            p["source"] == it["source"] and _near_dup(it, p, q_threshold, answer_threshold)
-            for p in pre_cutoff
-        )
-    ]
+    ref = [(p["source"], _key(p)) for p in pre_cutoff]
+    out = []
+    for it in items:
+        k = _key(it)
+        if not any(src == it["source"] and _near_dup_keys(k, kp, q_threshold, answer_threshold)
+                   for src, kp in ref):
+            out.append(it)
+    return out
 
 
 # --- skeletons ---------------------------------------------------------------
