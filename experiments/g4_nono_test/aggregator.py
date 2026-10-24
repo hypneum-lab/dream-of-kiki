@@ -432,7 +432,8 @@ def select_n(records: Iterable[Mapping[str, Any]]) -> dict[str, Any]:
     if abort_reasons:
         return {**base, "abort": True, "abort_reasons": abort_reasons, "n": None, "line": None}
     used = [s for s in SMOKE_SEEDS if s not in manip_fail]
-    for s in used:
+    # every smoke cell is validated, including a dropped seed's
+    for s in SMOKE_SEEDS:
         for c in grid:
             rec = cells[(s, *c)]
             for metric in ("cdpa", "wdpa"):

@@ -71,6 +71,7 @@ from kiki_oniric.eval.relational_probe import (  # noqa: E402
 )
 
 ARRAY_KEYS = ("a_trained", "b_trained", "a_null", "b_null")
+NERVE_WML_COMMIT = "95ac6b78477c3ce999b31bca775769041e082b46"
 PRIMARY_K = 10
 PRIMARY_TAU = 0.1
 TAU_GRID = (1.0, 0.1, 0.01, 0.001, 0.0001)
@@ -368,12 +369,20 @@ def eligibility_problems(doc: dict[str, Any]) -> list[str]:
             probs.append("export manifest is not confirmatory (unpinned checkout)")
         if prov.get("seed_hash_mismatch") or prov.get("seeds_not_in_manifest"):
             probs.append("dump hashes do not match the export manifest")
+        nw = prov.get("nerve_wml") or {}
+        if nw.get("commit") != NERVE_WML_COMMIT or nw.get("head") != NERVE_WML_COMMIT:
+            probs.append(f"export manifest pin is not nerve-wml {NERVE_WML_COMMIT}")
+    if doc.get("abort_threshold", DEFAULT_ABORT_THRESHOLD) != DEFAULT_ABORT_THRESHOLD:
+        probs.append(
+            f"abort threshold overridden ({doc.get('abort_threshold')}); registered"
+            f" is more than {DEFAULT_ABORT_THRESHOLD} excluded seeds"
+        )
     for s in doc.get("seeds", []):
         sid = s["seed"]
         if not s.get("sha256"):
             probs.append(f"seed {sid}: dump hash not verified")
-        if s.get("pinned") is False:
-            probs.append(f"seed {sid}: exported from an unpinned checkout")
+        if s.get("pinned") is not True:
+            probs.append(f"seed {sid}: exported from an unpinned checkout (pinned flag absent or false)")
         dims = s.get("dims") or {}
         if any(tuple(v) != REGISTERED_SHAPE for v in dims.values()) or len(dims) != 4:
             probs.append(f"seed {sid}: arrays are not {REGISTERED_SHAPE}")
@@ -427,8 +436,11 @@ def decide(doc: dict[str, Any], delta: float = DELTA, alpha: float = ALPHA) -> d
     ok = [s for s in doc["seeds"] if s.get("status") == "ok"]
     seed_set = tuple(sorted(int(s["seed"]) for s in doc["seeds"]))
     probs = eligibility_problems(doc)
-    abort = bool(doc.get("abort"))
-    reading = _reading(doc, delta, alpha)
+    n_excl = sum(s.get("status") == "excluded" for s in doc["seeds"])
+    # the registered abort (section 4) is recomputed, never taken from a
+    # possibly overridden --abort-threshold
+    abort = bool(doc.get("abort")) or n_excl > DEFAULT_ABORT_THRESHOLD
+    reading = _reading(dict(doc, abort=abort), delta, alpha)
     out: dict[str, Any] = {
         "delta": delta,
         "alpha": alpha,
@@ -500,6 +512,8 @@ def _parse_cli(argv: list[str] | None) -> argparse.Namespace:
     args = ap.parse_args(argv)
     if args.decide and (args.k != PRIMARY_K or args.tau != PRIMARY_TAU):
         ap.error(f"--decide needs the primary protocol k = {PRIMARY_K}, tau = {PRIMARY_TAU}")
+    if args.decide and args.abort_threshold != DEFAULT_ABORT_THRESHOLD:
+        ap.error(f"--decide uses the registered abort threshold {DEFAULT_ABORT_THRESHOLD}")
     return args
 
 

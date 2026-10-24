@@ -449,11 +449,17 @@ Split-FMNIST test inputs, same statistics and preprocessing) is
   100..119; (ii) every dump has a verified `.sha256` sidecar
   (`--require-hash`) and matches the export manifest, whose own hash
   is verified (`--manifest`); (iii) the manifest and every dump come
-  from the pinned v1.9.0 checkout (`confirmatory_eligible`, `pinned`;
-  an `--allow-unpinned` export is never eligible); (iv) the primary
+  from the pinned v1.9.0 checkout (`confirmatory_eligible`; the
+  manifest's recorded commit and HEAD equal `95ac6b7…`; every dump
+  carries `pinned` true, and a missing flag counts as unpinned; an
+  `--allow-unpinned` export is never eligible); (iv) the primary
   protocol (k = 10, τ = 0.1, l2; `--decide` refuses other k or τ);
   (v) every array has the registered shape 1024 × 16; (vi) every
-  seed carries finite trained-substrate accuracies. The learning gate
+  seed carries finite trained-substrate accuracies; (vii) the
+  registered abort threshold (more than 6 excluded seeds) is used:
+  `--decide` refuses `--abort-threshold` overrides, the decision code
+  recomputes the abort from the seed statuses, and a stored override
+  makes the run ineligible. The learning gate
   is recomputed from those accuracies; a supplied `gate_pass` is not
   trusted, and a disagreement is flagged.
 - **Fixed n = 20 seeds, no optional stopping.** No statistic is

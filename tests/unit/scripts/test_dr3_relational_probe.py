@@ -260,12 +260,17 @@ def _seed_rec(seed: int, d: dict[str, float], res: float) -> dict[str, object]:
     }
 
 
+PIN = "95ac6b78477c3ce999b31bca775769041e082b46"
+
+
 def _eligible(seeds: list[Any], abort: bool = False) -> dict[str, Any]:
     return {
         "seeds": seeds, "abort": abort,
         "protocol": {"k": 10, "tau": 0.1, "preprocess": "l2"},
+        "abort_threshold": 6,
         "provenance": {"manifest_hash_ok": True, "confirmatory_eligible": True,
-                       "seed_hash_mismatch": [], "seeds_not_in_manifest": []},
+                       "seed_hash_mismatch": [], "seeds_not_in_manifest": [],
+                       "nerve_wml": {"commit": PIN, "head": PIN}},
     }
 
 
@@ -458,3 +463,44 @@ def test_permutation_null_reported_in_seed_record(tmp_path: Path) -> None:
     pn = rec["permutation_null"]
     assert pn["reported_only"] is True and pn["trained"]["S_H0"]["K"] == 9
     assert "D" in rec  # primary statistics unchanged alongside
+
+
+# --- review round 2 ------------------------------------------------------------
+
+
+def test_missing_pinned_flag_is_not_eligible() -> None:
+    doc = _eligible(_ok_seeds())
+    doc["seeds"][4].pop("pinned")
+    assert any("unpinned" in p for p in eligibility_problems(doc))
+    assert decide(doc, delta=DELTA)["eligible"] is False
+
+
+def test_manifest_pin_must_be_the_registered_commit() -> None:
+    doc = _eligible(_ok_seeds())
+    doc["provenance"]["nerve_wml"] = {"commit": "0" * 40, "head": "0" * 40}
+    assert any("pin" in p for p in eligibility_problems(doc))
+
+
+def test_registered_abort_recomputed_despite_threshold_override() -> None:
+    seeds = _ok_seeds()
+    for s in seeds[:7]:
+        s["status"] = "excluded"
+        s["reasons"] = ["x"]
+    doc = _eligible(seeds)
+    doc["abort"] = False  # computed with --abort-threshold 20
+    doc["abort_threshold"] = 20
+    out = decide(doc, delta=DELTA)
+    assert out["abort"] is True
+    assert out["eligible"] is False
+    assert any("abort threshold" in p for p in out["eligibility_problems"])
+    assert out["global_wording_allowed"] is False
+    doc["abort_threshold"] = 6
+    out = decide(doc, delta=DELTA)
+    assert out["abort"] is True and out["row"] == 0
+    assert out["global_wording_allowed"] is False
+
+
+def test_decide_rejects_abort_threshold_override(tmp_path: Path) -> None:
+    f = str(_write(tmp_path / "s100.npz"))
+    with pytest.raises(SystemExit):
+        main([f, "--abort-threshold", "20", "--output", str(tmp_path / "o.json"), "--decide"])

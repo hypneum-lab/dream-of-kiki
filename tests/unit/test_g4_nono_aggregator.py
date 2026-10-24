@@ -559,3 +559,16 @@ def test_cli_select_n_refusal_exit_code(tmp_path: Path) -> None:
     out = tmp_path / "n.json"
     assert main([*files, "--select-n", "--out", str(out)]) == 1
     assert json.loads(out.read_text())["n"] is None
+
+
+def test_select_n_validates_the_dropped_seed_too() -> None:
+    # review round 2: a single manipulation-failing seed with a NaN cell
+    # must refuse the selection, not be silently dropped
+    recs = _smoke(0.005, rho_low=False)
+    for r in recs:
+        if r["seed"] == 902:
+            r["manip_pass"] = False
+            if (r["arm"], r["strategy"]) == ("P_equ", "cross"):
+                r["cdpa"] = float("nan")
+    with pytest.raises(ValueError, match="smoke"):
+        select_n(recs)
