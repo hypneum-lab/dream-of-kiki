@@ -40,6 +40,7 @@ from experiments.g4_nono_test.metrics import (  # noqa: E402
 )
 from experiments.g4_nono_test.recombine_cross import (  # noqa: E402
     CrossStrategy,
+    RecombineVariant,
     sample_cross_domain_latents,
     soft_target_fc2_step,
 )
@@ -69,7 +70,7 @@ ARMS: tuple[str, ...] = ("baseline", "P_min", "P_equ", "P_max")
 STRATEGIES: tuple[str, ...] = ("cross", "within", "none")
 LATENT_DIM = 64
 N_CLASSES = 20
-EPOCHS = 3
+EPOCHS = 10  # PI amendment 2026-10-24 (was 3; G4-sexto section 9.1)
 BATCH_SIZE = 64
 LR = 0.01
 BUFFER_CAPACITY = 320
@@ -139,8 +140,10 @@ def recombine(
     strategy: CrossStrategy,
     beta_buffer: _BetaBufferCNN,
     seed: int,
+    variant: RecombineVariant = "light",
 ) -> None:
-    """RECOMBINE with the section 5 strategies (no-op for ``none``)."""
+    """RECOMBINE with the section 5 strategies (no-op for ``none``);
+    ``variant`` is ``light`` for P_equ and ``full`` for P_max."""
     populated = beta_buffer.latents()
     if not populated:
         return
@@ -148,7 +151,7 @@ def recombine(
     lab = np.asarray([c for _, c in populated], dtype=np.int64)
     batch = sample_cross_domain_latents(
         strategy=strategy, latents=lat, labels=lab,
-        n_synthetic=N_SYNTHETIC, seed=seed,
+        n_synthetic=N_SYNTHETIC, seed=seed, variant=variant,
     )
     if batch is None:
         return
@@ -231,8 +234,16 @@ def dream_episode(
     if Operation.RECOMBINE in ops:
         recombine(
             cnn, strategy=strategy, beta_buffer=beta_buffer,
-            seed=seed + 30_000,
+            seed=seed + 30_000, variant=recombine_variant_for(profile),
         )
+
+
+def recombine_variant_for(profile: object) -> RecombineVariant:
+    """Framework C section 3.1: P_max runs recombine_full, P_equ
+    recombine_light (the op sets otherwise coincide)."""
+    from kiki_oniric.profiles.p_max import PMaxProfile
+
+    return "full" if isinstance(profile, PMaxProfile) else "light"
 
 
 def manipulation_accuracy(
@@ -287,6 +298,9 @@ def run_cell(
         "batch_size": batch_size,
         "lr": lr,
         "hp_combo_id": combo.combo_id,
+        "recombine_variant": (
+            "full" if arm == "P_max" else "light" if arm == "P_equ" else None
+        ),
         "cdpa": None,
         "wdpa": None,
         "retention_a": None,
