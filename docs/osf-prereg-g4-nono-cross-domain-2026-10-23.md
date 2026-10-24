@@ -22,8 +22,14 @@ are not edited).
 (class-incremental, no per-task label remap).
 **Benchmark:** Split-CIFAR-100-coarse two-domain stream (§5).
 **Design:** matched-block (seed = block), paired analysis (§2, §6).
-**Compute:** N = 95 seeds × 8 cells per seed = 760 cells, or
-N = 108 (864 cells) under the pre-stated N-selection rule (§3).
+**Compute:** N = 95 seeds × 9 cells per seed (8 confirmatory + 1
+exploratory un-mixed control) = 855 cells, or N = 108 (972 cells)
+under the pre-stated N-selection rule (§3); 760 / 864 confirmatory
+cells. Per-cell time at 10 epochs: see §9 (second smoke).
+**Domain corpus:** pending the PI's choice of a second corpus with a
+stronger domain shift (§10 item 1); the CIFAR-100 animals /
+non-animals split below is the current pipeline and stays in place
+until then.
 **Power script:** `scripts/prereg_power_2026_10.py` (§3).
 **Lock commit:** *(filled by introducing commit hash at filing)*
 **Lock timestamp:** *(filled at filing, pre-driver-run)*
@@ -568,8 +574,22 @@ error rates of §2.
     `−Σ_c t_c log softmax(fc2(z))_c` over the 16 samples.
 - **Cells per seed.** `baseline` and `P_min` do not run RECOMBINE, so
   they are run once per seed. `P_equ` and `P_max` are run with each
-  of the three strategies. 2 + 2 × 3 = **8 cells per seed**; 760
-  cells at N = 95, 864 at N = 108.
+  of the three strategies. 2 + 2 × 3 = **8 confirmatory cells per
+  seed** (760 at N = 95, 864 at N = 108), plus the exploratory
+  `P_max/unmixed` cell (below): **9 cells per seed**, 855 / 972.
+- **Exploratory un-mixed control (PI decision 2026-10-24; reported
+  only).** Cell `P_max/unmixed`: at each DE it makes exactly the
+  `cross` draws (same stream, λ, pairs and records) but replays the
+  two records of each pair **unmixed**, with hard one-hot labels (32
+  latents, one `fc2` step at lr 0.01, same mean cross-entropy), and
+  with P_max's recombine_full noise drawn for the 32 latents. It
+  separates recombination from logit rebalancing. Contrasts
+  `CDPA(P_max, cross) − CDPA(P_max, unmixed)` and
+  `CDPA(P_max, unmixed) − CDPA(P_max, none)` are reported with the
+  §2 state rules at nominal α = 0.05 in an `exploratory_arms` block.
+  They are never confirmatory, are outside the family, the guard,
+  the §7 row and the completeness check of the 8 registered cells,
+  and never change a decided state.
 - **Driver / aggregator.** `experiments/g4_nono_test/run_cross_domain.py`
   (one cell per call, PR #44) and `experiments/g4_nono_test/aggregator.py`
   (PR #41). The aggregator implements §2, §4 and §7 exactly; its
@@ -798,14 +818,14 @@ domain × recombination interaction is read from H12-B (`cross` vs
 `within`), and retention versus cross-domain discrimination are
 reported as separate endpoints (§6).
 
-1. **Domain split (§5).** Animals / non-animals (default) or a
-   stronger shift (second corpus; needs a new loader and pin).
-2. **Un-mixed control arm (not registered).** An exploratory arm that
-   replays the same domain-A and domain-B latents with hard labels
-   and the same number of `fc2` steps would separate recombination
-   from logit rebalancing (a design suggestion from the literature
-   check, not a result in the cited paper). It adds cells and compute
-   beyond §3, so it is left to the PI.
+1. **Domain corpus (§5) — partly decided on 2026-10-24.** The PI
+   chose a second corpus with a stronger domain shift instead of the
+   CIFAR-100 animals / non-animals split; the corpus itself is
+   **pending the PI's choice** among the proposed candidates (new
+   loader, SHA-256 pins and checklist item 5 follow). Until then the
+   CIFAR-100 pipeline stays as the working smoke pipeline.
+2. ~~Un-mixed control arm~~ — decided by the PI on 2026-10-24:
+   registered as an **exploratory** arm (§5), reported only.
 3. **Hardware.** Partly decided by the PI on 2026-10-24: the smoke
    runs on macM1 now (done, see §9); the hardware for the
    confirmatory campaign is chosen after the N10-C campaign. The

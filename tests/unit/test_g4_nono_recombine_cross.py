@@ -243,3 +243,44 @@ def test_unknown_variant_raises() -> None:
     with pytest.raises(ValueError, match="variant"):
         sample_cross_domain_latents(strategy="cross", latents=lat, labels=lab,
                                     n_synthetic=16, seed=5, variant="vae")  # type: ignore[arg-type]
+
+
+# --- un-mixed exploratory control (PI decision 2026-10-24) -----------------
+
+
+@pytest.mark.parametrize("variant", ["light", "full"])
+def test_unmixed_replays_the_cross_records_with_hard_labels(variant: str) -> None:
+    lat, lab = _buffer(FULL)
+    lat = np.abs(lat)
+    cross = _ok(sample_cross_domain_latents(strategy="cross", latents=lat, labels=lab,
+                                            n_synthetic=16, seed=5))
+    un = _ok(sample_cross_domain_latents(strategy="unmixed", latents=lat, labels=lab,
+                                         n_synthetic=16, seed=5, variant=variant))  # type: ignore[arg-type]
+    rec = cross["records"]
+    assert np.array_equal(un["records"], rec) and np.array_equal(un["pairs"], cross["pairs"])
+    assert un["x"].shape == (32, D) and un["y"].shape == (32, N_CLASSES)
+    # hard one-hot labels of the two records of each pair, a then b
+    want = np.zeros((32, N_CLASSES), np.float32)
+    want[np.arange(0, 32, 2), cross["pairs"][:, 0]] = 1.0
+    want[np.arange(1, 32, 2), cross["pairs"][:, 1]] = 1.0
+    assert np.array_equal(un["y"], want)
+    if variant == "light":
+        assert np.array_equal(un["x"], lat[rec.ravel()])
+    else:
+        assert not np.array_equal(un["x"], lat[rec.ravel()]) and (un["x"] >= 0).all()
+
+
+def test_unmixed_noop_when_only_one_domain() -> None:
+    lat, lab = _buffer(list(DOMAIN_A[:3]))
+    assert sample_cross_domain_latents(strategy="unmixed", latents=lat, labels=lab,
+                                       n_synthetic=16, seed=5) is None
+
+
+def test_records_audit_field_does_not_change_cross_draws() -> None:
+    lat, lab = _buffer(FULL)
+    b = _ok(sample_cross_domain_latents(strategy="cross", latents=lat, labels=lab,
+                                        n_synthetic=16, seed=5))
+    # each mixed latent is the convex mix of its two audited records
+    lam = b["lam"][:, None]
+    mix = lam * lat[b["records"][:, 0]] + (1 - lam) * lat[b["records"][:, 1]]
+    assert np.allclose(b["x"], mix)

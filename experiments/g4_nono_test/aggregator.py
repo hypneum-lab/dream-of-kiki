@@ -77,6 +77,14 @@ SECONDARY: tuple[tuple[str, Cell, Cell], ...] = (
     ("retention_a", ("P_max", "cross"), ("P_max", "none")),
     ("retention_a", ("P_max", "cross"), ("P_max", "within")),
 )
+# Exploratory arms (PI decision 2026-10-24): reported only, never
+# confirmatory, never part of the family, the guard, the row or the
+# completeness check of the 8 registered cells.
+EXPLORATORY_CELLS: tuple[Cell, ...] = (("P_max", "unmixed"),)
+EXPLORATORY: tuple[tuple[str, Cell, Cell], ...] = (
+    ("cdpa", ("P_max", "cross"), ("P_max", "unmixed")),
+    ("cdpa", ("P_max", "unmixed"), ("P_max", "none")),
+)
 # Descriptive only (PI decision 2026-10-24): with one shared 20-way
 # class-incremental head the network predicts almost only the last
 # task's classes, so acc20 is capped near 0.1 x the last pair's 2-way
@@ -300,7 +308,8 @@ def aggregate(
     outside = sorted(seen - set(seeds))
     if outside:
         raise ValueError(f"seed(s) {outside} outside the planned list 0..{n_planned - 1}")
-    incomplete = len(cells) < 8 * n_planned
+    n_exploratory = sum(1 for k in cells if (k[1], k[2]) in EXPLORATORY_CELLS)
+    incomplete = len(cells) - n_exploratory < 8 * n_planned
     abort_reasons: list[str] = []
     if aborted:
         abort_reasons.append(f"{len(aborted)} run_id_collision / aborted cell record(s)")
@@ -346,6 +355,14 @@ def aggregate(
             h["state"] = contrast_state_ac(h, eps)
         sec[key] = h
 
+    explo = {}
+    for metric, c1, c2 in EXPLORATORY:
+        key = f"{metric}:{c1[0]}/{c1[1]}-{c2[0]}/{c2[1]}"
+        h = _contrast(cells, retained, metric, c1, c2, ALPHA_SECONDARY)
+        if "L" in h:
+            h["state"] = contrast_state_ac(h, eps)
+        explo[key] = h
+
     desc = {}
     for metric, c1, c2 in DESCRIPTIVE:
         key = f"{metric}:{c1[0]}/{c1[1]}-{c2[0]}/{c2[1]}"
@@ -386,6 +403,12 @@ def aggregate(
         },
         "secondary": {"alpha": ALPHA_SECONDARY, "exploratory": True, "contrasts": sec},
         "descriptive": {"no_state": True, "contrasts": desc},
+        "exploratory_arms": {
+            "reported_only": True,
+            "alpha": ALPHA_SECONDARY,
+            "n_cells_missing": n_planned * len(EXPLORATORY_CELLS) - n_exploratory,
+            "contrasts": explo,
+        },
     }
 
 

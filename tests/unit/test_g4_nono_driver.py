@@ -49,7 +49,9 @@ def stream() -> Stream:
 
 def test_cell_grid_is_8_per_seed() -> None:
     cells = drv.cells_for_seed()
-    assert len(cells) == 8
+    assert len(cells) == 9  # 8 confirmatory + the exploratory un-mixed arm
+    assert drv.confirmatory_cells() == [c for c in cells if c != ("P_max", "unmixed")]
+    assert len(drv.confirmatory_cells()) == 8
     assert ("baseline", "na") in cells and ("P_min", "na") in cells
     for arm in ("P_equ", "P_max"):
         for s in ("cross", "within", "none"):
@@ -441,3 +443,34 @@ def test_p_max_cross_cell_differs_from_p_equ_cross() -> None:
 def test_default_epochs_is_10() -> None:
     # PI amendment 2026-10-24 (G4-sexto section 9.1 precedent)
     assert drv.EPOCHS == 10
+
+
+# --- exploratory un-mixed arm (PI decision 2026-10-24) ---------------------
+
+
+def test_unmixed_only_on_p_max() -> None:
+    drv.validate_cell("P_max", "unmixed")
+    with pytest.raises(ValueError):
+        drv.validate_cell("P_equ", "unmixed")
+
+
+def test_unmixed_is_noop_before_task6(stream: Stream) -> None:
+    out = {}
+    strats: tuple[CrossStrategy, ...] = ("unmixed", "none")
+    for strat in strats:
+        cnn, buf = _state(stream, 5)
+        _de_arm(cnn, buf, "P_max", strat, k=5)
+        out[strat] = _weights(cnn)
+    for a, b in zip(out["unmixed"], out["none"]):
+        assert np.array_equal(a, b)
+
+
+def test_unmixed_differs_from_cross_and_none(stream: Stream) -> None:
+    out = {}
+    strats: tuple[CrossStrategy, ...] = ("unmixed", "cross", "none")
+    for strat in strats:
+        cnn, buf = _state(stream, 6)
+        _de_arm(cnn, buf, "P_max", strat, k=6)
+        out[strat] = _weights(cnn)
+    assert not np.array_equal(out["unmixed"][0], out["cross"][0])
+    assert not np.array_equal(out["unmixed"][0], out["none"][0])

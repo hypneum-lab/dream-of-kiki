@@ -86,12 +86,21 @@ EVAL_CHUNK = 2000
 EXIT_RUN_ID_COLLISION = 3
 
 
-def cells_for_seed() -> list[tuple[str, str]]:
-    """The 8 (arm, strategy) cells of one seed."""
+EXPLORATORY_CELLS: tuple[tuple[str, str], ...] = (("P_max", "unmixed"),)
+
+
+def confirmatory_cells() -> list[tuple[str, str]]:
+    """The 8 registered (arm, strategy) cells of one seed."""
     cells: list[tuple[str, str]] = [("baseline", "na"), ("P_min", "na")]
     for arm in ("P_equ", "P_max"):
         cells += [(arm, s) for s in STRATEGIES]
     return cells
+
+
+def cells_for_seed() -> list[tuple[str, str]]:
+    """All 9 cells of one seed: the 8 confirmatory cells plus the
+    exploratory un-mixed control (PI decision 2026-10-24)."""
+    return confirmatory_cells() + list(EXPLORATORY_CELLS)
 
 
 def validate_cell(arm: str, strategy: str) -> None:
@@ -408,7 +417,7 @@ def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(description="G4-nono: run one cell")
     p.add_argument("--seed", type=int, required=True)
     p.add_argument("--arm", choices=ARMS, required=True)
-    p.add_argument("--strategy", choices=("na",) + STRATEGIES, required=True)
+    p.add_argument("--strategy", choices=("na",) + STRATEGIES + ("unmixed",), required=True)
     p.add_argument("--out", type=Path, required=True)
     p.add_argument("--data-dir", type=Path, default=DEFAULT_DATA_DIR)
     p.add_argument("--registry-db", type=Path, default=DEFAULT_REGISTRY_DB)

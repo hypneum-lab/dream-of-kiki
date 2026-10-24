@@ -586,3 +586,33 @@ def test_select_n_validates_the_dropped_seed_too() -> None:
                 r["cdpa"] = float("nan")
     with pytest.raises(ValueError, match="smoke"):
         select_n(recs)
+
+
+# --- exploratory un-mixed arm (PI decision 2026-10-24) ---------------------
+
+
+def _with_unmixed(recs: list[dict[str, Any]], delta: float) -> list[dict[str, Any]]:
+    out = list(recs)
+    for r in recs:
+        if (r["arm"], r["strategy"]) == ("P_max", "cross"):
+            out.append(dict(r, strategy="unmixed", cdpa=r["cdpa"] - delta))
+    return out
+
+
+def test_unmixed_contrast_is_exploratory_and_changes_nothing() -> None:
+    base = _scenario("CONFIRMED", "CONFIRMED", "EQUIVALENT")
+    plain = aggregate(base, n_planned=N)
+    out = aggregate(_with_unmixed(base, 0.1), n_planned=N)
+    ex = out["exploratory_arms"]
+    assert ex["reported_only"] is True
+    c = ex["contrasts"]["cdpa:P_max/cross-P_max/unmixed"]
+    assert c["mean"] == pytest.approx(0.1) and c["state"] == "CONFIRMED"
+    assert out["row"] == plain["row"] and out["incomplete_run"] is False
+    for h in ("H12-A", "H12-B", "H12-C"):
+        assert out["hypotheses"][h]["state"] == plain["hypotheses"][h]["state"]
+
+
+def test_missing_unmixed_cells_do_not_mark_run_incomplete() -> None:
+    out = aggregate(_scenario("CONFIRMED", "CONFIRMED", "EQUIVALENT"), n_planned=N)
+    assert out["incomplete_run"] is False
+    assert out["exploratory_arms"]["n_cells_missing"] == N
