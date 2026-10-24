@@ -282,3 +282,33 @@ def calibrated_difference(
 ) -> dict[str, float]:
     """``D = S(trained) - S(null)`` per shared key (never a ratio)."""
     return {key: float(trained[key]) - float(null[key]) for key in trained if key in null}
+
+
+# --- 1-NN comparator (exploratory, descriptive) ---------------------------
+
+
+def nn_edges(d: Array) -> set[tuple[int, int]]:
+    """Unordered 1-NN edges ``{i, nn(i)}`` (``i < j``), ties -> lower index."""
+    nn = knn_indices(d, 1)[:, 0]
+    return {(min(i, int(j)), max(i, int(j))) for i, j in enumerate(nn)}
+
+
+def nn_comparator(x: object, y: object, preprocess: str = "l2") -> dict[str, float]:
+    """1-NN comparator for ``S_H0`` (Shi et al., arXiv:2610.20286).
+
+    * ``S_mKNN_k1``: ``(1/n) sum_i 1[nn_X(i) = nn_Y(i)]`` (mutual-kNN
+      at k = 1, same tie rule).
+    * ``S_H0_res``: ``|(T_X & T_Y) - (E_NN(X) | E_NN(Y))| / (n - 1)``,
+      the shared MST edges that are 1-NN edges in neither
+      representation.
+
+    Descriptive only: not part of the confirmatory family.
+    """
+    dx, dy = _prepare(x, y, preprocess)
+    n = int(dx.shape[0])
+    shared = prim_mst_edges(dx) & prim_mst_edges(dy)
+    residual = shared - (nn_edges(dx) | nn_edges(dy))
+    return {
+        "S_mKNN_k1": _mknn_from_d(dx, dy, 1, None),
+        "S_H0_res": len(residual) / (n - 1),
+    }

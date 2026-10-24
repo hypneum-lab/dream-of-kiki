@@ -7,8 +7,10 @@ exported representation matrices and writes the per-seed statistics
 (``S_mKNN``, ``S_H0``, ``S_mKNN_tau``, ``S_H0_tau``) for the trained
 pair and the untrained null pair, plus the calibrated differences
 ``D = S(trained) - S(null)``. It does NOT train substrates, does NOT
-apply the learning gate (accuracy >= 0.25, done by the export helper),
-and does NOT compute the section 2 states or section 7 rows.
+apply the learning gate (accuracy >= 0.25, done by the export helper).
+With ``--decide`` it also computes the section 2 states, the section 7
+row and the "global" wording rule from the retained seeds (fixed n,
+run once after all 20 seeds are dumped and hashed, section 8).
 **Mode** : pipeline code, no empirical claim.
 
 Input format (one ``.npz`` per seed, float32 or float64)
@@ -27,7 +29,8 @@ mandatory.
 Output : JSON (``--output``), per seed ``status`` ``ok`` or
 ``excluded`` (with reasons, section 4), ``trained`` / ``null`` /
 ``D`` dicts, the exploratory ``conditional_weight`` (``S^tau / S``
-trained minus null) and, with ``--sensitivity``, the preprocessing /
+trained minus null), the descriptive 1-NN ``comparator``
+(``S_mKNN_k1``, ``S_H0_res``, section 5) and, with ``--sensitivity``, the preprocessing /
 k / tau sensitivity blocks. ``abort`` is true when more than
 ``--abort-threshold`` (default 6) seeds are excluded.
 
@@ -52,11 +55,13 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
+from kiki_oniric.eval.statistics import paired_tost  # noqa: E402
 from kiki_oniric.eval.relational_probe import (  # noqa: E402
     PREPROCESS_MODES,
     STAT_KEYS,
     calibrated_difference,
     check_representation,
+    nn_comparator,
     relational_statistics,
 )
 
@@ -66,6 +71,10 @@ PRIMARY_TAU = 0.1
 TAU_GRID = (1.0, 0.1, 0.01, 0.001, 0.0001)
 K_SENSITIVITY = (5, 20)
 DEFAULT_ABORT_THRESHOLD = 6
+DELTA = 0.025
+ALPHA = 0.05 / 4
+CONFIRMATORY_SEEDS = tuple(range(100, 120))
+COMPARATOR_KEYS = ("S_mKNN_k1", "S_H0_res")
 
 
 def _sha256_of(path: Path) -> str:
@@ -146,6 +155,13 @@ def analyse_seed(
         a, b = ct[m], cn[m]
         cd[m] = (a - b) if a is not None and b is not None else None
     out["conditional_weight"] = {"trained": ct, "null": cn, "D": cd}
+    comp_t = nn_comparator(rec["a_trained"], rec["b_trained"], "l2")
+    comp_n = nn_comparator(rec["a_null"], rec["b_null"], "l2")
+    out["comparator"] = {
+        "trained": comp_t,
+        "null": comp_n,
+        "D": calibrated_difference(comp_t, comp_n),
+    }
     if sensitivity:
         out["sensitivity"] = _sensitivity(rec, k, tau)
     return out
@@ -175,6 +191,94 @@ def _sensitivity(rec: dict[str, Any], k: int, tau: float) -> dict[str, Any]:
     }
 
 
+# --- section 2 states, section 7 rows, wording rule ----------------------
+
+
+def _bounds(d: list[float], alpha: float) -> dict[str, Any]:
+    """Paired one-sided (1 - alpha) bounds of mean(D) (df = n - 1).
+
+    ``delta`` only parametrises paired_tost's equivalence flag, unused
+    here; identical differences give L = U = mean(D) exactly.
+    """
+    r = paired_tost(np.asarray(d, dtype=float), np.zeros(len(d)), delta=1.0, alpha=alpha)
+    return {
+        "n": r.n, "mean": r.mean_diff, "sd": r.sd_diff,
+        "L": r.ci_lower, "U": r.ci_upper, "degenerate": r.degenerate,
+    }
+
+
+def statistic_state(d: list[float], delta: float = DELTA, alpha: float = ALPHA) -> dict[str, Any]:
+    """Section 2 state of one statistic: SURVIVES / FAILS / INDETERMINATE."""
+    out = _bounds(d, alpha)
+    if out["L"] > 0 and out["mean"] >= delta:
+        out["state"] = "SURVIVES"
+    elif out["U"] < delta:
+        out["state"] = "FAILS"
+    else:
+        out["state"] = "INDETERMINATE"
+    return out
+
+
+def outcome_row(states: tuple[str, ...] | list[str], *, abort: bool) -> int:
+    """First matching section 7 row (0-5) from the (A, B, C, D) states."""
+    if abort:
+        return 0
+    a, b, c, d = states
+    if a == b == "SURVIVES" and c == d == "FAILS":
+        return 1
+    if a == b == "SURVIVES" and "SURVIVES" in (c, d):
+        return 2
+    if a == "SURVIVES" and b == "FAILS":
+        return 3
+    if a == "FAILS":
+        return 4
+    return 5
+
+
+def decide(doc: dict[str, Any], delta: float = DELTA, alpha: float = ALPHA) -> dict[str, Any]:
+    """Section 2 states, section 7 row and the "global" wording rule.
+
+    Uses the seeds with ``status == "ok"`` (seed-level exclusions apply
+    to all four statistics). The 1-NN comparator is descriptive: mean
+    of D with a two-sided 95 % paired-t interval; "global" may be used
+    in rows 1-2 only if S_H0_res has mean(D) >= delta and an interval
+    excluding 0.
+    """
+    ok = [s for s in doc["seeds"] if s.get("status") == "ok"]
+    seed_set = tuple(sorted(int(s["seed"]) for s in doc["seeds"]))
+    out: dict[str, Any] = {
+        "delta": delta,
+        "alpha": alpha,
+        "n_retained": len(ok),
+        "confirmatory_seed_set": seed_set == CONFIRMATORY_SEEDS,
+        "all_retained_hashed": all(s.get("sha256") for s in ok),
+    }
+    abort = bool(doc.get("abort"))
+    if len(ok) < 2:
+        out.update(states=None, row=0 if abort else 5, global_wording_allowed=False,
+                   note="fewer than 2 retained seeds")
+        return out
+    states = {k: statistic_state([float(s["D"][k]) for s in ok], delta, alpha) for k in STAT_KEYS}
+    comparator = {}
+    for k in COMPARATOR_KEYS:
+        b = _bounds([float(s["comparator"]["D"][k]) for s in ok], 0.025)
+        comparator[k] = {"n": b["n"], "mean": b["mean"], "sd": b["sd"], "ci95": [b["L"], b["U"]]}
+    res = comparator["S_H0_res"]
+    out.update(
+        states=states,
+        hypotheses={
+            "H13-A": states["S_mKNN"]["state"] == "SURVIVES",
+            "H13-B": states["S_H0"]["state"] == "SURVIVES",
+            "H13-C": states["S_mKNN_tau"]["state"] == "FAILS",
+            "H13-D": states["S_H0_tau"]["state"] == "FAILS",
+        },
+        row=outcome_row(tuple(states[k]["state"] for k in STAT_KEYS), abort=abort),
+        comparator=comparator,
+        global_wording_allowed=bool(res["mean"] >= delta and res["ci95"][0] > 0),
+    )
+    return out
+
+
 def _parse_cli(argv: list[str] | None) -> argparse.Namespace:
     ap = argparse.ArgumentParser(description="DR-3 relational probe statistics")
     ap.add_argument("inputs", nargs="+", type=Path, help="per-seed .npz dumps")
@@ -184,6 +288,10 @@ def _parse_cli(argv: list[str] | None) -> argparse.Namespace:
     ap.add_argument("--sensitivity", action="store_true")
     ap.add_argument("--require-hash", action="store_true")
     ap.add_argument("--abort-threshold", type=int, default=DEFAULT_ABORT_THRESHOLD)
+    ap.add_argument(
+        "--decide", action="store_true",
+        help="also compute section 2 states, section 7 row and wording rule",
+    )
     return ap.parse_args(argv)
 
 
@@ -217,6 +325,8 @@ def main(argv: list[str] | None = None) -> int:
         "abort": n_excl > args.abort_threshold,
         "seeds": seeds,
     }
+    if args.decide:
+        doc["decision"] = decide(doc)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(doc, indent=2, sort_keys=True) + "\n")
     print(f"wrote {args.output}: retained={doc['n_retained']} excluded={n_excl} abort={doc['abort']}")

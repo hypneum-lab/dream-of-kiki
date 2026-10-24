@@ -37,7 +37,8 @@ def _z(n: int, seed: int) -> np.ndarray:
     """Fixed sequence with mean exactly 0 and sd (ddof=1) exactly 1."""
     z = np.random.default_rng(seed).normal(size=n)
     z = z - z.mean()
-    return z / z.std(ddof=1)
+    out: np.ndarray = z / z.std(ddof=1)
+    return out
 
 
 def _vec(mean: float, spread: float, n: int = N, seed: int = 1) -> np.ndarray:
