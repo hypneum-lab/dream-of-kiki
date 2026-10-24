@@ -287,13 +287,27 @@ def test_secondary_contrasts_reported_at_nominal_alpha() -> None:
         "cdpa:P_max/cross-P_equ/cross",
         "cdpa:P_max/cross-P_min/na",
         "cdpa:P_max/within-P_max/none",
-        "doa:P_max/cross-P_max/none",
-        "doa:P_max/cross-P_max/within",
         "retention_a:P_max/cross-P_max/none",
-        "acc20:P_max/cross-P_max/none",
     ):
         assert key in sec["contrasts"], key
     assert out["alpha_family"] == pytest.approx(ALPHA_FAMILY)
+
+
+def test_acc20_and_doa_are_descriptive_only() -> None:
+    # PI decision 2026-10-24: degenerate by construction with a shared
+    # class-incremental head, so no state is assigned to them
+    out = aggregate(_scenario("CONFIRMED", "CONFIRMED", "EQUIVALENT"), n_planned=N)
+    assert not any(k.startswith(("acc20:", "doa:")) for k in out["secondary"]["contrasts"])
+    desc = out["descriptive"]
+    assert desc["no_state"] is True
+    for key in (
+        "acc20:P_max/cross-P_max/none",
+        "acc20:P_max/cross-P_max/within",
+        "doa:P_max/cross-P_max/none",
+        "doa:P_max/cross-P_max/within",
+    ):
+        c = desc["contrasts"][key]
+        assert "state" not in c and "mean" in c and len(c["ci95"]) == 2
 
 
 # --- section 3 N-selection rule ---------------------------------------------

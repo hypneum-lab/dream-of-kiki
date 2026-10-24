@@ -14,8 +14,9 @@ PR #41). Consumes the per-cell JSON records written by
   BOUNDED-NO-GAIN, INCONCLUSIVE) and the H12-C states (EQUIVALENT,
   MEANINGFULLY-DIFFERENT, INCONCLUSIVE), first match;
 * section 7: the first matching DualVer row (0-8);
-* section 2 secondary contrasts and the section 6 domain-only probe
-  (DOA) contrasts, same state rules at nominal alpha = 0.05;
+* section 2 secondary contrasts (CDPA, retention), same state rules at
+  nominal alpha = 0.05; acc20 and the section 6 domain-only probe (DOA)
+  are descriptive only (no state; PI decision 2026-10-24);
 * section 3: the smoke N-selection rule (``--select-n``), after
   checking that all 24 smoke cells are present and usable and that the
   registered abort conditions do not hold;
@@ -75,6 +76,13 @@ SECONDARY: tuple[tuple[str, Cell, Cell], ...] = (
     ("cdpa", ("P_max", "within"), ("P_max", "none")),
     ("retention_a", ("P_max", "cross"), ("P_max", "none")),
     ("retention_a", ("P_max", "cross"), ("P_max", "within")),
+)
+# Descriptive only (PI decision 2026-10-24): with one shared 20-way
+# class-incremental head the network predicts almost only the last
+# task's classes, so acc20 is capped near 0.1 x the last pair's 2-way
+# accuracy and DOA is pinned near 0.5. Mean, SD and a two-sided 95 %
+# paired interval are reported; no state is assigned.
+DESCRIPTIVE: tuple[tuple[str, Cell, Cell], ...] = (
     ("acc20", ("P_max", "cross"), ("P_max", "none")),
     ("acc20", ("P_max", "cross"), ("P_max", "within")),
     ("doa", ("P_max", "cross"), ("P_max", "none")),
@@ -338,6 +346,14 @@ def aggregate(
             h["state"] = contrast_state_ac(h, eps)
         sec[key] = h
 
+    desc = {}
+    for metric, c1, c2 in DESCRIPTIVE:
+        key = f"{metric}:{c1[0]}/{c1[1]}-{c2[0]}/{c2[1]}"
+        h = _contrast(cells, retained, metric, c1, c2, 0.025)
+        if "L" in h:
+            h["ci95"] = [h.pop("L"), h.pop("U")]
+        desc[key] = h
+
     row = outcome_row(
         hyps["H12-A"]["state"], hyps["H12-B"]["state"], hyps["H12-C"]["state"], abort=abort
     )
@@ -369,6 +385,7 @@ def aggregate(
             "row": wc_row,
         },
         "secondary": {"alpha": ALPHA_SECONDARY, "exploratory": True, "contrasts": sec},
+        "descriptive": {"no_state": True, "contrasts": desc},
     }
 
 

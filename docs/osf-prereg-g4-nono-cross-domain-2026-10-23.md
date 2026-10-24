@@ -5,7 +5,9 @@
 and ε applied; ε reverted to 0.01 and N = 108 tier added; revision 5,
 2026-10-24: pre-filing code status, no protocol change; revision 6,
 2026-10-24: PI decision removes the N = 30 line of the N-selection
-rule, so N is 95 or 108)
+rule, so N is 95 or 108; revision 7, 2026-10-24: PI amendment after
+the first smoke — epochs 3 → 10, acc20 and DOA descriptive only, and
+P_max runs recombine_full so that P_equ and P_max differ on the CNN)
 **Parent OSF:** 10.17605/OSF.IO/Q6JYN
 **Sister pre-regs (locked, not modified):**
 `docs/osf-prereg-g4-sexto-pilot.md` (H6-A, CIFAR-100),
@@ -219,8 +221,10 @@ Secondary contrasts (reported, outside the family, same state rules
 at nominal α = 0.05): `CDPA(P_max, cross)` vs `CDPA(P_equ, cross)`,
 `CDPA(P_max, cross)` vs `CDPA(P_min)`, `CDPA(P_max, within)` vs
 `CDPA(P_max, none)` (needed before any "generic synthetic-SGD"
-reading), and the same contrasts on retention and final 20-way
-accuracy.
+reading), and the same contrasts on retention. Final 20-way
+accuracy (acc20) and the domain-only probe (DOA) are **descriptive
+only** (PI decision 2026-10-24): mean, SD and a two-sided 95 % paired
+interval, no state (see §6 for why).
 
 ## §3 Power analysis
 
@@ -484,10 +488,19 @@ error rates of §2.
   all 1000 test images (2 × 500) of its two superclasses. Labels are
   the coarse ids (0-19) on the 20-way head. No per-seed reshuffle of
   task composition.
-- **Training per task.** `train_task(epochs = 3, batch_size = 64,
+- **Training per task.** `train_task(epochs = 10, batch_size = 64,
   lr = 0.01)`, plain SGD, cross-entropy, no augmentation, input
   scaling as in `experiments.g4_sexto_test.cifar100_dataset` (G4-sexto
-  defaults). The last partial batch is kept.
+  defaults). The last partial batch is kept. **Amendment (PI
+  decision 2026-10-24): epochs 3 → 10.** The first smoke (§9) hit the
+  §4 manipulation-check abort at 3 epochs (2 of 3 seeds below 0.60).
+  Short reruns showed genuine under-fitting of the first pair (train
+  and test 2-way accuracy equal, loss near ln 2) and task-1 2-way
+  accuracy 0.615 / 0.639 at 10 epochs on seeds 900 / 901 (0.609 /
+  0.500 at 3 epochs, 0.601 / 0.613 at 8). Precedent: G4-sexto §9.1
+  raised epochs (3 → 8) for the same substrate and loader. The change
+  applies to every arm and strategy alike, so it cannot favour one
+  side of any contrast. Driver default `EPOCHS = 10`.
 - **Dream episodes (ladder schedule).** One DE after each of tasks
   1-9, i.e. before training tasks 2-10, with DE seed `seed + k` for
   the DE that precedes task k + 1 (k = 1..9). No DE after task 10.
@@ -527,6 +540,29 @@ error rates of §2.
     (k = 6..9), so `cross` and `within` have identical sample counts
     and SGD steps.
   - `none`: RECOMBINE skipped.
+  - **Profile variant (PI decision 2026-10-24).** Framework C §3.1
+    gives `P_equ` the op recombine_light and `P_max` recombine_full;
+    the op sets otherwise coincide. On the CNN path `P_equ` uses the
+    interpolant above (light). `P_max` (full) draws, after the record
+    draws of the same stream, ε ~ N(0, I) (16 × 64) and uses
+    `max(0, z + σ ⊙ ε)`: a reparameterised Gaussian sample around the
+    interpolant, with σ the per-dimension SD of all buffer latents
+    (a moment-matched encoder) and the `fc1` ReLU as decoder, so the
+    sample stays in the post-ReLU latent space. λ, pairs, records and
+    soft targets are identical across the two variants. Before this
+    change the two profiles differed only in runtime handlers acting
+    on the dummy DE input slice, so every CNN-side update and every
+    metric of `P_equ` and `P_max` was identical; the same holds for
+    the G4-quinto results (retention 0.8754 for both), which are
+    therefore an implementation artefact and are not edited. The
+    primary H12 contrasts are within `P_max`, so their treatment cells
+    now use recombine_full. `P_equ` and `P_max` still coincide in the
+    `none` cells and at the DEs where `cross` / `within` are no-ops
+    (k = 1..5), because RECOMBINE is the only op that differs.
+    `baseline`, `P_min`, every `P_equ` cell and `P_max/none` are
+    bit-identical to the code before the change (regression test on
+    macM1). The α input and channel 2 of the framework's `P_max` are
+    not modelled on the CNN path.
   - Update for `cross` / `within`: one SGD step (lr 0.01) on the
     head `fc2` only, mean soft-target cross-entropy
     `−Σ_c t_c log softmax(fc2(z))_c` over the 16 samples.
@@ -591,23 +627,30 @@ All metrics are computed after task 10 training (end of stream).
   100 pairs.
 - **WDPA (H12-C).** Same computation over the 45 + 45 within-domain
   pairs; unweighted mean over the 90 pairs.
-- **Domain-only probe, DOA (secondary, exploratory;
+- **Domain-only probe, DOA (descriptive only, PI decision
+  2026-10-24;
   `experiments.g4_nono_test.metrics.compute_doa`, cell field `doa`).**
   For each of the 20000 test images of the 20 classes (1000 per class), predict
   the *domain* by comparing the maximum logit over the 10 domain-A
   classes with the maximum over the 10 domain-B classes (tie counts
   0.5); DOA is the accuracy against the true domain. It uses no
   within-pair class information. The paired contrasts `cross − none`
-  and `cross − within` on DOA are reported with the same state rules
-  at nominal α = 0.05, outside the confirmatory family, spending no
-  α. Reading rule (descriptive): if the `cross` gain in DOA is of
+  and `cross − within` on DOA are reported descriptively (mean, SD,
+  two-sided 95 % paired interval, no state). With one shared
+  class-incremental head the network predicts almost only the last
+  task's classes (domain B), so DOA is pinned near 0.5 by
+  construction (exactly 0.5 in every cell of the first smoke). Reading rule (descriptive): if the `cross` gain in DOA is of
   the same size as the gain in CDPA, the CDPA gain cannot be
   separated from a domain-shortcut or head-recalibration mechanism
   (Zhang et al., arXiv:2607.22994) and H12-A / H12-B are reported with
   that qualification. Nothing in §2 or §7 changes.
 - **Retention (secondary, ladder-comparable).** Accuracy on domain-A
   test images after task 10, restricted to the 10 domain-A logits.
-- **Final 20-way accuracy (secondary).**
+- **Final 20-way accuracy, acc20 (descriptive only, PI decision
+  2026-10-24).** Reported like DOA, no state. With the collapse onto
+  the last task, acc20 is at most 0.1 × the last pair's 2-way accuracy
+  (0.05 in every cell of the first smoke), so it cannot carry a
+  contrast.
 - Effect sizes: g_av and g_z as defined in §2 (paired). The ladder's
   independent-cell Hedges' g is not used for confirmatory contrasts.
 
@@ -767,8 +810,6 @@ reported as separate endpoints (§6).
    runs on macM1 now (done, see §9); the hardware for the
    confirmatory campaign is chosen after the N10-C campaign. The
    protocol does not change; R1 run_ids are per machine.
-4. **Amendment after the smoke (new, 2026-10-24).** The smoke hit the
-   §4 manipulation-check abort (2 of 3 seeds) and `acc20` is at
-   chance; the PI decides the amendment (for example more task
-   epochs per G4-sexto §9.1) before the smoke is rerun and N is
-   selected.
+4. ~~Amendment after the smoke~~ — decided by the PI on 2026-10-24:
+   epochs 3 → 10 (§5), acc20 and DOA descriptive only (§2, §6), and
+   `P_max` runs recombine_full (§5). The smoke is rerun (§9).
