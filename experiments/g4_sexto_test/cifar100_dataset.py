@@ -40,7 +40,7 @@ import io
 import tarfile
 import urllib.request
 from pathlib import Path
-from typing import Final, TypedDict
+from typing import Any, Final, TypedDict
 
 import numpy as np
 
@@ -90,13 +90,13 @@ class SplitCIFAR100Task(TypedDict):
     y_test: np.ndarray
 
 
-def decode_cifar100_bin(path: Path) -> tuple[np.ndarray, np.ndarray]:
-    """Decode one CIFAR-100 binary file into (NHWC uint8, fine uint8).
+def decode_cifar100_bin_with_coarse(
+    path: Path,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Decode one CIFAR-100 binary file into (NHWC uint8, fine, coarse).
 
-    Each record is ``CIFAR100_RECORD_SIZE`` bytes : the first byte
-    is the coarse label (dropped), the second the fine label
-    (returned), and the remaining 3072 bytes are the image stored
-    CHW (RGB) — reshaped to NHWC for CNN consumption.
+    Same record layout as :func:`decode_cifar100_bin` ; byte 0 (the
+    coarse label, 0..19) is kept and returned as the third array.
 
     Raises :
         ValueError : payload length is not a multiple of
@@ -114,15 +114,33 @@ def decode_cifar100_bin(path: Path) -> tuple[np.ndarray, np.ndarray]:
         return (
             np.zeros((0, 32, 32, 3), np.uint8),
             np.zeros((0,), np.uint8),
+            np.zeros((0,), np.uint8),
         )
     arr = np.frombuffer(raw, dtype=np.uint8).reshape(
         n, CIFAR100_RECORD_SIZE
     )
-    # byte 0 is coarse label (dropped) ; byte 1 is fine label.
+    coarse = arr[:, 0].copy()
     fine = arr[:, 1].copy()
     nhwc = np.transpose(
         arr[:, 2:].reshape(n, 3, 32, 32), (0, 2, 3, 1)
     ).copy()
+    return nhwc, fine, coarse
+
+
+def decode_cifar100_bin(path: Path) -> tuple[np.ndarray, np.ndarray]:
+    """Decode one CIFAR-100 binary file into (NHWC uint8, fine uint8).
+
+    Each record is ``CIFAR100_RECORD_SIZE`` bytes : the first byte
+    is the coarse label (dropped here ; see
+    :func:`decode_cifar100_bin_with_coarse` to keep it), the second
+    the fine label (returned), and the remaining 3072 bytes are the
+    image stored CHW (RGB) — reshaped to NHWC for CNN consumption.
+
+    Raises :
+        ValueError : payload length is not a multiple of
+                     ``CIFAR100_RECORD_SIZE`` (truncated file).
+    """
+    nhwc, fine, _coarse = decode_cifar100_bin_with_coarse(path)
     return nhwc, fine
 
 
@@ -210,19 +228,11 @@ def download_if_missing_hf(data_dir: Path) -> tuple[Path, Path]:
     return train_path, test_path
 
 
-def _decode_parquet_shard(path: Path) -> tuple[np.ndarray, np.ndarray]:
-    """Decode a HF cifar100 parquet shard into (NHWC uint8, fine uint8).
-
-    The HF schema is ``{"img": {"bytes": ...}, "fine_label": int,
-    "coarse_label": int}`` ; we read ``fine_label`` only. Some
-    mirrors expose ``"image"`` and ``"label"`` instead — both are
-    tried.
-    """
-    import pyarrow.parquet as pq
+def _parquet_frame_to_arrays(
+    df: Any, path: Path, *, with_coarse: bool
+) -> tuple[np.ndarray, np.ndarray, np.ndarray | None]:
     from PIL import Image  # local import keeps base loader pure-numpy
 
-    table = pq.read_table(path)
-    df = table.to_pandas()
     n = len(df)
     images = np.empty((n, 32, 32, 3), dtype=np.uint8)
     labels = np.empty((n,), dtype=np.uint8)
@@ -236,6 +246,14 @@ def _decode_parquet_shard(path: Path) -> tuple[np.ndarray, np.ndarray]:
             f"HF cifar100 parquet at {path} has no fine_label / label "
             "column"
         )
+    coarse: np.ndarray | None = None
+    if with_coarse:
+        if "coarse_label" not in df.columns:
+            raise ValueError(
+                f"HF cifar100 parquet at {path} has no coarse_label "
+                "column"
+            )
+        coarse = np.empty((n,), dtype=np.uint8)
     for i in range(n):
         cell = df[img_col].iloc[i]
         png_bytes = cell["bytes"] if isinstance(cell, dict) else cell
@@ -243,7 +261,44 @@ def _decode_parquet_shard(path: Path) -> tuple[np.ndarray, np.ndarray]:
             arr = np.asarray(pil_img.convert("RGB"))
         images[i] = arr
         labels[i] = int(df[label_col].iloc[i])
+        if coarse is not None:
+            coarse[i] = int(df["coarse_label"].iloc[i])
+    return images, labels, coarse
+
+
+def _decode_parquet_shard(path: Path) -> tuple[np.ndarray, np.ndarray]:
+    """Decode a HF cifar100 parquet shard into (NHWC uint8, fine uint8).
+
+    The HF schema is ``{"img": {"bytes": ...}, "fine_label": int,
+    "coarse_label": int}`` ; we read ``fine_label`` only. Some
+    mirrors expose ``"image"`` and ``"label"`` instead — both are
+    tried.
+    """
+    import pyarrow.parquet as pq
+
+    df = pq.read_table(path).to_pandas()
+    images, labels, _ = _parquet_frame_to_arrays(
+        df, path, with_coarse=False
+    )
     return images, labels
+
+
+def decode_parquet_shard_with_coarse(
+    path: Path,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Decode a HF parquet shard into (NHWC uint8, fine, coarse).
+
+    Requires the ``coarse_label`` column (raises ``ValueError``
+    otherwise). Same pinned files as :func:`_decode_parquet_shard`.
+    """
+    import pyarrow.parquet as pq
+
+    df = pq.read_table(path).to_pandas()
+    images, labels, coarse = _parquet_frame_to_arrays(
+        df, path, with_coarse=True
+    )
+    assert coarse is not None
+    return images, labels, coarse
 
 
 def _build_tasks_from_arrays(
@@ -351,3 +406,29 @@ def load_split_cifar100_10tasks_auto(
         return load_split_cifar100_10tasks(canonical_dir)
     train_path, test_path = download_if_missing_hf(data_dir)
     return load_split_cifar100_10tasks_hf(train_path, test_path)
+
+
+def load_cifar100_coarse_arrays_auto(
+    data_dir: Path,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """Return raw ``(x_train, coarse_train, x_test, coarse_test)``.
+
+    Images are NHWC uint8 ; coarse labels are uint8 in ``0..19``.
+    Same acquisition order and SHA-256 pins as
+    :func:`load_split_cifar100_10tasks_auto` (canonical binary if
+    present, else the pinned HF parquet mirror) ; no new download
+    source. Used by the G4-nono two-domain stream.
+    """
+    canonical_dir = data_dir / "cifar-100-binary"
+    if canonical_dir.exists() and (canonical_dir / "test.bin").exists():
+        x_tr, _f, c_tr = decode_cifar100_bin_with_coarse(
+            canonical_dir / "train.bin"
+        )
+        x_te, _f2, c_te = decode_cifar100_bin_with_coarse(
+            canonical_dir / "test.bin"
+        )
+        return x_tr, c_tr, x_te, c_te
+    train_path, test_path = download_if_missing_hf(data_dir)
+    x_tr, _f, c_tr = decode_parquet_shard_with_coarse(train_path)
+    x_te, _f2, c_te = decode_parquet_shard_with_coarse(test_path)
+    return x_tr, c_tr, x_te, c_te
