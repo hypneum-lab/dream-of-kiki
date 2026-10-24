@@ -660,8 +660,43 @@ carry a universality claim in either direction.
   synthetic data; item 5 needs the pinned CIFAR-100 binary and parquet
   files on the filing host; (c) done:
   `tests/unit/test_g4_nono_aggregator.py` reaches every §2 state and
-  every §7 row end to end on synthetic paired records; (d) open: the
-  smoke has not run.
+  every §7 row end to end on synthetic paired records; (d) the smoke
+  ran on 2026-10-24 (below) and **hit the registered abort
+  condition**, so no N has been selected; open until the PI decides
+  the amendment.
+  **Smoke result, 2026-10-24 (PI decision: pilot on macM1 now,
+  campaign later).** Code at `28e18c5` (`DREAMOFKIKI_COMMIT_SHA`),
+  macM1 (M1, 32 GB), CIFAR-100 from the pinned parquet mirror, one
+  process at `nice 19`, run **concurrently with the N10-C
+  campaign** (Metal near full load, swap 6.6-7.5 of 8 GB), so wall
+  times may be inflated. 24 of 24 cells completed (`status: ok`, no
+  cell-level exclusion, no non-finite metric); N10-C stayed alive
+  throughout and the memory guard never triggered.
+  - Wall time: driver-reported 7.7-16.3 s per cell (median 13.8 s;
+    289 s for 24 cells); 20-31 s per cell including process start
+    and data loading; 613 s for the whole smoke.
+  - Manipulation check (2-way task-1 accuracy, threshold 0.60): seed
+    900 0.609 (pass), 901 0.500 (fail), 902 0.526 (fail). **2 of 3
+    smoke seeds fail, which is the §4 abort condition**; the
+    aggregator refuses the N selection (`n: null`).
+  - Descriptive only (not used, because the selection is refused):
+    SD̂_D of `WDPA(within) − WDPA(none)` = 0.0016 over the three
+    seeds (below 0.015, so the rule would have given 95); r̂ = 0.93
+    (CDPA cross/none), 0.99 (CDPA cross/within), 0.98 (WDPA
+    within/none).
+  - Final 20-way accuracy (`acc20`) is 0.05, the 20-class chance
+    level, in every `baseline` and `P_max` cell, and CDPA / WDPA sit
+    at 0.50-0.52. Together with the manipulation check, this says the
+    substrate barely learns task 1 at the registered 3 epochs on this
+    stream.
+  - Per the deviation envelope (b) below, this needs an amendment
+    before any confirmatory cell runs (for example more epochs per
+    G4-sexto §9.1); the choice is left to the PI. The smoke records
+    are kept (macM1 `~/scratch/code/g4-pilot-out/`, with the runner
+    log and the refused `n-selection.json`).
+  - Checklist item 5 was not run: no host has both pinned CIFAR-100
+    files (macM1 and Studio hold only the parquet mirror;
+    electron-server holds neither).
 - **Pre-filing smoke:** seeds 900-902, all 8 cells, on the filing
   hardware. It verifies the driver, the checklist tests and per-cell
   wall time, and records SD̂_D for the §3 N-selection rule (and r̂,
@@ -705,5 +740,12 @@ reported as separate endpoints (§6).
    from logit rebalancing (a design suggestion from the literature
    check, not a result in the cited paper). It adds cells and compute
    beyond §3, so it is left to the PI.
-3. **Hardware.** M1 Max or Studio. The protocol does not change; R1
-   run_ids are per machine.
+3. **Hardware.** Partly decided by the PI on 2026-10-24: the smoke
+   runs on macM1 now (done, see §9); the hardware for the
+   confirmatory campaign is chosen after the N10-C campaign. The
+   protocol does not change; R1 run_ids are per machine.
+4. **Amendment after the smoke (new, 2026-10-24).** The smoke hit the
+   §4 manipulation-check abort (2 of 3 seeds) and `acc20` is at
+   chance; the PI decides the amendment (for example more task
+   epochs per G4-sexto §9.1) before the smoke is rerun and N is
+   selected.
