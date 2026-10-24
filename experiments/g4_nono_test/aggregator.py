@@ -190,14 +190,27 @@ def _contrast(
     alpha: float,
 ) -> dict[str, Any]:
     kept, lost = [], []
+    reasons: dict[str, str] = {}
     for s in seeds:
         r1, r2 = cells.get((s, *c1)), cells.get((s, *c2))
-        (kept if _usable(r1, metric) and _usable(r2, metric) else lost).append(s)
+        if _usable(r1, metric) and _usable(r2, metric):
+            kept.append(s)
+            continue
+        lost.append(s)
+        why = []
+        for c, r in ((c1, r1), (c2, r2)):
+            if r is None:
+                why.append(f"missing_record:{c[0]}/{c[1]}")
+            elif not _usable(r, metric):
+                tag = r.get("exclusion_reason") or "unusable"
+                why.append(f"{tag}:{c[0]}/{c[1]}")
+        reasons[str(s)] = ";".join(why)
     out: dict[str, Any] = {
         "metric": metric,
         "cells": [f"{c1[0]}/{c1[1]}", f"{c2[0]}/{c2[1]}"],
         "seeds_lost_cell_level": lost,
         "n_lost_cell_level": len(lost),
+        "loss_reasons": reasons,
     }
     if len(kept) < 2:
         out.update(n=len(kept), state="INCONCLUSIVE", note="fewer than 2 complete pairs")
@@ -217,7 +230,12 @@ def aggregate(
     if n_planned not in GUARD:
         raise ValueError(f"n_planned must be one of {sorted(GUARD)} (got {n_planned})")
     cells, aborted = _index(records)
-    seeds = sorted({k[0] for k in cells} | {int(r["seed"]) for r in aborted})
+    seeds = list(range(n_planned))
+    seen = {k[0] for k in cells} | {int(r["seed"]) for r in aborted}
+    outside = sorted(seen - set(seeds))
+    if outside:
+        raise ValueError(f"seed(s) {outside} outside the planned list 0..{n_planned - 1}")
+    incomplete = len(cells) < 8 * n_planned
     abort_reasons: list[str] = []
     if aborted:
         abort_reasons.append(f"{len(aborted)} run_id_collision / aborted cell record(s)")
@@ -261,7 +279,8 @@ def aggregate(
     return {
         "prereg": "docs/osf-prereg-g4-nono-cross-domain-2026-10-23.md",
         "n_planned": n_planned,
-        "n_seeds_seen": len(seeds),
+        "n_seeds_seen": len(seen),
+        "incomplete_run": incomplete,
         "n_seeds_retained": len(retained),
         "seed_exclusions": seed_excl,
         "eps": eps,

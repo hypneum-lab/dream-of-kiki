@@ -363,3 +363,31 @@ def test_cli_select_n(tmp_path: Path) -> None:
     out = tmp_path / "n.json"
     assert main([*files, "--select-n", "--out", str(out)]) == 0
     assert json.loads(out.read_text())["n"] == 108
+
+
+def test_missing_cell_record_counts_as_cell_level_loss() -> None:
+    # a cell that crashed (e.g. a BLOCKING invariant raised in the DE
+    # runtime) writes no record: it is a cell-level loss with a reason
+    recs = [
+        r for r in _scenario("CONFIRMED", "CONFIRMED", "EQUIVALENT")
+        if not (r["seed"] == 5 and r["arm"] == "P_max" and r["strategy"] == "none")
+    ]
+    out = aggregate(recs, n_planned=N)
+    a = out["hypotheses"]["H12-A"]
+    assert a["n"] == N - 1 and a["n_lost_cell_level"] == 1
+    assert a["loss_reasons"] == {"5": "missing_record:P_max/none"}
+    assert out["incomplete_run"] is True
+
+
+def test_missing_seed_is_lost_and_run_incomplete() -> None:
+    recs = [r for r in _scenario("CONFIRMED", "CONFIRMED", "EQUIVALENT") if r["seed"] != 29]
+    out = aggregate(recs, n_planned=N)
+    assert out["hypotheses"]["H12-A"]["n"] == N - 1
+    assert out["incomplete_run"] is True
+
+
+def test_rejects_seed_outside_planned_list() -> None:
+    recs = _scenario("CONFIRMED", "CONFIRMED", "EQUIVALENT")
+    recs[0] = dict(recs[0], seed=900)
+    with pytest.raises(ValueError, match="seed"):
+        aggregate(recs, n_planned=N)
