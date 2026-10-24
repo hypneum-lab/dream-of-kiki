@@ -343,8 +343,9 @@ Required properties:
    lower-casing and whitespace collapse of question + gold answer)
    are removed. Near-duplicates (character 5-gram Jaccard ≥ 0.6 on
    the normalised question, or an identical gold answer string with
-   Jaccard ≥ 0.4) are merged into one fact group. Each fact group is
-   then reduced to one item (the one with the lowest item SHA-256),
+   Jaccard ≥ 0.4) are merged into one fact group (connected
+   components, §5.1b). Each fact group is then reduced to one item
+   (the one with the lowest source-item hash `src_hash`, §5.1b),
    so every retained item is its own fact group and the row-level
    `_cell_split` is fact-disjoint within a seed. Any item that is a
    near-duplicate of a row of `mmlu_real.jsonl`,
@@ -451,10 +452,14 @@ Two hashes per item, so randomisation never depends on its own output:
   `ensure_ascii=False`) of `{source, source_id, date, question,
   choices, answer}` **after normalisation and before permutation**
   (`choices` in source order, `answer` the source index; `date`
-  `YYYY-MM-DD` or `null`; `source_id` = `<file>:<line>` for
-  `realtimeqa`, `<csv row index>` for `daily_oracle`,
-  `val.csv:<row index>` for `mmlu_cf`, 0-based data rows). It drives
-  every random or ordered choice below.
+  `YYYY-MM-DD` or `null`; `source_id` is a string: for `realtimeqa`
+  the repository-relative path from the repository root with forward
+  slashes, a colon and the 0-based line index, e.g.
+  `past/2026/20260501_qa.jsonl:3`; for `daily_oracle` the 0-based
+  data-row index of the pinned CSV as a decimal string, e.g. `1527`;
+  for `mmlu_cf` `val.csv:` and the 0-based data-row index, e.g.
+  `val.csv:42`). It drives every random or ordered choice below,
+  including the fact-group representative of §5.1 property 3.
 - **Final hash** `item_sha256` = SHA-256 of the canonical JSON of the
   frozen item `{source, source_id, date, prompt, choices, answer,
   src_hash}` **after** permutation (`prompt` includes the date
@@ -492,28 +497,71 @@ Construction order (each step logs its in / out counts per source):
 
 Dedupe (5) comes after the date filter (4) so that an item removed for
 its date can never knock out a kept duplicate; step 4's second clause
-covers contamination through such duplicates.
+covers contamination through such duplicates. Its reference set is
+**every pre-cutoff row of the same source after step 2, including
+rows that step 3 would exclude** (a malformed earlier copy still
+leaks the fact).
 
-**Headroom drop and rebalancing.** If a source's tuning accuracy
-exceeds 0.80 (rule 5), that source is removed from both partitions.
-Quotas are **not** recomputed and no tuning item ever moves to the
-confirmatory partition (tuning items have been scored). If the dropped
-source is dated, k is recomputed from the remaining dated source and
-the `mmlu_cf` cap is re-applied by removing `mmlu_cf` **confirmatory**
-items from the end of the src_hash order until `mmlu_cf` holds at most
-k items in total; its tuning items are kept, and the resulting shares
-are reported. The check is then repeated once on the remaining pooled
-tuning partition; if it still exceeds 0.80, or if the confirmatory
-(≥ 300) or tuning (≥ 120) minima fail, the corpus is not used and is
-extended or replaced before filing (§5.1).
+**Exact definitions (reference implementation
+`scripts/e1_corpus_core.py`, unit-tested on synthetic items).**
+- *Keys.* `norm_key(t)` = NFKC, lower-case, whitespace collapsed to
+  single spaces, trimmed. `grams(t)` = the set of character 5-grams
+  of `norm_key(t)`; a non-empty key shorter than 5 characters is one
+  gram; an empty key gives the empty set. `J(a, b)` = |a ∩ b| /
+  |a ∪ b|, and 0 when both are empty (never a duplicate).
+- *Near-duplicate relation.* Items x, y are near-duplicates iff
+  `J(grams(q_x), grams(q_y)) ≥ 0.6`, or their normalised gold
+  options are equal and `J ≥ 0.4`.
+- *Grouping.* Union-find over **all pairs** of the step-5 survivors
+  plus the reference rows (pilot fixtures, mega_v2 facts): every
+  near-duplicate pair is joined. A connected component that contains
+  a reference row is removed entirely; every other component keeps
+  its item with the lowest `src_hash`. Step 4's contamination check
+  uses the same relation against the pre-cutoff reference set.
+- *Skeleton* (dependency-free; after the grouping). On the NFKC
+  question, in this order: (i) ISO dates `\b\d{4}-\d{2}-\d{2}\b`
+  and month-name dates (`Jan`/`January` … `Dec`/`December`,
+  optional `.`, a 1-2 digit day with optional `st|nd|rd|th`,
+  optional `, YYYY`) → `<d>`; (ii) numbers `\d(?:[\d,.]*\d)?` →
+  `<n>`; (iii) the first character is lower-cased (sentence-initial
+  word); (iv) runs of capitalised tokens
+  `[A-Z][\w'’-]*(?:\s+[A-Z][\w'’-]*)*` → `<e>`; (v) lower-case and
+  whitespace collapse. Example: "What did Emmanuel Macron announce
+  on May 3, 2026 about 1,200 New Jobs?" → `what did <e> announce on
+  <d> about <n> <e>?`. Items sharing a skeleton beyond 5 keep the 5
+  with the lowest `src_hash`.
+
+**Headroom drop and rebalancing (`headroom_rebalance`).** Every
+tuning item must have been scored. Outcomes are ACCEPT or **REJECT**;
+REJECT means the corpus is not used and is extended or replaced
+before filing (§5.1). Items are only ever removed; quotas are never
+recomputed and no tuning item moves to the confirmatory partition.
+```
+a  acc_s = tuning accuracy of each source; D = {s : acc_s > 0.80}
+b  both dated sources in D                      -> REJECT
+c  remove every source in D from both partitions
+d  if mmlu_cf remains and a dated source is in D:
+     k' = total size of the remaining dated source
+     if |mmlu_cf tuning| > k'                   -> REJECT (cap cannot
+        be met without moving scored items)
+     else drop mmlu_cf CONFIRMATORY items with the highest src_hash
+        until |mmlu_cf| = min(|mmlu_cf|, k')
+e  pooled accuracy of the remaining tuning partition > 0.80
+                                                -> REJECT
+f  confirmatory < 300 or tuning < 120           -> REJECT
+g  ACCEPT; record the partitions and the weights w_s
+```
+If only `mmlu_cf` fails, step d does nothing (k is unchanged).
 
 **Pooled estimand and source weights.** `_cell_split` draws each
 seed's replay and eval items uniformly from the pooled confirmatory
 partition, without stratification. The pooled estimand therefore
 weights each source s by its share of the confirmatory partition,
-`w_s = c_s / Σ c` (with the cap, close to 1/3 each). The `w_s` are
-written to the manifest and the filed version; the realised per-seed
-shares are reported.
+`w_s = c_s / Σ c`. With the cap the three shares are only roughly
+equal (the sources differ in size after deduplication, and a
+headroom drop changes them); the **recorded** `w_s` govern the
+estimand. They are written to the manifest and the filed version;
+the realised per-seed shares are reported.
 
 ### §5.2 Per-seed item counts
 
@@ -845,7 +893,11 @@ into the filed version.
    and the mega_v2 facts), stem-skeleton count, source-stratified
    group-level partition, manifest with `--check`; tests on
    constructed duplicates, skeleton collisions, the date cutoff, the
-   whitespace leak and the option permutation.
+   whitespace leak and the option permutation. **Partly done:** the
+   deterministic core of §5.1b (hashes, union-find grouping, skeleton,
+   contamination check, cap, quotas, split, headroom rebalancing) is
+   `scripts/e1_corpus_core.py` with 17 unit tests on synthetic items;
+   loading the pinned sources, tokenisation and model scoring remain.
 
 **Audit trail.** Milestones:
 `docs/milestones/e1-35b-replay-controls-<date>.{json,md}`, including
