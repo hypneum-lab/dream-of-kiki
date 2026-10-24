@@ -16,7 +16,12 @@ PR #41). Consumes the per-cell JSON records written by
 * section 7: the first matching DualVer row (0-8);
 * section 2 secondary contrasts and the section 6 domain-only probe
   (DOA) contrasts, same state rules at nominal alpha = 0.05;
-* section 3: the smoke N-selection rule (``--select-n``).
+* section 3: the smoke N-selection rule (``--select-n``), after
+  checking that all 24 smoke cells are present and usable and that the
+  registered abort conditions do not hold;
+* section 4: the differential-exclusion guard qualifies the section 7
+  row (``row_confirmatory``) and the worst-case imputation sensitivity
+  analysis (reported only, never changes a state or the row).
 
 Bounds come from :func:`kiki_oniric.eval.statistics.paired_tost`
 (paired SE, df = n - 1, exact identical-difference handling), so the
@@ -138,6 +143,19 @@ def contrast_state_eq(s: Mapping[str, Any], eps: float = EPS) -> str:
     return "INCONCLUSIVE"
 
 
+# Hypotheses whose state the first-match reading of each row depends on.
+ROW_DEPENDS: dict[int, tuple[str, ...]] = {
+    1: ("H12-C",),
+    2: ("H12-A", "H12-B", "H12-C"),
+    3: ("H12-A", "H12-B", "H12-C"),
+    4: ("H12-A", "H12-B", "H12-C"),
+    5: ("H12-A", "H12-B", "H12-C"),
+    6: ("H12-A", "H12-C"),
+    7: ("H12-A", "H12-C"),
+    8: ("H12-A", "H12-C"),
+}
+
+
 def outcome_row(a: str, b: str, c: str, *, abort: bool) -> int:
     """First matching section 7 row (0-8); the table is exhaustive."""
     if abort:
@@ -220,6 +238,46 @@ def _contrast(
     return out
 
 
+def _worst_case(
+    cells: Mapping[tuple[int, str, str], Mapping[str, Any]],
+    seeds: list[int],
+    metric: str,
+    c1: Cell,
+    c2: Cell,
+    alpha: float,
+) -> dict[str, Any]:
+    """Worst-case imputation for the treatment (section 4 sensitivity).
+
+    Cells lost at cell level (missing record or excluded cell) among
+    the retained seeds are imputed against the treatment: the treatment
+    cell ``c1`` with the lowest observed value of that cell, the
+    comparator ``c2`` with the highest. Seed-level exclusions are not
+    imputed. Reported only.
+    """
+    obs1 = [float(cells[(s, *c1)][metric]) for s in seeds if _usable(cells.get((s, *c1)), metric)]
+    obs2 = [float(cells[(s, *c2)][metric]) for s in seeds if _usable(cells.get((s, *c2)), metric)]
+    lo1 = min(obs1) if obs1 else None
+    hi2 = max(obs2) if obs2 else None
+    x, y, n_imp = [], [], 0
+    for s in seeds:
+        r1, r2 = cells.get((s, *c1)), cells.get((s, *c2))
+        u1, u2 = _usable(r1, metric), _usable(r2, metric)
+        if (not u1 and lo1 is None) or (not u2 and hi2 is None):
+            continue
+        x.append(float(r1[metric]) if u1 else lo1)  # type: ignore[index, arg-type]
+        y.append(float(r2[metric]) if u2 else hi2)  # type: ignore[index, arg-type]
+        n_imp += int(not (u1 and u2))
+    out: dict[str, Any] = {
+        "n_imputed": n_imp,
+        "imputed_values": {f"{c1[0]}/{c1[1]}": lo1, f"{c2[0]}/{c2[1]}": hi2},
+    }
+    if len(x) < 2:
+        out.update(n=len(x), state="INCONCLUSIVE", note="fewer than 2 pairs")
+        return out
+    out.update(paired_summary(x, y, alpha=alpha))
+    return out
+
+
 def aggregate(
     records: Iterable[Mapping[str, Any]],
     n_planned: int,
@@ -262,7 +320,15 @@ def aggregate(
         if "L" in h:
             h["state"] = (contrast_state_eq if label == "H12-C" else contrast_state_ac)(h, eps)
         h["exploratory_guard"] = h["n_lost_cell_level"] > GUARD[n_planned]
+        h["confirmatory"] = not abort and not h["exploratory_guard"]
         hyps[label] = h
+
+    wc_hyps: dict[str, dict[str, Any]] = {}
+    for label, metric, c1, c2 in FAMILY:
+        w = _worst_case(cells, retained, metric, c1, c2, ALPHA_FAMILY)
+        if "L" in w:
+            w["state"] = (contrast_state_eq if label == "H12-C" else contrast_state_ac)(w, eps)
+        wc_hyps[label] = w
 
     sec = {}
     for metric, c1, c2 in SECONDARY:
@@ -274,6 +340,11 @@ def aggregate(
 
     row = outcome_row(
         hyps["H12-A"]["state"], hyps["H12-B"]["state"], hyps["H12-C"]["state"], abort=abort
+    )
+    guarded_by = [h for h in ROW_DEPENDS.get(row, ()) if hyps[h]["exploratory_guard"]]
+    wc_row = outcome_row(
+        wc_hyps["H12-A"]["state"], wc_hyps["H12-B"]["state"], wc_hyps["H12-C"]["state"],
+        abort=abort,
     )
     return {
         "prereg": "docs/osf-prereg-g4-nono-cross-domain-2026-10-23.md",
@@ -288,6 +359,15 @@ def aggregate(
         "abort_reasons": abort_reasons,
         "hypotheses": hyps,
         "row": row,
+        "row_confirmatory": row != 0 and not guarded_by,
+        "row_guarded_by": guarded_by,
+        "worst_case_sensitivity": {
+            "reported_only": True,
+            "rule": "lost cells imputed against the treatment: treatment cell at its"
+                    " lowest observed value, comparator at its highest",
+            "hypotheses": wc_hyps,
+            "row": wc_row,
+        },
         "secondary": {"alpha": ALPHA_SECONDARY, "exploratory": True, "contrasts": sec},
     }
 
@@ -299,44 +379,86 @@ def _pearson(x: list[float], y: list[float]) -> float | None:
     return float(np.corrcoef(xa, ya)[0, 1])
 
 
+def n_from_sd(sd_hat: float) -> tuple[int, int]:
+    """Section 3 rule: (N, line); the 0.015 threshold is inclusive."""
+    return (108, 1) if sd_hat >= SD_THRESHOLD else (95, 2)
+
+
 def select_n(records: Iterable[Mapping[str, Any]]) -> dict[str, Any]:
     """Section 3 N-selection rule from the smoke seeds 900-902.
+
+    All 24 smoke cells (8 per seed) must be present, ``ok`` and finite
+    on every metric the rule or r^ uses; otherwise ``ValueError`` (no N
+    is selected from a partial smoke). The registered abort conditions
+    are checked first: a run_id collision record, or more than 50 % of
+    the smoke seeds failing the manipulation check, refuses the
+    selection (``n`` is None, ``abort`` true). A single failing seed is
+    dropped and SD^_D uses the remaining two seeds.
 
     Line 1: SD^_D (ddof 1) of WDPA(within) - WDPA(none) >= 0.015 -> 108;
     line 2: otherwise 95 (PI decision 2026-10-24: the former N = 30
     line is removed, so 95 is the floor). r^ for each H12 contrast
     (``P_max`` arm) is still computed and reported, but no longer
-    selects N. Every smoke cell must be present and usable.
+    selects N.
     """
     cells, aborted = _index(records)
+    seen = {k[0] for k in cells} | {int(r["seed"]) for r in aborted}
+    outside = sorted(seen - set(SMOKE_SEEDS))
+    if outside:
+        raise ValueError(f"smoke contains non-smoke seed(s) {outside}")
+    grid = [("baseline", "na"), ("P_min", "na")] + [
+        (arm, st) for arm in ("P_equ", "P_max") for st in ("cross", "within", "none")
+    ]
+    missing = [(s, *c) for s in SMOKE_SEEDS for c in grid if (s, *c) not in cells]
+    if missing and not aborted:
+        raise ValueError(f"smoke incomplete: missing cell(s) {missing}")
+    manip_fail = sorted(
+        s for s in SMOKE_SEEDS
+        if any(r.get("manip_pass") is False for k, r in cells.items() if k[0] == s)
+    )
+    abort_reasons: list[str] = []
     if aborted:
-        raise ValueError("smoke contains aborted cell records")
+        abort_reasons.append(f"{len(aborted)} run_id_collision / aborted cell record(s)")
+    if len(manip_fail) > 0.5 * len(SMOKE_SEEDS):
+        abort_reasons.append(
+            f"manipulation check failed on {len(manip_fail)} of {len(SMOKE_SEEDS)} smoke seeds"
+        )
+    base: dict[str, Any] = {
+        "smoke_seeds": list(SMOKE_SEEDS),
+        "n_cells": len(cells),
+        "manip_fail_seeds": manip_fail,
+        "n_manip_fail": len(manip_fail),
+    }
+    if abort_reasons:
+        return {**base, "abort": True, "abort_reasons": abort_reasons, "n": None, "line": None}
+    used = [s for s in SMOKE_SEEDS if s not in manip_fail]
+    for s in used:
+        for c in grid:
+            rec = cells[(s, *c)]
+            for metric in ("cdpa", "wdpa"):
+                if not _usable(rec, metric):
+                    raise ValueError(f"smoke unusable: seed {s} cell {c} metric {metric}")
     vals: dict[tuple[str, Cell], list[float]] = {}
     for _label, metric, c1, c2 in FAMILY:
         for c in (c1, c2):
-            col = []
-            for s in SMOKE_SEEDS:
-                rec = cells.get((s, *c))
-                if not _usable(rec, metric):
-                    raise ValueError(f"smoke incomplete: seed {s} cell {c} metric {metric}")
-                col.append(float(rec[metric]))  # type: ignore[index]
-            vals[(metric, c)] = col
-    r_hat = {}
-    for label, metric, c1, c2 in FAMILY:
-        r_hat[label] = _pearson(vals[(metric, c1)], vals[(metric, c2)])
+            vals[(metric, c)] = [float(cells[(s, *c)][metric]) for s in used]
+    r_hat = {
+        label: _pearson(vals[(metric, c1)], vals[(metric, c2)])
+        for label, metric, c1, c2 in FAMILY
+    }
     d = np.asarray(vals[("wdpa", ("P_max", "within"))]) - np.asarray(
         vals[("wdpa", ("P_max", "none"))]
     )
     sd_hat = float(np.std(d, ddof=1))
-    min_r = min((r if r is not None else -math.inf) for r in r_hat.values())
-    if sd_hat >= SD_THRESHOLD:
-        n, line = 108, 1
-    else:
-        n, line = 95, 2
+    n, line = n_from_sd(sd_hat)
+    finite_r = [r for r in r_hat.values() if r is not None]
     return {
-        "smoke_seeds": list(SMOKE_SEEDS),
+        **base,
+        "abort": False,
+        "abort_reasons": [],
+        "seeds_used": used,
         "r_hat": r_hat,
-        "min_r_hat": None if math.isinf(min_r) else min_r,
+        "min_r_hat": min(finite_r) if len(finite_r) == len(r_hat) else None,
         "sd_hat_d": sd_hat,
         "n": n,
         "line": line,
@@ -351,8 +473,10 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--select-n", action="store_true", help="apply the section 3 smoke rule")
     args = p.parse_args(argv)
     records = [json.loads(f.read_text()) for f in sorted(args.inputs)]
+    rc = 0
     if args.select_n:
         doc = select_n(records)
+        rc = 1 if doc["n"] is None else 0
     else:
         if args.n_planned is None:
             p.error("--n-planned is required unless --select-n")
@@ -360,7 +484,7 @@ def main(argv: list[str] | None = None) -> int:
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(doc, indent=2, sort_keys=True) + "\n")
     print(f"wrote {args.out}")
-    return 0
+    return rc
 
 
 if __name__ == "__main__":

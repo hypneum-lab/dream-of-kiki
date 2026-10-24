@@ -25,6 +25,7 @@ from experiments.g4_nono_test.aggregator import (
     contrast_state_ac,
     contrast_state_eq,
     main,
+    n_from_sd,
     outcome_row,
     paired_summary,
     select_n,
@@ -405,3 +406,156 @@ def test_rejects_seed_outside_planned_list() -> None:
     recs[0] = dict(recs[0], seed=900)
     with pytest.raises(ValueError, match="seed"):
         aggregate(recs, n_planned=N)
+
+
+# --- differential-exclusion guard qualifies the row (review fix 2) ---------
+
+
+def _lose(cell: tuple[str, str], k: int) -> dict[tuple[int, str, str], str]:
+    return {(s, *cell): "non_finite_logits" for s in range(k)}
+
+
+def test_guard_marks_dependent_row_exploratory() -> None:
+    # 10 of 95 seeds lose P_max/cross: H12-A and H12-B are guarded
+    recs = _scenario("CONFIRMED", "CONFIRMED", "EQUIVALENT",
+                     excluded=_lose(("P_max", "cross"), 10))
+    out = aggregate(recs, n_planned=N)
+    assert out["row"] == 2  # raw row is kept
+    assert out["row_confirmatory"] is False
+    assert out["row_guarded_by"] == ["H12-A", "H12-B"]
+    assert out["hypotheses"]["H12-A"]["confirmatory"] is False
+    assert out["hypotheses"]["H12-C"]["confirmatory"] is True
+
+
+def test_unguarded_row_is_confirmatory() -> None:
+    out = aggregate(_scenario("CONFIRMED", "CONFIRMED", "EQUIVALENT"), n_planned=N)
+    assert out["row_confirmatory"] is True and out["row_guarded_by"] == []
+
+
+def test_row1_reads_only_h12c() -> None:
+    recs = _scenario("CONFIRMED", "CONFIRMED", "MEANINGFULLY-DIFFERENT",
+                     excluded=_lose(("P_max", "cross"), 10))
+    out = aggregate(recs, n_planned=N)
+    assert out["row"] == 1 and out["row_confirmatory"] is True
+
+
+def test_guarded_data_never_yields_unqualified_row() -> None:
+    # P_max/none feeds H12-A and H12-C, so every row depends on a guarded
+    # hypothesis: no combination may produce a confirmatory reading
+    for a in AB:
+        for b in AB:
+            for c in C:
+                recs = _scenario(a, b, c, excluded=_lose(("P_max", "none"), 10))
+                out = aggregate(recs, n_planned=N)
+                assert out["row_confirmatory"] is False, (a, b, c, out["row"])
+
+
+def test_abort_row_is_never_confirmatory() -> None:
+    recs = _scenario("CONFIRMED", "CONFIRMED", "EQUIVALENT", manip_fail=set(range(48)))
+    out = aggregate(recs, n_planned=N)
+    assert out["row"] == 0 and out["row_confirmatory"] is False
+
+
+# --- worst-case imputation sensitivity (PI decision 2026-10-24) -----------
+
+
+def test_worst_case_not_needed_without_cell_losses() -> None:
+    out = aggregate(_scenario("CONFIRMED", "CONFIRMED", "EQUIVALENT"), n_planned=N)
+    wc = out["worst_case_sensitivity"]
+    assert wc["reported_only"] is True
+    for h in ("H12-A", "H12-B", "H12-C"):
+        assert wc["hypotheses"][h]["n_imputed"] == 0
+        assert wc["hypotheses"][h]["state"] == out["hypotheses"][h]["state"]
+    assert wc["row"] == out["row"]
+
+
+def test_worst_case_imputes_against_the_treatment() -> None:
+    excl = _lose(("P_max", "cross"), 10)
+    recs = _scenario("CONFIRMED", "CONFIRMED", "EQUIVALENT", excluded=excl)
+    out = aggregate(recs, n_planned=N)
+    wc = out["worst_case_sensitivity"]["hypotheses"]["H12-A"]
+    assert wc["n_imputed"] == 10 and wc["n"] == N
+    cross = [r["cdpa"] for r in recs if (r["arm"], r["strategy"]) == ("P_max", "cross")
+             and r["cdpa"] is not None]
+    none = [r["cdpa"] for r in recs if (r["arm"], r["strategy"]) == ("P_max", "none")]
+    assert wc["imputed_values"]["P_max/cross"] == pytest.approx(min(cross))
+    assert wc["imputed_values"]["P_max/none"] == pytest.approx(max(none))
+    assert wc["mean"] < out["hypotheses"]["H12-A"]["mean"]
+    # the decided state is never changed by the sensitivity analysis
+    plain = aggregate(recs, n_planned=N)["hypotheses"]["H12-A"]["state"]
+    assert out["hypotheses"]["H12-A"]["state"] == plain
+
+
+def test_worst_case_imputes_missing_records_but_not_seed_exclusions() -> None:
+    recs = [
+        r for r in _scenario("CONFIRMED", "CONFIRMED", "EQUIVALENT", manip_fail={0})
+        if not (r["seed"] == 5 and r["arm"] == "P_max" and r["strategy"] == "none")
+    ]
+    out = aggregate(recs, n_planned=N)
+    wc = out["worst_case_sensitivity"]["hypotheses"]["H12-A"]
+    assert wc["n_imputed"] == 1 and wc["n"] == N - 1  # seed 0 stays excluded
+
+
+def test_worst_case_can_change_the_sensitivity_state_only() -> None:
+    # heavy one-sided losses flip the worst case away from CONFIRMED
+    excl = _lose(("P_max", "cross"), 40)
+    out = aggregate(_scenario("CONFIRMED", "CONFIRMED", "EQUIVALENT", excluded=excl), n_planned=N)
+    assert out["hypotheses"]["H12-A"]["state"] == "CONFIRMED"
+    assert out["worst_case_sensitivity"]["hypotheses"]["H12-A"]["state"] != "CONFIRMED"
+
+
+# --- smoke validation for the N rule (review fix 3) -----------------------
+
+
+def test_select_n_requires_every_smoke_cell() -> None:
+    recs = [r for r in _smoke(0.005, rho_low=False)
+            if not (r["seed"] == 901 and r["arm"] == "baseline")]
+    with pytest.raises(ValueError, match="smoke"):
+        select_n(recs)
+
+
+def test_select_n_refused_on_majority_manipulation_failure() -> None:
+    recs = _smoke(0.02, rho_low=False)
+    for r in recs:
+        if r["seed"] in (900, 901):
+            r["manip_pass"] = False
+    out = select_n(recs)
+    assert out["n"] is None and out["abort"] is True
+    assert out["n_manip_fail"] == 2
+
+
+def test_select_n_single_manipulation_failure_uses_two_seeds() -> None:
+    recs = _smoke(0.02, rho_low=False)
+    for r in recs:
+        if r["seed"] == 902:
+            r["manip_pass"] = False
+    out = select_n(recs)
+    assert out["abort"] is False and out["n_manip_fail"] == 1
+    assert out["seeds_used"] == [900, 901]
+    assert out["n"] in (95, 108)
+
+
+def test_select_n_refused_on_run_id_collision() -> None:
+    recs = _smoke(0.005, rho_low=False)
+    recs.append({"status": "aborted", "abort_reason": "run_id_collision", "seed": 900,
+                 "arm": "P_max", "strategy": "cross"})
+    out = select_n(recs)
+    assert out["n"] is None and out["abort"] is True
+
+
+def test_n_rule_boundary_is_inclusive() -> None:
+    assert n_from_sd(0.015) == (108, 1)
+    assert n_from_sd(float(np.nextafter(0.015, 0.0))) == (95, 2)
+
+
+def test_cli_select_n_refusal_exit_code(tmp_path: Path) -> None:
+    files = []
+    for i, rec in enumerate(_smoke(0.02, rho_low=False)):
+        if rec["seed"] in (900, 901):
+            rec["manip_pass"] = False
+        p = tmp_path / f"smoke{i:02d}.json"
+        p.write_text(json.dumps(rec))
+        files.append(str(p))
+    out = tmp_path / "n.json"
+    assert main([*files, "--select-n", "--out", str(out)]) == 1
+    assert json.loads(out.read_text())["n"] is None

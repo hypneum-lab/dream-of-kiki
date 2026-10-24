@@ -307,7 +307,19 @@ line:
 
 The rule is applied once, before any confirmatory cell runs; its
 inputs and outcome are written into the filed version, and N is
-fixed from then on. With three seeds SD̂_D is very imprecise: the
+fixed from then on. **Smoke validity.** N is selected only from a
+complete smoke: all 24 cells (8 per seed) present, with status `ok`
+and finite CDPA / WDPA. The registered abort conditions of §4 apply
+to the smoke: a run_id collision, or a manipulation-check failure on
+2 or 3 of the 3 smoke seeds, refuses the selection (the cause is
+investigated and the amendment path of §4 applies). A single seed
+failing the manipulation check is dropped and SD̂_D is computed from
+the other two (ddof = 1); this is reported. Any other missing or
+unusable cell (no record, non-finite metric, excluded cell) also
+refuses the selection: the cause is fixed and the full smoke is
+rerun in a fresh output directory and registry, and both smoke runs
+are reported; a driver change made for this is part of the lock
+commit. With three seeds SD̂_D is very imprecise: the
 rule is a pre-stated deterministic trigger, not an estimate of the
 population SD_D. No ladder milestone stores per-seed paired CDPA or
 WDPA differences (the metrics are new), so there is no prior
@@ -390,7 +402,26 @@ error rates of §2.
   **cell-level**
   exclusions, that hypothesis's state is still reported but is
   labelled exploratory: cell-level exclusions can depend on the
-  treatment.
+  treatment. The §7 row is still computed from the raw states, but
+  its reading is **exploratory** whenever a hypothesis that the
+  row's first-match condition reads is guarded (row 1 reads H12-C;
+  rows 2-5 read H12-A, H12-B and H12-C; rows 6-8 read H12-A and
+  H12-C). An exploratory row is reported with its number and never
+  supports a re-scoping (row 2), an addendum (rows 3-5) or an
+  extension (row 6). The aggregator writes `row_confirmatory` and
+  `row_guarded_by`.
+- **Worst-case imputation sensitivity (PI decision, 2026-10-24;
+  reported only).** For each H12 contrast, every cell lost at cell
+  level among the retained seeds (excluded cell or missing record;
+  seed-level manipulation exclusions are not imputed) is imputed
+  against the treatment: the treatment cell (`P_max/cross` for
+  H12-A/B, `P_max/within` for H12-C) takes the lowest value observed
+  for that cell over the retained seeds, and the comparator cell the
+  highest. The §2 states and the §7 row are recomputed on the imputed
+  data and reported next to the primary ones. This analysis never
+  changes a decided state, the row or its confirmatory status; a
+  disagreement with the primary reading is reported in the
+  milestone and in Paper 2.
 - **Abort.** If more than 50 % of seeds fail the manipulation check,
   or a run_id collides with a prior registry entry, the run is
   aborted and amended (raise epochs per G4-sexto §9.1). On abort,
