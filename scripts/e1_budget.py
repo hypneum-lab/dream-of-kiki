@@ -51,3 +51,24 @@ def update_token_budget(t_s: int, arm_scoring_tokens: int) -> int:
     if t_s < 0:
         raise ValueError(f"t_s must be >= 0, got {t_s}")
     return max(t_s - charged_scoring_tokens(arm_scoring_tokens), 0)
+
+
+def budget_status(t_s: int, arm_scoring_tokens: int) -> dict[str, object]:
+    """Feasibility of the matched budget for one cell (review round 3).
+
+    The match holds only if ``ceil(S / 3) <= T_s``: the profile-specific
+    scoring alone must fit in the budget. Otherwise the cell is run with
+    0 update tokens but classified ``scoring-overbudget``: it is excluded
+    from every matched-compute claim and reported. (A common-budget
+    adjustment was rejected: it would change every arm's T_s through
+    OPR's scoring and couple the arms.)
+    """
+    charge = charged_scoring_tokens(arm_scoring_tokens)
+    matched = charge <= t_s
+    return {
+        "t_s": t_s,
+        "charge": charge,
+        "update_tokens": update_token_budget(t_s, arm_scoring_tokens),
+        "status": "matched" if matched else "scoring-overbudget",
+        "matched": matched,
+    }

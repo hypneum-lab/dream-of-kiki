@@ -616,3 +616,41 @@ def test_missing_unmixed_cells_do_not_mark_run_incomplete() -> None:
     out = aggregate(_scenario("CONFIRMED", "CONFIRMED", "EQUIVALENT"), n_planned=N)
     assert out["incomplete_run"] is False
     assert out["exploratory_arms"]["n_cells_missing"] == N
+
+
+# --- review round 3: exploratory records never drive abort / exclusion -----
+
+
+def test_exploratory_run_id_collision_does_not_abort() -> None:
+    base = _with_unmixed(_scenario("CONFIRMED", "CONFIRMED", "EQUIVALENT"), 0.1)
+    assert aggregate(base, n_planned=N)["row"] == 2
+    recs = [r for r in base if not (r["seed"] == 3 and r["strategy"] == "unmixed")]
+    recs.append({"status": "aborted", "abort_reason": "run_id_collision", "seed": 3,
+                 "arm": "P_max", "strategy": "unmixed"})
+    out = aggregate(recs, n_planned=N)
+    assert out["abort"] is False and out["row"] == 2
+    assert out["row_confirmatory"] is True
+    assert out["exploratory_arms"]["n_aborted_records"] == 1
+
+
+def test_exploratory_manipulation_flags_do_not_abort_or_exclude() -> None:
+    base = _with_unmixed(_scenario("CONFIRMED", "CONFIRMED", "EQUIVALENT"), 0.1)
+    plain = aggregate(base, n_planned=N)
+    for r in base:
+        if r["strategy"] == "unmixed" and r["seed"] < 48:
+            r["manip_pass"] = False
+    out = aggregate(base, n_planned=N)
+    assert out["abort"] is False and out["seed_exclusions"] == []
+    assert out["row"] == plain["row"]
+    assert out["exploratory_arms"]["manip_fail_seeds"] == list(range(48))
+
+
+def test_select_n_ignores_exploratory_records() -> None:
+    recs = _smoke(0.005, rho_low=False)
+    plain = select_n(recs)
+    extra = [dict(r, strategy="unmixed", manip_pass=False) for r in recs
+             if (r["arm"], r["strategy"]) == ("P_max", "cross")]
+    extra.append({"status": "aborted", "abort_reason": "run_id_collision", "seed": 900,
+                  "arm": "P_max", "strategy": "unmixed"})
+    out = select_n(recs + extra[1:])
+    assert out["abort"] is False and out["n"] == plain["n"] and out["n_manip_fail"] == 0

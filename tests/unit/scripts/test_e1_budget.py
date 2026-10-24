@@ -5,6 +5,7 @@ from __future__ import annotations
 import pytest
 
 from scripts.e1_budget import (
+    budget_status,
     FORWARD_TOKEN_COST,
     charged_scoring_tokens,
     scoring_pass_tokens,
@@ -46,3 +47,24 @@ def test_budget_floors_at_zero() -> None:
 def test_negative_inputs_raise(t: int, s: int) -> None:
     with pytest.raises(ValueError):
         update_token_budget(t, s)
+
+
+# --- review round 3: infeasible cells are classified, not silently floored -
+
+
+def test_overbudget_cell_is_classified() -> None:
+    # T = 100, S = 10000: scoring alone costs 3334 token-equivalents
+    st = budget_status(100, 10_000)
+    assert st == {"t_s": 100, "charge": 3334, "update_tokens": 0,
+                  "status": "scoring-overbudget", "matched": False}
+
+
+def test_feasible_cell_is_matched() -> None:
+    st = budget_status(12_000, 3000)
+    assert st["status"] == "matched" and st["matched"] is True
+    assert st["update_tokens"] == 11_000
+
+
+def test_exact_boundary_is_feasible() -> None:
+    st = budget_status(1000, 3000)  # charge 1000 == T
+    assert st["matched"] is True and st["update_tokens"] == 0

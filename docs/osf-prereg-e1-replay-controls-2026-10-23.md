@@ -445,7 +445,17 @@ per pass), so OPR's update budget is
 profile keeps `U = T_s`. The schedule then ends at U instead of T_s
 (same terminal-update rule). `scripts/e1_budget.py`
 (`scoring_pass_tokens`, `update_token_budget`) implements this, with
-tests; S_OPR, the charge and U are written to each cell. "Matched
+tests; S_OPR, the charge and U are written to each cell. **Feasibility
+(review round 3).** The match holds only if `ceil(S_OPR / 3) ≤ T_s`.
+A cell where OPR's scoring alone exceeds T_s is still run (with 0
+update tokens) but is classified `scoring-overbudget`
+(`budget_status`): it is excluded from every matched-compute claim and
+reported with its counts. A common-budget adjustment (raising every
+arm's budget by OPR's scoring) was rejected because it would make
+every arm's T_s depend on OPR and couple the arms. Expected margin:
+160 passes of roughly 60-70 tokens give about 3 500 token-equivalents
+against a T_s of about 12 000 for 40 fact records at m = 5, so the
+case should not arise; the rule fixes what happens if it does. "Matched
 compute" therefore means matched total compute (updates plus
 profile-specific scoring), not only matched update tokens.
 

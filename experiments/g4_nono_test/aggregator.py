@@ -294,6 +294,17 @@ def _worst_case(
     return out
 
 
+def _split_exploratory(
+    records: Iterable[Mapping[str, Any]],
+) -> tuple[list[Mapping[str, Any]], list[Mapping[str, Any]]]:
+    """(confirmatory, exploratory) records; only the former drive the
+    abort conditions, seed exclusions and completeness (review round 3)."""
+    conf, expl = [], []
+    for r in records:
+        (expl if (str(r.get("arm")), str(r.get("strategy"))) in EXPLORATORY_CELLS else conf).append(r)
+    return conf, expl
+
+
 def aggregate(
     records: Iterable[Mapping[str, Any]],
     n_planned: int,
@@ -302,14 +313,17 @@ def aggregate(
     """Apply sections 2, 4 and 7 to the cell records of one run."""
     if n_planned not in GUARD:
         raise ValueError(f"n_planned must be one of {sorted(GUARD)} (got {n_planned})")
-    cells, aborted = _index(records)
+    conf_records, expl_records = _split_exploratory(records)
+    cells, aborted = _index(conf_records)
+    expl_cells, expl_aborted = _index(expl_records)
     seeds = list(range(n_planned))
     seen = {k[0] for k in cells} | {int(r["seed"]) for r in aborted}
-    outside = sorted(seen - set(seeds))
+    seen_all = seen | {k[0] for k in expl_cells} | {int(r["seed"]) for r in expl_aborted}
+    outside = sorted(seen_all - set(seeds))
     if outside:
         raise ValueError(f"seed(s) {outside} outside the planned list 0..{n_planned - 1}")
-    n_exploratory = sum(1 for k in cells if (k[1], k[2]) in EXPLORATORY_CELLS)
-    incomplete = len(cells) - n_exploratory < 8 * n_planned
+    n_exploratory = len(expl_cells)
+    incomplete = len(cells) < 8 * n_planned
     abort_reasons: list[str] = []
     if aborted:
         abort_reasons.append(f"{len(aborted)} run_id_collision / aborted cell record(s)")
@@ -356,9 +370,10 @@ def aggregate(
         sec[key] = h
 
     explo = {}
+    all_cells = {**cells, **expl_cells}
     for metric, c1, c2 in EXPLORATORY:
         key = f"{metric}:{c1[0]}/{c1[1]}-{c2[0]}/{c2[1]}"
-        h = _contrast(cells, retained, metric, c1, c2, ALPHA_SECONDARY)
+        h = _contrast(all_cells, retained, metric, c1, c2, ALPHA_SECONDARY)
         if "L" in h:
             h["state"] = contrast_state_ac(h, eps)
         explo[key] = h
@@ -407,6 +422,10 @@ def aggregate(
             "reported_only": True,
             "alpha": ALPHA_SECONDARY,
             "n_cells_missing": n_planned * len(EXPLORATORY_CELLS) - n_exploratory,
+            "n_aborted_records": len(expl_aborted),
+            "manip_fail_seeds": sorted(
+                {k[0] for k, r in expl_cells.items() if r.get("manip_pass") is False}
+            ),
             "contrasts": explo,
         },
     }
@@ -441,7 +460,8 @@ def select_n(records: Iterable[Mapping[str, Any]]) -> dict[str, Any]:
     (``P_max`` arm) is still computed and reported, but no longer
     selects N.
     """
-    cells, aborted = _index(records)
+    conf_records, _expl = _split_exploratory(records)
+    cells, aborted = _index(conf_records)
     seen = {k[0] for k in cells} | {int(r["seed"]) for r in aborted}
     outside = sorted(seen - set(SMOKE_SEEDS))
     if outside:

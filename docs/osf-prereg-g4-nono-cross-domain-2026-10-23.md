@@ -602,7 +602,11 @@ error rates of §2.
     (k = 1..5), because RECOMBINE is the only op that differs.
     `baseline`, `P_min`, every `P_equ` cell and `P_max/none` are
     bit-identical to the code before the change (regression test on
-    macM1). The α input and channel 2 of the framework's `P_max` are
+    macM1; the golden hashes cover a 1-epoch synthetic fixture, not
+    the default 10-epoch CIFAR outputs). The buffer-SD Gaussian
+    sample is this study's documented CNN operationalisation of
+    recombine_full; framework C §3.1 names the op but does not
+    prescribe this form. The α input and channel 2 of the framework's `P_max` are
     not modelled on the CNN path.
   - Update for `cross` / `within`: one SGD step (lr 0.01) on the
     head `fc2` only, mean soft-target cross-entropy
@@ -624,7 +628,10 @@ error rates of §2.
   §2 state rules at nominal α = 0.05 in an `exploratory_arms` block.
   They are never confirmatory, are outside the family, the guard,
   the §7 row and the completeness check of the 8 registered cells,
-  and never change a decided state.
+  and never change a decided state. Exploratory records never enter
+  the abort conditions, the seed-level exclusions or the smoke N
+  selection; their own aborted records and manipulation flags are
+  reported in the exploratory block.
 - **Driver / aggregator.** `experiments/g4_nono_test/run_cross_domain.py`
   (one cell per call, PR #44) and `experiments/g4_nono_test/aggregator.py`
   (PR #41). The aggregator implements §2, §4 and §7 exactly; its
