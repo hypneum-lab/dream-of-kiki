@@ -3,7 +3,8 @@
 **Status:** DRAFT — not yet filed on OSF (to be filed by the PI).
 **Date:** 2026-10-23 (revision 3: PI decisions of 2026-10-23 on δ
 and n applied; revision 4, 2026-10-24: pre-filing code status, no
-protocol change)
+protocol change; revision 5, 2026-10-24: export helper added per the
+PI decision of 2026-10-24, no protocol change)
 **Parent OSF:** 10.17605/OSF.IO/Q6JYN
 **c_version at drafting:** C-v0.25.0+PARTIAL
 **Claim under test:** the DR-3 anchoring sentence in Paper 1 §8.4
@@ -251,6 +252,38 @@ FAILS state matters for rows 3-4.
   The same 1024 inputs feed the trained and null pairs of seed s.
 - Exported matrices (float32, 1024 × 16) are saved with a `.sha256`
   next to each dump before any statistic is computed.
+- **Export helper (PI decision, 2026-10-24).**
+  `scripts/dr3_export_nerve_wml.py` in this repository is a
+  standalone script run with the Python environment of a nerve-wml
+  checkout at `v1.9.0`; dream-of-kiki gains no dependency (no torch,
+  no nerve-wml). It refuses to run unless the checkout's `HEAD` is
+  `95ac6b78477c3ce999b31bca775769041e082b46` with no modified tracked
+  file, checks that the imported modules come from that checkout, and
+  calls the v1.9.0 `_train_mlp` / `_train_lif` of
+  `scripts/platonic_rh_alignment.py` unchanged (steps 800 for the
+  trained pair, 0 for the null pair). Invocation:
+
+  ```
+  git clone https://github.com/hypneum-lab/nerve-wml.git nwml-v1.9.0
+  cd nwml-v1.9.0 && git checkout --detach v1.9.0
+  git rev-parse HEAD  # 95ac6b78477c3ce999b31bca775769041e082b46
+  uv sync --frozen
+  uv run python <dream-of-kiki>/scripts/dr3_export_nerve_wml.py \
+      --seeds 100-119 --out <dumps>
+  uv run python <dream-of-kiki>/scripts/dr3_export_nerve_wml.py \
+      --seeds 900 --out <smoke-dumps>   # §9 smoke, never analysed
+  ```
+
+  Outputs (never overwritten): one `dr3-seed<s>.npz` per seed (`seed`,
+  `a_trained`, `b_trained`, `a_null`, `b_null`, the four learning-gate
+  accuracies of §4 and `gate_pass`), a `dr3-seed<s>.npz.sha256`
+  sidecar (`<hex>  <file>`), and `export-manifest.json` with its own
+  `.sha256`: tag, commit, clean-tree flag, Python / numpy / torch
+  versions, protocol constants and, per seed, the file SHA-256, the
+  SHA-256 of each array's float32 bytes, the accuracies and the gate
+  outcome. The probe is then run on the dumps with `--require-hash`;
+  it excludes any seed whose `gate_pass` is false, so gate failures
+  count towards the §4 abort.
 
 **Preprocessing (primary, fixed).** L2-normalise each row; use
 Euclidean distance on the result. No centering. This matches the
@@ -386,6 +419,7 @@ Split-FMNIST test inputs, same statistics and preprocessing) is
 ## §9 Audit trail and deviations
 
 - **Filing gate.** This draft is not filed until the export helper
+  (`scripts/dr3_export_nerve_wml.py`, §5)
   and `scripts/dr3_relational_probe.py` exist at a pinned commit with
   passing tests (below), the learning gate has been run on one smoke
   seed (seed 900, not analysed) to confirm trained substrates pass
@@ -395,8 +429,9 @@ Split-FMNIST test inputs, same statistics and preprocessing) is
   unit-tested before filing: mKNN on a hand-built example, Prim tie
   rule, H₀ normalisation, τ → ∞ limit equals the structure score,
   S_mKNN(k=1) and S_H0^res on a hand-built example).
-  It consumes dumps exported from `nerve-wml` at v1.9.0 by an export
-  helper that imports the v1.9.0 training functions unchanged.
+  It consumes dumps exported from `nerve-wml` at v1.9.0 by the export
+  helper `scripts/dr3_export_nerve_wml.py`, which imports the v1.9.0
+  training functions unchanged.
 - **Status 2026-10-24.** Done: `kiki_oniric.eval.relational_probe`
   and `scripts/dr3_relational_probe.py` (PR #43, review APPROVE) with
   the listed unit tests (hand-built mKNN, Prim tie rule, H₀
@@ -404,12 +439,25 @@ Split-FMNIST test inputs, same statistics and preprocessing) is
   (`nn_comparator`: S_mKNN(k=1), S_H0^res, hand-built tests) and the
   decision code (`--decide`: §2 states, §7 row, "global" wording
   rule; tests reach every state and row on synthetic D vectors), both
-  in this PR. Open: the export helper (it imports nerve-wml v1.9.0
-  training code, which is not a dependency of this repository), the
+  in this PR; the export helper `scripts/dr3_export_nerve_wml.py`
+  (§5; PI decision 2026-10-24: standalone, run inside a v1.9.0
+  checkout, no new dependency here), with tests in
+  `tests/unit/scripts/test_dr3_export_nerve_wml.py` that replace
+  nerve-wml by a numpy fake (dump contract read back by the probe,
+  same inputs and seeds for the trained and null pairs, gate at 0.25
+  on the trained substrates only and its exclusion in the probe,
+  SHA-256 sidecars and manifest, refusal of an unpinned or modified
+  checkout, no overwrite). Integration check (not the filing smoke):
+  the helper was run once on seed 900 in a clean v1.9.0 clone on
+  macM1 with torch 2.11.0 (the version in the v1.9.0 `uv.lock`) from
+  an existing environment rather than `uv sync --frozen`; the trained
+  substrates passed the gate (MLP 0.519, LIF 0.545), the untrained
+  ones stayed near the 0.083 chance level (0.104, 0.087), and a rerun
+  gave identical array hashes. Open: the filing smoke on seed 900
+  with the documented invocation on the filing host, and the
   permutation-null secondary analysis of §5 (departure 1; not yet
-  implemented, and the level of c_α is not yet stated) and the smoke
-  on seed 900. The v1.9.0 tag is public on GitHub (verified
-  2026-10-24).
+  implemented, and the level of c_α is not yet stated). The v1.9.0
+  tag is public on GitHub (verified 2026-10-24).
 - Milestones: `docs/milestones/dr3-relational-probe-<date>.{json,md}`.
 - Results are appended to `docs/proofs/dr3-substrate-evidence.md` as
   a new dated section (append-only).
@@ -423,7 +471,9 @@ The protocol above is complete with these defaults; changing one
 requires editing the named section before the lock commit.
 
 Decided by the PI on 2026-10-23 and no longer open: δ = 0.025;
-n = 20 seeds.
+n = 20 seeds. Decided on 2026-10-24: the export helper is a
+standalone script run inside a nerve-wml v1.9.0 checkout, with no
+new dependency in this repository (§5).
 
 1. **τ (§5).** 0.1 (default) or another single value from You et
    al.'s grid.

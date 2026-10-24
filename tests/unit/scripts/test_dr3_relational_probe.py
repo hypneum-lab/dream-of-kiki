@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 import pytest
@@ -97,6 +98,53 @@ def test_analyse_seed_excludes_coincident_rows(tmp_path: Path) -> None:
     assert rec["status"] == "excluded"
     assert any("a_null" in r and "coincide" in r for r in rec["reasons"])
     assert "D" not in rec
+
+
+def _gate(acc_a: float, acc_b: float) -> dict[str, Any]:
+    return {
+        "acc_a_trained": np.float64(acc_a),
+        "acc_b_trained": np.float64(acc_b),
+        "acc_a_null": np.float64(0.08),
+        "acc_b_null": np.float64(0.09),
+        "gate_pass": np.bool_(acc_a >= 0.25 and acc_b >= 0.25),
+    }
+
+
+def test_learning_gate_fields_from_export_helper(tmp_path: Path) -> None:
+    rec = load_seed_npz(_write(tmp_path / "s.npz", **_gate(0.6, 0.4)))
+    assert rec["gate"] == {
+        "gate_pass": True,
+        "acc_a_trained": pytest.approx(0.6),
+        "acc_b_trained": pytest.approx(0.4),
+        "acc_a_null": pytest.approx(0.08),
+        "acc_b_null": pytest.approx(0.09),
+    }
+    out = analyse_seed(rec, k=5, tau=0.1)
+    assert out["status"] == "ok"
+    assert out["gate"]["gate_pass"] is True
+
+
+def test_learning_gate_failure_excludes_seed(tmp_path: Path) -> None:
+    rec = load_seed_npz(_write(tmp_path / "s.npz", **_gate(0.6, 0.2)))
+    out = analyse_seed(rec, k=5, tau=0.1)
+    assert out["status"] == "excluded"
+    assert any("learning gate" in r and "b_trained" in r for r in out["reasons"])
+    assert "D" not in out
+
+
+def test_learning_gate_absent_means_not_scored(tmp_path: Path) -> None:
+    rec = load_seed_npz(_write(tmp_path / "s.npz"))
+    assert rec["gate"] is None
+    assert analyse_seed(rec, k=5, tau=0.1)["gate"] is None
+
+
+def test_learning_gate_failure_counts_towards_abort(tmp_path: Path) -> None:
+    ok = _write(tmp_path / "s100.npz", seed=100, **_gate(0.6, 0.4))
+    bad = _write(tmp_path / "s101.npz", seed=101, **_gate(0.1, 0.4))
+    out = tmp_path / "out.json"
+    main([str(ok), str(bad), "--k", "5", "--output", str(out), "--abort-threshold", "0"])
+    doc = json.loads(out.read_text())
+    assert doc["n_excluded"] == 1 and doc["abort"] is True
 
 
 def test_analyse_seed_sensitivity_blocks(tmp_path: Path) -> None:

@@ -7,7 +7,10 @@ exported representation matrices and writes the per-seed statistics
 (``S_mKNN``, ``S_H0``, ``S_mKNN_tau``, ``S_H0_tau``) for the trained
 pair and the untrained null pair, plus the calibrated differences
 ``D = S(trained) - S(null)``. It does NOT train substrates, does NOT
-apply the learning gate (accuracy >= 0.25, done by the export helper).
+score the learning gate (accuracy >= 0.25, scored by the export helper
+``scripts/dr3_export_nerve_wml.py``); it applies the gate recorded in
+the dump, so a gate failure is a seed-level exclusion counted towards
+the section 4 abort.
 With ``--decide`` it also computes the section 2 states, the section 7
 row and the "global" wording rule from the retained seeds (fixed n,
 run once after all 20 seeds are dumped and hashed, section 8).
@@ -22,7 +25,9 @@ Input format (one ``.npz`` per seed, float32 or float64)
 ``b_null``     (n, d_b)  substrate B, same constructor/seed, 0 steps
 
 Row ``i`` of all four arrays is the same input (the 1024 inputs of
-that seed). An optional sidecar ``<file>.npz.sha256`` (hex digest as
+that seed). Optional learning-gate fields written by the export helper:
+``gate_pass`` (bool) and ``acc_a_trained``, ``acc_b_trained``,
+``acc_a_null``, ``acc_b_null``; ``gate_pass`` false excludes the seed. An optional sidecar ``<file>.npz.sha256`` (hex digest as
 first token) is verified when present; ``--require-hash`` makes it
 mandatory.
 
@@ -75,6 +80,8 @@ DELTA = 0.025
 ALPHA = 0.05 / 4
 CONFIRMATORY_SEEDS = tuple(range(100, 120))
 COMPARATOR_KEYS = ("S_mKNN_k1", "S_H0_res")
+GATE_THRESHOLD = 0.25
+GATE_ACC_KEYS = ("acc_a_trained", "acc_b_trained", "acc_a_null", "acc_b_null")
 
 
 def _sha256_of(path: Path) -> str:
@@ -108,6 +115,13 @@ def load_seed_npz(path: str | Path, require_hash: bool = False) -> dict[str, Any
             if arr.dtype.kind not in "fiu":
                 raise ValueError(f"{p.name}: '{key}' must be numeric, got dtype {arr.dtype}")
             rec[key] = arr.astype(np.float64)
+        rec["gate"] = None
+        if "gate_pass" in z.files:
+            gate: dict[str, Any] = {"gate_pass": bool(np.asarray(z["gate_pass"]))}
+            for key in GATE_ACC_KEYS:
+                if key in z.files:
+                    gate[key] = float(np.asarray(z[key]))
+            rec["gate"] = gate
     rows = {rec[k].shape[0] for k in ARRAY_KEYS}
     if len(rows) != 1:
         raise ValueError(f"{p.name}: arrays must have the same number of rows, got {sorted(rows)}")
@@ -132,8 +146,16 @@ def analyse_seed(
     sensitivity: bool = False,
 ) -> dict[str, Any]:
     """Statistics for one seed, or an exclusion record (section 4)."""
-    out: dict[str, Any] = {"seed": rec["seed"], "sha256": rec.get("sha256")}
+    gate = rec.get("gate")
+    out: dict[str, Any] = {"seed": rec["seed"], "sha256": rec.get("sha256"), "gate": gate}
     reasons = []
+    if gate is not None and not gate["gate_pass"]:
+        failed = [
+            f"learning gate: {k[4:]} accuracy {gate[k]:.4f} < {GATE_THRESHOLD}"
+            for k in ("acc_a_trained", "acc_b_trained")
+            if k in gate and gate[k] < GATE_THRESHOLD
+        ]
+        reasons.extend(failed or ["learning gate: gate_pass is false"])
     for key in ARRAY_KEYS:
         reason = check_representation(rec[key], "l2")
         if reason is not None:
