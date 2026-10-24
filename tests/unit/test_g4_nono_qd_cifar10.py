@@ -159,6 +159,10 @@ def test_checklist_item5_real_corpus() -> None:
 
 
 def test_driver_defaults_to_the_new_corpus(monkeypatch: pytest.MonkeyPatch) -> None:
+    try:  # the driver imports MLX, absent on Linux CI (see conftest.py)
+        import mlx.core  # noqa: F401
+    except ImportError:
+        pytest.skip("MLX unavailable on this platform")
     from experiments.g4_nono_test import run_cross_domain as drv
 
     cif_tr, cif_te, draws = _fake_sources()
