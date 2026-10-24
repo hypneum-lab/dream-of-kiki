@@ -5,8 +5,9 @@
 and the fact corpus applied; revision 4, 2026-10-24: pre-filing code
 status, no protocol change; revision 5, 2026-10-24: PI decisions —
 scoring passes counted in the compute budget, LR-matched replay
-registered as an exploratory arm, fact-corpus source = a public fact
-set pending the PI's choice of set)
+registered as an exploratory arm, fact-corpus sources = RealTime QA +
+Daily Oracle + MMLU-CF (§5.1a); node and HF revision deferred until
+the corpus exists)
 **Parent OSF:** 10.17605/OSF.IO/Q6JYN
 **Parent backlog item:** `EXPERIMENT-BACKLOG.md` E1 (powered TOST,
 35B run pending).
@@ -373,6 +374,70 @@ Required properties:
    manifest. The corpus and partition hashes are written into the
    filed version; any later change to the corpus is a deviation.
 
+### §5.1a Sources (PI decision 2026-10-24: all three public sets)
+
+The PI chose to use all three proposed public fact sets. **Reading
+to be confirmed by the PI:** one pooled item bank, with `source`
+recorded on every item and pre-registered as a stratum; partitions
+are stratified by source; per-source results are reported
+descriptively; the primary analysis (§2) is pooled. The §5.1
+properties apply to every item, whatever its source.
+
+| `source` | Set and pin | Licence | Role |
+|---|---|---|---|
+| `realtimeqa` | RealTime QA, `github.com/realtimeqa/realtimeqa_public` at commit `e288dcfe1d7818bf48299249ae892939637775db` (2026-10-23), files `past/2026/*_qa.jsonl`; per-file SHA-256 computed and pinned at build | none declared (questions from CNN / The Week news quizzes) | human-written, native 4-choice, dated news items |
+| `daily_oracle` | Daily Oracle, HF `agentic-learning-ai-lab/daily-oracle` at revision `455b35b2a2415034b05ef91e56c80191fef4a737`, `mc_questions_2020-01-01_2026-07-18.csv` (119 302 323 B, LFS SHA-256 `c8c0b5adaa266fa5e9c1ec59b9cd7d9182c89607d39eb0ef2b269cbb12e58178`) | CC BY 4.0 | LLM-generated, 4-choice, dated, one article per item |
+| `mmlu_cf` | MMLU-CF validation, HF `microsoft/MMLU-CF` at revision `c25b89a968a2062e422dd96ddf0fe3387507f0dd`, `val.csv` (2 247 391 B, SHA-256 `28816045197decd701b1a0e51923b43684d708d8c06ec62d20541f90939ac49f`; `val.parquet` LFS `a44a6bb1…77173d`) | CDLA-Permissive-2.0 | decontaminated MMLU-style items, undated |
+
+Rules fixed for all sources (applied by the task-7 build script before
+the §5.1 deduplication, and recorded per item):
+1. **Date cutoff.** Dated items (`realtimeqa` `question_date`,
+   `daily_oracle` `date`) are kept only if dated **2026-04-16 or
+   later** (Qwen3.6-35B-A3B was released 2026-04-15), so they post-date
+   the model. `mmlu_cf` items carry no date: they are kept with a
+   contamination caveat (the validation set is public since
+   December 2024) and rely on the headroom rule (5).
+2. **Whitespace normalisation.** Question and each option are
+   stripped of leading / trailing whitespace before hashing and
+   prompting (in Daily Oracle the gold option never carries trailing
+   spaces while distractors do, a format leak). After normalisation
+   the build reports, per source, how often the gold option is the
+   longest; this is descriptive.
+3. **Same-type distractors.** `mmlu_cf` items with a "None of the
+   other choices" option are removed (§5.1, property 1).
+4. **Date injection.** Dated items are prompted as
+   `"Date: YYYY-MM-DD\n" + question` with their own date; undated
+   items get no prefix. (Many news items say "this week".)
+5. **Headroom per source.** The §5.1 headroom check (base accuracy
+   ≤ 0.80 on the tuning partition) is applied to the pooled tuning
+   partition **and to each source**; a source above 0.80 is dropped
+   before freezing and the drop is recorded.
+6. **Option order.** Choices are permuted per item with
+   `default_rng(int(item_sha256[:16], 16))` and the gold index is
+   updated, so position carries no information; the permutation is
+   part of the frozen item.
+7. **Balance (default, to be confirmed by the PI).** The dated
+   sources give about 545 (`realtimeqa`) and 492 (`daily_oracle`)
+   items after the cutoff, while `mmlu_cf` has about 5 400 after
+   rule 3. To keep the pool from being dominated by undated MMLU-style
+   items, `mmlu_cf` is subsampled (seeded by item hash) to the size of
+   the larger dated source. The confirmatory (≥ 300) and tuning
+   (≥ 120) minima of §5.1 apply to the pool.
+8. **Stratified partition.** The §5.1 group-key partition is applied
+   within each source, so each source contributes to the confirmatory
+   and tuning partitions in the same proportion.
+9. **Licences.** `realtimeqa` text is not redistributed: the repository
+   and any publication carry only item IDs (source file, line, date),
+   item SHA-256 and the build script; the item text is rebuilt from the
+   pinned commit. `daily_oracle` (CC BY 4.0) and `mmlu_cf`
+   (CDLA-Permissive-2.0) are attributed in the milestone.
+10. **Reporting.** Every §2 statistic is also reported per source
+    (descriptive, no state); the confirmatory states are pooled.
+
+Only the pins and metadata above were fetched (the 2.2 MB MMLU-CF
+`val.csv` to compute its SHA-256, then deleted); the corpus is built
+by task 7 once the study gate is passed.
+
 ### §5.2 Per-seed item counts
 
 Confirmatory seeds (0-140) draw replay and eval items only from the
@@ -693,11 +758,17 @@ into the filed version.
 5. Drift (full-norm), collapse, frozen-reference and MoE-drift
    (router drift, expert-usage histogram) fields per cell (§6).
 6. `analyze_e1_cuda.py`: §2 states, §7 tables, validity gates.
-7. Fact-corpus build and check script (§5.1): normalisation, exact
-   and near-duplicate detection (including against the pilot
-   fixtures and the mega_v2 facts), stem-skeleton count, group-level
-   partition, manifest with `--check`; tests on constructed
-   duplicates and skeleton collisions.
+7. Fact-corpus build and check script (§5.1, §5.1a): fetch the three
+   pinned sources and verify their pins; apply rules 1-9 of §5.1a
+   (date cutoff, whitespace normalisation, "None of the other
+   choices" removal, date injection, option permutation, balance,
+   per-source headroom bookkeeping, licence-aware export of
+   `realtimeqa` as IDs + hashes only); normalisation, exact and
+   near-duplicate detection (including against the pilot fixtures
+   and the mega_v2 facts), stem-skeleton count, source-stratified
+   group-level partition, manifest with `--check`; tests on
+   constructed duplicates, skeleton collisions, the date cutoff, the
+   whitespace leak and the option permutation.
 
 **Audit trail.** Milestones:
 `docs/milestones/e1-35b-replay-controls-<date>.{json,md}`, including
@@ -717,7 +788,8 @@ gated on the independent fact corpus of §5.1, and the pilot
 fixtures are smoke-only. Changing an item below requires editing the
 named section before the lock commit.
 
-1. **CUDA node and model revision (§9).** The registered backend is
+1. **CUDA node and model revision (§9) — deferred by the PI on
+   2026-10-24 until the fact corpus exists.** The registered backend is
    CUDA / HF transformers only; the choice is which multi-GPU node
    (at least 2 × H200-class, 4 × H200 default) and the exact HF
    revision hash of Qwen3.6-35B-A3B. Running on Apple MLX instead
@@ -725,10 +797,6 @@ named section before the lock commit.
    before filing, not a hardware swap.
 2. ~~LR-matched replay arm~~ — decided by the PI on 2026-10-24:
    registered as an exploratory arm (§5.4), reported only.
-3. **Fact-corpus source (§5.1) — partly decided on 2026-10-24.** A
-   public fact set (not mega-v2, not newly authored items); **which
-   set is pending the PI's choice** among the proposed candidates.
-   The §5.1 properties apply to it unchanged (in particular the
-   template / stem-skeleton limit, deduplication, headroom ≤ 0.80 on
-   the tuning partition, and SHA-256 pins of the source files at a
-   fixed version).
+3. ~~Fact-corpus source~~ — decided by the PI on 2026-10-24: all
+   three public sets (§5.1a). **To confirm:** the pooled-bank reading
+   with `source` as a stratum, and the default balance rule 7.
