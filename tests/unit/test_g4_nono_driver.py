@@ -9,19 +9,25 @@ import numpy as np
 import pytest
 
 from experiments.g4_nono_test import run_cross_domain as drv
+from experiments.g4_nono_test.recombine_cross import (
+    CrossStrategy,
+    soft_target_fc2_step,
+)
 from experiments.g4_nono_test.stream import (
     DOMAIN_A,
     TASK_CLASS_PAIRS,
     DomainTask,
     build_domain_stream,
 )
-from experiments.g4_nono_test.recombine_cross import soft_target_fc2_step
 from experiments.g4_quinto_test.small_cnn import G4SmallCNN
+from experiments.g4_sexto_test.run_step1_cifar100 import _BetaBufferCNN
+
+Stream = list[DomainTask]
 
 
 def _synthetic_stream(
     n_train: int = 20, n_test: int = 6, seed: int = 0
-) -> list[DomainTask]:
+) -> Stream:
     rng = np.random.default_rng(seed)
 
     def mk(n: int) -> tuple[np.ndarray, np.ndarray]:
@@ -37,7 +43,7 @@ def _synthetic_stream(
 
 
 @pytest.fixture(scope="module")
-def stream() -> list[DomainTask]:
+def stream() -> Stream:
     return _synthetic_stream()
 
 
@@ -50,7 +56,7 @@ def test_cell_grid_is_8_per_seed() -> None:
             assert (arm, s) in cells
 
 
-def test_invalid_arm_strategy_combo_rejected(stream: list[DomainTask]) -> None:
+def test_invalid_arm_strategy_combo_rejected(stream: Stream) -> None:
     with pytest.raises(ValueError):
         drv.validate_cell("baseline", "cross")
     with pytest.raises(ValueError):
@@ -73,7 +79,7 @@ def test_constants_match_spec() -> None:
     assert drv.SMOKE_SEEDS == (900, 901, 902)
 
 
-def test_buffer_push_16_plus_16_latents_frozen(stream: list[DomainTask]) -> None:
+def test_buffer_push_16_plus_16_latents_frozen(stream: Stream) -> None:
     cnn = G4SmallCNN(latent_dim=64, n_classes=20, seed=0)
     buf = drv.new_buffer()
     fill_rng = np.random.default_rng(5000)
@@ -81,19 +87,20 @@ def test_buffer_push_16_plus_16_latents_frozen(stream: list[DomainTask]) -> None
     assert len(buf) == 32
     ys = [r["y"] for r in buf._records]
     assert ys.count(0) == 16 and ys.count(1) == 16
-    before = [np.asarray(r["latent"]).tolist() for r in buf._records]
+    assert all(r["latent"] is not None for r in buf._records)
+    before = [list(r["latent"] or []) for r in buf._records]
     cnn.train_task(
         stream[0]["x_train_nhwc"], stream[0]["y_train"],
         epochs=1, batch_size=64, lr=0.05,
     )
-    after = [np.asarray(r["latent"]).tolist() for r in buf._records]
+    after = [list(r["latent"] or []) for r in buf._records]
     assert before == after  # frozen at push time
     # but a fresh latent from the trained net differs
     x = np.asarray(buf._records[0]["x"], np.float32)[None]
     assert not np.allclose(cnn.latent(x)[0], before[0])
 
 
-def test_buffer_fill_without_replacement(stream: list[DomainTask]) -> None:
+def test_buffer_fill_without_replacement(stream: Stream) -> None:
     cnn = G4SmallCNN(latent_dim=64, n_classes=20, seed=0)
     buf = drv.new_buffer()
     drv.push_task(buf, cnn, stream[0], np.random.default_rng(1))
@@ -101,13 +108,13 @@ def test_buffer_fill_without_replacement(stream: list[DomainTask]) -> None:
     assert len(xs) == 32
 
 
-def _weights(cnn: Any) -> list[np.ndarray]:
+def _weights(cnn: G4SmallCNN) -> list[np.ndarray]:
     return [np.asarray(cnn._fc2.weight).copy(), np.asarray(cnn._fc2.bias).copy()]
 
 
 def _state(
-    stream: list[DomainTask], upto_task: int, seed: int = 3
-) -> tuple[Any, Any]:
+    stream: Stream, upto_task: int, seed: int = 3
+) -> tuple[G4SmallCNN, _BetaBufferCNN]:
     """Network + buffer after training/pushing tasks 0..upto_task-1."""
     cnn = G4SmallCNN(latent_dim=64, n_classes=20, seed=seed)
     buf = drv.new_buffer()
@@ -121,7 +128,13 @@ def _state(
     return cnn, buf
 
 
-def _de(cnn: Any, buf: Any, strategy: Any, k: int, seed: int = 3) -> None:
+def _de(
+    cnn: G4SmallCNN,
+    buf: _BetaBufferCNN,
+    strategy: CrossStrategy,
+    k: int,
+    seed: int = 3,
+) -> None:
     from experiments.g4_split_fmnist.dream_wrap import build_profile
     from experiments.g4_ter_hp_sweep.hp_grid import representative_combo
 
@@ -131,11 +144,12 @@ def _de(cnn: Any, buf: Any, strategy: Any, k: int, seed: int = 3) -> None:
     )
 
 
-def test_cross_and_within_noop_before_task6(stream: list[DomainTask]) -> None:
+def test_cross_and_within_noop_before_task6(stream: Stream) -> None:
     """Checklist 4: weights after the DE before task 6 (k=5) are
     bit-identical across cross / within / none."""
-    outs = {}
-    for strat in ("cross", "within", "none"):
+    outs: dict[str, list[np.ndarray]] = {}
+    strats: tuple[CrossStrategy, ...] = ("cross", "within", "none")
+    for strat in strats:
         cnn, buf = _state(stream, 5)
         _de(cnn, buf, strat, k=5)
         outs[strat] = _weights(cnn)
@@ -144,9 +158,10 @@ def test_cross_and_within_noop_before_task6(stream: list[DomainTask]) -> None:
             assert np.array_equal(a, b)
 
 
-def test_cross_differs_from_none_once_both_domains_present(stream: list[DomainTask]) -> None:
-    res = {}
-    for strat in ("cross", "within", "none"):
+def test_cross_differs_from_none_once_both_domains_present(stream: Stream) -> None:
+    res: dict[str, list[np.ndarray]] = {}
+    strats: tuple[CrossStrategy, ...] = ("cross", "within", "none")
+    for strat in strats:
         cnn, buf = _state(stream, 6)
         _de(cnn, buf, strat, k=6)
         res[strat] = _weights(cnn)
@@ -155,7 +170,7 @@ def test_cross_differs_from_none_once_both_domains_present(stream: list[DomainTa
     assert not np.array_equal(res["cross"][0], res["within"][0])
 
 
-def test_soft_target_step_updates_only_fc2(stream: list[DomainTask]) -> None:
+def test_soft_target_step_updates_only_fc2(stream: Stream) -> None:
     cnn, buf = _state(stream, 6)
     conv_before = np.asarray(cnn._conv1.weight).copy()
     fc2_before = np.asarray(cnn._fc2.weight).copy()
@@ -169,7 +184,7 @@ def test_soft_target_step_updates_only_fc2(stream: list[DomainTask]) -> None:
     assert not np.array_equal(fc2_before, np.asarray(cnn._fc2.weight))
 
 
-def test_run_cell_record_and_pairing(stream: list[DomainTask], tmp_path: Path) -> None:
+def test_run_cell_record_and_pairing(stream: Stream, tmp_path: Path) -> None:
     rec = drv.run_cell(
         arm="P_max", strategy="cross", seed=1, stream=stream,
         epochs=1, batch_size=64, lr=0.01,
@@ -192,7 +207,7 @@ def test_run_cell_record_and_pairing(stream: list[DomainTask], tmp_path: Path) -
     assert other["manip_acc"] == rec["manip_acc"]
 
 
-def test_baseline_cell_has_na_strategy(stream: list[DomainTask]) -> None:
+def test_baseline_cell_has_na_strategy(stream: Stream) -> None:
     rec = drv.run_cell(
         arm="baseline", strategy="na", seed=2, stream=stream,
         epochs=1, batch_size=64, lr=0.01,
@@ -201,7 +216,7 @@ def test_baseline_cell_has_na_strategy(stream: list[DomainTask]) -> None:
 
 
 def test_none_matches_independently_disabled_recombine(
-    stream: list[DomainTask], monkeypatch: pytest.MonkeyPatch
+    stream: Stream, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """P_max/none equals P_max with the RECOMBINE step patched out."""
     a = drv.run_cell(arm="P_max", strategy="none", seed=4, stream=stream,
@@ -214,9 +229,9 @@ def test_none_matches_independently_disabled_recombine(
 
 
 def test_run_cell_non_finite_logits_marks_exclusion(
-    stream: list[DomainTask], monkeypatch: pytest.MonkeyPatch
+    stream: Stream, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    def nan_logits(cnn: Any, x: np.ndarray) -> np.ndarray:
+    def nan_logits(cnn: G4SmallCNN, x: np.ndarray) -> np.ndarray:
         return np.full((len(x), 20), np.nan, np.float32)
 
     monkeypatch.setattr(drv, "_logits_chunked", nan_logits)
@@ -230,11 +245,11 @@ def test_run_cell_non_finite_logits_marks_exclusion(
 
 
 def test_run_cell_non_finite_manip_marks_exclusion(
-    stream: list[DomainTask], monkeypatch: pytest.MonkeyPatch
+    stream: Stream, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     real = G4SmallCNN.predict_logits
 
-    def bad(self: Any, x: np.ndarray) -> np.ndarray:
+    def bad(self: G4SmallCNN, x: np.ndarray) -> np.ndarray:
         out = real(self, x).copy()
         out[0, 0] = np.nan
         return out
@@ -246,14 +261,14 @@ def test_run_cell_non_finite_manip_marks_exclusion(
     assert rec["exclusion_reason"] == "non_finite_logits"
 
 
-def test_clean_cell_not_excluded(stream: list[DomainTask]) -> None:
+def test_clean_cell_not_excluded(stream: Stream) -> None:
     rec = drv.run_cell(arm="baseline", strategy="na", seed=6, stream=stream,
                        epochs=1, batch_size=64, lr=0.01)
     assert rec["excluded"] is False and rec["exclusion_reason"] is None
 
 
 def test_duplicate_cell_different_out_aborts(
-    stream: list[DomainTask], tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    stream: Stream, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     monkeypatch.setattr(drv, "load_stream", lambda data_dir: stream)
     db = tmp_path / "r.sqlite"
@@ -274,7 +289,7 @@ def test_duplicate_cell_different_out_aborts(
 
 
 def test_main_writes_outcome_record(
-    stream: list[DomainTask], tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    stream: Stream, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     monkeypatch.setattr(drv, "load_stream", lambda data_dir: stream)
     out = tmp_path / "cell.json"
@@ -307,7 +322,7 @@ def test_manip_accuracy_is_two_way_restricted() -> None:
 
 
 def test_main_refuses_to_overwrite_existing_record(
-    stream: list[DomainTask], tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    stream: Stream, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     monkeypatch.setattr(drv, "load_stream", lambda data_dir: stream)
     out = tmp_path / "cell.json"
@@ -348,6 +363,8 @@ def test_concurrent_claim_has_exactly_one_winner(tmp_path: Path) -> None:
 
 def test_claim_then_second_claim_loses(tmp_path: Path) -> None:
     db = tmp_path / "c.sqlite"
-    kw: dict[str, Any] = dict(c_version=drv.C_VERSION, profile="p", seed=0, commit_sha="x")
+    kw: dict[str, Any] = dict(
+        c_version=drv.C_VERSION, profile="p", seed=0, commit_sha="x"
+    )
     assert drv.claim_run_id(db, **kw) is True
     assert drv.claim_run_id(db, **kw) is False

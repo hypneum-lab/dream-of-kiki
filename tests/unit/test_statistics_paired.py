@@ -172,9 +172,11 @@ def test_n_less_than_two_raises() -> None:
 def test_invalid_parameters_raise(kwargs: dict[str, float]) -> None:
     params: dict[str, Any] = {"delta": 0.01, "alpha": 0.05, **kwargs}
     with pytest.raises(ValueError):
-        paired_tost(X, Y, **params)
+        paired_tost(X, Y, delta=params["delta"], alpha=params["alpha"])
     with pytest.raises(ValueError):
-        paired_noninferiority(X, Y, **params)
+        paired_noninferiority(
+            X, Y, delta=params["delta"], alpha=params["alpha"]
+        )
 
 
 def test_invalid_inputs_raise() -> None:

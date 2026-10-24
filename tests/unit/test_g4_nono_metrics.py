@@ -1,7 +1,7 @@
 """CDPA / WDPA / retention / 2-way metrics on synthetic predictions."""
 from __future__ import annotations
 
-from typing import Callable
+from collections.abc import Callable
 
 import numpy as np
 import pytest
@@ -130,7 +130,7 @@ def test_two_way_accuracy_uses_only_first_two_logits() -> None:
      compute_retention_domain_a],
 )
 def test_non_finite_logits_raise(
-    fn: Callable[[np.ndarray, np.ndarray], float], bad: float
+    fn: Callable[[np.ndarray, np.ndarray], object], bad: float
 ) -> None:
     y = _labels()
     z = _onehot_logits(y)
