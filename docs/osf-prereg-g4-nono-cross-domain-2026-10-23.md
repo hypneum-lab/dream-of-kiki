@@ -279,21 +279,29 @@ is only 0.005-0.008 accuracy points, i.e. below ε, and is by design
 not confirmable. From an arm SD of 0.02 upwards the raw floor barely
 changes the complete-rule power.
 
-**"No practical effect" rules at ε = 0.01** (true difference 0):
-H12-C EQUIVALENT (paired TOST, Monte Carlo) and H12-A/B
-BOUNDED-NO-GAIN (`U < ε`, exact noncentral t), power by SD of the
-paired difference SD_D:
+**"No practical effect" rules at ε = 0.01** (true difference 0; all
+powers in this section assume the full planned N is retained):
+H12-C EQUIVALENT (paired TOST, Monte Carlo) and, for H12-A/B, two
+events. `U < ε` (exact noncentral t) is the union of
+BOUNDED-NO-GAIN and POSITIVE-NEGLIGIBLE under the first-match order
+of §2; the exact BOUNDED-NO-GAIN state is `L ≤ 0 ∧ U < ε` (Monte
+Carlo), which at a true difference of 0 is capped near 1 − α = 0.983
+because L > 0 then sends the outcome to POSITIVE-NEGLIGIBLE. Power by
+SD of the paired difference SD_D:
 
 | rule, N | SD_D = 0.0075 | 0.01 | 0.015 | 0.02 | 0.025 | 0.03 | 0.04 |
 |---|---|---|---|---|---|---|---|
 | EQUIVALENT, 95 | 1.00 | 1.00 | 1.00 | 0.99 | 0.92 | 0.72 | 0.22 |
 | EQUIVALENT, 108 | 1.00 | 1.00 | 1.00 | 1.00 | 0.95 | 0.81 | 0.34 |
-| BOUNDED-NO-GAIN, 95 | 1.00 | 1.00 | 1.00 | 1.00 | 0.96 | 0.86 | 0.61 |
-| BOUNDED-NO-GAIN, 108 | 1.00 | 1.00 | 1.00 | 1.00 | 0.98 | 0.90 | 0.67 |
+| U < ε (BNG ∪ PN), 95 | 1.00 | 1.00 | 1.00 | 1.00 | 0.96 | 0.86 | 0.61 |
+| U < ε (BNG ∪ PN), 108 | 1.00 | 1.00 | 1.00 | 1.00 | 0.98 | 0.90 | 0.67 |
+| BOUNDED-NO-GAIN (exact), 95 | 0.98 | 0.98 | 0.98 | 0.98 | 0.96 | 0.86 | 0.61 |
+| BOUNDED-NO-GAIN (exact), 108 | 0.98 | 0.98 | 0.98 | 0.98 | 0.97 | 0.90 | 0.67 |
 
-Largest SD_D with 80 % power (EQUIVALENT / BOUNDED-NO-GAIN): 0.0282 /
-0.0324 at N = 95, 0.0301 / 0.0346 at N = 108. Seeds needed for 80 %: 29 / 23 at SD_D = 0.015, 49 / 38 at
-0.02, 75 / 58 at 0.025, 108 / 82 at 0.03, 189 / 144 at 0.04.
+Largest SD_D with 80 % power (EQUIVALENT / `U < ε`): 0.0282 /
+0.0324 at N = 95, 0.0301 / 0.0346 at N = 108. Seeds needed for 80 %:
+29 / 23 at SD_D = 0.015, 49 / 38 at 0.02, 75 / 58 at 0.025, 108 / 82
+at 0.03, 189 / 144 at 0.04.
 
 **N-selection rule (PI decisions of 2026-10-23 and 2026-10-24).** The
 pre-filing smoke (§9, seeds 900-902, outside the confirmatory list,
@@ -340,30 +348,47 @@ the r̂ line did not trigger, the old rule therefore stayed at N = 30
 too often, and its unconditional EQUIVALENT power was 0.89 / 0.74 /
 0.69 / 0.63 at SD_D = 0.015 / 0.02 / 0.025 / 0.03.
 
-**Unconditional power of the registered rule.** Method: the smoke
-seeds are disjoint from the confirmatory seeds, so the rule's power
-at a true SD_D is P(N = 95) × power(95) + P(N = 108) × power(108),
-with P(N = 108) = exp(−(0.015 / SD_D)²) from the χ²₂ law above and
-power(n) from the "no practical effect" table (TOST Monte Carlo for
-EQUIVALENT, exact noncentral t for BOUNDED-NO-GAIN). True difference
-0, normal D, ε = 0.01, α = 1/60 (`scripts/prereg_power_2026_10.py`,
-section 5b):
+**Unconditional power of the registered rule.** Method: the
+selection is driven by σ_sel, the SD of `WDPA(within) − WDPA(none)`;
+P(N = 108) = exp(−(0.015 / σ_sel)²) from the χ²₂ law above. The smoke
+seeds are disjoint from the confirmatory seeds, so a rule's power is
+P(N = 95) × power(95) + P(N = 108) × power(108), with power(n)
+evaluated at the SD of that contrast, σ_con. True difference 0,
+normal D, ε = 0.01, α = 1/60, full planned N retained
+(`scripts/prereg_power_2026_10.py`, section 5b).
+
+*H12-C.* Its contrast is the selector difference, so σ_con = σ_sel =
+SD_D:
 
 | SD_D | 0.0075 | 0.01 | 0.015 | 0.02 | 0.025 | 0.03 | 0.04 |
 |---|---|---|---|---|---|---|---|
 | P(N = 108) | 0.02 | 0.11 | 0.37 | 0.57 | 0.70 | 0.78 | 0.87 |
 | EQUIVALENT | 1.00 | 1.00 | 1.00 | 0.995 | 0.94 | 0.79 | 0.33 |
-| BOUNDED-NO-GAIN | 1.00 | 1.00 | 1.00 | 0.998 | 0.97 | 0.89 | 0.66 |
+
+*H12-A/B.* The CDPA contrast SD σ_con is a different quantity from
+σ_sel, so power is given for separate scenarios (rows σ_sel, columns
+σ_con), for the exact BOUNDED-NO-GAIN state:
+
+| σ_sel \ σ_con | 0.01 | 0.015 | 0.02 | 0.025 | 0.03 | 0.04 |
+|---|---|---|---|---|---|---|
+| 0.0075 | 0.98 | 0.98 | 0.98 | 0.96 | 0.86 | 0.61 |
+| 0.015 | 0.98 | 0.98 | 0.98 | 0.96 | 0.88 | 0.63 |
+| 0.03 | 0.98 | 0.98 | 0.98 | 0.97 | 0.89 | 0.66 |
+
+(`U < ε`, i.e. BOUNDED-NO-GAIN ∪ POSITIVE-NEGLIGIBLE, is the same
+except 1.00 in place of 0.98 for σ_con ≤ 0.02.)
 
 **What the rule can and cannot establish (stated plainly).** With
-the 95-seed floor, both "no practical effect" rules keep at least
-80 % power for SD_D up to 0.025 (0.94 / 0.97), whichever line the
-smoke selects; at 0.03 they reach 0.79 / 0.89. At larger SD_D
-the design is under-powered: at 0.04 EQUIVALENT power is 0.33 and
-189 seeds would be needed (144 for BOUNDED-NO-GAIN). The complete
-H12-A/B confirmation rule has about 0.5 power at a true d_av exactly
-at the 0.5 floor at either N (table above); this is a property of the
-observed-effect floor, not of N.
+the 95-seed floor, H12-C EQUIVALENT keeps at least 80 % power for
+SD_D up to 0.025 (0.94) and reaches 0.79 at 0.03; H12-A/B
+BOUNDED-NO-GAIN keeps at least 80 % for a CDPA contrast SD up to
+0.03 (0.86-0.89 depending on σ_sel). At larger SDs the design is
+under-powered: at 0.04 EQUIVALENT power is 0.33 (189 seeds needed)
+and BOUNDED-NO-GAIN 0.61-0.66 (144 needed). The complete H12-A/B
+confirmation rule has about 0.5 power at a true d_av exactly at the
+0.5 floor at either N (table above); this is a property of the
+observed-effect floor, not of N. Retained n below the planned N
+(exclusions, §4) lowers every power in this section.
 
 Under-power makes INCONCLUSIVE more likely; it does not change the
 error rates of §2.

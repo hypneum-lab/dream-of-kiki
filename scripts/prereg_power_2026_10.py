@@ -118,6 +118,14 @@ def power_noninferiority(mu, sd, n, alpha, margin, seed=3) -> float:
     return float(np.mean(lo > -margin))
 
 
+def power_bng_exact(mu, sd, n, alpha, margin, seed=6) -> float:
+    """P(L <= 0 and U < margin): the BOUNDED-NO-GAIN state under the
+    first-match order (POSITIVE-NEGLIGIBLE takes L > 0 and U < margin)."""
+    m, s = _paired_suff(mu, sd, n, seed)
+    lo, hi = _bounds(m, s, n, alpha)
+    return float(np.mean((lo <= 0) & (hi < margin)))
+
+
 def power_tost(mu, sd, n, alpha, margin, seed=4) -> float:
     m, s = _paired_suff(mu, sd, n, seed)
     lo, hi = _bounds(m, s, n, alpha)
@@ -274,8 +282,12 @@ def main() -> None:
           " true diff 0\n")
     sds = (0.0075, 0.01, 0.015, 0.02, 0.025, 0.03, 0.04)
     g4_ns = (95, 108)
-    print("H12-C TOST (EQUIVALENT) and H12-A/B BOUNDED-NO-GAIN (U < eps),"
-          " by SD of the paired difference:\n")
+    print("All powers assume the full planned N is retained. H12-C TOST"
+          " (EQUIVALENT); 'U<eps' = P(U < eps), which under first-match"
+          " ordering is BOUNDED-NO-GAIN or POSITIVE-NEGLIGIBLE (exact"
+          " noncentral t); 'BNG' = the exact BOUNDED-NO-GAIN event"
+          " L <= 0 and U < eps (Monte Carlo). By SD of the paired"
+          " difference:\n")
     print(_fmt_row(["rule, n", *[f"SD_D={x}" for x in sds]]))
     print(_fmt_row(["---"] * (len(sds) + 1)))
     for n in g4_ns:
@@ -284,6 +296,10 @@ def main() -> None:
     for n in g4_ns:
         print(_fmt_row([f"U<eps, n={n}",
                         *[f"{power_bound_exact(eps / x, n, a_g4):.2f}"
+                          for x in sds]]))
+    for n in g4_ns:
+        print(_fmt_row([f"BNG, n={n}",
+                        *[f"{power_bng_exact(0, x, n, a_g4, eps):.2f}"
                           for x in sds]]))
     print()
     for n in g4_ns:
@@ -296,19 +312,20 @@ def main() -> None:
     print("\n### 5b. N-selection rule, unconditional power"
           " (PI decision 2026-10-24)\n")
     print("N = 108 if the smoke SD^_D (3 seeds, ddof 1) >= 0.015, else"
-          " N = 95. With normal D, 2 SD^_D^2 / SD_D^2 ~ chi2(2), so"
-          " P(N = 108) = exp(-(0.015 / SD_D)^2). Smoke seeds are disjoint"
-          " from the confirmatory seeds, so power = P(N = 95) pow(95) +"
-          " P(N = 108) pow(108), with the section 5 powers.\n")
+          " N = 95. sigma_sel is the SD of WDPA(within) - WDPA(none),"
+          " which drives the selection; with normal D,"
+          " 2 SD^_D^2 / sigma_sel^2 ~ chi2(2), so P(N = 108) ="
+          " exp(-(0.015 / sigma_sel)^2). Smoke seeds are disjoint from"
+          " the confirmatory seeds, so power = P(N = 95) pow(95) +"
+          " P(N = 108) pow(108). Full planned N retained, true diff 0.\n")
     sel_sds = (0.0075, 0.01, 0.015, 0.02, 0.025, 0.03, 0.04)
-    print(_fmt_row(["", *[f"SD_D={x}" for x in sel_sds]]))
-    print(_fmt_row(["---"] * (len(sel_sds) + 1)))
-    p108 = [float(np.exp(-(0.015 / x) ** 2)) for x in sel_sds]
-    print(_fmt_row(["P(N = 108)", *[f"{q:.2f}" for q in p108]]))
 
-    def _mix(pw, n_lo: int) -> list[str]:
-        return [f"{(1 - q) * pw(x, n_lo) + q * pw(x, 108):.3f}"
-                for q, x in zip(p108, sel_sds)]
+    def _p108(sig: float) -> float:
+        return float(np.exp(-(0.015 / sig) ** 2))
+
+    def _mix_at(pw, sig_sel: float, sig_con: float, n_lo: int = 95) -> float:
+        q = _p108(sig_sel)
+        return (1 - q) * pw(sig_con, n_lo) + q * pw(sig_con, 108)
 
     def _tost_at(x: float, n: int) -> float:
         return power_tost(0, x, n, a_g4, eps)
@@ -316,11 +333,31 @@ def main() -> None:
     def _bound_at(x: float, n: int) -> float:
         return power_bound_exact(eps / x, n, a_g4)
 
-    print(_fmt_row(["EQUIVALENT", *_mix(_tost_at, 95)]))
-    print(_fmt_row(["BOUNDED-NO-GAIN", *_mix(_bound_at, 95)]))
+    def _bng_at(x: float, n: int) -> float:
+        return power_bng_exact(0, x, n, a_g4, eps)
+
+    print("H12-C (its contrast is the selector difference, so"
+          " sigma_contrast = sigma_sel = SD_D):\n")
+    print(_fmt_row(["", *[f"SD_D={x}" for x in sel_sds]]))
+    print(_fmt_row(["---"] * (len(sel_sds) + 1)))
+    print(_fmt_row(["P(N = 108)", *[f"{_p108(x):.2f}" for x in sel_sds]]))
+    print(_fmt_row(["EQUIVALENT",
+                    *[f"{_mix_at(_tost_at, x, x):.3f}" for x in sel_sds]]))
     print("\nFor comparison, the removed rule (30 / 95 / 108) when its r^"
           " line does not trigger (N = 30 unless SD^_D >= 0.015):\n")
-    print(_fmt_row(["EQUIVALENT, old", *_mix(_tost_at, 30)]))
+    print(_fmt_row(["EQUIVALENT, old",
+                    *[f"{_mix_at(_tost_at, x, x, 30):.3f}" for x in sel_sds]]))
+
+    con_sds = (0.01, 0.015, 0.02, 0.025, 0.03, 0.04)
+    sel_grid = (0.0075, 0.015, 0.03)
+    for label, pw in (("U<eps (BNG or PN)", _bound_at), ("BNG exact", _bng_at)):
+        print(f"\nH12-A/B {label}: rows sigma_sel (WDPA), columns"
+              " sigma_contrast (CDPA SD of D):\n")
+        print(_fmt_row(["sigma_sel", *[f"s_con={x}" for x in con_sds]]))
+        print(_fmt_row(["---"] * (len(con_sds) + 1)))
+        for sg in sel_grid:
+            print(_fmt_row([str(sg), *[f"{_mix_at(pw, sg, x):.3f}"
+                                       for x in con_sds]]))
 
     print("\n## 6. DR3 paired complete rules (units of SD of D), n = 20\n")
     print("SURVIVES = lower bound > 0 AND mean(D) >= delta;"
