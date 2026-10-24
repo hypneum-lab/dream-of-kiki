@@ -4,7 +4,10 @@
 **Date:** 2026-10-23 (revision 3: PI decisions of 2026-10-23 on δ
 and n applied; revision 4, 2026-10-24: pre-filing code status, no
 protocol change; revision 5, 2026-10-24: export helper added per the
-PI decision of 2026-10-24, no protocol change)
+PI decision of 2026-10-24, no protocol change; revision 6,
+2026-10-24: PI decisions on τ and on c_α of the permutation
+secondary, decision-eligibility rules and the "global" wording
+guard after an independent review)
 **Parent OSF:** 10.17605/OSF.IO/Q6JYN
 **c_version at drafting:** C-v0.25.0+PARTIAL
 **Claim under test:** the DR-3 anchoring sentence in Paper 1 §8.4
@@ -281,9 +284,12 @@ FAILS state matters for rows 3-4.
   `.sha256`: tag, commit, clean-tree flag, Python / numpy / torch
   versions, protocol constants and, per seed, the file SHA-256, the
   SHA-256 of each array's float32 bytes, the accuracies and the gate
-  outcome. The probe is then run on the dumps with `--require-hash`;
-  it excludes any seed whose `gate_pass` is false, so gate failures
-  count towards the §4 abort.
+  outcome. The probe is then run on the dumps with
+  `--require-hash --manifest <dumps>/export-manifest.json --decide`
+  (plus `--permutation-null` for the §6 secondary); it recomputes the
+  gate from the accuracies and excludes failing seeds, so gate
+  failures count towards the §4 abort, and it applies the
+  eligibility rules of §8.
 
 **Preprocessing (primary, fixed).** L2-normalise each row; use
 Euclidean distance on the result. No centering. This matches the
@@ -314,8 +320,8 @@ Sensitivity pipelines (reported only, never change a verdict):
 - *S_mKNN^τ* (Eq. 4): `(1/n) Σ_i (1/k) Σ_{j ∈ N_k^X(i) ∩ N_k^Y(i)}
   w_ij`.
 - *S_H0^τ* (Eq. 5): `(1/(n − 1)) Σ_{(i,j) ∈ T_X ∩ T_Y} w_ij`.
-- **τ = 0.1** for the confirmatory geometry statistics (fixed here,
-  the middle of You et al.'s grid). The full grid
+- **τ = 0.1** for the confirmatory geometry statistics (decided by
+  the PI on 2026-10-24; the middle of You et al.'s grid). The full grid
   τ ∈ {1, 0.1, 0.01, 0.001, 0.0001} is reported as a sensitivity
   sweep. As τ → ∞ the geometry scores recover the structure scores.
 - Sensitivity (reported, not tested): k ∈ {5, 20}; linear CKA and
@@ -360,7 +366,31 @@ corrected.
    al. That null is primary here. The permutation calibration
    (K = 500, same statistic, You et al.'s T_cal; the
    Gröger/You-comparable form) is computed and reported as a
-   secondary analysis.
+   secondary analysis. **Specification (PI decision 2026-10-24).**
+   Per seed and per pair (trained, and null for reference), each of
+   K = 500 draws permutes the rows of substrate B's codes (the sample
+   correspondence; substrate A is never permuted) and recomputes the
+   same statistic under the primary protocol (l2, k = 10, τ = 0.1).
+   c_α is the (1 − α) quantile, **α = 0.05 (95th percentile)**, of the
+   pool {T_obs, T_1, …, T_K}, taken as the order statistic of rank
+   ⌈(1 − α)(K + 1)⌉ (rank 476 of 501); T_cal = max{(T_obs − c_α) /
+   (1 − c_α), 0} (0 if c_α = 1). The add-one permutation p-value is
+   reported too. Fixed stream `default_rng([seed, 2609])`
+   (`[seed + 1, 2609]` for the null pair). Reported only; it never
+   changes a §2 state, the §7 row or the wording rule.
+   **Check against You et al. (arXiv:2609.27252, v1 HTML, read
+   2026-10-24).** §3.4, Eqs. 7-8 (verbatim): "We define cα as the
+   (1−α) quantile of {Tobs,T(1),…,T(K)}", and the calibrated score is
+   max{(T_obs − c_α)/(1 − c_α), 0}; the sample correspondences of the
+   second model are permuted. §4.1 (verbatim): "calibrated using 500
+   correspondence permutations at α=0.05". So c_α at α = 0.05 (the
+   95th percentile of the pool) and K = 500 match the paper. Their
+   appendix B.1 reportedly states the empirical right-tail quantile
+   at rank ⌈(1 − α)(K + 1)⌉; that wording was seen only in a summary
+   of the HTML and must be checked against the PDF / TeX source
+   before it is quoted. Implementation:
+   `scripts/dr3_relational_probe.py --permutation-null` (`calibrate`,
+   `permutation_null`).
 2. *Layer selection.* They take a maximum over layer pairs. Here
    there is one pre-registered layer per substrate, so no maximum.
 3. *Clipping.* Their 95th-percentile clipping targets outlier
@@ -401,7 +431,10 @@ excludes 0. Otherwise rows 1 and 2 are written with "relational
 structure, in which the global (spanning-tree) score is not
 separable from one-nearest-neighbour overlap" in place of "(local
 and global)". This is a wording rule applied to prose only; it is
-not a fifth confirmatory test and changes no state.
+not a fifth confirmatory test and changes no state. The decision
+code allows "global" only when the run is eligible (§8), not
+aborted, the row is 1 or 2, and the S_H0^res criterion holds
+(`global_wording_allowed`); every other row never uses it.
 
 The secondary G5 pair (MLX MLP vs E-SNN, penultimate layer,
 Split-FMNIST test inputs, same statistics and preprocessing) is
@@ -409,6 +442,20 @@ Split-FMNIST test inputs, same statistics and preprocessing) is
 
 ## §8 Reporting commitment and stopping rule
 
+- **Decision eligibility.** A confirmatory §2 state and §7 row are
+  written only when all of the following hold; otherwise the same
+  reading is reported under `exploratory` and the confirmatory
+  fields are empty: (i) the dumps are exactly the unique seeds
+  100..119; (ii) every dump has a verified `.sha256` sidecar
+  (`--require-hash`) and matches the export manifest, whose own hash
+  is verified (`--manifest`); (iii) the manifest and every dump come
+  from the pinned v1.9.0 checkout (`confirmatory_eligible`, `pinned`;
+  an `--allow-unpinned` export is never eligible); (iv) the primary
+  protocol (k = 10, τ = 0.1, l2; `--decide` refuses other k or τ);
+  (v) every array has the registered shape 1024 × 16; (vi) every
+  seed carries finite trained-substrate accuracies. The learning gate
+  is recomputed from those accuracies; a supplied `gate_pass` is not
+  trusted, and a disagreement is flagged.
 - **Fixed n = 20 seeds, no optional stopping.** No statistic is
   computed on any trained pair before all 20 seeds and their nulls
   are dumped and hashed.
@@ -453,11 +500,17 @@ Split-FMNIST test inputs, same statistics and preprocessing) is
   an existing environment rather than `uv sync --frozen`; the trained
   substrates passed the gate (MLP 0.519, LIF 0.545), the untrained
   ones stayed near the 0.083 chance level (0.104, 0.087), and a rerun
-  gave identical array hashes. Open: the filing smoke on seed 900
-  with the documented invocation on the filing host, and the
-  permutation-null secondary analysis of §5 (departure 1; not yet
-  implemented, and the level of c_α is not yet stated). The v1.9.0
-  tag is public on GitHub (verified 2026-10-24).
+  gave identical array hashes. Also done (2026-10-24): the
+  permutation-null secondary (§5, departure 1; tests of the order
+  statistic, rescaling, clipping and the fixed stream), the
+  decision-eligibility checks of §8 with negative tests (missing
+  manifest or gate, incomplete seeds, unpinned export, non-primary
+  k / τ, wrong shape, mismatched hashes; end to end from the export
+  helper), the recomputed gate, and the restricted "global" wording
+  rule (tests for abort, ineligible runs and every row). Open: the
+  filing smoke on seed 900 with the documented invocation on the
+  filing host. The v1.9.0 tag is public on GitHub (verified
+  2026-10-24).
 - Milestones: `docs/milestones/dr3-relational-probe-<date>.{json,md}`.
 - Results are appended to `docs/proofs/dr3-substrate-evidence.md` as
   a new dated section (append-only).
@@ -475,5 +528,6 @@ n = 20 seeds. Decided on 2026-10-24: the export helper is a
 standalone script run inside a nerve-wml v1.9.0 checkout, with no
 new dependency in this repository (§5).
 
-1. **τ (§5).** 0.1 (default) or another single value from You et
-   al.'s grid.
+1. ~~τ (§5)~~ — decided by the PI on 2026-10-24: τ = 0.1.
+   (Permutation secondary c_α: decided on 2026-10-24, α = 0.05,
+   95th percentile; see §5, departure 1.)

@@ -209,3 +209,75 @@ def test_cli_refuses_unpinned_checkout(tmp_path: Path) -> None:
 
     with pytest.raises(RuntimeError, match="not pinned"):
         main(["--seeds", "900", "--out", str(tmp_path)], api_factory=lambda r: FakeAPI(), git=other)
+
+
+# --- export -> probe --decide integration (review fix 1) -------------------
+
+
+def _git_other(args: Sequence[str], root: Path) -> str:
+    return {"rev-parse": "0" * 40, "status": ""}[args[0]]
+
+
+def _export(tmp_path: Path, seeds: str, git: Any = _git_ok, unpinned: bool = False) -> Path:
+    out = tmp_path / "dumps"
+    argv = ["--nerve-wml-root", str(tmp_path), "--seeds", seeds, "--out", str(out)]
+    if unpinned:
+        argv.append("--allow-unpinned")
+    assert main(argv, api_factory=lambda root: FakeAPI(), git=git) == 0
+    return out
+
+
+def _decide(dumps: Path, tmp_path: Path, files: list[Path] | None = None) -> dict[str, Any]:
+    from scripts.dr3_relational_probe import main as probe_main
+
+    stats = tmp_path / "stats.json"
+    files = files if files is not None else sorted(dumps.glob("*.npz"))
+    assert probe_main([*map(str, files), "--require-hash", "--manifest",
+                       str(dumps / "export-manifest.json"), "--decide",
+                       "--output", str(stats)]) == 0
+    decision: dict[str, Any] = json.loads(stats.read_text())["decision"]
+    return decision
+
+
+@pytest.fixture(scope="module")
+def pinned_dumps(tmp_path_factory: pytest.TempPathFactory) -> Path:
+    return _export(tmp_path_factory.mktemp("pinned"), "100-119")
+
+
+def test_pinned_complete_export_is_eligible(pinned_dumps: Path, tmp_path: Path) -> None:
+    out = _decide(pinned_dumps, tmp_path)
+    assert out["eligible"] is True, out["eligibility_problems"]
+    assert out["row"] in range(1, 6)
+
+
+def test_incomplete_seed_set_is_not_eligible(pinned_dumps: Path, tmp_path: Path) -> None:
+    files = sorted(pinned_dumps.glob("*.npz"))[:-1]
+    out = _decide(pinned_dumps, tmp_path, files)
+    assert out["eligible"] is False and out["row"] is None
+    assert any("100..119" in p for p in out["eligibility_problems"])
+
+
+def test_unpinned_export_is_not_eligible(tmp_path: Path) -> None:
+    dumps = _export(tmp_path, "100-119", git=_git_other, unpinned=True)
+    with np.load(dumps / "dr3-seed100.npz") as z:
+        assert bool(z["pinned"]) is False
+    out = _decide(dumps, tmp_path)
+    assert out["eligible"] is False and out["row"] is None
+    assert any("unpinned" in p for p in out["eligibility_problems"])
+
+
+def test_missing_gate_is_not_eligible(pinned_dumps: Path, tmp_path: Path) -> None:
+    import shutil
+
+    dumps = tmp_path / "copy"
+    shutil.copytree(pinned_dumps, dumps)
+    f = dumps / "dr3-seed105.npz"
+    with np.load(f) as z:
+        kept = {k: z[k] for k in z.files if not k.startswith("acc_") and k != "gate_pass"}
+    np.savez(f, **kept)
+    digest = hashlib.sha256(f.read_bytes()).hexdigest()
+    (dumps / "dr3-seed105.npz.sha256").write_text(f"{digest}  {f.name}\n")
+    out = _decide(dumps, tmp_path)
+    assert out["eligible"] is False
+    assert any("gate not scored" in p for p in out["eligibility_problems"])
+    assert any("do not match" in p for p in out["eligibility_problems"])

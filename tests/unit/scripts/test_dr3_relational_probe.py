@@ -12,7 +12,10 @@ import pytest
 
 from scripts.dr3_relational_probe import (
     analyse_seed,
+    calibrate,
     decide,
+    eligibility_problems,
+    permutation_null,
     load_seed_npz,
     main,
     outcome_row,
@@ -249,10 +252,28 @@ def test_row_table_exhaustive_and_abort() -> None:
 
 def _seed_rec(seed: int, d: dict[str, float], res: float) -> dict[str, object]:
     return {
-        "seed": seed, "status": "ok", "sha256": "ab" * 32,
+        "seed": seed, "status": "ok", "sha256": "ab" * 32, "pinned": True,
+        "dims": {k: [1024, 16] for k in ("a_trained", "b_trained", "a_null", "b_null")},
+        "gate": {"gate_pass": True, "acc_a_trained": 0.5, "acc_b_trained": 0.5},
         "D": d,
         "comparator": {"D": {"S_mKNN_k1": res, "S_H0_res": res}},
     }
+
+
+def _eligible(seeds: list[Any], abort: bool = False) -> dict[str, Any]:
+    return {
+        "seeds": seeds, "abort": abort,
+        "protocol": {"k": 10, "tau": 0.1, "preprocess": "l2"},
+        "provenance": {"manifest_hash_ok": True, "confirmatory_eligible": True,
+                       "seed_hash_mismatch": [], "seeds_not_in_manifest": []},
+    }
+
+
+def _seeds_for(states: tuple[str, ...], res_mean: float = 0.05) -> list[Any]:
+    keys = ("S_mKNN", "S_H0", "S_mKNN_tau", "S_H0_tau")
+    cols = {k: _d(*STATE_D[s], seed=i + 2) for i, (k, s) in enumerate(zip(keys, states))}
+    res = _d(res_mean, 0.01, seed=9)
+    return [_seed_rec(100 + i, {k: cols[k][i] for k in keys}, res[i]) for i in range(N20)]
 
 
 @pytest.mark.parametrize(("row", "states"), ROWS)
@@ -263,7 +284,8 @@ def test_decide_end_to_end_rows(row: int, states: tuple[str, ...]) -> None:
     seeds = [
         _seed_rec(100 + i, {k: cols[k][i] for k in keys}, res[i]) for i in range(N20)
     ]
-    out = decide({"seeds": seeds, "abort": False}, delta=DELTA)
+    out = decide(_eligible(seeds), delta=DELTA)
+    assert out["eligible"] is True, out["eligibility_problems"]
     assert tuple(out["states"][k]["state"] for k in keys) == states
     assert out["row"] == row
     assert out["confirmatory_seed_set"] is True
@@ -276,7 +298,7 @@ def test_decide_global_wording_rule() -> None:
     for res_mean, allowed in ((0.05, True), (0.01, False), (0.0, False)):
         res = _d(res_mean, 0.01, seed=9)
         seeds = [_seed_rec(100 + i, {k: base[k][i] for k in keys}, res[i]) for i in range(N20)]
-        out = decide({"seeds": seeds, "abort": False}, delta=DELTA)
+        out = decide(_eligible(seeds), delta=DELTA)
         assert out["row"] == 1
         assert out["global_wording_allowed"] is allowed
         assert out["comparator"]["S_H0_res"]["ci95"][0] <= out["comparator"]["S_H0_res"]["mean"]
@@ -285,24 +307,154 @@ def test_decide_global_wording_rule() -> None:
 def test_decide_abort_and_excluded_seeds() -> None:
     keys = ("S_mKNN", "S_H0", "S_mKNN_tau", "S_H0_tau")
     seeds = [_seed_rec(100 + i, {k: 0.05 + 0.001 * i for k in keys}, 0.0) for i in range(N20)]
-    seeds[0] = {"seed": 100, "status": "excluded", "reasons": ["x"]}
-    out = decide({"seeds": seeds, "abort": False}, delta=DELTA)
+    seeds[0] = dict(seeds[0], status="excluded", reasons=["x"])
+    out = decide(_eligible(seeds), delta=DELTA)
     assert out["n_retained"] == N20 - 1
-    out = decide({"seeds": seeds, "abort": True}, delta=DELTA)
-    assert out["row"] == 0
+    out = decide(_eligible(seeds, abort=True), delta=DELTA)
+    assert out["row"] == 0 and out["global_wording_allowed"] is False
 
 
 def test_decide_flags_nonconfirmatory_seed_set() -> None:
     keys = ("S_mKNN", "S_H0", "S_mKNN_tau", "S_H0_tau")
     seeds = [_seed_rec(900 + i, {k: 0.05 + 0.001 * i for k in keys}, 0.0) for i in range(3)]
-    out = decide({"seeds": seeds, "abort": False}, delta=DELTA)
+    out = decide(_eligible(seeds), delta=DELTA)
     assert out["confirmatory_seed_set"] is False
+    assert out["eligible"] is False and out["row"] is None and out["states"] is None
+    assert out["exploratory"]["row"] in range(0, 6)
 
 
 def test_main_decide_flag(tmp_path: Path) -> None:
     files = [str(_write(tmp_path / f"s{s}.npz", seed=s)) for s in (100, 101, 102)]
     out = tmp_path / "out.json"
-    assert main([*files, "--k", "5", "--output", str(out), "--decide"]) == 0
+    assert main([*files, "--output", str(out), "--decide"]) == 0
     doc = json.loads(out.read_text())
-    assert doc["decision"]["row"] in range(0, 6)
+    assert doc["decision"]["eligible"] is False and doc["decision"]["row"] is None
+    assert doc["decision"]["exploratory"]["row"] in range(0, 6)
     assert doc["decision"]["confirmatory_seed_set"] is False
+
+
+@pytest.mark.parametrize("flags", [["--k", "5"], ["--tau", "0.01"]])
+def test_decide_rejects_non_primary_protocol(tmp_path: Path, flags: list[str]) -> None:
+    f = str(_write(tmp_path / "s100.npz"))
+    with pytest.raises(SystemExit):
+        main([f, *flags, "--output", str(tmp_path / "o.json"), "--decide"])
+
+
+# --- confirmatory eligibility (review fix 1) --------------------------------
+
+
+def _ok_seeds() -> list[Any]:
+    return _seeds_for(("SURVIVES", "SURVIVES", "FAILS", "FAILS"))
+
+
+def test_eligibility_clean_doc_has_no_problems() -> None:
+    assert eligibility_problems(_eligible(_ok_seeds())) == []
+
+
+@pytest.mark.parametrize(
+    ("mutate", "needle"),
+    [
+        (lambda d: d.pop("provenance"), "manifest"),
+        (lambda d: d["provenance"].update(confirmatory_eligible=False), "unpinned"),
+        (lambda d: d["provenance"].update(manifest_hash_ok=False), "hash not verified"),
+        (lambda d: d["provenance"].update(seed_hash_mismatch=[101]), "do not match"),
+        (lambda d: d["protocol"].update(tau=0.01), "non-primary"),
+        (lambda d: d["seeds"].pop(), "100..119"),
+        (lambda d: d["seeds"].append(dict(d["seeds"][0])), "duplicate"),
+        (lambda d: d["seeds"][3].update(pinned=False), "unpinned"),
+        (lambda d: d["seeds"][3].update(sha256=None), "hash not verified"),
+        (lambda d: d["seeds"][3]["dims"].update(a_null=[1024, 8]), "1024"),
+        (lambda d: d["seeds"][3].pop("gate"), "gate not scored"),
+        (lambda d: d["seeds"][3]["gate"].update(acc_b_trained=float("nan")), "gate not scored"),
+    ],
+)
+def test_eligibility_problems_block_the_decision(mutate: Any, needle: str) -> None:
+    doc = _eligible(_ok_seeds())
+    mutate(doc)
+    probs = eligibility_problems(doc)
+    assert any(needle in p for p in probs), probs
+    out = decide(doc, delta=DELTA)
+    assert out["eligible"] is False
+    assert out["row"] is None and out["states"] is None
+    assert out["global_wording_allowed"] is False
+    assert "exploratory" in out
+
+
+# --- "global" wording rule needs eligibility, no abort, row 1-2 (fix 6) -----
+
+
+@pytest.mark.parametrize(("row", "states"), ROWS)
+def test_global_wording_only_on_rows_1_and_2(row: int, states: tuple[str, ...]) -> None:
+    out = decide(_eligible(_seeds_for(states, res_mean=0.05)), delta=DELTA)
+    assert out["row"] == row
+    assert out["global_wording_allowed"] is (row in (1, 2))
+
+
+def test_global_wording_never_on_abort_or_ineligible() -> None:
+    seeds = _seeds_for(("SURVIVES", "SURVIVES", "FAILS", "FAILS"), res_mean=0.05)
+    assert decide(_eligible(seeds), delta=DELTA)["global_wording_allowed"] is True
+    assert decide(_eligible(seeds, abort=True), delta=DELTA)["global_wording_allowed"] is False
+    doc = _eligible(seeds)
+    doc["provenance"]["confirmatory_eligible"] = False
+    assert decide(doc, delta=DELTA)["global_wording_allowed"] is False
+
+
+# --- gate recomputed, supplied gate_pass not trusted (fix 1) ---------------
+
+
+def test_gate_pass_true_but_low_accuracy_is_excluded(tmp_path: Path) -> None:
+    g = _gate(0.6, 0.2)
+    g["gate_pass"] = np.bool_(True)  # lying flag
+    out = analyse_seed(load_seed_npz(_write(tmp_path / "s.npz", **g)), k=5, tau=0.1)
+    assert out["status"] == "excluded" and out["gate_pass_mismatch"] is True
+
+
+def test_gate_non_finite_accuracy_is_excluded(tmp_path: Path) -> None:
+    g = _gate(float("nan"), 0.6)
+    out = analyse_seed(load_seed_npz(_write(tmp_path / "s.npz", **g)), k=5, tau=0.1)
+    assert out["status"] == "excluded"
+    assert any("non-finite" in r for r in out["reasons"])
+
+
+# --- permutation-null secondary (PI decision 2026-10-24) -------------------
+
+
+def test_calibrate_order_statistic_and_rescaling() -> None:
+    perm = np.arange(19) / 100.0  # 0.00 .. 0.18
+    out = calibrate(0.5, perm, alpha=0.05)
+    # pool of 20 values; rank ceil(0.95 * 20) = 19 -> 0.18
+    assert out["c_alpha"] == pytest.approx(0.18)
+    assert out["T_cal"] == pytest.approx((0.5 - 0.18) / (1 - 0.18))
+    assert out["K"] == 19 and out["p_add_one"] == pytest.approx(1 / 20)
+
+
+def test_calibrate_clips_to_zero_and_handles_c_one() -> None:
+    assert calibrate(0.1, np.full(19, 0.3))["T_cal"] == 0.0
+    assert calibrate(1.0, np.ones(19))["T_cal"] == 0.0
+
+
+def test_calibrate_95th_percentile_at_k500() -> None:
+    perm = np.linspace(0.0, 1.0, 500, endpoint=False)
+    out = calibrate(0.2, perm)
+    pool = np.sort(np.concatenate([[0.2], perm]))
+    assert out["c_alpha"] == pool[int(np.ceil(0.95 * 501)) - 1]
+
+
+def test_permutation_null_identical_pair_calibrates_high() -> None:
+    x = np.random.default_rng(0).normal(size=(40, 6))
+    out = permutation_null(x, x.copy(), k=5, tau=0.1, n_perm=19, seed=3)
+    assert set(out) == {"S_mKNN", "S_H0", "S_mKNN_tau", "S_H0_tau"}
+    assert out["S_mKNN"]["T_obs"] == pytest.approx(1.0)
+    assert out["S_mKNN"]["T_cal"] > 0.5
+    again = permutation_null(x, x.copy(), k=5, tau=0.1, n_perm=19, seed=3)
+    assert again == out  # fixed stream
+
+
+def test_permutation_null_reported_in_seed_record(tmp_path: Path) -> None:
+    out = tmp_path / "o.json"
+    f = str(_write(tmp_path / "s100.npz"))
+    assert main([f, "--k", "5", "--output", str(out), "--permutation-null", "--n-perm", "9"]) == 0
+    rec = json.loads(out.read_text())["seeds"][0]
+    pn = rec["permutation_null"]
+    assert pn["reported_only"] is True and pn["trained"]["S_H0"]["K"] == 9
+    assert "D" in rec  # primary statistics unchanged alongside

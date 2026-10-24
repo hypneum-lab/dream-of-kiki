@@ -34,16 +34,18 @@ Outputs in ``--out`` (existing files are never overwritten):
 * ``dr3-seed<seed>.npz``: ``seed``, ``a_trained``, ``b_trained``,
   ``a_null``, ``b_null`` (float32, 1024 x 16, row ``i`` = input ``i``),
   the learning-gate accuracies ``acc_a_trained``, ``acc_b_trained``,
-  ``acc_a_null``, ``acc_b_null`` and ``gate_pass``;
+  ``acc_a_null``, ``acc_b_null``, ``gate_pass`` and ``pinned``;
 * ``dr3-seed<seed>.npz.sha256``: ``<hex>  <file name>``;
 * ``export-manifest.json`` (+ ``.sha256``): pin, versions, protocol
   constants and, per seed, the file hash, per-array content hashes
   (``sha256`` of the C-order float32 bytes, comparable across reruns
   independently of the ``.npz`` container), accuracies and gate.
 
-Seeds failing the gate are dumped like the others and are excluded by
-``scripts/dr3_relational_probe.py`` from ``gate_pass``, so the section 4
-abort count sees every exclusion.
+Seeds failing the gate are dumped like the others; the probe
+recomputes the gate from the accuracies (it does not trust
+``gate_pass``) and excludes them, so the section 4 abort count sees
+every exclusion. A confirmatory decision additionally needs the probe's
+``--manifest`` check of this manifest (pinned checkout, hashes).
 """
 from __future__ import annotations
 
@@ -159,8 +161,15 @@ def dump_path(out_dir: Path, seed: int) -> Path:
     return out_dir / f"dr3-seed{seed}.npz"
 
 
-def export_seed(api: SubstrateAPI, seed: int, out_dir: Path) -> dict[str, Any]:
-    """Train, export, gate and dump one seed; return its manifest entry."""
+def export_seed(
+    api: SubstrateAPI, seed: int, out_dir: Path, pinned: bool = False
+) -> dict[str, Any]:
+    """Train, export, gate and dump one seed; return its manifest entry.
+
+    ``pinned`` (true only for a verified v1.9.0 checkout) is written
+    into the dump so that an ``--allow-unpinned`` export can never feed
+    a confirmatory decision.
+    """
     path = dump_path(out_dir, seed)
     if path.exists():
         raise FileExistsError(f"{path} exists; dumps are never overwritten")
@@ -192,6 +201,7 @@ def export_seed(api: SubstrateAPI, seed: int, out_dir: Path) -> dict[str, Any]:
     payload: dict[str, Any] = {"seed": np.int64(seed), **arrays}
     payload.update({f"acc_{k}": np.float64(v) for k, v in acc.items()})
     payload["gate_pass"] = np.bool_(gate_pass)
+    payload["pinned"] = np.bool_(pinned)
     np.savez(path, **payload)
     digest = _write_sidecar(path)
     return {
@@ -215,7 +225,8 @@ def run_export(
     for s in seeds:
         if dump_path(out_dir, s).exists():
             raise FileExistsError(f"{dump_path(out_dir, s)} exists; dumps are never overwritten")
-    entries = [export_seed(api, s, out_dir) for s in seeds]
+    pinned = bool(checkout.get("pinned"))
+    entries = [export_seed(api, s, out_dir, pinned=pinned) for s in seeds]
     doc = {
         "script": "scripts/dr3_export_nerve_wml.py",
         "prereg": "docs/osf-prereg-dr3-relational-probe-2026-10-23.md",
