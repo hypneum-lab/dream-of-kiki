@@ -2,7 +2,8 @@
 
 **Status:** DRAFT — not yet filed on OSF (to be filed by the PI).
 **Date:** 2026-10-23 (revision 4: PI decisions of 2026-10-23 on N
-and ε applied; ε reverted to 0.01 and N = 108 tier added)
+and ε applied; ε reverted to 0.01 and N = 108 tier added; revision 5,
+2026-10-24: pre-filing code status, no protocol change)
 **Parent OSF:** 10.17605/OSF.IO/Q6JYN
 **Sister pre-regs (locked, not modified):**
 `docs/osf-prereg-g4-sexto-pilot.md` (H6-A, CIFAR-100),
@@ -357,6 +358,10 @@ error rates of §2.
   whose two cells both complete, and the error rates of §2 are
   conditional on that set; the guard below limits, but does not
   remove, selection by treatment-dependent failures.
+  A cell whose run raises (for example a BLOCKING invariant raised by
+  the dream runtime) writes no outcome record; the aggregator counts
+  the missing record as a cell-level exclusion (reason
+  `missing_record`) and the driver log is preserved.
 - **No replacement.** The seed list is fixed (§5). Excluded seeds are
   not replaced. Inference uses the retained n; the achieved n and
   every excluded seed with its reason are reported.
@@ -420,8 +425,8 @@ error rates of §2.
   by an earlier network. This is part of what is tested.
 - **RECOMBINE strategies** (extension of
   `experiments/g4_quater_test/recombine_strategies.py`; module
-  `experiments/g4_nono_test/recombine_cross.py`, to be written and
-  reviewed against the checklist below **before filing**). At a DE
+  `experiments/g4_nono_test/recombine_cross.py`, written and
+  reviewed against the checklist below in PR #44). At a DE
   with recombine seed `seed + k + 30000`, one `default_rng` stream
   is used in this order:
   1. draw λ₁..λ₁₆ ~ Uniform(0.2, 0.8) (so `cross` and `within` use
@@ -449,9 +454,14 @@ error rates of §2.
   of the three strategies. 2 + 2 × 3 = **8 cells per seed**; 240
   cells at N = 30, 760 at N = 95, 864 at N = 108.
 - **Driver / aggregator.** `experiments/g4_nono_test/run_cross_domain.py`
-  and `experiments/g4_nono_test/aggregator.py` (to be written before
-  filing). The aggregator implements §2 exactly and calls
-  `scipy.stats.ttest_rel(..., alternative="greater")` for H12-A/B.
+  (one cell per call, PR #44) and `experiments/g4_nono_test/aggregator.py`
+  (PR #41). The aggregator implements §2, §4 and §7 exactly; its
+  bounds come from the paired helper
+  `kiki_oniric.eval.statistics.paired_tost` (paired SE, df = n − 1),
+  whose one-sided bound `L > 0` is the same decision as
+  `scipy.stats.ttest_rel(..., alternative="greater")` at α. Its
+  `--select-n` mode applies the §3 N-selection rule to the smoke
+  records.
 - **Data pin.** CIFAR-100 archive and SHA-256 pins from
   `experiments.g4_sexto_test.cifar100_dataset`. That loader drops the
   coarse-label byte; the driver adds a coarse-label decode path from
@@ -476,6 +486,19 @@ commit; each has a unit test under `tests/`):
 8. The aggregator reproduces a hand-computed paired example
    (L, U, g_av, g_z, state) — test.
 
+Tests per item (status 2026-10-24): 1 `test_ladder_module_untouched`,
+`test_shapes_and_soft_targets`; 2
+`test_same_seed_same_lambda_across_strategies`; 3
+`test_distinct_class_and_domain_constraints_1e4_draws`; 4
+`test_cross_and_within_noop_before_task6`; 5
+`test_pinned_bin_coarse_matches_parquet_first_1000` (skipped unless
+both pinned files are present, so it must be run on the filing host;
+see §9); 6 `test_buffer_push_16_plus_16_latents_frozen`; 7
+`test_tie_on_a_single_pair_counts_half_per_image`,
+`test_all_equal_logits_give_exactly_half`; 8
+`test_paired_summary_hand_example`
+(`tests/unit/test_g4_nono_{recombine_cross,driver,loader_coarse,metrics,aggregator}.py`).
+
 ## §6 Outcome metrics
 
 All metrics are computed after task 10 training (end of stream).
@@ -487,8 +510,9 @@ All metrics are computed after task 10 training (end of stream).
   100 pairs.
 - **WDPA (H12-C).** Same computation over the 45 + 45 within-domain
   pairs; unweighted mean over the 90 pairs.
-- **Domain-only probe, DOA (secondary, exploratory).** For each of
-  the 20000 test images of the 20 classes (1000 per class), predict
+- **Domain-only probe, DOA (secondary, exploratory;
+  `experiments.g4_nono_test.metrics.compute_doa`, cell field `doa`).**
+  For each of the 20000 test images of the 20 classes (1000 per class), predict
   the *domain* by comparing the maximum logit over the 10 domain-A
   classes with the maximum over the 10 domain-B classes (tie counts
   0.5); DOA is the accuracy against the true domain. It uses no
@@ -553,6 +577,14 @@ carry a universality claim in either direction.
   (wall time, r̂, SD̂_D, manipulation-check pass rate) and the N
   fixed by the §3 N-selection rule are written into the filed version.
   The lock commit is the commit that contains all four.
+  **Status 2026-10-24:** (a) done: driver and `recombine_cross.py`
+  (PR #44, three review rounds, APPROVE) and the aggregator (this PR),
+  to be pinned by the lock commit; (b) done for items 1-4 and 6-8 on
+  synthetic data; item 5 needs the pinned CIFAR-100 binary and parquet
+  files on the filing host; (c) done:
+  `tests/unit/test_g4_nono_aggregator.py` reaches every §2 state and
+  every §7 row end to end on synthetic paired records; (d) open: the
+  smoke has not run.
 - **Pre-filing smoke:** seeds 900-902, all 8 cells, on the filing
   hardware. It verifies the driver, the checklist tests and per-cell
   wall time, and records r̂ and SD̂_D for the §3 N-selection rule. Its

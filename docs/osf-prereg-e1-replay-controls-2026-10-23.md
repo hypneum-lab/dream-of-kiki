@@ -2,7 +2,8 @@
 
 **Status:** DRAFT — not yet filed on OSF (to be filed by the PI).
 **Date:** 2026-10-23 (revision 3: PI decisions of 2026-10-23 on δ
-and the fact corpus applied)
+and the fact corpus applied; revision 4, 2026-10-24: pre-filing code
+status, no protocol change)
 **Parent OSF:** 10.17605/OSF.IO/Q6JYN
 **Parent backlog item:** `EXPERIMENT-BACKLOG.md` E1 (powered TOST,
 35B run pending).
@@ -159,8 +160,12 @@ convention only if SD_D = 0.0345 (§3).
 
 `kiki_oniric.eval.statistics.tost_equivalence` is **not** used: it
 computes an independent-samples standard error with
-`df = n₁ + n₂ − 2`, which is wrong for paired data. Implementing a
-paired helper with tests is a required pre-filing task (§9).
+`df = n₁ + n₂ − 2`, which is wrong for paired data. The paired
+procedures above are implemented as
+`kiki_oniric.eval.statistics.paired_tost` and
+`paired_noninferiority` (PR #42; tested against hand-computed
+examples and SciPy one-sided p-values, identical differences handled
+exactly), which closes task 1 of §9.
 
 **Family.** Three hypotheses, Bonferroni α = 0.05 / 3 = **1/60
 ≈ 0.0167** (same α as the E1 harness).
@@ -599,11 +604,11 @@ partition hashes, the hardware and the HF revision hash are written
 into the filed version.
 
 **Required pre-filing code tasks** (each with unit tests):
-1. Paired NI / TOST / bound helper (e.g.
-   `kiki_oniric.eval.statistics.paired_bounds`) implementing §2
-   exactly, tested against a hand-computed example and against
-   `scipy.stats.ttest_rel`. The existing `tost_equivalence` is left
-   unchanged and unused here.
+1. **Done (PR #42):** paired NI / TOST / bound helper
+   (`kiki_oniric.eval.statistics.paired_tost`,
+   `paired_noninferiority`) implementing §2 exactly, tested against
+   hand-computed examples and SciPy one-sided p-values. The existing
+   `tost_equivalence` is left unchanged and unused here.
 2. Corpus loader: `pilot_cycle3_cuda.py` reads the fact corpus and
    its §5.1 manifest (and the pilot manifest for the smoke), verifies
    the hashes, and restricts `_cell_split` to the requested

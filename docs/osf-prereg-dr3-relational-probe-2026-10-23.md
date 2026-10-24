@@ -2,7 +2,8 @@
 
 **Status:** DRAFT — not yet filed on OSF (to be filed by the PI).
 **Date:** 2026-10-23 (revision 3: PI decisions of 2026-10-23 on δ
-and n applied)
+and n applied; revision 4, 2026-10-24: pre-filing code status, no
+protocol change)
 **Parent OSF:** 10.17605/OSF.IO/Q6JYN
 **c_version at drafting:** C-v0.25.0+PARTIAL
 **Claim under test:** the DR-3 anchoring sentence in Paper 1 §8.4
@@ -12,10 +13,8 @@ mutual-kNN = 0.174 at k = 10, N = 1024, 3 seeds, 18.8× a random
 baseline; `nerve-wml` v1.9.0).
 **Primary substrate pair:** `MlpWML` vs `LifWML` from `nerve-wml`
 tag `v1.9.0` (commit `95ac6b78477c3ce999b31bca775769041e082b46`;
-the tag is on the lab Gitea mirror `git.saillant.cc/hypneum-lab/
-nerve-wml` but **not yet on the GitHub repository**; the filing gate
-(§9) requires the tag, or an archive of that commit, to be public
-next to the filed registration), reproduced through
+the annotated tag is public on `github.com/hypneum-lab/nerve-wml`
+and resolves to that commit, verified 2026-10-24), reproduced through
 `scripts/platonic_rh_alignment.py` at that commit.
 **Secondary substrate pair (exploratory):** MLX MLP vs E-SNN from
 `experiments/g5_cross_substrate/` (§7, last paragraph).
@@ -398,6 +397,19 @@ Split-FMNIST test inputs, same statistics and preprocessing) is
   S_mKNN(k=1) and S_H0^res on a hand-built example).
   It consumes dumps exported from `nerve-wml` at v1.9.0 by an export
   helper that imports the v1.9.0 training functions unchanged.
+- **Status 2026-10-24.** Done: `kiki_oniric.eval.relational_probe`
+  and `scripts/dr3_relational_probe.py` (PR #43, review APPROVE) with
+  the listed unit tests (hand-built mKNN, Prim tie rule, H₀
+  normalisation, τ → ∞ limit); the 1-NN comparator
+  (`nn_comparator`: S_mKNN(k=1), S_H0^res, hand-built tests) and the
+  decision code (`--decide`: §2 states, §7 row, "global" wording
+  rule; tests reach every state and row on synthetic D vectors), both
+  in this PR. Open: the export helper (it imports nerve-wml v1.9.0
+  training code, which is not a dependency of this repository), the
+  permutation-null secondary analysis of §5 (departure 1; not yet
+  implemented, and the level of c_α is not yet stated) and the smoke
+  on seed 900. The v1.9.0 tag is public on GitHub (verified
+  2026-10-24).
 - Milestones: `docs/milestones/dr3-relational-probe-<date>.{json,md}`.
 - Results are appended to `docs/proofs/dr3-substrate-evidence.md` as
   a new dated section (append-only).
