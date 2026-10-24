@@ -25,7 +25,7 @@ aggregator and the E1 analysis share one paired implementation.
 Usage::
 
     uv run python -m experiments.g4_nono_test.aggregator cells/*.json \
-        --n-planned 30 --out agg.json
+        --n-planned 95 --out agg.json
     uv run python -m experiments.g4_nono_test.aggregator smoke/*.json \
         --select-n --out n-selection.json
 """
@@ -52,10 +52,9 @@ ALPHA_SECONDARY = 0.05
 G_FLOOR = 0.5
 # Differential-exclusion guard (section 4): more than this many seeds
 # lost to cell-level exclusions makes the hypothesis exploratory.
-GUARD = {30: 3, 95: 9, 108: 10}
+GUARD = {95: 9, 108: 10}
 SMOKE_SEEDS = (900, 901, 902)
 SD_THRESHOLD = 0.015
-R_THRESHOLD = 0.5
 METRICS = ("cdpa", "wdpa", "retention_a", "acc20", "doa")
 
 Cell = tuple[str, str]
@@ -304,9 +303,10 @@ def select_n(records: Iterable[Mapping[str, Any]]) -> dict[str, Any]:
     """Section 3 N-selection rule from the smoke seeds 900-902.
 
     Line 1: SD^_D (ddof 1) of WDPA(within) - WDPA(none) >= 0.015 -> 108;
-    line 2: min r^ < 0.5 (undefined r^ counts as below) -> 95;
-    line 3: otherwise 30. Contrasts are those of the H12 family
-    (``P_max`` arm). Every smoke cell must be present and usable.
+    line 2: otherwise 95 (PI decision 2026-10-24: the former N = 30
+    line is removed, so 95 is the floor). r^ for each H12 contrast
+    (``P_max`` arm) is still computed and reported, but no longer
+    selects N. Every smoke cell must be present and usable.
     """
     cells, aborted = _index(records)
     if aborted:
@@ -331,10 +331,8 @@ def select_n(records: Iterable[Mapping[str, Any]]) -> dict[str, Any]:
     min_r = min((r if r is not None else -math.inf) for r in r_hat.values())
     if sd_hat >= SD_THRESHOLD:
         n, line = 108, 1
-    elif min_r < R_THRESHOLD:
-        n, line = 95, 2
     else:
-        n, line = 30, 3
+        n, line = 95, 2
     return {
         "smoke_seeds": list(SMOKE_SEEDS),
         "r_hat": r_hat,

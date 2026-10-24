@@ -210,16 +210,16 @@ def main() -> None:
     print("## 1. Test-rejection MDE at 80 % power (exact noncentral t)\n")
     for label, n, a, sided in [
         ("DR3 independent, n=20/group, one-sided a=.0125", 20, a_dr3, 1),
-        ("G4 independent, n=30/group, one-sided a=1/60", 30, a_g4, 1),
         ("G4 independent, n=95/group, one-sided a=1/60", 95, a_g4, 1),
+        ("G4 independent, n=108/group, one-sided a=1/60", 108, a_g4, 1),
     ]:
         d = mde_two_sample(n, a, sided)
         print(f"- {label}: d = {d:.3f}, Hedges g = "
               f"{d * hedges_j(2 * n - 2):.3f}")
     for label, n, a in [
         ("DR3 paired, n=20, one-sided a=.0125", 20, a_dr3),
-        ("G4 paired, n=30, one-sided a=1/60", 30, a_g4),
         ("G4 paired, n=95, one-sided a=1/60", 95, a_g4),
+        ("G4 paired, n=108, one-sided a=1/60", 108, a_g4),
         ("E1 paired, n=141, one-sided a=1/60", 141, a_e1),
     ]:
         dz = mde_paired(n, a)
@@ -243,14 +243,14 @@ def main() -> None:
     rs = (0.0, 0.3, 0.5, 0.7, 0.9)
     print(_fmt_row(["n", *[f"r={r}" for r in rs]]))
     print(_fmt_row(["---"] * (len(rs) + 1)))
-    for n in (30, 95):
+    for n in (95, 108):
         dz = mde_paired(n, a_g4)
         print(_fmt_row([str(n), *[f"{dz * np.sqrt(2 * (1 - r)):.3f}"
                                   for r in rs]]))
 
     print("\n## 4. G4-nono complete rule (paired t AND g_av >= 0.5)\n")
     d_grid = (0.5, 0.6, 0.8, 1.0)
-    for n in (30, 95):
+    for n in (95, 108):
         print(f"\nn = {n} (rows: r; columns: true d_av)\n")
         print(_fmt_row(["r", *[f"d_av={d}" for d in d_grid]]))
         print(_fmt_row(["---"] * (len(d_grid) + 1)))
@@ -261,19 +261,19 @@ def main() -> None:
 
     eps = 0.01
     print("\n### 4b. Same rule plus raw floor mean(D) >= eps = 0.01"
-          " (n = 30, r = 0.5)\n")
+          " (n = 95, r = 0.5)\n")
     sigmas = (0.01, 0.02, 0.04)
     print(_fmt_row(["arm SD", *[f"d_av={d}" for d in d_grid]]))
     print(_fmt_row(["---"] * (len(d_grid) + 1)))
     for sg in sigmas:
-        cells = [f"{power_paired_gav_floor(d, 0.5, 30, a_g4, 0.5, sigma=sg, raw_floor=eps):.2f}"
+        cells = [f"{power_paired_gav_floor(d, 0.5, 95, a_g4, 0.5, sigma=sg, raw_floor=eps):.2f}"
                  for d in d_grid]
         print(_fmt_row([str(sg), *cells]))
 
     print("\n## 5. G4-nono 'no practical effect' rules, eps = 0.01,"
           " true diff 0\n")
     sds = (0.0075, 0.01, 0.015, 0.02, 0.025, 0.03, 0.04)
-    g4_ns = (30, 95, 108)
+    g4_ns = (95, 108)
     print("H12-C TOST (EQUIVALENT) and H12-A/B BOUNDED-NO-GAIN (U < eps),"
           " by SD of the paired difference:\n")
     print(_fmt_row(["rule, n", *[f"SD_D={x}" for x in sds]]))
@@ -292,6 +292,35 @@ def main() -> None:
     for x in (0.015, 0.02, 0.025, 0.03, 0.04):
         print(f"- SD_D = {x}: n for 80 % = {n_needed_tost(eps, x, a_g4)}"
               f" (TOST), {n_needed_bound(eps, x, a_g4)} (U < eps)")
+
+    print("\n### 5b. N-selection rule, unconditional power"
+          " (PI decision 2026-10-24)\n")
+    print("N = 108 if the smoke SD^_D (3 seeds, ddof 1) >= 0.015, else"
+          " N = 95. With normal D, 2 SD^_D^2 / SD_D^2 ~ chi2(2), so"
+          " P(N = 108) = exp(-(0.015 / SD_D)^2). Smoke seeds are disjoint"
+          " from the confirmatory seeds, so power = P(N = 95) pow(95) +"
+          " P(N = 108) pow(108), with the section 5 powers.\n")
+    sel_sds = (0.0075, 0.01, 0.015, 0.02, 0.025, 0.03, 0.04)
+    print(_fmt_row(["", *[f"SD_D={x}" for x in sel_sds]]))
+    print(_fmt_row(["---"] * (len(sel_sds) + 1)))
+    p108 = [float(np.exp(-(0.015 / x) ** 2)) for x in sel_sds]
+    print(_fmt_row(["P(N = 108)", *[f"{q:.2f}" for q in p108]]))
+
+    def _mix(pw, n_lo: int) -> list[str]:
+        return [f"{(1 - q) * pw(x, n_lo) + q * pw(x, 108):.3f}"
+                for q, x in zip(p108, sel_sds)]
+
+    def _tost_at(x: float, n: int) -> float:
+        return power_tost(0, x, n, a_g4, eps)
+
+    def _bound_at(x: float, n: int) -> float:
+        return power_bound_exact(eps / x, n, a_g4)
+
+    print(_fmt_row(["EQUIVALENT", *_mix(_tost_at, 95)]))
+    print(_fmt_row(["BOUNDED-NO-GAIN", *_mix(_bound_at, 95)]))
+    print("\nFor comparison, the removed rule (30 / 95 / 108) when its r^"
+          " line does not trigger (N = 30 unless SD^_D >= 0.015):\n")
+    print(_fmt_row(["EQUIVALENT, old", *_mix(_tost_at, 30)]))
 
     print("\n## 6. DR3 paired complete rules (units of SD of D), n = 20\n")
     print("SURVIVES = lower bound > 0 AND mean(D) >= delta;"

@@ -30,7 +30,7 @@ from experiments.g4_nono_test.aggregator import (
     select_n,
 )
 
-N = 30
+N = 95
 
 
 def _z(n: int, seed: int) -> np.ndarray:
@@ -92,18 +92,18 @@ def _records(
     return recs
 
 
-# Per-contrast D recipes (n = 30, alpha = 1/60, eps = 0.01, arm SD 0.1).
+# Per-contrast D recipes (n = 95, alpha = 1/60, eps = 0.01, arm SD 0.1).
 AB = {
     "CONFIRMED": (0.10, 0.01),
     "POSITIVE-NEGLIGIBLE": (0.004, 0.002),
     "DETECTED-BELOW-FLOOR": (0.02, 0.01),
     "BOUNDED-NO-GAIN": (0.0, 0.01),
-    "INCONCLUSIVE": (0.0, 0.05),
+    "INCONCLUSIVE": (0.0, 0.08),
 }
 C = {
     "EQUIVALENT": (0.0, 0.01),
     "MEANINGFULLY-DIFFERENT": (0.03, 0.01),
-    "INCONCLUSIVE": (0.0, 0.05),
+    "INCONCLUSIVE": (0.0, 0.08),
 }
 
 
@@ -219,7 +219,7 @@ def test_row_table_exhaustive() -> None:
 
 
 def test_row0_abort_on_manipulation_failure() -> None:
-    recs = _scenario("CONFIRMED", "CONFIRMED", "EQUIVALENT", manip_fail=set(range(16)))
+    recs = _scenario("CONFIRMED", "CONFIRMED", "EQUIVALENT", manip_fail=set(range(48)))
     out = aggregate(recs, n_planned=N)
     assert out["abort"] is True
     assert out["row"] == 0
@@ -245,16 +245,16 @@ def test_manipulation_excluded_seed_dropped_everywhere() -> None:
 
 
 def test_pairwise_deletion_and_differential_guard() -> None:
-    excl = {(s, "P_max", "cross"): "non_finite_logits" for s in range(4)}
+    excl = {(s, "P_max", "cross"): "non_finite_logits" for s in range(10)}
     out = aggregate(_scenario("CONFIRMED", "CONFIRMED", "EQUIVALENT", excluded=excl), n_planned=N)
     a, c = out["hypotheses"]["H12-A"], out["hypotheses"]["H12-C"]
-    assert a["n"] == N - 4 and a["n_lost_cell_level"] == 4
-    assert a["exploratory_guard"] is True  # > 3 of 30 lost
+    assert a["n"] == N - 10 and a["n_lost_cell_level"] == 10
+    assert a["exploratory_guard"] is True  # > 9 of 95 lost
     assert c["n"] == N and c["exploratory_guard"] is False
 
 
-def test_guard_not_triggered_at_three_losses() -> None:
-    excl = {(s, "P_max", "cross"): "non_finite_logits" for s in range(3)}
+def test_guard_not_triggered_at_nine_losses() -> None:
+    excl = {(s, "P_max", "cross"): "non_finite_logits" for s in range(9)}
     out = aggregate(_scenario("CONFIRMED", "CONFIRMED", "EQUIVALENT", excluded=excl), n_planned=N)
     assert out["hypotheses"]["H12-A"]["exploratory_guard"] is False
 
@@ -262,6 +262,13 @@ def test_guard_not_triggered_at_three_losses() -> None:
 def test_rejects_unregistered_n() -> None:
     with pytest.raises(ValueError, match="n_planned"):
         aggregate(_scenario("CONFIRMED", "CONFIRMED", "EQUIVALENT"), n_planned=31)
+
+
+def test_rejects_removed_n30() -> None:
+    # PI decision 2026-10-24: N = 30 is no longer a registered N
+    recs = _records(_vec(0.1, 0.01, 30, 2), _vec(0.1, 0.01, 30, 3), _vec(0.0, 0.01, 30, 4))
+    with pytest.raises(ValueError, match="n_planned"):
+        aggregate(recs, n_planned=30)
 
 
 def test_rejects_duplicate_cells() -> None:
@@ -312,16 +319,23 @@ def test_select_n_sd_line_first() -> None:
     assert out["n"] == 108 and out["line"] == 1
 
 
-def test_select_n_r_line() -> None:
+def test_select_n_floor_line_with_low_r() -> None:
     out = select_n(_smoke(0.005, rho_low=True))
-    assert out["min_r_hat"] < 0.5
+    assert out["min_r_hat"] < 0.5  # r^ is reported, it no longer selects N
     assert out["n"] == 95 and out["line"] == 2
 
 
-def test_select_n_default_line() -> None:
+def test_select_n_floor_line_with_high_r() -> None:
+    # PI decision 2026-10-24: the N = 30 line is removed; 95 is the floor
     out = select_n(_smoke(0.005, rho_low=False))
     assert out["min_r_hat"] >= 0.5
-    assert out["n"] == 30 and out["line"] == 3
+    assert out["n"] == 95 and out["line"] == 2
+
+
+def test_select_n_just_below_threshold_stays_at_floor() -> None:
+    out = select_n(_smoke(0.0149, rho_low=False))
+    assert out["sd_hat_d"] == pytest.approx(0.0149)
+    assert out["n"] == 95 and out["line"] == 2
 
 
 def test_select_n_zero_variance_counts_below_half() -> None:
@@ -349,7 +363,7 @@ def test_cli_writes_json(tmp_path: Path) -> None:
         p.write_text(json.dumps(rec))
         files.append(str(p))
     out = tmp_path / "agg.json"
-    assert main([*files, "--n-planned", "30", "--out", str(out)]) == 0
+    assert main([*files, "--n-planned", "95", "--out", str(out)]) == 0
     doc = json.loads(out.read_text())
     assert doc["row"] == 2
 
@@ -380,7 +394,7 @@ def test_missing_cell_record_counts_as_cell_level_loss() -> None:
 
 
 def test_missing_seed_is_lost_and_run_incomplete() -> None:
-    recs = [r for r in _scenario("CONFIRMED", "CONFIRMED", "EQUIVALENT") if r["seed"] != 29]
+    recs = [r for r in _scenario("CONFIRMED", "CONFIRMED", "EQUIVALENT") if r["seed"] != 94]
     out = aggregate(recs, n_planned=N)
     assert out["hypotheses"]["H12-A"]["n"] == N - 1
     assert out["incomplete_run"] is True

@@ -3,7 +3,9 @@
 **Status:** DRAFT — not yet filed on OSF (to be filed by the PI).
 **Date:** 2026-10-23 (revision 4: PI decisions of 2026-10-23 on N
 and ε applied; ε reverted to 0.01 and N = 108 tier added; revision 5,
-2026-10-24: pre-filing code status, no protocol change)
+2026-10-24: pre-filing code status, no protocol change; revision 6,
+2026-10-24: PI decision removes the N = 30 line of the N-selection
+rule, so N is 95 or 108)
 **Parent OSF:** 10.17605/OSF.IO/Q6JYN
 **Sister pre-regs (locked, not modified):**
 `docs/osf-prereg-g4-sexto-pilot.md` (H6-A, CIFAR-100),
@@ -18,9 +20,8 @@ are not edited).
 (class-incremental, no per-task label remap).
 **Benchmark:** Split-CIFAR-100-coarse two-domain stream (§5).
 **Design:** matched-block (seed = block), paired analysis (§2, §6).
-**Compute:** N = 30 seeds × 8 cells per seed = 240 cells, or
-N = 95 (760 cells) or N = 108 (864 cells) under the pre-stated
-N-selection rule (§3).
+**Compute:** N = 95 seeds × 8 cells per seed = 760 cells, or
+N = 108 (864 cells) under the pre-stated N-selection rule (§3).
 **Power script:** `scripts/prereg_power_2026_10.py` (§3).
 **Lock commit:** *(filled by introducing commit hash at filing)*
 **Lock timestamp:** *(filled at filing, pre-driver-run)*
@@ -228,48 +229,50 @@ All numbers are reproduced by `scripts/prereg_power_2026_10.py`
 200 000 draws, for complete rules).
 
 **Test-only MDE at 80 % power, one-sided α = 1/60.** The paired
-test needs `d_z = 0.564` (g_z ≈ 0.550) at n = 30 and `d_z = 0.308`
-at n = 95. Converted to the g_av scale with
+test needs `d_z = 0.308` (g_z ≈ 0.306) at n = 95 and `d_z = 0.289`
+(g_z ≈ 0.287) at n = 108. Converted to the g_av scale with
 `d_av = d_z × sqrt(2(1 − r))`, where r is the within-seed
 correlation between the two strategies' outcomes:
 
 | n (d_av MDE) | r = 0 | r = 0.3 | r = 0.5 | r = 0.7 | r = 0.9 |
 |---|---|---|---|---|---|
-| 30 | 0.798 | 0.668 | 0.564 | 0.437 | 0.252 |
 | 95 | 0.436 | 0.365 | 0.308 | 0.239 | 0.138 |
+| 108 | 0.408 | 0.342 | 0.289 | 0.224 | 0.129 |
 
-For reference, an independent-groups design at n = 30 per group would
-need d = 0.782 (g ≈ 0.772); at n = 95, d = 0.434.
+For reference, an independent-groups design would need d = 0.434 at
+n = 95 per group and d = 0.406 at n = 108.
 
 **Complete confirmation rule** (paired t rejects **and**
 `g_av ≥ 0.5`), power by true d_av and r:
 
-| n = 30 | d_av = 0.5 | 0.6 | 0.8 | 1.0 |
-|---|---|---|---|---|
-| r = 0 | 0.39 | 0.54 | 0.80 | 0.94 |
-| r = 0.3 | 0.46 | 0.64 | 0.89 | 0.98 |
-| r = 0.5 | 0.48 | 0.68 | 0.94 | 0.99 |
-| r = 0.7 | 0.48 | 0.72 | 0.97 | 1.00 |
-| r = 0.9 | 0.47 | 0.81 | 1.00 | 1.00 |
-
 | n = 95 | d_av = 0.5 | 0.6 | 0.8 | 1.0 |
 |---|---|---|---|---|
 | r = 0 | 0.49 | 0.74 | 0.98 | 1.00 |
+| r = 0.3 | 0.49 | 0.78 | 0.99 | 1.00 |
 | r = 0.5 | 0.49 | 0.82 | 1.00 | 1.00 |
+| r = 0.7 | 0.49 | 0.87 | 1.00 | 1.00 |
 | r = 0.9 | 0.48 | 0.95 | 1.00 | 1.00 |
+
+| n = 108 | d_av = 0.5 | 0.6 | 0.8 | 1.0 |
+|---|---|---|---|---|
+| r = 0 | 0.49 | 0.76 | 0.98 | 1.00 |
+| r = 0.3 | 0.50 | 0.79 | 0.99 | 1.00 |
+| r = 0.5 | 0.49 | 0.83 | 1.00 | 1.00 |
+| r = 0.7 | 0.49 | 0.89 | 1.00 | 1.00 |
+| r = 0.9 | 0.49 | 0.97 | 1.00 | 1.00 |
 
 A true effect exactly at the floor (d_av = 0.5) is confirmed at most
 about half the time at any n; this is a property of an observed-
 effect floor, stated here so it is not read as a design flaw later.
 
 The raw floor `mean(D) ≥ ε` (ε = 0.01) only bites when arm SDs are
-small. With r = 0.5, n = 30 and power shown by true d_av:
+small. With r = 0.5, n = 95 and power shown by true d_av:
 
 | arm SD | d_av = 0.5 | 0.6 | 0.8 | 1.0 |
 |---|---|---|---|---|
-| 0.01 | 0.00 | 0.01 | 0.14 | 0.50 |
-| 0.02 | 0.44 | 0.66 | 0.93 | 0.99 |
-| 0.04 | 0.48 | 0.68 | 0.94 | 0.99 |
+| 0.01 | 0.00 | 0.00 | 0.03 | 0.50 |
+| 0.02 | 0.45 | 0.80 | 1.00 | 1.00 |
+| 0.04 | 0.49 | 0.82 | 1.00 | 1.00 |
 
 When the seed SD of CDPA is ≈ 0.01, a standardised effect of 0.5-0.8
 is only 0.005-0.008 accuracy points, i.e. below ε, and is by design
@@ -283,55 +286,72 @@ paired difference SD_D:
 
 | rule, N | SD_D = 0.0075 | 0.01 | 0.015 | 0.02 | 0.025 | 0.03 | 0.04 |
 |---|---|---|---|---|---|---|---|
-| EQUIVALENT, 30 | 1.00 | 1.00 | 0.83 | 0.39 | 0.08 | 0.01 | 0.00 |
 | EQUIVALENT, 95 | 1.00 | 1.00 | 1.00 | 0.99 | 0.92 | 0.72 | 0.22 |
 | EQUIVALENT, 108 | 1.00 | 1.00 | 1.00 | 1.00 | 0.95 | 0.81 | 0.34 |
-| BOUNDED-NO-GAIN, 30 | 1.00 | 1.00 | 0.92 | 0.69 | 0.49 | 0.35 | 0.21 |
 | BOUNDED-NO-GAIN, 95 | 1.00 | 1.00 | 1.00 | 1.00 | 0.96 | 0.86 | 0.61 |
 | BOUNDED-NO-GAIN, 108 | 1.00 | 1.00 | 1.00 | 1.00 | 0.98 | 0.90 | 0.67 |
 
-Largest SD_D with 80 % power (EQUIVALENT / BOUNDED-NO-GAIN): 0.0154 /
-0.0177 at N = 30, 0.0282 / 0.0324 at N = 95, 0.0301 / 0.0346 at
-N = 108. Seeds needed for 80 %: 29 / 23 at SD_D = 0.015, 49 / 38 at
+Largest SD_D with 80 % power (EQUIVALENT / BOUNDED-NO-GAIN): 0.0282 /
+0.0324 at N = 95, 0.0301 / 0.0346 at N = 108. Seeds needed for 80 %: 29 / 23 at SD_D = 0.015, 49 / 38 at
 0.02, 75 / 58 at 0.025, 108 / 82 at 0.03, 189 / 144 at 0.04.
 
-**N-selection rule (PI decisions, 2026-10-23).** The pre-filing
-smoke (§9, seeds 900-902, outside the confirmatory list, never used
-for inference) computes from its three seeds: (i) r̂, the Pearson
-correlation across the smoke seeds between the two cells of each
-confirmatory contrast (CDPA `cross`/`none`, CDPA `cross`/`within`,
-WDPA `within`/`none`); an undefined r̂ (a cell with zero variance)
-counts as below 0.5; and (ii) SD̂_D, the sd (ddof = 1) of the three
-per-seed differences `WDPA(within) − WDPA(none)`. N is then fixed by
-the first matching line:
+**N-selection rule (PI decisions of 2026-10-23 and 2026-10-24).** The
+pre-filing smoke (§9, seeds 900-902, outside the confirmatory list,
+never used for inference) computes from its three seeds SD̂_D, the
+sd (ddof = 1) of the three per-seed differences
+`WDPA(within) − WDPA(none)`. N is then fixed by the first matching
+line:
 
 1. SD̂_D ≥ 0.015 → **N = 108** (seeds 0..107);
-2. otherwise, min r̂ < 0.5 → **N = 95** (seeds 0..94);
-3. otherwise → **N = 30** (seeds 0..29).
+2. otherwise → **N = 95** (seeds 0..94).
 
 The rule is applied once, before any confirmatory cell runs; its
 inputs and outcome are written into the filed version, and N is
-fixed from then on. With three seeds both estimates are very
-imprecise (r̂ has one degree of freedom): the rule is a pre-stated
-deterministic trigger, not an estimate of the population r or SD_D.
-The SD line takes precedence because SD_D drives the power of the
-ε-bounded states; r̂ matters for the complete H12-A/B rule (table
-above). No ladder milestone stores per-seed paired CDPA or WDPA
-differences (the metrics are new), so there is no prior estimate;
-the planning value for SD_D is the threshold, 0.015.
+fixed from then on. With three seeds SD̂_D is very imprecise: the
+rule is a pre-stated deterministic trigger, not an estimate of the
+population SD_D. No ladder milestone stores per-seed paired CDPA or
+WDPA differences (the metrics are new), so there is no prior
+estimate; the planning value for SD_D is the threshold, 0.015. The
+smoke also reports r̂, the Pearson correlation across the smoke seeds
+between the two cells of each confirmatory contrast (CDPA
+`cross`/`none`, CDPA `cross`/`within`, WDPA `within`/`none`; an
+undefined r̂ is reported as such). r̂ is descriptive only: it no
+longer selects N.
 
-**What each N can and cannot establish (stated plainly).** At the
-threshold SD_D = 0.015, N = 30 gives 0.83 (EQUIVALENT) and 0.92
-(BOUNDED-NO-GAIN). The remaining under-power is:
-- **N = 30 when the smoke underestimates SD_D.** N = 30 is adequate
-  for EQUIVALENT only if SD_D ≤ 0.0154. If the true SD_D is larger
-  but SD̂_D < 0.015 (likely with three seeds), N stays 30 and
-  EQUIVALENT power falls to 0.39 at 0.02 and 0.08 at 0.025.
-- **N = 108 at large SD_D.** N = 108 is adequate for EQUIVALENT only
-  if SD_D ≤ 0.0301 (0.0346 for BOUNDED-NO-GAIN); at 0.04 power is
-  0.34 / 0.67 and 189 / 144 seeds would be needed.
-- N = 95 (reached only when SD̂_D < 0.015) is adequate for
-  EQUIVALENT up to SD_D = 0.0282.
+**Why the former N = 30 line was removed (PI decision,
+2026-10-24).** The revision-4 rule had a third line (N = 30 when
+SD̂_D < 0.015 and every r̂ ≥ 0.5). A three-seed sd often falls below
+the threshold when the true SD_D is above it: with normal D,
+2 SD̂_D² / SD_D² follows χ²₂, so P(SD̂_D ≥ 0.015) = exp(−(0.015 /
+SD_D)²), which is only 0.37 at SD_D = 0.015 and 0.57 at 0.02. When
+the r̂ line did not trigger, the old rule therefore stayed at N = 30
+too often, and its unconditional EQUIVALENT power was 0.89 / 0.74 /
+0.69 / 0.63 at SD_D = 0.015 / 0.02 / 0.025 / 0.03.
+
+**Unconditional power of the registered rule.** Method: the smoke
+seeds are disjoint from the confirmatory seeds, so the rule's power
+at a true SD_D is P(N = 95) × power(95) + P(N = 108) × power(108),
+with P(N = 108) = exp(−(0.015 / SD_D)²) from the χ²₂ law above and
+power(n) from the "no practical effect" table (TOST Monte Carlo for
+EQUIVALENT, exact noncentral t for BOUNDED-NO-GAIN). True difference
+0, normal D, ε = 0.01, α = 1/60 (`scripts/prereg_power_2026_10.py`,
+section 5b):
+
+| SD_D | 0.0075 | 0.01 | 0.015 | 0.02 | 0.025 | 0.03 | 0.04 |
+|---|---|---|---|---|---|---|---|
+| P(N = 108) | 0.02 | 0.11 | 0.37 | 0.57 | 0.70 | 0.78 | 0.87 |
+| EQUIVALENT | 1.00 | 1.00 | 1.00 | 0.995 | 0.94 | 0.79 | 0.33 |
+| BOUNDED-NO-GAIN | 1.00 | 1.00 | 1.00 | 0.998 | 0.97 | 0.89 | 0.66 |
+
+**What the rule can and cannot establish (stated plainly).** With
+the 95-seed floor, both "no practical effect" rules keep at least
+80 % power for SD_D up to 0.025 (0.94 / 0.97), whichever line the
+smoke selects; at 0.03 they reach 0.79 / 0.89. At larger SD_D
+the design is under-powered: at 0.04 EQUIVALENT power is 0.33 and
+189 seeds would be needed (144 for BOUNDED-NO-GAIN). The complete
+H12-A/B confirmation rule has about 0.5 power at a true d_av exactly
+at the 0.5 floor at either N (table above); this is a property of the
+observed-effect floor, not of N.
 
 Under-power makes INCONCLUSIVE more likely; it does not change the
 error rates of §2.
@@ -366,8 +386,8 @@ error rates of §2.
   not replaced. Inference uses the retained n; the achieved n and
   every excluded seed with its reason are reported.
 - **Differential-exclusion guard.** If a confirmatory contrast loses
-  more than 3 of its 30 seeds (more than 9 of 95, more than 10 of
-  108) to **cell-level**
+  more than 9 of its 95 seeds (more than 10 of 108) to
+  **cell-level**
   exclusions, that hypothesis's state is still reported but is
   labelled exploratory: cell-level exclusions can depend on the
   treatment.
@@ -382,7 +402,7 @@ error rates of §2.
 
 ## §5 Stream, substrate and driver (executable specification)
 
-- **Seeds.** Confirmatory seeds `0..N − 1`, with N ∈ {30, 95, 108}
+- **Seeds.** Confirmatory seeds `0..N − 1`, with N ∈ {95, 108}
   fixed by the §3 N-selection rule. Smoke seeds `900..902` (never
   analysed).
 - **Domains** (fixed; CIFAR-100 coarse label id in brackets):
@@ -451,8 +471,8 @@ error rates of §2.
     `−Σ_c t_c log softmax(fc2(z))_c` over the 16 samples.
 - **Cells per seed.** `baseline` and `P_min` do not run RECOMBINE, so
   they are run once per seed. `P_equ` and `P_max` are run with each
-  of the three strategies. 2 + 2 × 3 = **8 cells per seed**; 240
-  cells at N = 30, 760 at N = 95, 864 at N = 108.
+  of the three strategies. 2 + 2 × 3 = **8 cells per seed**; 760
+  cells at N = 95, 864 at N = 108.
 - **Driver / aggregator.** `experiments/g4_nono_test/run_cross_domain.py`
   (one cell per call, PR #44) and `experiments/g4_nono_test/aggregator.py`
   (PR #41). The aggregator implements §2, §4 and §7 exactly; its
@@ -574,8 +594,9 @@ carry a universality claim in either direction.
   (b) every item of the §5 fidelity checklist has a passing test,
   (c) the aggregator has been run on synthetic paired data covering
   every §2 state and every §7 row, and (d) the smoke results below
-  (wall time, r̂, SD̂_D, manipulation-check pass rate) and the N
-  fixed by the §3 N-selection rule are written into the filed version.
+  (wall time, SD̂_D, r̂ (descriptive), manipulation-check pass
+  rate) and the N fixed by the §3 N-selection rule are written into
+  the filed version.
   The lock commit is the commit that contains all four.
   **Status 2026-10-24:** (a) done: driver and `recombine_cross.py`
   (PR #44, three review rounds, APPROVE) and the aggregator (this PR),
@@ -587,7 +608,8 @@ carry a universality claim in either direction.
   smoke has not run.
 - **Pre-filing smoke:** seeds 900-902, all 8 cells, on the filing
   hardware. It verifies the driver, the checklist tests and per-cell
-  wall time, and records r̂ and SD̂_D for the §3 N-selection rule. Its
+  wall time, and records SD̂_D for the §3 N-selection rule (and r̂,
+descriptive). Its
   numbers are reported but never pooled with confirmatory seeds.
 - Known deviation envelopes:
   a. CIFAR-100 SHA-256 mismatch: abort and amend with the new pin.
@@ -607,7 +629,8 @@ are genuine choices; changing one requires editing the named section
 before the lock commit.
 
 Decided by the PI on 2026-10-23 and no longer open: ε = 0.01; N
-by the §3 N-selection rule (30, 95 or 108).
+by the §3 N-selection rule (95 or 108; the N = 30 line was removed
+by the PI on 2026-10-24).
 
 **Within-domain equivalence margin (check, no change).** The
 pre-registered within-domain margin already exists: H12-C is a
