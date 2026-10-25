@@ -1,0 +1,304 @@
+{
+ "cells": {
+  "p_ctrl_onpolicy_replay|2000": {
+   "close_ok": true,
+   "decisions": {
+    "collapse": true,
+    "post": true,
+    "post_correct": true,
+    "pre": true,
+    "pre_correct": true,
+    "restructure": true
+   },
+   "drift_rel": 0.001456930186990107,
+   "exact": {
+    "achieved_loss_tokens": [
+     4354,
+     4354
+    ],
+    "budget": [
+     {
+      "charge": 1656,
+      "matched": true,
+      "status": "matched",
+      "t_s": 6010,
+      "update_tokens": 4354
+     },
+     {
+      "charge": 1656,
+      "matched": true,
+      "status": "matched",
+      "t_s": 6010,
+      "update_tokens": 4354
+     }
+    ],
+    "n_eval_items": [
+     12,
+     12
+    ],
+    "n_truncated": [
+     1,
+     1
+    ],
+    "n_updates": [
+     141,
+     141
+    ],
+    "opr_corpus_size": [
+     9,
+     9
+    ],
+    "s_opr": [
+     4968,
+     4968
+    ],
+    "t_s": [
+     6010,
+     6010
+    ]
+   },
+   "exact_equal": true,
+   "kl_diff": 0.0004296944265803366,
+   "norm_change_rel": 0.0014568571801470156,
+   "post_diff": 0.0,
+   "pre_diff": 0.0,
+   "restructure": [
+    null,
+    null
+   ],
+   "router_drift_rel": 0.07644263303679318,
+   "usage_l1_diff": 0.0018248175182481036
+  },
+  "p_equ|2000": {
+   "close_ok": true,
+   "decisions": {
+    "collapse": true,
+    "post": true,
+    "post_correct": true,
+    "pre": true,
+    "pre_correct": true,
+    "restructure": true
+   },
+   "drift_rel": 7.042797759959519e-08,
+   "exact": {
+    "achieved_loss_tokens": [
+     6010,
+     6010
+    ],
+    "budget": [
+     {
+      "charge": 0,
+      "matched": true,
+      "status": "matched",
+      "t_s": 6010,
+      "update_tokens": 6010
+     },
+     {
+      "charge": 0,
+      "matched": true,
+      "status": "matched",
+      "t_s": 6010,
+      "update_tokens": 6010
+     }
+    ],
+    "n_eval_items": [
+     12,
+     12
+    ],
+    "n_truncated": [
+     0,
+     0
+    ],
+    "n_updates": [
+     200,
+     200
+    ],
+    "t_s": [
+     6010,
+     6010
+    ]
+   },
+   "exact_equal": true,
+   "kl_diff": 3.5641381953898895e-05,
+   "norm_change_rel": 2.4726595750870172e-09,
+   "post_diff": 0.0,
+   "pre_diff": 0.0,
+   "restructure": [
+    null,
+    null
+   ],
+   "router_drift_rel": 7.253371580370364e-08,
+   "usage_l1_diff": 0.003981420039814221
+  },
+  "p_max|2000": {
+   "close_ok": true,
+   "decisions": {
+    "collapse": true,
+    "post": true,
+    "post_correct": true,
+    "pre": true,
+    "pre_correct": true,
+    "restructure": true
+   },
+   "drift_rel": 7.282149029561485e-08,
+   "exact": {
+    "achieved_loss_tokens": [
+     6010,
+     6010
+    ],
+    "budget": [
+     {
+      "charge": 0,
+      "matched": true,
+      "status": "matched",
+      "t_s": 6010,
+      "update_tokens": 6010
+     },
+     {
+      "charge": 0,
+      "matched": true,
+      "status": "matched",
+      "t_s": 6010,
+      "update_tokens": 6010
+     }
+    ],
+    "n_eval_items": [
+     12,
+     12
+    ],
+    "n_truncated": [
+     0,
+     0
+    ],
+    "n_updates": [
+     200,
+     200
+    ],
+    "t_s": [
+     6010,
+     6010
+    ]
+   },
+   "exact_equal": true,
+   "kl_diff": 6.040878277615864e-05,
+   "norm_change_rel": 7.91469914782759e-11,
+   "post_diff": 0.0,
+   "pre_diff": 0.0,
+   "restructure": [
+    2,
+    2
+   ],
+   "router_drift_rel": 7.253371580370364e-08,
+   "usage_l1_diff": 0.002156602521566048
+  },
+  "p_min|2000": {
+   "close_ok": true,
+   "decisions": {
+    "collapse": true,
+    "post": true,
+    "post_correct": true,
+    "pre": true,
+    "pre_correct": true,
+    "restructure": true
+   },
+   "drift_rel": 0.0020072551429343613,
+   "exact": {
+    "achieved_loss_tokens": [
+     6010,
+     6010
+    ],
+    "budget": [
+     {
+      "charge": 0,
+      "matched": true,
+      "status": "matched",
+      "t_s": 6010,
+      "update_tokens": 6010
+     },
+     {
+      "charge": 0,
+      "matched": true,
+      "status": "matched",
+      "t_s": 6010,
+      "update_tokens": 6010
+     }
+    ],
+    "n_eval_items": [
+     12,
+     12
+    ],
+    "n_truncated": [
+     0,
+     0
+    ],
+    "n_updates": [
+     200,
+     200
+    ],
+    "t_s": [
+     6010,
+     6010
+    ]
+   },
+   "exact_equal": true,
+   "kl_diff": 0.0001572061493119515,
+   "norm_change_rel": 0.0020071820959722078,
+   "post_diff": 0.0,
+   "pre_diff": 0.0,
+   "restructure": [
+    null,
+    null
+   ],
+   "router_drift_rel": 0.03278784291872297,
+   "usage_l1_diff": 0.0033178500331785266
+  }
+ },
+ "cells_close_ok": true,
+ "cells_exact_ok": true,
+ "dtype": "bfloat16",
+ "mlx_deterministic": {
+  "bit_identical": false,
+  "envelope": null,
+  "max_abs_diff": 0.00018310546875,
+  "n_tensors_differing": 48,
+  "ok": true
+ },
+ "ok": false,
+ "raw_vs_transformers_tokens_equal_on_probe": true,
+ "restore_exact": {
+  "mlx": true,
+  "torch": true
+ },
+ "routing_base_identical": false,
+ "scores": {
+  "argmax_equal": true,
+  "max_abs_diff": 0.057028770446777344,
+  "ok": true
+ },
+ "sgd_step": {
+  "max_rel_diff": 0.6896924424435654,
+  "n_changed_torch": 69,
+  "n_tensors": 76,
+  "ok": false,
+  "spurious_mlx_changes": [],
+  "worst_tensor": "language_model.model.layers.2.post_attention_layernorm.weight"
+ },
+ "token_ce": {
+  "max_abs_diff_excl_flips": 0.009876251220703125,
+  "n_positions": 590,
+  "n_positions_diff_gt_1e-2": 64,
+  "ok": false
+ },
+ "tokens_identical": true,
+ "tolerances": {
+  "delta_rel": 0.2,
+  "determinism_abs": null,
+  "drift_rel": 0.2,
+  "loss": 0.1,
+  "score": 0.1
+ },
+ "versions": {
+  "mlx": "0.31.1",
+  "torch": "2.11.0"
+ }
+}
