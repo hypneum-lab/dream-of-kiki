@@ -161,6 +161,14 @@ def _mlx_tree(weights_dir: Path) -> dict[str, Any]:
     return dict(tree_flatten(model.parameters()))
 
 
+def _np32(v: Any) -> np.ndarray:
+    """float32 numpy copy of an MLX array (numpy has no bf16; exact widening)."""
+    import mlx.core as mx
+
+    return np.asarray(v.astype(mx.float32)) if mx.issubdtype(v.dtype, mx.floating) \
+        else np.asarray(v)
+
+
 def _rel(a: np.ndarray, b: np.ndarray) -> float:
     den = float(np.linalg.norm(b))
     return float(np.linalg.norm(a - b)) / den if den > 0 else float(np.linalg.norm(a))
@@ -307,16 +315,16 @@ def run(tok_dir: Path, dtype: str, work: Path, cell_seeds: tuple[int, ...] = (20
     mb.restore()
     rep["restore_exact"] = {
         "torch": all(torch.equal(v, t_base[k_]) for k_, v in tmodel.state_dict().items()),
-        "mlx": all(np.array_equal(np.asarray(v), np.asarray(m_base[k_]))
+        "mlx": all(np.array_equal(_np32(v), _np32(m_base[k_]))
                    for k_, v in tree_flatten(mmodel.parameters()))}
     rep["cells_exact_ok"] = exact_ok
     rep["cells_close_ok"] = close_ok
 
     # 5. MLX determinism: the same cell twice gives bit-identical parameters
     hn.profile_cell(mb, benches, "p_min", 2000, am, am.n_eval)
-    a = {k_: np.asarray(v) for k_, v in tree_flatten(mmodel.parameters())}
+    a = {k_: _np32(v) for k_, v in tree_flatten(mmodel.parameters())}
     hn.profile_cell(mb, benches, "p_min", 2000, am, am.n_eval)
-    b = {k_: np.asarray(v) for k_, v in tree_flatten(mmodel.parameters())}
+    b = {k_: _np32(v) for k_, v in tree_flatten(mmodel.parameters())}
     diffs = {k_: float(np.max(np.abs(a[k_].astype(np.float64) - b[k_].astype(np.float64))))
              for k_ in a}
     env = tol["determinism_abs"]

@@ -1019,6 +1019,49 @@ any further cell runs. Budget: 512 GB of unified memory minus the OS
 and other resident processes (a virtual machine of ≈ 118 GB RSS was
 resident on 2026-10-25), i.e. ≈ 390 GB for E1.
 
+**Port revalidation (2026-10-25).** *Parity, PyTorch vs MLX* (macM1,
+`scripts/e1_mlx_parity.py`, tiny Qwen3.5-MoE with the 35B's
+architecture and the same weights, float32; tolerances fixed in the
+script before the run): token ids identical; base-model routing
+identical; choice scores max |Δ| 2.0e-4 (tol 1e-3) with identical
+argmax; per-token cross-entropy max |Δ| 1.005e-3 against a 1e-3
+tolerance — a marginal **fail**, reported and not re-toleranced, with
+no position above 1e-2; one SGD step: every tensor changes on both,
+max relative difference 5.7e-3 (tol 1e-2), no spurious change; 12
+harness cells (p_min, p_equ, p_max, OPR, shuffle, template × 2 seeds):
+identical budgets, token and step counts, OPR corpus sizes, per-item
+correctness, accuracies and RESTRUCTURE index; drift / norm change
+rel. Δ ≤ 3.5e-4, router drift ≤ 2.1e-3, KL ≤ 2.2e-4, usage L1
+≤ 6.9e-3 (a tolerance of 1e-2 set after a first run showed non-zero
+values; disclosed); restore bit-exact on both backends; MLX run to run
+max |Δ| 3e-8 (not bit-identical, within the 1e-6 envelope). bf16
+parity: pending (report to be added).
+*Single 35B cell on the Studio* (smoke mode, pilot fixtures, seed
+2000, `p_min`, code `8f2173e`, record
+`docs/milestones/e1-mlx-smoke-1cell-2026-10-25.json`): weights
+verified against the pins, T_s = 18 335 = achieved loss tokens, 400
+updates, 80 eval items, pre 0.563 → post 0.653, no collapse, no
+invariant violation; **wall 1 483 s; peak MLX memory 219.8 GB**
+(active 138.6 GB at the end, host RSS 70.7 GB), inside the 456 GB GPU
+wired limit with the ≈ 120 GB VM resident. Component timings (same
+model, pilot items): one scoring forward ≈ 0.114 s (≈ 27 tokens), one
+replay update ≈ 3.3 s at 27 tokens and ≈ 3.5 s at 47 tokens (≈ 3.0 s
+fixed per full-parameter step + ≈ 0.011 s per token), drift 3.8 s,
+restore 3 ms.
+*Projection* (confirmatory corpus: fact records ≈ 40.2 tokens, prompts
+≈ 35.0, choice passes ≈ 40.5, neutral filler ≈ 10.8; scoring forward
+taken as 0.13 s): T_s ≈ 5 × 40 × 39.2 ≈ 7 850 loss tokens, so ≈ 200
+updates for each fact-corpus arm (≈ 680 s), ≈ 230 for the template
+arm, ≈ 800 for `p_ctrl_sft` (≈ 2 500 s), ≈ 145 for OPR, 0 for
+`p_noise`; scoring 8 × n_eval forwards per cell (≈ 135 s at n_eval =
+130, ≈ 265 s at 255). Per confirmatory seed (10 profiles) ≈ 2.6 h at
+n_eval = 130 (≈ 3.0 h at 255); 141 seeds ≈ 363-420 h; tuning (120
+cells, n_eval = the 432 remaining tuning items) ≈ 35 h; calibration
+(60 cells) ≈ 19 h; smoke (30 cells) ≈ 12 h; headroom minutes. **Total
+≈ 430-490 h, i.e. 18-20 days of exclusive Studio time**, dominated by
+the fixed cost of a full-parameter step on 35 B parameters. The PI
+decides whether this fits the budget before filing; N is not reduced.
+
 **Memory (CUDA path, arithmetic, bf16, full-parameter SGD; not the
 registered backend since 2026-10-25).** Weights ≈ 35 B ×
 2 B ≈ 70 GB on GPU; gradients up to the same ≈ 70 GB (only routed
