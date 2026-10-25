@@ -33,14 +33,16 @@ Conformance Criterion was strengthened to **C+** and now requires
 **both** structural invariants and **C2 substrate-specific axiom
 property tests** — validated against 25 substrates from 6 categories
 through the sister-repo `nerve-wml` N8 Q2 + N9 Q2+ negative-tests
-audit (cumulative 25 / 25 FP; structural layer alone is insufficient).
+audit (cumulative 25 / 25 structural-layer false positives — 22
+deterministic, 3 statistical ; the structural layer is necessary but
+insufficient).
 
 | Item | State |
 |---|---|
 | Paper 1 §5.8 reformulation | shipped (per-substrate FP, no Cat C overstatement) |
 | Conformance Criterion | upgraded **C → C+** (C1 + C2 + C3) |
 | C2 axiom property tests | mandated for any substrate compliance claim |
-| Negative-tests audit | 25 / 25 substrates rejected (Cat A–F), upstream `nerve-wml` |
+| Negative-tests audit | 25 / 25 adversarial substrates (Cat A–F) produce false positives at the structural layer — 22 deterministic, 3 statistical (Cat C) ; structural layer necessary but insufficient, hence C2. Upstream `nerve-wml` ; artefact `docs/milestones/q2plus-conformance-negative-results.json` |
 | Critic-driven fixes | 6 / 6 closed (CRITICAL #1 ablation void, CRITICAL #2 degenerate metrics, MAJOR #3 Cat C overstatement, MAJOR #4 Jonckheere wrong test, MAJOR #5 β-VAE confound, MAJOR #6 paper/JSON count mismatch) |
 
 Cumulative on main HEAD `15efb95` : **479 commits**, internal
