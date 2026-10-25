@@ -142,7 +142,7 @@ sub-powered, and explicitly a 1.5B pilot, NOT the 35B claim.**
 | H1 vs baseline | rejected 3/3 (`p_min` p≈2.4e-20, `p_equ` p≈1.1e-19, `p_max` p≈1.5e-19, n=20) at α=0.0125 ; gain carried by `mega_v2` |
 | E1 powered TOST harness | **delivered** — Hedges' g, SESOI g=0.29, α=0.0167 (Bonferroni), power analysis |
 | Power deficit (honest) | **≈ 141 pairs** needed for 80 % power ; only 20 seeds available (`adequately_powered=False`) — **not** a nominal-power proof |
-| 35B bf16 pin | **turnkey** — `qwen3p6-35b-bf16-local` resolves `repo_id` via `KIKI_35B_BF16_PATH` ; real 35B run **out of reach of the dev M1 Max (32 GB)**, ready on the Mac Studio |
+| 35B bf16 pin | **turnkey** — `qwen3p6-35b-bf16-local` resolves `repo_id` via `KIKI_35B_BF16_PATH` ; real 35B run **out of reach of the dev M1 Max (32 GB)**, ready on the Mac Studio — host powered down since 2026-10, run on hold |
 | hellaswag fixture | **real** 200-item `rowanz/val` replaces a degenerate 8-item fallback (was saturating ≈1.0) ; now ≈0.38–0.42, gain isolated to `mega_v2` |
 | mmlu loader | **audited, no silent fallback** — raises `ValueError` on missing fixture ; 0.91 is on a real "sanity" subset |
 
