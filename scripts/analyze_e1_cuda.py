@@ -255,7 +255,7 @@ def decide(cells: Iterable[Cell], amendment: Mapping[str, Any] | None = None) ->
     bad_mode = {str(c.get("mode")) for c in cells} - {"confirmatory"}
     if bad_mode:
         raise ValueError(f"non-confirmatory cells in the input: {sorted(bad_mode)}")
-    for field in ("corpus", "model", "revision", "amendment_sha256", "run_identity"):
+    for field in ("corpus", "backend", "model", "revision", "amendment_sha256", "run_identity"):
         if any(not c.get(field) for c in cells):
             raise ValueError(f"cells lack the provenance field {field}")
         vals = {json.dumps(c.get(field), sort_keys=True) for c in cells}
