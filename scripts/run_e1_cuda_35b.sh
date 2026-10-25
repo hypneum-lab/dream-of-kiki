@@ -1,70 +1,31 @@
 #!/bin/bash
-# Turnkey E1 dream-ablation (CUDA) on a multi-H200 node (e.g. OVH h200-4-gpu).
-# Clones the harness + fixtures, installs deps, resolves the 35B HF weights,
-# and runs the full 6-profile x N-seed study (dream p_min/p_equ/p_max + controls
-# p_ctrl_sft/p_ctrl_shuffle/p_noise) sharded across the GPUs. Fully resumable:
-# re-running continues from the JSONL cache in $HL_OUT.
+# E1 (35B replay controls) on a multi-GPU CUDA node: one step per call.
+# docs/osf-prereg-e1-replay-controls-2026-10-23.md, sections 5 and 9.
 #
-#   HL_MODEL    (REQUIRED) Qwen 35B HF repo id OR local transformers path
-#   HL_NSEEDS   seeds (default 141, the powered count)
-#   HL_WORK     scratch dir (default /workspace/e1)   HL_OUT  results (persisted!)
-#   HL_GIT_TOKEN  optional Gitea token if the harness repo needs auth
-#   HL_NSAMPLES / HL_NREPLAY / HL_LR / HL_INNER  experiment knobs
+# The Python environment (torch, transformers, accelerate) must already be
+# installed from a hash-pinned lock (supply-chain policy: no unpinned
+# install here). The model is Qwen/Qwen3.6-35B-A3B at the pinned revision.
 #
-# Example (OVH all-in-one job, 4x H200):
-#   HL_MODEL=Qwen/Qwen3.6-35B-A3B HL_OUT=/workspace/out bash run_e1_cuda_35b.sh
+#   HL_STEP   smoke | headroom | tuning | calibrate | amend | confirmatory
+#   HL_DOK    dream-of-kiki checkout (default: this script's repository)
+#   HL_CORPUS / HL_MANIFEST   built corpus + manifest (scripts/e1_corpus_build.py)
+#   HL_OUT    results directory (persisted; cells are resumable)
+#   HL_AMENDMENT / HL_TUNING_CELLS / HL_CALIB_CELLS   for later steps
+#   HL_SEEDS  optional seed subset of the step (sharding), e.g. 0-46
 set -eu
-WORK=${HL_WORK:-/workspace/e1}
-OUT=${HL_OUT:-$WORK/output}
-mkdir -p "$WORK" "$OUT"
-cd "$WORK"
-
-# HF repo id (default) or a local transformers path. The local studio dir named
-# "...-MLX-BF16" is actually plain HF safetensors — point HL_MODEL at it for a
-# sovereign run (no HF download); otherwise the HF repo is pulled (fast on OVH).
-HL_MODEL=${HL_MODEL:-Qwen/Qwen3.6-35B-A3B}
-
-echo "[e1-35b] === deps ==="
-pip install -q --break-system-packages transformers accelerate "huggingface_hub[cli]" \
-  2>/dev/null || pip install -q transformers accelerate "huggingface_hub[cli]"
-
-echo "[e1-35b] === harness + fixtures ==="
-if [ ! -f "$WORK/pilot_cycle3_cuda.py" ]; then
-  url="https://git.saillant.cc/hypneum-lab/dream-of-kiki.git"
-  [ -n "${HL_GIT_TOKEN:-}" ] && url="https://clems:${HL_GIT_TOKEN}@git.saillant.cc/hypneum-lab/dream-of-kiki.git"
-  git clone --depth 1 "$url" dok
-  cp dok/scripts/pilot_cycle3_cuda.py "$WORK/"
-  cp dok/tests/fixtures/mmlu_real.jsonl dok/tests/fixtures/hellaswag_sanity.jsonl "$WORK/"
-fi
-
-echo "[e1-35b] === weights ($HL_MODEL) ==="
-export HF_HOME=${HF_HOME:-$WORK/hf-cache}
-# pre-download so the ~70 GB pull is visible + resumable before the run (a local
-# path is used as-is). Skipped if HL_MODEL is an existing directory.
-if [ ! -d "$HL_MODEL" ]; then
-  huggingface-cli download "$HL_MODEL" --quiet || \
-    echo "[e1-35b] pre-download skipped; from_pretrained will fetch on first use"
-fi
-
-echo "[e1-35b] === GPUs ==="
+DOK=${HL_DOK:-$(cd "$(dirname "$0")/.." && pwd)}
+OUT=${HL_OUT:?set HL_OUT}
+STEP=${HL_STEP:?set HL_STEP}
+mkdir -p "$OUT"
+python -c "import torch, transformers, accelerate" \
+  || { echo "[e1] install the pinned environment first"; exit 1; }
 nvidia-smi --query-gpu=index,name,memory.total --format=csv,noheader || true
-
-if [ "${HL_SKIP_SMOKE:-0}" != "1" ]; then
-  echo "[e1-35b] === SMOKE: validate 35B load + cells before the 141-seed run ==="
-  HL_DEVICE_MAP=auto HL_TRUST_REMOTE_CODE=${HL_TRUST_REMOTE_CODE:-1} HL_OUT="$OUT/smoke" \
-    HL_MMLU="$WORK/mmlu_real.jsonl" HL_HELLASWAG="$WORK/hellaswag_sanity.jsonl" \
-    HL_PROFILES=p_min,p_noise HL_NSAMPLES=8 HL_NREPLAY=4 HL_INNER=2 \
-    python "$WORK/pilot_cycle3_cuda.py" --scale "$HL_MODEL" --smoke \
-    || { echo "[e1-35b] SMOKE FAILED — fix before committing to the full run"; exit 1; }
-  echo "[e1-35b] smoke OK ✓"
-  [ "${HL_SMOKE_ONLY:-0}" = "1" ] && { echo "[e1-35b] HL_SMOKE_ONLY=1 — stopping after smoke"; exit 0; }
-fi
-
-echo "[e1-35b] === run (resumable) ==="
-export HL_DEVICE_MAP=auto HL_OUT="$OUT" \
-  HL_TRUST_REMOTE_CODE=${HL_TRUST_REMOTE_CODE:-1} \
-  HL_MMLU="$WORK/mmlu_real.jsonl" HL_HELLASWAG="$WORK/hellaswag_sanity.jsonl" \
-  HL_NSAMPLES=${HL_NSAMPLES:-50} HL_NREPLAY=${HL_NREPLAY:-20} \
-  HL_LR=${HL_LR:-1e-4} HL_INNER=${HL_INNER:-5}
-python "$WORK/pilot_cycle3_cuda.py" --scale "$HL_MODEL" --n-seeds "${HL_NSEEDS:-141}"
-echo "[e1-35b] DONE — results in $OUT (pilot-cycle3-cuda-*.json + .cells.jsonl)"
+export HL_DEVICE_MAP=${HL_DEVICE_MAP:-auto}
+set -- --mode "$STEP" --out "$OUT"
+[ -n "${HL_CORPUS:-}" ] && set -- "$@" --corpus "$HL_CORPUS"
+[ -n "${HL_MANIFEST:-}" ] && set -- "$@" --manifest "$HL_MANIFEST"
+[ -n "${HL_AMENDMENT:-}" ] && set -- "$@" --amendment "$HL_AMENDMENT"
+[ -n "${HL_TUNING_CELLS:-}" ] && set -- "$@" --tuning-cells "$HL_TUNING_CELLS"
+[ -n "${HL_CALIB_CELLS:-}" ] && set -- "$@" --calib-cells "$HL_CALIB_CELLS"
+[ -n "${HL_SEEDS:-}" ] && set -- "$@" --seeds "$HL_SEEDS"
+python "$DOK/scripts/pilot_cycle3_cuda.py" "$@"

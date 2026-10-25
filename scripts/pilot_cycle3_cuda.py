@@ -1,76 +1,70 @@
 #!/usr/bin/env python3
-"""E1 dream-ablation — CUDA/PyTorch port (first vertical slice).
+"""E1 35B replay controls — CUDA / PyTorch harness.
 
-Mirrors the MLX ``pilot_cycle3_real.py`` cell logic on NVIDIA GPUs so the full
-control suite can run on sovereign cloud (OVH H200 / DataCrunch / Scaleway).
+**Gate** : ``docs/osf-prereg-e1-replay-controls-2026-10-23.md`` (sections
+4, 5, 6, 9). R1: a different backend from the MLX runs; numbers are never
+pooled across backends.
 
-This first slice implements the cost-critical pattern and the two profiles that
-matter most for the scientific defence:
+Load-once + restore: the model is loaded once, a CPU copy of the base
+weights is restored before every cell.
 
-  * **load-once + restore** — the 35B is loaded ONCE; a CPU copy of the baseline
-    weights is restored before every cell (a few-second GPU copy instead of a
-    30-60 s reload from disk → ~halves the per-cell time vs the MLX harness).
-  * ``p_min`` — DREAM: SGD replay of experiences (the core effect).
-  * ``p_noise`` — NOISE-FLOOR control: no dream; re-eval on a different sample
-    draw → delta = test-retest variance the dream must beat.
+Modes (``--mode``), each with its fixed seeds and the only partition it
+may read (``scripts.e1_corpus_io``):
 
-Downscale / recombine / restructure (p_equ / p_max) land in the next slice.
+==============  ==================  ===========================================
+mode            seeds               reads
+==============  ==================  ===========================================
+smoke           2000-2002           pilot fixtures (section 5.3), all profiles
+headroom        none (base model)   TUNING of the PENDING-HEADROOM corpus
+tuning          1000-1009           TUNING of the FROZEN corpus (120 cells)
+calibrate       1000-1009           TUNING of the FROZEN corpus (60 cells)
+amend           -                   tuning + calibration cells (no model)
+confirmatory    0-140               CONFIRMATORY of the FROZEN corpus
+==============  ==================  ===========================================
 
-R1: results are a DIFFERENT backend from the MLX runs — never mix the numbers.
+Confirmatory cells need the frozen tuning amendment (``--amendment``).
+The model revision is pinned (section 10 item 1): loading
+``Qwen/Qwen3.6-35B-A3B`` at any other revision is refused.
 
-  HL_MODEL / --scale  HF id or local path (default a tiny model for a CPU/GPU smoke)
-  HL_PROFILES         comma list (default "p_min,p_noise")
-  --n-seeds N         seeds 0..N-1
-  --smoke             1 cell per profile, tiny fixture
-  HL_LR / HL_INNER    replay LR / inner SGD steps per record
-  output: pilot-cycle3-cuda-<slug>.cells.jsonl (resumable) + final json
+    python pilot_cycle3_cuda.py --mode smoke --model <id> [--revision R]
+    python pilot_cycle3_cuda.py --mode headroom --corpus C --manifest M
+    python pilot_cycle3_cuda.py --mode tuning --corpus C --manifest M
+    python pilot_cycle3_cuda.py --mode calibrate --corpus C --manifest M --tuning-cells T
+    python pilot_cycle3_cuda.py --mode amend --manifest M --tuning-cells T --calib-cells K
+    python pilot_cycle3_cuda.py --mode confirmatory --corpus C --manifest M --amendment A
 """
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
+import math
 import os
+import sys
 import time
+from collections.abc import Sequence
 from pathlib import Path
+from typing import Any
 
 import torch
 
-# --- real benchmark fixtures (dream-of-kiki tests/fixtures), backend-agnostic
-#     JSONL reused as-is; only the scoring is ported to torch. ----------------
-_FIX = Path(__file__).resolve().parents[1] / "tests" / "fixtures"
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 
+from scripts import e1_corpus_io as cio
+from scripts import e1_diagnostics as dg
+from scripts import e1_profiles as pr
+from scripts.e1_budget import budget_status, scoring_pass_tokens
+from scripts.e1_schedule import schedule, summary, token_budget
 
-def _load_mmlu(path: Path) -> list[dict]:
-    items = []
-    for line in path.read_text(encoding="utf-8").splitlines():
-        if line.strip():
-            r = json.loads(line)
-            items.append({"prompt": r["question"].strip() + "\nAnswer:",
-                          "choices": [" " + c for c in r["choices"]],
-                          "answer": int(r["answer"])})
-    return items
-
-
-def _load_hellaswag(path: Path) -> list[dict]:
-    items = []
-    for line in path.read_text(encoding="utf-8").splitlines():
-        if line.strip():
-            r = json.loads(line)
-            items.append({"prompt": r["ctx"].strip(),
-                          "choices": [" " + e for e in r["endings"]],
-                          "answer": int(r["label"])})
-    return items
-
-
-# Neutral filler for the matched-compute SFT control — content unrelated to the
-# benchmarks, so it isolates "any gradient step helps" from "relevant replay".
-_NEUTRAL_TEXTS = [
-    "The weather changed slowly from one day to the next.",
-    "A long road wound quietly through the empty valley.",
-    "She closed the wooden door and walked down the street.",
-    "Clouds drifted above the distant grey hills at dusk.",
-    "The old clock kept its steady rhythm through the night.",
-]
+MODEL_REPO = "Qwen/Qwen3.6-35B-A3B"
+MODEL_REVISION = "995ad96eacd98c81ed38be0c5b274b04031597b0"
+SEEDS = {"smoke": tuple(range(2000, 2003)), "tuning": tuple(range(1000, 1010)),
+         "calibrate": tuple(range(1000, 1010)), "confirmatory": tuple(range(141))}
+N_REPLAY = 40
+NOISE_SEED_OFFSET = 9973
+_FIX = ROOT / "tests" / "fixtures"
 
 
 def _shuffle_text(text: str, seed: int) -> str:
@@ -82,9 +76,9 @@ def _shuffle_text(text: str, seed: int) -> str:
     return " ".join(w[i] for i in torch.randperm(len(w), generator=g).tolist())
 
 
-def _cell_split(benches: dict, seed: int, n_replay: int, n_eval: int):
-    """Disjoint per-(bench, seed) split — replay pool vs eval subset — so the
-    dream never replays an item it is scored on (leakage control built in)."""
+def _cell_split(benches: dict[str, list[dict[str, Any]]], seed: int, n_replay: int,
+                n_eval: int) -> tuple[dict[str, list[dict[str, Any]]], list[dict[str, Any]]]:
+    """Disjoint per-(bench, seed) split: replay items vs eval items."""
     eval_sets, replay_items = {}, []
     for name, items in benches.items():
         g = torch.Generator().manual_seed(seed)
@@ -95,166 +89,198 @@ def _cell_split(benches: dict, seed: int, n_replay: int, n_eval: int):
     return eval_sets, replay_items
 
 
-def _profile_replay(profile: str, replay_items: list, seed: int) -> list:
-    """Replay corpus per profile: relevant facts (dream), neutral (SFT control),
-    shuffled (content-destroyed control), or none (noise floor)."""
-    if profile == "p_noise":
-        return []
-    facts = [it["prompt"] + it["choices"][it["answer"]] for it in replay_items]
-    if profile == "p_ctrl_sft":
-        reps = (len(facts) // len(_NEUTRAL_TEXTS)) + 1
-        return (_NEUTRAL_TEXTS * reps)[:max(1, len(facts))]
-    if profile == "p_ctrl_shuffle":
-        return [_shuffle_text(f, seed) for f in facts]
-    return facts  # p_min: relevant, coherent, held-out replay
+# --- model -------------------------------------------------------------------
 
 
 def _device() -> str:
     return "cuda" if torch.cuda.is_available() else "cpu"
 
 
-def _load_model(model_id: str):
+def _load_model(model_id: str, revision: str | None) -> tuple[Any, Any]:
+    if model_id == MODEL_REPO and revision != MODEL_REVISION:
+        raise SystemExit(f"{MODEL_REPO} must be loaded at the pinned revision {MODEL_REVISION}")
     from transformers import AutoModelForCausalLM, AutoTokenizer
+
     dev = _device()
     dtype = torch.bfloat16 if dev == "cuda" else torch.float32
-    # trust_remote_code lets newer archs (e.g. qwen3_5_moe) load when the
-    # installed transformers lacks native support / the repo ships modeling code.
     trc = os.environ.get("HL_TRUST_REMOTE_CODE", "0") == "1"
-    tok = AutoTokenizer.from_pretrained(model_id, trust_remote_code=trc)
-    # device_map="auto" (sharding a 35B over GPUs) needs `accelerate`; only use
-    # it for multi-GPU. Single GPU/CPU: plain load + .to(dev). HL_DEVICE_MAP
-    # overrides (e.g. "auto" to force sharding on a multi-H200 node).
+    tok = AutoTokenizer.from_pretrained(model_id, revision=revision, trust_remote_code=trc)
     default_map = "auto" if (dev == "cuda" and torch.cuda.device_count() > 1) else ""
     use_map = os.environ.get("HL_DEVICE_MAP", default_map)
-    kw = {"dtype": dtype, "trust_remote_code": trc}
+    kw: dict[str, Any] = {"dtype": dtype, "trust_remote_code": trc, "revision": revision}
     if use_map:
         kw["device_map"] = use_map
     model = AutoModelForCausalLM.from_pretrained(model_id, **kw)
     if not use_map:
         model = model.to(dev)
+    model.eval()
     return model, tok
 
 
-def _snapshot_cpu(model) -> dict:
-    """Baseline weights on CPU, restored before each cell (load-once pattern)."""
+def _snapshot_cpu(model: Any) -> dict[str, torch.Tensor]:
     return {k: v.detach().to("cpu", copy=True) for k, v in model.state_dict().items()}
 
 
-def _restore(model, base: dict) -> None:
+def _restore(model: Any, base: dict[str, torch.Tensor]) -> None:
     model.load_state_dict(base, strict=True)
 
 
-def _input_device(model):
-    """Device where inputs must land. On a device_map-sharded 35B the input
-    embedding lives on one GPU and accelerate hooks move activations across the
-    others, so inputs go to the embedding's device, not next(parameters())."""
+def _input_device(model: Any) -> torch.device:
     try:
-        return model.get_input_embeddings().weight.device
+        return model.get_input_embeddings().weight.device  # type: ignore[no-any-return]
     except Exception:  # noqa: BLE001
-        return next(model.parameters()).device
+        return next(model.parameters()).device  # type: ignore[no-any-return]
+
+
+def _ids(tok: Any, text: str) -> torch.Tensor:
+    return tok(text, return_tensors="pt").input_ids  # type: ignore[no-any-return]
 
 
 @torch.no_grad()
-def _weight_sig(model):
-    """Cheap global fingerprint: mean of the first few large weight tensors.
-    Any dream update shifts these, so sig_pre != sig_post proves the model
-    changed (more robust than a single scalar, far cheaper than a full norm)."""
-    out = []
-    for v in model.parameters():
-        if v.is_floating_point() and v.numel() > 10000:
-            out.append(round(v.detach().float().mean().item(), 9))
-            if len(out) >= 5:
-                break
-    return out
-
-
-@torch.no_grad()
-def _score_choice(model, tok, prompt: str, choice: str) -> float:
-    """Length-normalised log-prob of `choice` continued after `prompt` (the
-    standard cloze score for MMLU/HellaSwag multiple-choice)."""
+def _score_choice(model: Any, tok: Any, prompt: str, choice: str) -> float:
+    """Length-normalised log-prob of ``choice`` after ``prompt`` (cloze score)."""
     dev = _input_device(model)
-    p_ids = tok(prompt, return_tensors="pt").input_ids
-    full = tok(prompt + choice, return_tensors="pt").input_ids.to(dev)
+    p_ids = _ids(tok, prompt)
+    full = _ids(tok, prompt + choice).to(dev)
     out = model(full)
     logp = torch.log_softmax(out.logits[0, :-1].float(), dim=-1)
     tgt = full[0, 1:]
-    cont = logp[range(tgt.numel()), tgt][p_ids.shape[1] - 1:]   # continuation tokens only
+    cont = logp[range(tgt.numel()), tgt][p_ids.shape[1] - 1:]
     return cont.mean().item() if cont.numel() else -1e9
 
 
 @torch.no_grad()
-def _eval_items(model, tok, items) -> float:
-    """Accuracy over a fixed item list (already subsampled by _cell_split)."""
-    if not items:
-        return 0.0
-    correct = 0
+def _score_items(model: Any, tok: Any, items: Sequence[dict[str, Any]]) -> tuple[
+        list[list[float]], list[int]]:
+    """Choice scores and argmax (ties -> lowest index, ``torch.argmax``)."""
+    scores, argmax = [], []
     for ex in items:
-        scores = [_score_choice(model, tok, ex["prompt"], c) for c in ex["choices"]]
-        if int(torch.tensor(scores).argmax()) == ex["answer"]:
-            correct += 1
-    return correct / len(items)
+        s = [_score_choice(model, tok, ex["prompt"], c) for c in ex["choices"]]
+        scores.append(s)
+        argmax.append(int(torch.tensor(s).argmax()))
+    return scores, argmax
 
 
-def _eval_sets(model, tok, eval_sets: dict) -> dict:
-    """Per-benchmark accuracy + composite mean over pre-split eval sets."""
-    accs = {name: _eval_items(model, tok, items) for name, items in eval_sets.items()}
-    accs["composite"] = sum(accs.values()) / max(1, len(accs))
-    return accs
+def _eval(model: Any, tok: Any, eval_sets: dict[str, list[dict[str, Any]]]) -> dict[str, Any]:
+    by, correct, scores, sources = {}, [], [], []
+    for name, items in eval_sets.items():
+        sc, am = _score_items(model, tok, items)
+        cor = [a == int(it["answer"]) for a, it in zip(am, items, strict=True)]
+        by[name] = sum(cor) / len(cor) if cor else 0.0
+        correct += cor
+        scores += sc
+        sources += [str(it.get("source", name)) for it in items]
+    acc = sum(by.values()) / max(1, len(by))
+    return {"acc": acc, "by_bench": by, "correct": correct, "scores": scores,
+            "sources": sources}
 
 
-def _replay(model, tok, texts, lr: float, inner: int) -> None:
-    """DREAM core: SGD next-token replay over experiences (momentumless SGD =
-    same family as the MLX harness; no optimizer state to bloat the 35B)."""
+# --- MoE router ---------------------------------------------------------------
+
+
+def _router_modules(model: Any) -> list[tuple[str, Any]]:
+    return [(n, m) for n, m in model.named_modules()
+            if n.endswith("mlp.gate") and isinstance(m, torch.nn.Linear)]
+
+
+class _RouterCounter:
+    """Counts top-k routed tokens per (layer, expert) while attached."""
+
+    def __init__(self, model: Any) -> None:
+        self.k = int(getattr(getattr(model, "config", None), "num_experts_per_tok", 0) or 0)
+        self.mods = _router_modules(model) if self.k else []
+        self.counts: dict[str, int] = {}
+        self.handles: list[Any] = []
+
+    def __enter__(self) -> _RouterCounter:
+        for name, mod in self.mods:
+            self.handles.append(mod.register_forward_hook(self._hook(name)))
+        return self
+
+    def _hook(self, name: str) -> Any:
+        def fn(_m: Any, _i: Any, out: Any) -> None:
+            logits = out[0] if isinstance(out, tuple) else out
+            top = torch.topk(logits.reshape(-1, logits.shape[-1]).float(), self.k, dim=-1).indices
+            for e, c in zip(*torch.unique(top, return_counts=True), strict=True):
+                key = f"{name}:{int(e)}"
+                self.counts[key] = self.counts.get(key, 0) + int(c)
+        return fn
+
+    def __exit__(self, *exc: Any) -> None:
+        for h in self.handles:
+            h.remove()
+
+
+@torch.no_grad()
+def _drift(model: Any, base: dict[str, torch.Tensor], router_only: bool = False) -> tuple[
+        float, float]:
+    """(sum of squared differences, sum of squared pre values) over float tensors."""
+    sq_d = sq_p = 0.0
+    for k, v in model.state_dict().items():
+        if not v.is_floating_point() or (router_only and not k.endswith("mlp.gate.weight")):
+            continue
+        b = base[k].to(v.device, dtype=torch.float32)
+        sq_d += float(((v.float() - b) ** 2).sum())
+        sq_p += float((b ** 2).sum())
+    return sq_d, sq_p
+
+
+# --- replay and dream ops -------------------------------------------------------
+
+
+def _replay(model: Any, tok: Any, texts: Sequence[str], lr: float, m: int,
+            budget: int) -> dict[str, Any]:
+    """Token-budget replay (section 5.4): momentumless SGD, batch 1."""
+    ids = [_ids(tok, t) for t in texts]
+    lengths = [int(x.shape[1]) for x in ids]
+    updates = schedule(lengths, m, budget) if texts else []
     dev = _input_device(model)
     opt = torch.optim.SGD(model.parameters(), lr=lr)
     model.train()
-    for text in texts:
-        ids = tok(text, return_tensors="pt").input_ids.to(dev)
-        if ids.shape[1] < 2:
-            continue
-        for _ in range(inner):
-            out = model(ids, labels=ids)
-            opt.zero_grad()
-            out.loss.backward()
-            opt.step()
+    losses: list[float] = []
+    violation = None
+    for u in updates:
+        x = ids[u.record][:, : u.n_input].to(dev)
+        opt.zero_grad(set_to_none=True)
+        out = model(x, labels=x)
+        if not torch.isfinite(out.loss):
+            violation = "S2"  # BLOCKING: no NaN / Inf (docs/invariants/registry.md)
+            break
+        out.loss.backward()
+        opt.step()
+        losses.append(float(out.loss.detach()))
+    opt.zero_grad(set_to_none=True)
     model.eval()
+    return {**summary(updates, lengths), "planned_loss_tokens": budget,
+            "mean_replay_loss": sum(losses) / len(losses) if losses else None,
+            "invariant_violation": violation}
 
 
-def _get_layers(model):
-    """Locate the transformer block list across common architectures."""
+def _get_layers(model: Any) -> Any:
     for path in ("model.layers", "model.model.layers", "transformer.h", "gpt_neox.layers"):
         obj = model
-        ok = True
         for a in path.split("."):
-            if hasattr(obj, a):
-                obj = getattr(obj, a)
-            else:
-                ok = False
+            if not hasattr(obj, a):
                 break
-        if ok:
+            obj = getattr(obj, a)
+        else:
             return obj
     return None
 
 
 @torch.no_grad()
-def _downscale(model, factor: float) -> None:
-    """DOWNSCALE op: shrink every weight by `factor` (mirrors the MLX recursive
-    downscale that multiplies each leaf tensor)."""
+def _downscale(model: Any, factor: float) -> None:
     for p in model.parameters():
         if p.is_floating_point():
             p.mul_(factor)
 
 
-def _swap_layers(model, i: int) -> None:
+def _swap_layers(model: Any, i: int) -> None:
     layers = _get_layers(model)
     layers[i], layers[i + 1] = layers[i + 1], layers[i]
 
 
-def _restructure(model, seed: int):
-    """RESTRUCTURE op (p_max): swap two adjacent transformer blocks (NAS-style
-    perturbation, i = seed % (n-1)). Returns the swapped index (so the caller
-    can undo it before the next baseline restore), or None. Skipped if the two
-    blocks live on different devices (sharded) to avoid a device mismatch."""
+def _restructure(model: Any, seed: int) -> int | None:
     layers = _get_layers(model)
     if layers is None or len(layers) < 2:
         return None
@@ -268,124 +294,258 @@ def _restructure(model, seed: int):
         return None
 
 
-def _apply_dream_ops(model, profile: str, seed: int) -> dict:
-    """Structural dream ops beyond replay: downscale (p_equ/p_max) shrinks all
-    weights; restructure (p_max) swaps two adjacent blocks; recombine is a
-    weight-neutral latent op (no-op here, as in the MLX harness)."""
-    info = {"restructure_idx": None}
-    if profile in ("p_equ", "p_max"):
-        factor = float(os.environ.get("HL_SHRINK", "0.99"))
-        _downscale(model, factor)
-        info["downscale"] = factor
-    if profile == "p_max":
-        info["restructure_idx"] = _restructure(model, seed)
-    return info
+def _apply_dream_ops(model: Any, seed: int, downscale: bool, restructure: bool) -> dict[str, Any]:
+    """DOWNSCALE (p_equ, p_max: shrink 0.99), RESTRUCTURE (p_max: swap two
+    adjacent blocks). RECOMBINE is a weight-neutral no-op on this backend."""
+    ops: dict[str, Any] = {"downscale": None, "restructure_idx": None, "recombine": "no-op"}
+    if downscale:
+        ops["downscale"] = pr.SHRINK
+        _downscale(model, pr.SHRINK)
+    if restructure:
+        ops["restructure_idx"] = _restructure(model, seed)
+    return ops
 
 
-def _run_cell(model, tok, base, benches, profile, seed, *, n_samples, n_replay, lr, inner):
+@torch.no_grad()
+def _weights_finite(model: Any) -> bool:
+    return all(bool(torch.isfinite(p).all()) for p in model.parameters() if p.is_floating_point())
+
+
+# --- one cell ------------------------------------------------------------------
+
+
+def run_cell(model: Any, tok: Any, base: dict[str, torch.Tensor],
+             benches: dict[str, list[dict[str, Any]]], *, seed: int, n_eval: int,
+             corpus_kind: str, lr: float | None, m: int | None, downscale: bool,
+             restructure: bool, charge_opr: bool, noise: bool = False,
+             diagnostics: bool = True) -> dict[str, Any]:
+    """One E1 cell: restore, pre-eval, budgeted replay, ops, post-eval, diagnostics."""
     t0 = time.time()
     _restore(model, base)
-    eval_sets, replay_items = _cell_split(benches, seed, n_replay, n_samples)
-    pre = _eval_sets(model, tok, eval_sets)
-    w_pre = _weight_sig(model)
-    texts = _profile_replay(profile, replay_items, seed)
-    if texts:
-        _replay(model, tok, texts, lr, inner)
-    ops = _apply_dream_ops(model, profile, seed)
-    w_post = _weight_sig(model)
-    # dream/control profiles re-eval the SAME held-out items (isolate the model
-    # change); the noise floor uses a fresh disjoint draw (sampling variance).
-    if profile == "p_noise":
-        eval_post, _ = _cell_split(benches, seed + 9973, n_replay, n_samples)
+    eval_sets, replay_items = _cell_split(benches, seed, N_REPLAY, n_eval)
+    with _RouterCounter(model) as rc_pre:
+        pre = _eval(model, tok, eval_sets)
+    facts = pr.profile_texts("facts", replay_items, seed)
+    t_s = token_budget([int(_ids(tok, f).shape[1]) for f in facts])
+    rec: dict[str, Any] = {"seed": seed, "n_replay": len(replay_items), "t_s": t_s,
+                           "n_eval_items": len(pre["correct"])}
+    opr_choice = None
+    arm_scoring = 0
+    if corpus_kind == "opr":  # pre-replay checkpoint scores the replay prompts
+        _, opr_choice = _score_items(model, tok, replay_items)
+        arm_scoring = scoring_pass_tokens(
+            (0, [int(_ids(tok, it["prompt"] + c).shape[1]) for c in it["choices"]])
+            for it in replay_items)
+    texts = pr.profile_texts(corpus_kind, replay_items, seed, _shuffle_text, opr_choice)
+    if corpus_kind == "opr":
+        rec["opr_corpus_size"] = len(texts)
+        rec["s_opr"] = arm_scoring
+    budget = budget_status(t_s, arm_scoring if charge_opr else 0)
+    rec["budget"] = budget
+    if noise or not texts or lr is None or m is None:
+        rep = {"achieved_loss_tokens": 0, "n_updates": 0, "n_truncated": 0,
+               "planned_loss_tokens": 0, "mean_replay_loss": None, "invariant_violation": None}
     else:
-        eval_post = eval_sets
-    post = _eval_sets(model, tok, eval_post)
-    if ops.get("restructure_idx") is not None:    # undo the block swap so the
-        _swap_layers(model, ops["restructure_idx"])  # next _restore is canonical
-    return {
-        "profile": profile, "seed": seed,
-        "pre": pre["composite"], "post": post["composite"],
-        "delta": post["composite"] - pre["composite"],
-        "pre_by_bench": pre, "post_by_bench": post, "n_replay": len(replay_items),
-        "ops": ops,
-        "w_pre": w_pre, "w_post": w_post, "weight_changed": w_pre != w_post,
+        rep = _replay(model, tok, texts, lr, m, int(budget["update_tokens"]))
+    rec.update(rep)
+    ops = _apply_dream_ops(model, seed, downscale, restructure)
+    rec["ops"] = ops
+    if rec["invariant_violation"] is None and not _weights_finite(model):
+        rec["invariant_violation"] = "S2"
+    post_sets = _cell_split(benches, seed + NOISE_SEED_OFFSET, N_REPLAY, n_eval)[0] if noise \
+        else eval_sets
+    with _RouterCounter(model) as rc_post:
+        post = _eval(model, tok, post_sets)
+    if diagnostics:
+        sq_d, sq_p = _drift(model, base)
+        rq_d, rq_p = _drift(model, base, router_only=True)
+        rec["norm_change"] = math.sqrt(sq_d)
+        rec["drift"] = dg.relative_drift(sq_d, sq_p) if sq_p > 0 else None
+        rec["router_drift"] = dg.relative_drift(rq_d, rq_p) if rq_p > 0 else None
+        if not noise:  # same probe items pre and post
+            rec["kl_ref"] = dg.choice_kl(pre["scores"], post["scores"]) if pre["scores"] else None
+            rec["lost_correct"] = dg.lost_correct(pre["correct"], post["correct"])
+            rec["usage_l1"] = dg.usage_l1(rc_pre.counts, rc_post.counts)
+    if ops["restructure_idx"] is not None:
+        _swap_layers(model, ops["restructure_idx"])
+    rec.update({
+        "pre": pre["acc"], "post": post["acc"], "delta": post["acc"] - pre["acc"],
+        "pre_by_bench": pre["by_bench"], "post_by_bench": post["by_bench"],
+        "pre_correct": pre["correct"], "post_correct": post["correct"],
+        "eval_sources": pre["sources"],
+        "collapse": dg.collapse_flag(pre["acc"], post["acc"]),
         "wall_s": round(time.time() - t0, 1),
-    }
+    })
+    return rec
 
 
-def main() -> int:
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--scale", default=os.environ.get("HL_MODEL", "sshleifer/tiny-gpt2"))
-    ap.add_argument("--n-seeds", type=int, default=int(os.environ.get("HL_NSEEDS", "5")))
-    ap.add_argument("--n-samples", type=int, default=int(os.environ.get("HL_NSAMPLES", "4")))
-    ap.add_argument("--smoke", action="store_true")
-    args = ap.parse_args()
+def profile_cell(model: Any, tok: Any, base: dict[str, torch.Tensor],
+                 benches: dict[str, list[dict[str, Any]]], profile: str, seed: int,
+                 amendment: pr.Amendment, n_eval: int) -> dict[str, Any]:
+    cfg = pr.profile_config(profile, amendment)
+    rec = run_cell(model, tok, base, benches, seed=seed, n_eval=n_eval,
+                   corpus_kind=cfg.corpus, lr=cfg.lr, m=cfg.m, downscale=cfg.downscale,
+                   restructure=cfg.restructure, charge_opr=cfg.scoring_charged,
+                   noise=profile == "p_noise")
+    return {"profile": profile, "lr": cfg.lr, "m": cfg.m, **rec}
 
-    lr = float(os.environ.get("HL_LR", "1e-4"))
-    inner = int(os.environ.get("HL_INNER", "3"))
-    n_replay = int(os.environ.get("HL_NREPLAY", "10"))
-    profiles = tuple((os.environ.get(
-        "HL_PROFILES",
-        "p_min,p_equ,p_max,p_ctrl_sft,p_ctrl_shuffle,p_noise")).split(","))
-    seeds = (0,) if args.smoke else tuple(range(args.n_seeds))
-    slug = args.scale.replace("/", "_")
-    out_dir = Path(os.environ.get("HL_OUT", "."))
-    out_dir.mkdir(parents=True, exist_ok=True)
-    cache = out_dir / f"pilot-cycle3-cuda-{slug}.cells.jsonl"
 
-    print(f"[e1-cuda] device={_device()} model={args.scale} "
-          f"profiles={profiles} seeds={len(seeds)} lr={lr} inner={inner}", flush=True)
-    # real benchmark fixtures (env overrides for custom/larger sets)
-    benches = {}
-    mmlu_p = Path(os.environ.get("HL_MMLU", _FIX / "mmlu_real.jsonl"))
-    hella_p = Path(os.environ.get("HL_HELLASWAG", _FIX / "hellaswag_sanity.jsonl"))
-    if mmlu_p.exists():
-        benches["mmlu"] = _load_mmlu(mmlu_p)
-    if hella_p.exists():
-        benches["hellaswag"] = _load_hellaswag(hella_p)
-    if not benches:
-        raise SystemExit(f"[e1-cuda] no fixtures found ({mmlu_p}, {hella_p})")
-    print("[e1-cuda] benches: " + ", ".join(f"{k}={len(v)}" for k, v in benches.items()), flush=True)
+# --- modes ---------------------------------------------------------------------
 
-    model, tok = _load_model(args.scale)
-    base = _snapshot_cpu(model)              # load ONCE, restore per cell
-    print(f"[e1-cuda] model loaded + baseline snapshotted "
-          f"({sum(v.numel() for v in base.values())/1e9:.2f} G params)", flush=True)
 
-    done, cells = set(), []
-    if cache.exists() and not os.getenv("HL_E1_FRESH"):
-        for line in cache.open():
-            if line.strip():
-                r = json.loads(line)
-                cells.append(r)
-                done.add((r["profile"], r["seed"]))
-        print(f"[e1-cuda] resume: {len(done)} cached cells", flush=True)
+def _sha_file(p: Path) -> str:
+    return hashlib.sha256(p.read_bytes()).hexdigest()
 
-    for profile in profiles:
-        for seed in seeds:
-            if (profile, seed) in done:
-                continue
-            cell = _run_cell(model, tok, base, benches, profile, seed,
-                             n_samples=args.n_samples, n_replay=n_replay, lr=lr, inner=inner)
-            cells.append(cell)
-            with cache.open("a") as fh:
-                fh.write(json.dumps(cell) + "\n")
-            print(f"[e1-cuda] {profile} seed={seed} pre={cell['pre']:.3f} "
-                  f"post={cell['post']:.3f} delta={cell['delta']:+.3f} "
-                  f"wchg={cell['weight_changed']} wall={cell['wall_s']}s", flush=True)
 
-    # per-profile summary
-    import statistics as st
-    summary = {}
-    for profile in profiles:
-        ds = [c["delta"] for c in cells if c["profile"] == profile]
-        if ds:
-            summary[profile] = {"n": len(ds), "mean_delta": round(st.mean(ds), 4),
-                                "sd": round(st.pstdev(ds), 4) if len(ds) > 1 else 0.0}
-    (out_dir / f"pilot-cycle3-cuda-{slug}.json").write_text(json.dumps(
-        {"model": args.scale, "profiles": list(profiles), "summary": summary,
-         "cells": cells}, indent=2))
-    print(f"[e1-cuda] summary: {summary}", flush=True)
+def _cache(path: Path) -> tuple[list[dict[str, Any]], set[str]]:
+    cells: list[dict[str, Any]] = []
+    if path.exists():
+        cells = [json.loads(x) for x in path.read_text().splitlines() if x.strip()]
+    return cells, {c["key"] for c in cells}
+
+
+def _append(path: Path, cell: dict[str, Any]) -> None:
+    with path.open("a") as fh:
+        fh.write(json.dumps(cell) + "\n")
+
+
+def _selection_i(tuning_cells: Path) -> pr.Config:
+    cells = [json.loads(x) for x in tuning_cells.read_text().splitlines() if x.strip()]
+    seeds = SEEDS["tuning"]
+    by = {(c["seed"], float(c["lr"]), int(c["m"])): float(c["delta"]) for c in cells
+          if c.get("kind") == "tune_vanilla"}
+    return pr.select_config({(lr, m): sum(by[(s, lr, m)] for s in seeds) / len(seeds)
+                             for lr, m in pr.GRID})
+
+
+def main(argv: list[str] | None = None) -> int:  # noqa: C901 - one dispatch per mode
+    ap = argparse.ArgumentParser(description="E1 CUDA harness")
+    ap.add_argument("--mode", required=True, choices=("smoke", "headroom", "tuning", "calibrate",
+                                                       "amend", "confirmatory"))
+    ap.add_argument("--model", default=os.environ.get("HL_MODEL", MODEL_REPO))
+    ap.add_argument("--revision", default=os.environ.get("HL_REVISION", MODEL_REVISION))
+    ap.add_argument("--corpus", type=Path)
+    ap.add_argument("--manifest", type=Path)
+    ap.add_argument("--amendment", type=Path)
+    ap.add_argument("--tuning-cells", type=Path)
+    ap.add_argument("--calib-cells", type=Path)
+    ap.add_argument("--seeds", help="subset of the mode's seeds, e.g. 0-46 (sharding)")
+    ap.add_argument("--smoke-n-eval", type=int, default=50)
+    ap.add_argument("--pilot-partition", default="confirmatory", choices=cio.PARTITIONS)
+    ap.add_argument("--out", type=Path, default=Path(os.environ.get("HL_OUT", ".")))
+    args = ap.parse_args(argv)
+    args.out.mkdir(parents=True, exist_ok=True)
+
+    if args.mode == "amend":
+        if not (args.manifest and args.tuning_cells and args.calib_cells):
+            raise SystemExit("amend needs --manifest, --tuning-cells and --calib-cells")
+        man = json.loads(args.manifest.read_text())
+        if man.get("status") != cio.FROZEN:
+            raise SystemExit("amend needs the FROZEN manifest")
+        cells = [json.loads(x) for p in (args.tuning_cells, args.calib_cells)
+                 for x in p.read_text().splitlines() if x.strip()]
+        am = pr.tuning_amendment(cells, int(man["partitions"]["confirmatory"]["n_items"]))
+        am.update({"manifest_sha256": _sha_file(args.manifest),
+                   "tuning_cells_sha256": _sha_file(args.tuning_cells),
+                   "calib_cells_sha256": _sha_file(args.calib_cells),
+                   "date": time.strftime("%Y-%m-%d")})
+        out = args.out / "e1-tuning-amendment.json"
+        if out.exists():
+            raise SystemExit(f"refusing to overwrite {out}")
+        out.write_text(json.dumps(am, indent=1, sort_keys=True) + "\n")
+        print(json.dumps(am, sort_keys=True))
+        return 0
+
+    if args.mode == "smoke":
+        benches, prov = cio.load_pilot(_FIX, _FIX / "e1_partition_2026-10.json",
+                                       args.pilot_partition)
+    else:
+        if not (args.corpus and args.manifest):
+            raise SystemExit(f"{args.mode} needs --corpus and --manifest")
+        items, prov = cio.load_corpus(args.corpus, args.manifest, args.mode)
+        benches = {"facts": items}
+
+    seeds = SEEDS.get(args.mode, ())
+    if args.seeds:
+        lo, _, hi = args.seeds.partition("-")
+        want = set(range(int(lo), int(hi or lo) + 1))
+        if not want <= set(seeds):
+            raise SystemExit(f"--seeds outside the {args.mode} seeds")
+        seeds = tuple(s for s in seeds if s in want)
+
+    model, tok = _load_model(args.model, args.revision or None)
+    base = _snapshot_cpu(model)
+    slug = args.model.replace("/", "_")
+    common = {"mode": args.mode, "model": args.model, "revision": args.revision,
+              "corpus": prov, "device": _device(),
+              "torch": torch.__version__}
+
+    if args.mode == "headroom":
+        _restore(model, base)
+        _, am_ = _score_items(model, tok, items)
+        correct = {it["src_hash"]: a == int(it["answer"]) for it, a in zip(items, am_, strict=True)}
+        out = args.out / "e1-headroom.json"
+        if out.exists():
+            raise SystemExit(f"refusing to overwrite {out}")
+        out.write_text(json.dumps({"correct": correct, **common}, indent=1, sort_keys=True) + "\n")
+        print(f"[e1] headroom: {sum(correct.values())}/{len(correct)} tuning items correct")
+        return 0
+
+    cache = args.out / f"e1-{args.mode}-{slug}.cells.jsonl"
+    _, done = _cache(cache)
+    jobs: list[tuple[str, dict[str, Any]]] = []
+    if args.mode in ("smoke", "confirmatory"):
+        if args.mode == "confirmatory":
+            if not args.amendment:
+                raise SystemExit("confirmatory cells need the frozen tuning amendment")
+            am = pr.Amendment.from_dict(json.loads(args.amendment.read_text()))
+            common["amendment_sha256"] = _sha_file(args.amendment)
+            n_eval = am.n_eval
+        else:  # smoke: defaults stand in for the not-yet-tuned arms
+            am = pr.Amendment(pr.DEFAULT, pr.DEFAULT, 1.0, args.smoke_n_eval)
+            common["smoke_placeholder_amendment"] = am.as_dict()
+            n_eval = args.smoke_n_eval
+        for p in pr.ALL_PROFILES:
+            for s in seeds:
+                jobs.append((f"{p}|{s}", {"profile": p, "seed": s, "am": am, "n_eval": n_eval}))
+    elif args.mode == "tuning":
+        for s in seeds:
+            for lr, m in pr.GRID:
+                for kind in ("tune_vanilla", "tune_opr"):
+                    jobs.append((f"{kind}|{s}|{lr}|{m}", {"kind": kind, "seed": s, "lr": lr,
+                                                          "m": m}))
+    elif args.mode == "calibrate":
+        if not args.tuning_cells:
+            raise SystemExit("calibrate needs --tuning-cells (selection (i))")
+        lr_i, m_i = _selection_i(args.tuning_cells)
+        common["selection_vanilla"] = [lr_i, m_i]
+        for s in seeds:
+            for c in pr.C_GRID:
+                jobs.append((f"calib_lr|{s}|{c}", {"kind": "calib_lr", "seed": s, "c": c,
+                                                   "lr": c * lr_i, "m": m_i}))
+            jobs.append((f"calib_ref|{s}", {"kind": "calib_ref", "seed": s, "lr": lr_i,
+                                            "m": m_i}))
+
+    for key, job in jobs:
+        if key in done:
+            continue
+        s = int(job["seed"])
+        if "profile" in job:
+            cell = profile_cell(model, tok, base, benches, job["profile"], s, job["am"],
+                                job["n_eval"])
+        else:
+            kind = job["kind"]
+            cell = run_cell(model, tok, base, benches, seed=s, n_eval=0,
+                            corpus_kind="opr" if kind == "tune_opr" else "facts",
+                            lr=job["lr"], m=job["m"], downscale=kind == "calib_ref",
+                            restructure=False, charge_opr=kind == "tune_opr")
+            cell.update({k: v for k, v in job.items() if k != "seed"})
+        cell.update(common)
+        cell["key"] = key
+        _append(cache, cell)
+        print(f"[e1] {args.mode} {key} pre={cell['pre']:.3f} post={cell['post']:.3f} "
+              f"tokens={cell['achieved_loss_tokens']}/{cell['planned_loss_tokens']} "
+              f"wall={cell['wall_s']}s", flush=True)
     return 0
 
 

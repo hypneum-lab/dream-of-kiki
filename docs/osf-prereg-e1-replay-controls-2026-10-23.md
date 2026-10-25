@@ -917,35 +917,41 @@ into the filed version.
    `paired_noninferiority`) implementing §2 exactly, tested against
    hand-computed examples and SciPy one-sided p-values. The existing
    `tost_equivalence` is left unchanged and unused here.
-2. Corpus loader: `pilot_cycle3_cuda.py` reads the fact corpus and
-   its §5.1 manifest (and the pilot manifest for the smoke), verifies
-   the hashes, and restricts `_cell_split` to the requested
-   partition.
-3. Token-budget update schedule (§5), with achieved tokens and step
-   counts written to each cell; the scoring-pass charge of §5.4 is
-   implemented in `scripts/e1_budget.py` (done, tested) and must be
-   wired into the schedule.
-4. New profiles `p_ctrl_template` (prompt-only), tuned arms,
-   restricted MC-OPR (with OPR corpus size and S_OPR per cell) and
-   the exploratory `p_ctrl_lr_matched` with its calibration.
-5. Drift (full-norm), collapse, frozen-reference and MoE-drift
-   (router drift, expert-usage histogram) fields per cell (§6).
-6. `analyze_e1_cuda.py`: §2 states, §7 tables, validity gates.
-7. Fact-corpus build and check script (§5.1, §5.1a): fetch the three
-   pinned sources and verify their pins; apply rules 1-9 of §5.1a
-   (date cutoff, whitespace normalisation, "None of the other
-   choices" removal, date injection, option permutation, balance,
-   per-source headroom bookkeeping, licence-aware export of
-   `realtimeqa` as IDs + hashes only); normalisation, exact and
-   near-duplicate detection (including against the pilot fixtures
-   and the mega_v2 facts), stem-skeleton count, source-stratified
-   group-level partition, manifest with `--check`; tests on
-   constructed duplicates, skeleton collisions, the date cutoff, the
-   whitespace leak and the option permutation. **Partly done:** the
-   deterministic core of §5.1b (hashes, union-find grouping, skeleton,
-   contamination check, cap, quotas, split, headroom rebalancing) is
-   `scripts/e1_corpus_core.py` with 21 unit tests on synthetic items;
-   loading the pinned sources, tokenisation and model scoring remain.
+2. **Done (2026-10-25):** corpus loader `scripts/e1_corpus_io.py`,
+   wired into `pilot_cycle3_cuda.py --mode`: it verifies the corpus
+   file, every item hash and both partition hashes, and each mode
+   reads one partition only (confirmatory: CONFIRMATORY of a FROZEN
+   corpus; tuning / calibrate: TUNING of a FROZEN corpus; headroom:
+   TUNING of the PENDING-HEADROOM corpus; smoke: the pilot fixtures
+   through their partition manifest). Seeds are fixed per mode
+   (0-140, 1000-1009, 2000-2002); the pinned model revision is
+   enforced at load.
+3. **Done (2026-10-25):** token-budget schedule
+   `scripts/e1_schedule.py` (T_s, m-fold repeats, cycling, terminal
+   truncation to exactly the budget), wired with the §5.4 scoring
+   charge of `scripts/e1_budget.py`; achieved tokens, optimizer steps
+   and truncations are written to each cell.
+4. **Done (2026-10-25):** profile table, corpora (prompt-only
+   template, restricted MC-OPR with corpus size and S_OPR per cell),
+   tuning selection, empty-OPR handling, LR-matching calibration of c
+   and the frozen tuning amendment (`scripts/e1_profiles.py`,
+   `--mode tuning|calibrate|amend`).
+5. **Done (2026-10-25):** per-cell drift (full norm), collapse flag,
+   frozen-reference KL and "previously correct, now lost", router
+   drift, expert-usage L1 and mean replay loss
+   (`scripts/e1_diagnostics.py`; operationalisation in its
+   docstring: probe set = the cell's own eval items, KL over the
+   softmax of the 4 choice scores).
+6. **Done (2026-10-25):** `analyze_e1_cuda.py` replaced by the §2 / §4
+   / §6 / §7 decision code (states, gates, joint headline, secondary
+   and exploratory contrasts, per-source description).
+7. **Done (2026-10-25)** up to step 8: `scripts/e1_fetch_sources.sh`,
+   `scripts/e1_sources.py` and `scripts/e1_corpus_build.py` (pins,
+   row mapping, rules 1-9, the reference core, manifest without item
+   text, `--check`, `--freeze` for step 9). Step 9 needs the base
+   checkpoint on the CUDA node (`--mode headroom`, TUNING only).
+   All code is torch-free and tested, except the harness wiring,
+   whose tests run on a tiny CPU model where torch is installed.
 
 **Audit trail.** Milestones:
 `docs/milestones/e1-35b-replay-controls-<date>.{json,md}`, including
