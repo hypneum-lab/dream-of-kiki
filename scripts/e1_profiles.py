@@ -49,6 +49,7 @@ SD_STAR = 0.039661  # section 5.2, as printed by scripts/prereg_power_2026_10.py
 N_EVAL_FLOOR = 130
 N_REPLAY = 40
 MAX_OPR_DROPPED_TUNING = 2
+TUNING_SEEDS = tuple(range(1000, 1010))
 
 REGISTERED = ("p_min", "p_equ", "p_max", "p_ctrl_sft", "p_ctrl_shuffle", "p_noise",
               "p_ctrl_template", "p_ctrl_vanilla_replay_tuned", "p_ctrl_onpolicy_replay")
@@ -165,15 +166,29 @@ def opr_texts(replay_items: Sequence[Item], argmax: Sequence[int]) -> list[str]:
 # --- tuning ------------------------------------------------------------------
 
 
+def _finite(x: Any) -> bool:
+    return isinstance(x, (int, float)) and not isinstance(x, bool) and math.isfinite(x)
+
+
+def validate_amendment(d: Mapping[str, Any], confirmatory_size: int) -> Amendment:
+    """Refuse an amendment whose values the protocol cannot produce."""
+    am = Amendment.from_dict(d)
+    if am.selection_vanilla not in GRID or am.selection_opr not in GRID:
+        raise ValueError("selections must be grid configurations")
+    if am.c not in C_GRID:
+        raise ValueError(f"c must be one of {C_GRID}")
+    rule = n_eval_rule(float(d["p_disc"]), confirmatory_size)
+    if am.n_eval != rule["n_eval"] or am.n_eval < N_EVAL_FLOOR and not rule["capped"]:
+        raise ValueError(f"n_eval {am.n_eval} != section 5.2 rule {rule['n_eval']}")
+    return am
+
+
 def select_config(mean_delta: Mapping[Config, float]) -> Config:
     """Highest mean delta; ties within 1e-9 go to the lower LR, then smaller m."""
     if set(mean_delta) != set(GRID):
         raise ValueError(f"tuning needs exactly the 6 grid configurations (got {sorted(mean_delta)})")
-    best = sorted(GRID)[0]
-    for cfg in sorted(GRID):
-        if mean_delta[cfg] > mean_delta[best] + TIE:
-            best = cfg
-    return best
+    top = max(mean_delta[cfg] for cfg in GRID)
+    return min(cfg for cfg in GRID if mean_delta[cfg] >= top - TIE)  # lower LR, then m
 
 
 def calibrate_c(norms: Mapping[float, Sequence[float]], ref: Sequence[float]) -> float:
@@ -206,19 +221,47 @@ def tuning_amendment(cells: Sequence[Mapping[str, Any]], confirmatory_size: int)
     ``delta``, ``post_correct`` (per eval item), ``opr_corpus_size``
     (tune_opr) and ``norm_change`` (calibration).
     """
-    seeds = sorted({int(c["seed"]) for c in cells})
-    tune = {(c["kind"], int(c["seed"]), float(c["lr"]), int(c["m"])): c for c in cells
-            if c["kind"] in ("tune_vanilla", "tune_opr")}
-    calib = {(int(c["seed"]), float(c["c"])): c for c in cells if c["kind"] == "calib_lr"}
-    calib_ref = {int(c["seed"]): c for c in cells if c["kind"] == "calib_ref"}
+    seeds = list(TUNING_SEEDS)
+    tune: dict[tuple[str, int, float, int], Mapping[str, Any]] = {}
+    calib: dict[tuple[int, float], Mapping[str, Any]] = {}
+    calib_ref: dict[int, Mapping[str, Any]] = {}
+    for c in cells:
+        kind, s = str(c["kind"]), int(c["seed"])
+        if s not in TUNING_SEEDS:
+            raise ValueError(f"cell outside the tuning seeds 1000-1009: {kind} seed {s}")
+        value = c.get("norm_change") if kind.startswith("calib") else c.get("delta")
+        if c.get("invariant_violation") or not _finite(value):
+            raise ValueError(f"{kind} seed {s}: invariant violation or non-finite value; "
+                             "the amendment is not written (PI decision needed)")
+        if kind in ("tune_vanilla", "tune_opr"):
+            key: Any = (kind, s, float(c["lr"]), int(c["m"]))
+            table: Any = tune
+        elif kind == "calib_lr":
+            key, table = (s, float(c["c"])), calib
+        elif kind == "calib_ref":
+            key, table = s, calib_ref
+        else:
+            raise ValueError(f"unknown cell kind {kind!r}")
+        if key in table:
+            raise ValueError(f"duplicate cell {key}")
+        table[key] = c
+    want_tune = {(k, s, lr, m) for k in ("tune_vanilla", "tune_opr") for s in seeds
+                 for lr, m in GRID}
+    want_cal = {(s, c) for s in seeds for c in C_GRID}
+    if set(tune) != want_tune or set(calib) != want_cal or set(calib_ref) != set(seeds):
+        raise ValueError("incomplete tuning / calibration matrix: need 120 tuning cells, "
+                         "50 calib_lr and 10 calib_ref cells for seeds 1000-1009")
 
     def mean_over(kind: str, keep: Sequence[int]) -> dict[Config, float]:
         return {(lr, m): statistics.fmean(float(tune[(kind, s, lr, m)]["delta"]) for s in keep)
                 for lr, m in GRID}
 
     sel_v = select_config(mean_over("tune_vanilla", seeds))
-    empty = sorted({int(c["seed"]) for c in cells
-                    if c["kind"] == "tune_opr" and int(c["opr_corpus_size"]) == 0})
+    sizes = {s: {int(tune[("tune_opr", s, lr, m)]["opr_corpus_size"]) for lr, m in GRID}
+             for s in seeds}
+    if any(len(v) != 1 for v in sizes.values()):
+        raise ValueError("OPR corpus size differs across configurations of a tuning seed")
+    empty = sorted(s for s, v in sizes.items() if v == {0})
     opr_seeds = [s for s in seeds if s not in empty]
     opr_default = len(empty) > MAX_OPR_DROPPED_TUNING
     sel_o = DEFAULT if opr_default else select_config(mean_over("tune_opr", opr_seeds))
@@ -240,7 +283,10 @@ def tuning_amendment(cells: Sequence[Mapping[str, Any]], confirmatory_size: int)
     norms = {c: [float(calib[(s, c)]["norm_change"]) for s in seeds] for c in C_GRID}
     ref = [float(calib_ref[s]["norm_change"]) for s in seeds]
     c_sel = calibrate_c(norms, ref)
-    p_disc = statistics.fmean(disc) if disc else float("nan")
+    if not disc:
+        raise ValueError("no tuning seed has a non-empty OPR corpus: p_disc and n_eval are "
+                         "undefined (PI decision needed)")
+    p_disc = statistics.fmean(disc)
     rule = n_eval_rule(p_disc, confirmatory_size)
     return {
         "selection_vanilla": list(sel_v), "selection_opr": list(sel_o),

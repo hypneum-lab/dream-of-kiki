@@ -845,9 +845,11 @@ may act as an **implicit learning-rate reduction or regularisation**.
 An H14-B SUPERIOR reading is therefore compatible with that
 mechanism and is **not** evidence of a sleep-specific one. Only the
 registered contrast (tuned replay with versus without DOWNSCALE,
-same configuration and updates) is tested; an LR-matched replay arm
-that reproduces the weight-norm change of DOWNSCALE would separate
-the two readings and is **not** registered here (see §10).
+same configuration and updates) is tested. The LR-matched replay arm
+that reproduces the weight-norm change of DOWNSCALE
+(`p_ctrl_lr_matched`, §5.4) is registered as **exploratory** only
+(PI decision 2026-10-24): it is reported next to H14-B and cannot
+change this reading.
 
 **Joint headline** (first matching row; the last row catches every
 other combination):

@@ -66,6 +66,10 @@ def test_select_config_ties_and_grid() -> None:
     assert pr.select_config(md) == (3e-4, 2)
     with pytest.raises(ValueError):
         pr.select_config({(1e-4, 5): 0.0})
+    # ties are taken against the global maximum, not the running winner
+    md = {cfg: -1.0 for cfg in pr.GRID}
+    md[(3e-5, 5)], md[(1e-4, 2)], md[(1e-4, 5)] = 0.0, 0.75e-9, 1.5e-9
+    assert pr.select_config(md) == (1e-4, 2)
 
 
 def test_calibrate_c() -> None:
@@ -122,3 +126,31 @@ def test_tuning_amendment_opr_default_and_bad_calibration() -> None:
             c["lr"] = 1e-4
     with pytest.raises(ValueError, match="c x LR"):
         pr.tuning_amendment(bad, confirmatory_size=500)
+
+
+def test_amendment_input_validation() -> None:
+    cells = _cells()
+    with pytest.raises(ValueError, match="incomplete"):
+        pr.tuning_amendment([c for c in cells if c["seed"] != 1009], confirmatory_size=500)
+    with pytest.raises(ValueError, match="duplicate"):
+        pr.tuning_amendment(cells + [dict(cells[0])], confirmatory_size=500)
+    bad = _cells()
+    bad[0]["delta"] = float("nan")
+    with pytest.raises(ValueError, match="non-finite"):
+        pr.tuning_amendment(bad, confirmatory_size=500)
+    bad = _cells()
+    bad[0]["seed"] = 999
+    with pytest.raises(ValueError, match="outside"):
+        pr.tuning_amendment(bad, confirmatory_size=500)
+    with pytest.raises(ValueError, match="PI decision"):
+        pr.tuning_amendment(_cells(empty_opr=tuple(range(1000, 1010))), confirmatory_size=500)
+
+
+def test_validate_amendment() -> None:
+    a = pr.tuning_amendment(_cells(), confirmatory_size=500)
+    assert pr.validate_amendment(a, 500).n_eval == a["n_eval"]
+    for field, value in (("c", 2.5), ("selection_vanilla", [2e-4, 5]), ("n_eval", 129)):
+        with pytest.raises(ValueError):
+            pr.validate_amendment({**a, field: value}, 500)
+    with pytest.raises(ValueError, match="n_eval"):
+        pr.validate_amendment(a, 300)  # cap differs for another corpus size

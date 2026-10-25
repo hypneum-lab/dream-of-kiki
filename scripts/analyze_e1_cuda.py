@@ -49,7 +49,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from kiki_oniric.eval.statistics import paired_tost
-from scripts.e1_diagnostics import collapse_gate_fails, collapse_rate, mean_ci95
+from scripts.e1_diagnostics import COLLAPSE_GATE, collapse_rate, mean_ci95
 from scripts.e1_profiles import EXPLORATORY, REGISTERED
 
 N_PLANNED = 141
@@ -123,6 +123,13 @@ def _delta(c: Cell) -> float:
     return float(c["post"]) - float(c["pre"])
 
 
+def profile_collapse(idx: Mapping[tuple[str, int], Cell], profile: str) -> float:
+    """Section 6: collapse rate of a profile over its seeds (cells with finite pre / post)."""
+    flags = [bool(c.get("collapse")) for (p, _), c in idx.items()
+             if p == profile and _finite(c.get("pre")) and _finite(c.get("post"))]
+    return collapse_rate(flags)
+
+
 def contrast(idx: Mapping[tuple[str, int], Cell], x: str, y: str, kind: str,
              alpha: float, seeds: Sequence[int] = SEEDS) -> dict[str, Any]:
     """Paired contrast with gates; ``kind`` superiority or noninferiority."""
@@ -149,15 +156,15 @@ def contrast(idx: Mapping[tuple[str, int], Cell], x: str, y: str, kind: str,
     out: dict[str, Any] = {"x": x, "y": y, "kind": kind, "alpha": alpha, "delta": DELTA,
                            "n": len(kept), "n_lost_cell_level": n_lost, "lost_by_reason": lost,
                            "opr_feasibility_dropped": opr_dropped}
-    flags_x = [bool(idx[(x, s)].get("collapse")) for s in kept]
-    flags_y = [bool(idx[(y, s)].get("collapse")) for s in kept]
-    out["collapse_rate"] = {x: collapse_rate(flags_x), y: collapse_rate(flags_y)}
+    rates = {x: profile_collapse(idx, x), y: profile_collapse(idx, y)}
+    out["collapse_rate"] = rates
+    out["kept_seeds"] = kept
     gates = []
     if n_lost > MAX_LOST:
         gates.append("differential_exclusion")
     if opr_dropped > MAX_LOST:
         gates.append("opr_feasibility")
-    if collapse_gate_fails(flags_x) or collapse_gate_fails(flags_y):
+    if max(rates.values()) > COLLAPSE_GATE:
         gates.append("collapse")
     if len(kept) < 2:
         gates.append("fewer_than_2_pairs")
@@ -188,33 +195,43 @@ def joint_headline(states: Mapping[str, str]) -> str:
     return "J4"
 
 
-def per_source(idx: Mapping[tuple[str, int], Cell], x: str, y: str,
-               seeds: Sequence[int]) -> dict[str, Any]:
-    """Descriptive per-source paired difference (no state, section 5.1a rule 10)."""
+def _source_delta(c: Cell, src: str) -> float | None:
+    mask = [e == src for e in c.get("eval_sources") or []]
+    pre, post = c.get("pre_correct") or [], c.get("post_correct") or []
+    n = sum(mask)
+    if not n or len(pre) != len(mask) or len(post) != len(mask):
+        return None
+    return (sum(b for b, m in zip(post, mask, strict=True) if m)
+            - sum(a for a, m in zip(pre, mask, strict=True) if m)) / n
+
+
+def per_source(idx: Mapping[tuple[str, int], Cell], res: Mapping[str, Any]) -> dict[str, Any]:
+    """Section 5.1a rule 10: every section 2 statistic per source, descriptive, no state.
+
+    Uses the seeds the pooled contrast retained (same exclusions). For
+    ``p_noise`` the post items differ from the pre items, so no per-source
+    difference is defined.
+    """
+    x, y = str(res["x"]), str(res["y"])
+    if "p_noise" in (x, y):
+        return {}
+    kept = list(res.get("kept_seeds") or [])
+    sources = sorted({e for s in kept for e in idx[(x, s)].get("eval_sources") or []})
     out: dict[str, Any] = {}
-    sources = sorted({s for (p, _), c in idx.items() if p in (x, y)
-                      for s in c.get("eval_sources") or []})
     for src in sources:
-        ds: list[float | None] = []
-        for s in seeds:
-            cx, cy = idx.get((x, s)), idx.get((y, s))
-            if cx is None or cy is None:
-                continue
-            vals = []
-            for c in (cx, cy):
-                if c.get("profile") == "p_noise":
-                    vals = []  # p_noise post uses a different item draw
-                    break
-                mask = [e == src for e in c.get("eval_sources") or []]
-                pre, post = c.get("pre_correct") or [], c.get("post_correct") or []
-                n = sum(mask)
-                if not n or len(pre) != len(mask) or len(post) != len(mask):
-                    vals = []
-                    break
-                vals.append(sum(b for b, m in zip(post, mask, strict=True) if m) / n
-                            - sum(a for a, m in zip(pre, mask, strict=True) if m) / n)
-            ds.append(vals[0] - vals[1] if len(vals) == 2 else None)
-        out[src] = mean_ci95(ds)
+        dx, dy = [], []
+        for s in kept:
+            a, b = _source_delta(idx[(x, s)], src), _source_delta(idx[(y, s)], src)
+            if a is not None and b is not None:
+                dx.append(a)
+                dy.append(b)
+        row: dict[str, Any] = {"n": len(dx)}
+        if len(dx) >= 2:
+            r = paired_tost(dx, dy, delta=DELTA, alpha=float(res["alpha"]))
+            row.update({"mean": r.mean_diff, "sd": r.sd_diff, "se": r.se_diff,
+                        "L": r.ci_lower, "U": r.ci_upper, "g_z": r.g_z,
+                        "degenerate": r.degenerate})
+        out[src] = row
     return out
 
 
@@ -223,9 +240,10 @@ def decide(cells: Iterable[Cell]) -> dict[str, Any]:
     bad_mode = {str(c.get("mode")) for c in cells} - {"confirmatory"}
     if bad_mode:
         raise ValueError(f"non-confirmatory cells in the input: {sorted(bad_mode)}")
-    corp = {json.dumps(c.get("corpus"), sort_keys=True) for c in cells}
-    if len(corp) > 1:
-        raise ValueError("cells come from more than one corpus / partition")
+    for field in ("corpus", "model", "revision", "amendment_sha256", "run_identity"):
+        vals = {json.dumps(c.get(field), sort_keys=True) for c in cells}
+        if len(vals) > 1:
+            raise ValueError(f"cells disagree on {field}: more than one corpus / run identity")
     idx = _index(cells)
     outside = sorted({s for (_, s) in idx} - set(SEEDS))
     if outside:
@@ -255,9 +273,19 @@ def decide(cells: Iterable[Cell]) -> dict[str, Any]:
         "hypotheses": hyps, "states": states,
         "joint_headline": joint_headline(states),
         "secondary": secondary, "exploratory_arms": explo,
-        "per_source": {h: per_source(idx, x, y, SEEDS) for h, (x, y, _) in FAMILY.items()},
+        "per_source": {h: per_source(idx, r) for h, r in hyps.items()},
+        "opr_corpus_size": _size_distribution(idx),
         "diagnostics": diag,
     }
+
+
+def _size_distribution(idx: Mapping[tuple[str, int], Cell]) -> dict[str, int]:
+    sizes = [int(c["opr_corpus_size"]) for (p, _), c in idx.items()
+             if p == OPR and c.get("opr_corpus_size") is not None]
+    hist: dict[str, int] = {}
+    for v in sizes:
+        hist[str(v)] = hist.get(str(v), 0) + 1
+    return dict(sorted(hist.items(), key=lambda kv: int(kv[0])))
 
 
 def load_cells(path: Path) -> list[dict[str, Any]]:

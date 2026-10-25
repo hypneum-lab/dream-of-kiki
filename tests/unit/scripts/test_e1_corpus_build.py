@@ -272,36 +272,48 @@ def test_cli_write_refuses_overwrite_and_check(sources: Path, tmp_path: Path,
                     "--tokenizer", str(fake)])
 
 
+def _meta(man: dict[str, Any]) -> dict[str, Any]:
+    return {"model": src.MODEL_REPO, "revision": src.MODEL_REVISION,
+            "corpus": {"corpus_sha256": man["corpus_sha256"], "partition": "tuning",
+                       "partition_sha256": man["partitions"]["tuning"]["sha256"],
+                       "status": man["status"]}}
+
+
 def test_freeze_rejects_below_minima_and_foreign_items(sources: Path) -> None:
-    _, man_text = build.run(sources, src.byte_bound_counter, "b", False,
-                            tree_blobs=_blobs, fixtures_dir=FIX, mega=MEGA)
+    kw: dict[str, Any] = {"tree_blobs": _blobs, "fixtures_dir": FIX, "mega": MEGA,
+                          "tokenizer_pinned": True}
+    _, man_text = build.run(sources, src.byte_bound_counter, "b", False, **kw)
     man = json.loads(man_text)
+    meta = _meta(man)
     tuning = {i["src_hash"]: False for i in man["items"] if i["partition"] == "tuning"}
     corpus, frozen_text = build.run(sources, src.byte_bound_counter, "b", False,
-                                    tree_blobs=_blobs, fixtures_dir=FIX, mega=MEGA,
-                                    headroom=tuning, headroom_sha256="x",
-                                    tokenizer_pinned=True)
+                                    headroom=tuning, headroom_sha256="x", headroom_meta=meta,
+                                    **kw)
     frozen = json.loads(frozen_text)
     assert frozen["status"] == build.REJECTED and frozen["items"] == [] and corpus == ""
     assert frozen["headroom"]["reason"].startswith("minima")
-    conf = next(i["src_hash"] for i in man["items"] if i["partition"] == "confirmatory") \
-        if any(i["partition"] == "confirmatory" for i in man["items"]) else "f" * 64
     with pytest.raises(SystemExit, match="non-TUNING"):
-        build.run(sources, src.byte_bound_counter, "b", False, tree_blobs=_blobs,
-                  fixtures_dir=FIX, mega=MEGA, headroom={**tuning, conf: True},
-                  tokenizer_pinned=True)
+        build.run(sources, src.byte_bound_counter, "b", False,
+                  headroom={**tuning, "f" * 64: True}, headroom_meta=meta, **kw)
     with pytest.raises(ValueError, match="not scored"):
-        build.run(sources, src.byte_bound_counter, "b", False, tree_blobs=_blobs,
-                  fixtures_dir=FIX, mega=MEGA, headroom={}, tokenizer_pinned=True)
+        build.run(sources, src.byte_bound_counter, "b", False, headroom={},
+                  headroom_meta=meta, **kw)
     for bad in (None, 0, "false"):
         k = next(iter(tuning))
         with pytest.raises(SystemExit, match="booleans"):
-            build.run(sources, src.byte_bound_counter, "b", False, tree_blobs=_blobs,
-                      fixtures_dir=FIX, mega=MEGA, headroom={**tuning, k: bad},
-                      tokenizer_pinned=True)
+            build.run(sources, src.byte_bound_counter, "b", False,
+                      headroom={**tuning, k: bad}, headroom_meta=meta, **kw)
+    for field, value in (("model", "other/model"), ("revision", "main")):
+        with pytest.raises(SystemExit, match="provenance"):
+            build.run(sources, src.byte_bound_counter, "b", False, headroom=tuning,
+                      headroom_meta={**meta, field: value}, **kw)
+    wrong = {**meta, "corpus": {**meta["corpus"], "corpus_sha256": "0" * 64}}
+    with pytest.raises(SystemExit, match="provenance"):
+        build.run(sources, src.byte_bound_counter, "b", False, headroom=tuning,
+                  headroom_meta=wrong, **kw)
     with pytest.raises(SystemExit, match="PROVISIONAL"):
         build.run(sources, src.byte_bound_counter, "b", False, tree_blobs=_blobs,
-                  fixtures_dir=FIX, mega=MEGA, headroom=tuning)
+                  fixtures_dir=FIX, mega=MEGA, headroom=tuning, headroom_meta=meta)
 
 
 def test_freeze_refuses_provisional(sources: Path) -> None:

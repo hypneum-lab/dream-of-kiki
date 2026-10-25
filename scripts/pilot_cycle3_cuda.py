@@ -239,6 +239,7 @@ def _replay(model: Any, tok: Any, texts: Sequence[str], lr: float, m: int,
     model.train()
     losses: list[float] = []
     violation = None
+    done: list[Any] = []
     for u in updates:
         x = ids[u.record][:, : u.n_input].to(dev)
         opt.zero_grad(set_to_none=True)
@@ -249,9 +250,11 @@ def _replay(model: Any, tok: Any, texts: Sequence[str], lr: float, m: int,
         out.loss.backward()
         opt.step()
         losses.append(float(out.loss.detach()))
+        done.append(u)
     opt.zero_grad(set_to_none=True)
     model.eval()
-    return {**summary(updates, lengths), "planned_loss_tokens": budget,
+    return {**summary(done, lengths), "planned_loss_tokens": budget,
+            "planned_updates": len(updates),
             "mean_replay_loss": sum(losses) / len(losses) if losses else None,
             "invariant_violation": violation}
 
@@ -322,6 +325,9 @@ def run_cell(model: Any, tok: Any, base: dict[str, torch.Tensor],
     """One E1 cell: restore, pre-eval, budgeted replay, ops, post-eval, diagnostics."""
     t0 = time.time()
     _restore(model, base)
+    if torch.cuda.is_available():
+        for d in range(torch.cuda.device_count()):
+            torch.cuda.reset_peak_memory_stats(d)
     eval_sets, replay_items = _cell_split(benches, seed, N_REPLAY, n_eval)
     with _RouterCounter(model) as rc_pre:
         pre = _eval(model, tok, eval_sets)
@@ -344,7 +350,8 @@ def run_cell(model: Any, tok: Any, base: dict[str, torch.Tensor],
     rec["budget"] = budget
     if noise or not texts or lr is None or m is None:
         rep = {"achieved_loss_tokens": 0, "n_updates": 0, "n_truncated": 0,
-               "planned_loss_tokens": 0, "mean_replay_loss": None, "invariant_violation": None}
+               "planned_loss_tokens": 0, "planned_updates": 0, "mean_replay_loss": None,
+               "invariant_violation": None}
     else:
         rep = _replay(model, tok, texts, lr, m, int(budget["update_tokens"]))
     rec.update(rep)
@@ -375,8 +382,20 @@ def run_cell(model: Any, tok: Any, base: dict[str, torch.Tensor],
         "eval_sources": pre["sources"],
         "collapse": dg.collapse_flag(pre["acc"], post["acc"]),
         "wall_s": round(time.time() - t0, 1),
+        "cuda_max_memory_allocated": ([torch.cuda.max_memory_allocated(d)
+                                       for d in range(torch.cuda.device_count())]
+                                      if torch.cuda.is_available() else []),
+        "host_maxrss": _host_maxrss(),
     })
     return rec
+
+
+def _host_maxrss() -> int:
+    """Peak resident set size of this process in bytes (ru_maxrss)."""
+    import resource
+
+    r = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+    return int(r if sys.platform == "darwin" else r * 1024)
 
 
 def profile_cell(model: Any, tok: Any, base: dict[str, torch.Tensor],
@@ -391,6 +410,24 @@ def profile_cell(model: Any, tok: Any, base: dict[str, torch.Tensor],
 
 
 # --- modes ---------------------------------------------------------------------
+
+
+IDENTITY_KEYS = ("mode", "model", "revision", "corpus", "amendment_sha256",
+                 "smoke_placeholder_amendment", "selection_vanilla", "tuning_cells_sha256",
+                 "code_commit")
+
+
+def _code_commit() -> str | None:
+    env = os.environ.get("DREAMOFKIKI_COMMIT_SHA")
+    if env:
+        return env
+    import subprocess
+
+    try:
+        return subprocess.run(["git", "-C", str(ROOT), "rev-parse", "HEAD"], check=True,
+                              capture_output=True, text=True).stdout.strip()
+    except Exception:  # noqa: BLE001
+        return None
 
 
 def _sha_file(p: Path) -> str:
@@ -414,6 +451,8 @@ def _selection_i(tuning_cells: Path) -> pr.Config:
     seeds = SEEDS["tuning"]
     by = {(c["seed"], float(c["lr"]), int(c["m"])): float(c["delta"]) for c in cells
           if c.get("kind") == "tune_vanilla"}
+    if set(by) != {(s, lr, m) for s in seeds for lr, m in pr.GRID}:
+        raise SystemExit("selection (i) needs the complete tune_vanilla grid for seeds 1000-1009")
     return pr.select_config({(lr, m): sum(by[(s, lr, m)] for s in seeds) / len(seeds)
                              for lr, m in pr.GRID})
 
@@ -434,6 +473,9 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 - one dispatch per
     ap.add_argument("--pilot-partition", default="confirmatory", choices=cio.PARTITIONS)
     ap.add_argument("--out", type=Path, default=Path(os.environ.get("HL_OUT", ".")))
     args = ap.parse_args(argv)
+    if args.mode not in ("smoke", "amend") and (args.model != MODEL_REPO
+                                                or args.revision != MODEL_REVISION):
+        raise SystemExit(f"{args.mode} runs only on {MODEL_REPO}@{MODEL_REVISION}")
     args.out.mkdir(parents=True, exist_ok=True)
 
     if args.mode == "amend":
@@ -491,14 +533,24 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 - one dispatch per
         print(f"[e1] headroom: {sum(correct.values())}/{len(correct)} tuning items correct")
         return 0
 
+    common["code_commit"] = _code_commit()
+    if args.mode == "calibrate":
+        assert args.tuning_cells is not None
+        common["tuning_cells_sha256"] = _sha_file(args.tuning_cells)
     cache = args.out / f"e1-{args.mode}-{slug}.cells.jsonl"
-    _, done = _cache(cache)
+    cached, done = _cache(cache)
     jobs: list[tuple[str, dict[str, Any]]] = []
     if args.mode in ("smoke", "confirmatory"):
         if args.mode == "confirmatory":
             if not args.amendment:
                 raise SystemExit("confirmatory cells need the frozen tuning amendment")
-            am = pr.Amendment.from_dict(json.loads(args.amendment.read_text()))
+            assert args.manifest is not None
+            doc = json.loads(args.amendment.read_text())
+            if doc.get("manifest_sha256") != _sha_file(args.manifest):
+                raise SystemExit("the amendment was frozen against another corpus manifest")
+            conf_size = int(json.loads(args.manifest.read_text())
+                            ["partitions"]["confirmatory"]["n_items"])
+            am = pr.validate_amendment(doc, conf_size)
             common["amendment_sha256"] = _sha_file(args.amendment)
             n_eval = am.n_eval
         else:  # smoke: defaults stand in for the not-yet-tuned arms
@@ -526,6 +578,11 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 - one dispatch per
             jobs.append((f"calib_ref|{s}", {"kind": "calib_ref", "seed": s, "lr": lr_i,
                                             "m": m_i}))
 
+    identity = json.dumps({k: common.get(k) for k in IDENTITY_KEYS}, sort_keys=True)
+    run_id = hashlib.sha256(identity.encode()).hexdigest()
+    stale = sorted({c.get("run_identity") for c in cached} - {run_id}, key=str)
+    if stale:
+        raise SystemExit(f"{cache} holds cells of another run identity; use a fresh --out")
     for key, job in jobs:
         if key in done:
             continue
@@ -542,6 +599,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 - one dispatch per
             cell.update({k: v for k, v in job.items() if k != "seed"})
         cell.update(common)
         cell["key"] = key
+        cell["run_identity"] = run_id
         _append(cache, cell)
         print(f"[e1] {args.mode} {key} pre={cell['pre']:.3f} post={cell['post']:.3f} "
               f"tokens={cell['achieved_loss_tokens']}/{cell['planned_loss_tokens']} "

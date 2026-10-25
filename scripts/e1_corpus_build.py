@@ -277,13 +277,17 @@ def run(sources_dir: Path, count: src.TokenCounter, token_counter: str,
         mega: list[dict[str, Any]] | None = None,
         headroom: Mapping[str, Any] | None = None,
         headroom_sha256: str | None = None,
-        tokenizer_pinned: bool = False) -> tuple[str, str]:
+        tokenizer_pinned: bool = False,
+        headroom_meta: Mapping[str, Any] | None = None) -> tuple[str, str]:
     """Return (corpus text, manifest text).
 
     With ``headroom`` (the base checkpoint's correctness on every TUNING
     item, keyed by src_hash, from ``pilot_cycle3_cuda.py --mode
     headroom``) step 9 is applied with ``headroom_rebalance``: the
     result is the FROZEN corpus (or REJECTED, with no items).
+    ``headroom_meta`` (the rest of the headroom JSON) must name the
+    pinned model and revision and the rebuilt PENDING-HEADROOM corpus and
+    its TUNING partition.
     """
     pins = src.verify_pins(sources_dir, tree_blobs)
     raw = src.load_all(sources_dir)
@@ -306,6 +310,21 @@ def run(sources_dir: Path, count: src.TokenCounter, token_counter: str,
         bad = [k for k, v in headroom.items() if not isinstance(v, bool)]
         if bad:
             raise SystemExit(f"headroom scores must be JSON booleans ({len(bad)} are not)")
+        pending = freeze_items(parts, dict(report))
+        tuning_hashes = sorted(f["item_sha256"] for f in pending if f["partition"] == "tuning")
+        want = {"model": src.MODEL_REPO, "revision": src.MODEL_REVISION,
+                "corpus_sha256": _sha(corpus_text(pending)),
+                "partition": "tuning", "partition_sha256": _sha("\n".join(tuning_hashes)),
+                "status": PENDING}
+        meta = dict(headroom_meta or {})
+        corp = dict(meta.get("corpus") or {})
+        got = {"model": meta.get("model"), "revision": meta.get("revision"),
+               **{k: corp.get(k) for k in ("corpus_sha256", "partition", "partition_sha256",
+                                           "status")}}
+        if got != want:
+            diff = sorted(k for k in want if got.get(k) != want[k])
+            raise SystemExit(f"headroom provenance does not match the pinned model and the "
+                             f"rebuilt pending corpus: {diff}")
         tuning = {src_hash(x) for p in parts.values() for x in p["tuning"]}
         foreign = set(headroom) - tuning
         if foreign:  # confirmatory items are never scored before the first seed
@@ -358,12 +377,15 @@ def main(argv: list[str] | None = None) -> int:
                 "separately, no special tokens, summed")
     else:
         count, name = src.byte_bound_counter, "byte-bound (UTF-8 bytes, q + 1 + gold)"
-    hr, hr_sha = None, None
+    hr, hr_sha, hr_meta = None, None, None
     if args.freeze:
-        hr = dict(json.loads(args.freeze.read_text(encoding="utf-8"))["correct"])
+        doc = json.loads(args.freeze.read_text(encoding="utf-8"))
+        hr = dict(doc.pop("correct"))
+        hr_meta = doc
         hr_sha = src.sha256_file(args.freeze)
     corpus, man = run(args.sources, count, name, args.allow_undecided,
-                      headroom=hr, headroom_sha256=hr_sha, tokenizer_pinned=pinned)
+                      headroom=hr, headroom_sha256=hr_sha, tokenizer_pinned=pinned,
+                      headroom_meta=hr_meta)
     cpath, mpath = ((args.out / FROZEN_CORPUS_FILE, args.out / FROZEN_MANIFEST_FILE) if args.freeze
                     else (args.out / CORPUS_FILE, args.out / MANIFEST_FILE))
     if args.check:

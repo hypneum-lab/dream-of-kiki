@@ -112,6 +112,24 @@ def test_collapse_gate() -> None:
     assert an.decide(cells)["states"]["H14-B"] == "SUPERIOR"
 
 
+def test_collapse_rate_is_per_profile_not_per_pair() -> None:
+    cells = _cells({"p_min": 0.03, "p_equ": 0.03})
+    # 29 collapsed vanilla cells, 8 of them on seeds where p_equ is excluded:
+    # the profile rate (29/141) still fails the gate
+    _set(cells, "p_ctrl_vanilla_replay_tuned", range(29), collapse=True)
+    _set(cells, "p_equ", range(4), post=float("nan"))
+    h = an.decide(cells)["hypotheses"]["H14-B"]
+    assert h["collapse_rate"]["p_ctrl_vanilla_replay_tuned"] == pytest.approx(29 / 141)
+    assert "collapse" in h["gates_failed"]
+
+
+def test_opr_size_distribution() -> None:
+    cells = _cells()
+    _set(cells, an.OPR, range(3), opr_corpus_size=0)
+    r = an.decide(cells)
+    assert r["opr_corpus_size"] == {"0": 3, "10": 138}
+
+
 def test_incomplete_run_is_exploratory() -> None:
     cells = [c for c in _cells({"p_min": 0.03})
              if not (c["profile"] == "p_max" and c["seed"] == 140)]
@@ -131,6 +149,10 @@ def test_refusals() -> None:
     cells = _cells()
     cells[0]["corpus"] = {"sha": "y"}
     with pytest.raises(ValueError, match="corpus"):
+        an.decide(cells)
+    cells = _cells()
+    cells[5]["revision"] = "main"
+    with pytest.raises(ValueError, match="revision"):
         an.decide(cells)
     cells = _cells()
     cells[0]["seed"] = 141

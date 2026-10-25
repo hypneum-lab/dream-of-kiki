@@ -124,9 +124,13 @@ def test_calibration_cells_report_norm_change(setup: tuple[Any, Any, Any]) -> No
     assert b["norm_change"] > a["norm_change"] > 0
 
 
-def test_pinned_revision_enforced() -> None:
+def test_pinned_revision_enforced(tmp_path: Path) -> None:
     with pytest.raises(SystemExit, match="pinned revision"):
         h._load_model(h.MODEL_REPO, "main")
+    for mode in ("headroom", "tuning", "calibrate", "confirmatory"):
+        for extra in (["--model", "other/model"], ["--revision", "main"]):
+            with pytest.raises(SystemExit, match="runs only on"):
+                h.main(["--mode", mode, "--out", str(tmp_path), *extra])
 
 
 def test_amend_mode(tmp_path: Path) -> None:
