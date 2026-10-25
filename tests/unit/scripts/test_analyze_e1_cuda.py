@@ -24,7 +24,9 @@ def _cells(shift: dict[str, float] | None = None, sd: float = 0.02,
             d = float(base[s] + noise[s] + shift.get(p, 0.0))
             out.append({"mode": "confirmatory", "profile": p, "seed": s, "pre": 0.5,
                         "post": 0.5 + d, "collapse": False, "opr_corpus_size": 10,
-                        "budget": {"status": "matched"}, "corpus": {"sha": "x"}})
+                        "budget": {"status": "matched"}, "corpus": {"sha": "x"},
+                        "model": "m", "revision": "r", "amendment_sha256": "a",
+                        "run_identity": "i"})
     return out
 
 
@@ -149,6 +151,10 @@ def test_refusals() -> None:
     cells = _cells()
     cells[0]["corpus"] = {"sha": "y"}
     with pytest.raises(ValueError, match="corpus"):
+        an.decide(cells)
+    cells = _cells()
+    del cells[7]["run_identity"]
+    with pytest.raises(ValueError, match="lack"):
         an.decide(cells)
     cells = _cells()
     cells[5]["revision"] = "main"

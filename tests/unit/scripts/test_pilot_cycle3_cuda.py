@@ -135,7 +135,7 @@ def test_pinned_revision_enforced(tmp_path: Path) -> None:
 
 def test_amend_mode(tmp_path: Path) -> None:
     man = tmp_path / "m.json"
-    man.write_text(json.dumps({"status": "FROZEN",
+    man.write_text(json.dumps({"status": "FROZEN", "corpus_sha256": "c" * 64,
                                "partitions": {"confirmatory": {"n_items": 500}}}))
     tune, cal = tmp_path / "t.jsonl", tmp_path / "c.jsonl"
     rows_t, rows_c = [], []
@@ -150,11 +150,35 @@ def test_amend_mode(tmp_path: Path) -> None:
             rows_c.append({"kind": "calib_lr", "seed": s, "c": c, "lr": c * 1e-4, "m": 2,
                            "norm_change": c})
         rows_c.append({"kind": "calib_ref", "seed": s, "lr": 1e-4, "m": 2, "norm_change": 1.4})
+    prov = {"model": h.MODEL_REPO, "revision": h.MODEL_REVISION,
+            "corpus": {"corpus_sha256": "c" * 64, "partition": "tuning"}}
+    for r in rows_t:
+        r.update(prov, mode="tuning", run_identity="t1")
     tune.write_text("".join(json.dumps(r) + "\n" for r in rows_t))
+    for r in rows_c:
+        r.update(prov, mode="calibrate", run_identity="c1", selection_vanilla=[1e-4, 2],
+                 tuning_cells_sha256=h._sha_file(tune))
     cal.write_text("".join(json.dumps(r) + "\n" for r in rows_c))
-    assert h._selection_i(tune) == (1e-4, 2)
+    assert h._selection_i(tune, "c" * 64) == (1e-4, 2)
+    with pytest.raises(SystemExit, match="does not come"):
+        h._selection_i(tune, "d" * 64)
     assert h.main(["--mode", "amend", "--manifest", str(man), "--tuning-cells", str(tune),
                    "--calib-cells", str(cal), "--out", str(tmp_path)]) == 0
     am = json.loads((tmp_path / "e1-tuning-amendment.json").read_text())
     assert am["selection_vanilla"] == [1e-4, 2] and am["c"] == 1.5
     assert am["n_eval_rule"] == 636 and am["n_eval"] == 460 and am["capped"]
+
+
+def test_check_provenance_refusals() -> None:
+    base = {"mode": "tuning", "model": h.MODEL_REPO, "revision": h.MODEL_REVISION,
+            "corpus": {"corpus_sha256": "c" * 64, "partition": "tuning"}, "run_identity": "r"}
+    h.check_provenance([base], "tuning", "c" * 64)
+    for change in ({"revision": "main"}, {"mode": "calibrate"}, {"run_identity": None},
+                   {"corpus": {"corpus_sha256": "c" * 64, "partition": "confirmatory"}}):
+        with pytest.raises(SystemExit):
+            h.check_provenance([{**base, **change}], "tuning", "c" * 64)
+    with pytest.raises(SystemExit, match="more than one"):
+        h.check_provenance([base, {**base, "run_identity": "s"}], "tuning", "c" * 64)
+    with pytest.raises(SystemExit):
+        h.check_provenance([{**base, "mode": "calibrate", "tuning_cells_sha256": "x"}],
+                           "calibrate", "c" * 64, "y")

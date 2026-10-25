@@ -171,13 +171,30 @@ def _finite(x: Any) -> bool:
 
 
 def validate_amendment(d: Mapping[str, Any], confirmatory_size: int) -> Amendment:
-    """Refuse an amendment whose values the protocol cannot produce."""
+    """Refuse an amendment whose values the protocol cannot produce.
+
+    Raw types are checked before any conversion: LRs are grid floats, m
+    and n_eval are integers (not floats or booleans), c is a grid value
+    and p_disc a number in [0, 1].
+    """
+    def is_int(x: Any) -> bool:
+        return isinstance(x, int) and not isinstance(x, bool)
+
+    for key in ("selection_vanilla", "selection_opr"):
+        sel = d.get(key)
+        if not (isinstance(sel, list) and len(sel) == 2 and _finite(sel[0]) and is_int(sel[1])):
+            raise ValueError(f"{key} must be [lr, integer m]")
+    if not _finite(d.get("c")) or not is_int(d.get("n_eval")):
+        raise ValueError("c must be a number and n_eval an integer")
+    p_disc = d.get("p_disc")
+    if not _finite(p_disc) or not 0.0 <= float(p_disc) <= 1.0:
+        raise ValueError("p_disc must be a number in [0, 1]")
     am = Amendment.from_dict(d)
     if am.selection_vanilla not in GRID or am.selection_opr not in GRID:
         raise ValueError("selections must be grid configurations")
     if am.c not in C_GRID:
         raise ValueError(f"c must be one of {C_GRID}")
-    rule = n_eval_rule(float(d["p_disc"]), confirmatory_size)
+    rule = n_eval_rule(float(p_disc), confirmatory_size)
     if am.n_eval != rule["n_eval"] or am.n_eval < N_EVAL_FLOOR and not rule["capped"]:
         raise ValueError(f"n_eval {am.n_eval} != section 5.2 rule {rule['n_eval']}")
     return am
@@ -196,9 +213,13 @@ def calibrate_c(norms: Mapping[float, Sequence[float]], ref: Sequence[float]) ->
     if set(norms) != set(C_GRID):
         raise ValueError(f"calibration needs c in {C_GRID} (got {sorted(norms)})")
     r = statistics.median(ref)
+    meds = {c: statistics.median(norms[c]) for c in C_GRID}
+    if not r > 0 or not all(v > 0 for v in meds.values()):
+        raise ValueError("a median norm change is not positive: the log ratio is undefined "
+                         "(PI decision needed)")
     best, best_v = None, math.inf
     for c in sorted(C_GRID):
-        v = abs(math.log(statistics.median(norms[c]) / r))
+        v = abs(math.log(meds[c] / r))
         if v < best_v - 1e-12:
             best, best_v = c, v
     assert best is not None
@@ -257,6 +278,11 @@ def tuning_amendment(cells: Sequence[Mapping[str, Any]], confirmatory_size: int)
                 for lr, m in GRID}
 
     sel_v = select_config(mean_over("tune_vanilla", seeds))
+    raw_sizes = [tune[("tune_opr", s, lr, m)].get("opr_corpus_size") for s in seeds
+                 for lr, m in GRID]
+    if not all(isinstance(v, int) and not isinstance(v, bool) and 0 <= v <= N_REPLAY
+               for v in raw_sizes):
+        raise ValueError(f"OPR corpus sizes must be integers in 0..{N_REPLAY}")
     sizes = {s: {int(tune[("tune_opr", s, lr, m)]["opr_corpus_size"]) for lr, m in GRID}
              for s in seeds}
     if any(len(v) != 1 for v in sizes.values()):

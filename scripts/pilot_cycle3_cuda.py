@@ -446,8 +446,34 @@ def _append(path: Path, cell: dict[str, Any]) -> None:
         fh.write(json.dumps(cell) + "\n")
 
 
-def _selection_i(tuning_cells: Path) -> pr.Config:
-    cells = [json.loads(x) for x in tuning_cells.read_text().splitlines() if x.strip()]
+def _read_cells(path: Path) -> list[dict[str, Any]]:
+    return [json.loads(x) for x in path.read_text().splitlines() if x.strip()]
+
+
+def check_provenance(cells: Sequence[dict[str, Any]], mode: str, corpus_sha256: str,
+                     tuning_cells_sha256: str | None = None) -> None:
+    """Tuning / calibration records must come from one run of ``mode`` on the
+    pinned model and on the TUNING partition of the given (FROZEN) corpus."""
+    if not cells:
+        raise SystemExit(f"no {mode} cells")
+    ids = {c.get("run_identity") for c in cells}
+    for c in cells:
+        corp = c.get("corpus") or {}
+        ok = (c.get("mode") == mode and c.get("model") == MODEL_REPO
+              and c.get("revision") == MODEL_REVISION and corp.get("partition") == "tuning"
+              and corp.get("corpus_sha256") == corpus_sha256 and c.get("run_identity"))
+        if mode == "calibrate":
+            ok = ok and c.get("tuning_cells_sha256") == tuning_cells_sha256
+        if not ok:
+            raise SystemExit(f"{mode} cell {c.get('key')} does not come from this corpus, "
+                             "the pinned model or the given tuning cells")
+    if len(ids) != 1:
+        raise SystemExit(f"{mode} cells come from more than one run identity")
+
+
+def _selection_i(tuning_cells: Path, corpus_sha256: str) -> pr.Config:
+    cells = _read_cells(tuning_cells)
+    check_provenance(cells, "tuning", corpus_sha256)
     seeds = SEEDS["tuning"]
     by = {(c["seed"], float(c["lr"]), int(c["m"])): float(c["delta"]) for c in cells
           if c.get("kind") == "tune_vanilla"}
@@ -484,8 +510,14 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 - one dispatch per
         man = json.loads(args.manifest.read_text())
         if man.get("status") != cio.FROZEN:
             raise SystemExit("amend needs the FROZEN manifest")
-        cells = [json.loads(x) for p in (args.tuning_cells, args.calib_cells)
-                 for x in p.read_text().splitlines() if x.strip()]
+        tcells, ccells = _read_cells(args.tuning_cells), _read_cells(args.calib_cells)
+        check_provenance(tcells, "tuning", str(man["corpus_sha256"]))
+        check_provenance(ccells, "calibrate", str(man["corpus_sha256"]),
+                         _sha_file(args.tuning_cells))
+        sel = _selection_i(args.tuning_cells, str(man["corpus_sha256"]))
+        if any(c.get("selection_vanilla") != list(sel) for c in ccells):
+            raise SystemExit("calibration cells were not run at selection (i)")
+        cells = tcells + ccells
         am = pr.tuning_amendment(cells, int(man["partitions"]["confirmatory"]["n_items"]))
         am.update({"manifest_sha256": _sha_file(args.manifest),
                    "tuning_cells_sha256": _sha_file(args.tuning_cells),
@@ -569,7 +601,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 - one dispatch per
     elif args.mode == "calibrate":
         if not args.tuning_cells:
             raise SystemExit("calibrate needs --tuning-cells (selection (i))")
-        lr_i, m_i = _selection_i(args.tuning_cells)
+        lr_i, m_i = _selection_i(args.tuning_cells, str(prov["corpus_sha256"]))
         common["selection_vanilla"] = [lr_i, m_i]
         for s in seeds:
             for c in pr.C_GRID:

@@ -154,3 +154,26 @@ def test_validate_amendment() -> None:
             pr.validate_amendment({**a, field: value}, 500)
     with pytest.raises(ValueError, match="n_eval"):
         pr.validate_amendment(a, 300)  # cap differs for another corpus size
+
+
+def test_validate_amendment_raw_types_and_ranges() -> None:
+    a = pr.tuning_amendment(_cells(), confirmatory_size=500)
+    for field, value in (("selection_vanilla", [3e-4, 2.9]), ("n_eval", float(a["n_eval"])),
+                         ("p_disc", -1.0), ("p_disc", 2.0), ("n_eval", True)):
+        with pytest.raises(ValueError):
+            pr.validate_amendment({**a, field: value}, 500)
+
+
+def test_tuning_rejects_bad_sizes_and_zero_norms() -> None:
+    bad = _cells()
+    for c in bad:
+        if c["kind"] == "tune_opr":
+            c["opr_corpus_size"] = -1
+    with pytest.raises(ValueError, match="OPR corpus sizes"):
+        pr.tuning_amendment(bad, confirmatory_size=500)
+    bad = _cells()
+    for c in bad:
+        if c["kind"] == "calib_ref":
+            c["norm_change"] = 0.0
+    with pytest.raises(ValueError, match="PI decision"):
+        pr.tuning_amendment(bad, confirmatory_size=500)
