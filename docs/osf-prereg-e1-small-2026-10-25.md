@@ -15,9 +15,9 @@ The 35B study (`docs/osf-prereg-e1-replay-controls-2026-10-23.md`,
 **Substrate:** Qwen3.5-4B (dense), bf16, HF transformers,
 `Qwen/Qwen3.5-4B` at revision
 `851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a` (proposed pin, §2;
-**PI decision D1**).
-**Harness:** the E1 harness with the study selector `--study e1-small`
-(`HL_STUDY=e1-small`), runner `scripts/run_e1_small_cuda.sh` (§6).
+**PI decision S1**).
+**Harness:** the E1 harness with the study selector `HL_STUDY=e1-small`,
+runner `scripts/run_e1_small_cuda.sh` (§6).
 **Lock commit:** *(filled by introducing commit hash at filing)*
 **Lock timestamp:** *(filled at filing, pre-run)*
 
@@ -46,7 +46,7 @@ descriptive and outside both confirmatory families. E1-small also does
 not adjudicate the historical mega_v2 residual (different task,
 endpoint and model), exactly as the E1 draft §1 states for 35B.
 
-## §2 Model choice and pin (PI decision D1)
+## §2 Model choice and pin (PI decision S1)
 
 No Qwen3.6 4B model exists on Hugging Face (2026-10-25: the Qwen3.6
 releases are `Qwen3.6-35B-A3B` and `Qwen3.6-27B`, with FP8 variants).
@@ -141,14 +141,37 @@ The E1-small family is its own family: α = 0.05 / 3 for H14-A / B / C
 of E1-small, with no correction shared with the 35B family. Each study
 spends its own 0.05.
 
-**Inheritance is by pinned text (PI decision D7).** At filing, the E1
+**Inheritance is by pinned text (PI decision S7).** At filing, the E1
 draft text that E1-small inherits is fixed by its git blob at the
-E1-small lock commit and its SHA-256 (at drafting: commit `0f39ba5`,
-SHA-256 `e0950e7f…774630`). Later revisions of the E1 draft (e.g. the
-35B hardware or MLX decisions) do not change E1-small unless an
-E1-small amendment adopts them before its first tuning seed. The
-alternative is to file a self-contained copy of the inherited
-sections.
+E1-small lock commit and its SHA-256 (at drafting: commit `9172768`,
+revision 9 of the E1 draft, SHA-256 `ae00aea5…bf71b5`). Later
+revisions of the E1 draft do not change E1-small unless an E1-small
+amendment adopts them before its first tuning seed. The alternative
+is to file a self-contained copy of the inherited sections.
+
+**Backend.** Revision 9 of the E1 draft moved the 35B study to Apple
+MLX on the Mac Studio (its §9 "Backend", deviations D1-D10).
+E1-small keeps the **CUDA / PyTorch / HF transformers** backend
+(PI decision of 2026-10-25 14:43), i.e. the "CUDA path" of the E1
+draft; its §8 rule "every tuning, amendment and confirmatory cell
+from the registered backend" reads "CUDA / transformers" here. Of the
+35B deviations, only these points carry over, restated for the 4B:
+(35B D2) the transformers causal-LM load of this checkpoint is the
+language model only (§2), so full-parameter SGD, DOWNSCALE and the
+drift / norm measures cover the language model, exactly as `mlx_lm`
+does for the 35B; (35B D3) transformers stores the RMSNorm weight `w` of
+`norm(x)·(1 + w)` natively, nothing to restore; (35B D5) bf16 parameters,
+gradients and SGD update, float32 loss and scoring log-softmax; (35B D6)
+CUDA replay is not guaranteed bit-reproducible and no claim relies on
+it; (35B D7) RESTRUCTURE swaps two adjacent entries of the decoder-layer
+list (masks follow `config.layer_types` by position, which for
+unpadded batch-1 sequences gives the same outputs as per-layer types);
+(35B D10) the harness tokenizes with the transformers tokenizer of the
+pinned files, which differs from the raw `tokenizer.json` on 1 of
+7 850 corpus texts (**PI decision S8**, the same question as the 35B
+draft §10). The MLX-specific 35B D4, D8 and D9 do not apply. Unlike the
+35B draft's assumption for CUDA, the `fla` linear-attention kernels
+are not installed (S6 of §9 below).
 
 ## §4 Differences from the E1 (35B) draft
 
@@ -166,11 +189,12 @@ sections.
 | 10 | Frozen corpus | 35B freeze of the pending corpus | its own freeze of the **same** pending corpus with the 4B headroom scores (§5); hashes filed in this document | model |
 | 11 | Date cutoff rationale | 2026-04-16, after the 35B release (2026-04-15) | same cutoff; it also post-dates the 4B release (2026-02-27) | — |
 | 12 | Runtime | unmeasured at 35B | estimate in §5, measured by the smoke (§7) | size, hardware |
-| 13 | Runner | `scripts/run_e1_cuda_35b.sh` | `scripts/run_e1_small_cuda.sh` (`--study e1-small`) | hardware |
+| 13 | Runner | `scripts/run_e1_cuda_35b.sh` | `scripts/run_e1_small_cuda.sh` (`HL_STUDY=e1-small`) | hardware |
 | 14 | Milestones | `docs/milestones/e1-35b-replay-controls-<date>` | `docs/milestones/e1-small-4b-replay-controls-<date>` | separate study |
 | 15 | α family | its own 0.05 | its own 0.05 (§3) | separate study |
 | 16 | Inference | 35B only | 4B only; no inference about 35B (§1) | scope |
-| 17 | Backend | CUDA, HF transformers | same backend (CUDA, PyTorch 2.11.0, transformers 5.7.0, hash-pinned, §6) | — |
+| 17 | Backend | Apple MLX on the Mac Studio (revision 9; CUDA kept as a parity path) | CUDA, PyTorch 2.11.0, transformers 5.7.0, hash-pinned (§3, §6) | PI decision |
+| 17b | Linear-attention kernels | `mlx_lm` Metal kernel / op-by-op recurrence | transformers torch fallback (no `fla`, S6) | environment |
 | 18 | Cell counts | 1 620 (incl. 30 smoke) | same 1 620 | — (no change) |
 
 Everything not listed is identical.
@@ -194,7 +218,7 @@ KXKM-AI's GPU used about 1.4 GiB on 2026-10-25 (a shared model-swap
 proxy can load more), so the runner checks free memory before
 starting (§7). If the smoke shows a peak that does not fit, the
 pre-specified fallback is activation (gradient) checkpointing, which
-leaves the update rule unchanged (**PI decision D5**); a change of
+leaves the update rule unchanged (**PI decision S5**); a change of
 optimizer, precision or batch is not allowed without an amendment.
 The 35B arithmetic ("only routed experts receive gradients") does not
 apply.
@@ -209,14 +233,14 @@ at `n_eval` = 130: 1 040 scoring forwards (pre + post, 4 choices), +
 160 for OPR, + about 200 forward / backward updates (T_s ≈ 12 000
 loss tokens at m = 5), + one 9.7 GB restore. With the transformers
 torch fallback for Gated DeltaNet (the `flash-linear-attention` /
-`causal-conv1d` kernels are not installed; **PI decision D6**), a
+`causal-conv1d` kernels are not installed; **PI decision S6**), a
 rough planning figure is 1.5-2.5 min per cell, i.e. about 40-70 h
 for the 1 620 cells. The smoke (30 cells) and its projection to the
 confirmatory workload (E1 §9 method) replace this estimate in the
 filed version. If the projection exceeds the available KXKM-AI GPU
 time, the PI amends before filing; N is never reduced after filing.
 
-**Kernels (D6).** The run uses one attention implementation for the
+**Kernels (S6).** The run uses one attention implementation for the
 whole study (all of smoke, headroom, tuning and confirmatory). Default:
 the transformers torch fallback (no new dependency). Installing the
 fast kernels would add two new hash-pinned packages (to be approved)
@@ -231,14 +255,14 @@ pending.json`). Its construction depends on the model only through the
 step-3 token bound (question + gold ≤ 256 tokens), counted with the
 pinned 35B tokenizer, which is byte-identical to the 4B tokenizer
 (§2); with the proposed pin it is therefore the same corpus for both
-models in every respect. (With the D1 alternative, the bound would
+models in every respect. (With the S1 alternative, the bound would
 still be counted with the 35B tokenizer, i.e. it would be a fixed,
 model-external length filter; the ≤ 512-token memory bound would then
 be re-checked on the 4B tokenizer during the smoke.)
 
 **Headroom (step 9, separate for the 4B).** The 4B base checkpoint is
-scored on the TUNING partition only (`--mode headroom --study
-e1-small`); confirmatory items are never scored before the first
+scored on the TUNING partition only (`HL_STUDY=e1-small`, `--mode headroom`);
+confirmatory items are never scored before the first
 confirmatory seed. `headroom_rebalance` (E1 §5.1b) is applied to the
 4B scores exactly as specified (pooled and per-source 0.80 rule,
 REJECT conditions, weights `w_s`). The result is the E1-small FROZEN
@@ -246,7 +270,7 @@ corpus and manifest, written to their own directory and hashed into
 this document. The 35B study later applies its own step 9 to the same
 pending corpus.
 
-**Consequences for the PI (D2).** (i) If a source exceeds 0.80 for
+**Consequences for the PI (S2).** (i) If a source exceeds 0.80 for
 one model and not the other, the two FROZEN corpora differ (different
 sources and weights `w_s`); since nothing is pooled across sizes this
 does not invalidate either study, but per-source and pooled estimands
@@ -259,18 +283,21 @@ headroom first, which the PI has deferred; it is not proposed.
 
 ## §6 Code (harness support for the 4B)
 
-- Study selector: one table of pinned models in the harness
-  (`e1` → `Qwen/Qwen3.6-35B-A3B` @ `995ad96e…`, `e1-small` →
-  `Qwen/Qwen3.5-4B` @ `851bf6e8…`), chosen with `--study`
-  (`HL_STUDY`, default `e1`). Every model-dependent check (load,
-  per-mode refusal, tuning / calibration provenance) reads the
-  selected pin; loading either repository at another revision is
-  refused, and a cell is accepted only from the pinned model of its
-  study.
-- File integrity: for `e1-small`, the SHA-256 of both weight shards
-  and of `tokenizer.json` (§2) are checked before loading.
-- Provenance: each cell records `study`, model and revision (the
-  revision and model are already part of the run identity).
+- Study selector: one table of pinned models,
+  `scripts/e1_sources.py` `STUDY_MODELS` (`e1` →
+  `Qwen/Qwen3.6-35B-A3B` @ `995ad96e…`, `e1-small` →
+  `Qwen/Qwen3.5-4B` @ `851bf6e8…`), read by the single
+  model-selection spot of `scripts/e1_harness.py` (`MODEL_REPO`,
+  `MODEL_REVISION`) according to `HL_STUDY` (default `e1`; an unknown
+  value is refused). Every model-dependent check (per-mode refusal,
+  load at the pinned revision, tuning / calibration provenance) reads
+  the selected pin, so a cell is accepted only from the pinned model of
+  its study.
+- File integrity: `scripts/run_e1_small_cuda.sh` checks every file of
+  the pinned snapshot against `scripts/e1_small_weights.sha256` (the
+  ten SHA-256 of §2) and runs offline (`HF_HUB_OFFLINE=1`).
+- Provenance: each cell and the headroom file record `study`, model
+  and revision (model and revision are part of the run identity).
 - Corpus freeze: `scripts/e1_corpus_build.py --freeze --study e1-small`
   accepts headroom scores from the E1-small pin only; the step-3
   tokenizer pin is unchanged.
@@ -296,7 +323,7 @@ version. The exact command is in the PR description.
 
 ## §8 Filing gate (E1-small)
 
-Not filed until: the PI has decided D1-D7 (§9); the 4B smoke has run
+Not filed until: the PI has decided S1-S8 (§9); the 4B smoke has run
 and its measurements and projection are written here; the 4B headroom
 has run and the E1-small FROZEN corpus and manifest hashes are written
 here; the harness code is merged at a pinned commit with passing tests;
@@ -304,22 +331,27 @@ the inherited E1 text is pinned (§3).
 
 ## §9 Open decisions for the PI
 
-- **D1 Model.** `Qwen/Qwen3.5-4B` @ `851bf6e8…` (proposed; same
+- **S1 Model.** `Qwen/Qwen3.5-4B` @ `851bf6e8…` (proposed; same
   tokenizer and family as the 35B pin) or `Qwen/Qwen3-4B-Instruct-2507`
   @ `cdbee75f…` (literal "Qwen3 4B dense instruct"; different
   tokenizer and architecture). Weights of the proposed pin only were
   downloaded.
-- **D2 Headroom / freeze.** E1-small freezes its own copy of the same
+- **S2 Headroom / freeze.** E1-small freezes its own copy of the same
   pending corpus with the 4B headroom (proposed), accepting that the two
   FROZEN corpora can differ if a source is dropped for one model only.
-- **D3 Order.** E1-small is filed and run before the 35B study; the 35B
-  draft gains one cross-reference line and is otherwise unchanged.
-- **D4 Hardware.** KXKM-AI, one RTX 4090, shared with other studies
+- **S3 Order.** E1-small is filed and run before the 35B study; the 35B
+  draft is unchanged (a one-line cross-reference can be added by its
+  author).
+- **S4 Hardware.** KXKM-AI, one RTX 4090, shared with other studies
   (scheduling, not design).
-- **D5 Memory fallback.** Activation checkpointing if the smoke does
+- **S5 Memory fallback.** Activation checkpointing if the smoke does
   not fit (update rule unchanged), decided before filing.
-- **D6 Kernels.** Torch fallback for Gated DeltaNet (no new
+- **S6 Kernels.** Torch fallback for Gated DeltaNet (no new
   dependency, proposed) or the fast kernels (two new hash-pinned
   packages to approve); fixed for the whole study.
-- **D7 Inheritance.** By pinned reference to the E1 draft text
+- **S7 Inheritance.** By pinned reference to the E1 draft text
   (proposed) or a self-contained copy at filing.
+- **S8 Harness tokenizer.** The transformers tokenizer of the pinned
+  files (current harness) or the raw `tokenizer.json` (1 of 7 850
+  corpus texts differs); best decided together with the 35B draft's
+  same item so both studies tokenize alike.
