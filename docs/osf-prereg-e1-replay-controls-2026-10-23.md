@@ -14,7 +14,9 @@ rebalancing in §5.1b after an independent review; revision 7,
 §10 item 1), rule 3 widened to a frozen exact list of
 "none of the above"-type options (§5.1a); revision 8, 2026-10-25:
 PI decisions — empty-OPR tuning rule and H14-C infeasibility,
-undefined LR matching, MMLU-CF source date (§5.1, §5.4))
+undefined LR matching, MMLU-CF source date (§5.1, §5.4); revision 9,
+2026-10-25: PI decision — backend changed to Apple MLX on the Mac
+Studio M3 Ultra (§9 "Backend", deviations D1-D10))
 **Parent OSF:** 10.17605/OSF.IO/Q6JYN
 **Parent backlog item:** `EXPERIMENT-BACKLOG.md` E1 (powered TOST,
 35B run pending).
@@ -25,14 +27,17 @@ fixture leak). It leaves a replay-specific residual
 `p_min − p_ctrl_sft ≈ +0.10` (N = 20, 95 % CI [+0.085, +0.109]) as a
 non-adjudicable candidate, confounded by template / format transfer.
 **c_version at drafting:** C-v0.25.0+PARTIAL
-**Substrate:** Qwen3.6-35B-A3B, bf16, HF transformers
-(`HL_MODEL=Qwen/Qwen3.6-35B-A3B`, revision
-`995ad96eacd98c81ed38be0c5b274b04031597b0`, pinned by the PI on
-2026-10-25; §10 item 1).
-**Harness:** `scripts/pilot_cycle3_cuda.py` (load-once + restore) and
-`scripts/run_e1_cuda_35b.sh`, extended as listed in §9 (required
-pre-filing code tasks). Analysis: `scripts/analyze_e1_cuda.py`,
-extended with the paired procedures of §2.
+**Substrate:** Qwen3.6-35B-A3B, bf16 (`Qwen/Qwen3.6-35B-A3B`,
+revision `995ad96eacd98c81ed38be0c5b274b04031597b0`, pinned by the PI
+on 2026-10-25; §10 item 1). **Backend (PI decision 2026-10-25,
+pre-filing): Apple MLX** (mlx 0.31.1, mlx-lm 0.31.2, the versions
+hash-pinned in this repository's `uv.lock`) on the Mac Studio M3
+Ultra (512 GB unified memory), instead of HF transformers on CUDA;
+§9 "Backend" lists every difference this forces (D1-D10).
+**Harness:** `scripts/e1_harness.py` (modes, cell, run identity),
+backends `scripts/e1_mlx.py` (registered) and
+`scripts/pilot_cycle3_cuda.py` (PyTorch, kept for the parity check
+and the CUDA path); analysis `scripts/analyze_e1_cuda.py` (§2).
 **Study gate (PI decision, 2026-10-23):** E1 does not run until a
 larger **independent fact corpus** has been built, frozen and hashed
 to the specification of §5.1. That corpus supplies the tuning and
@@ -890,15 +895,94 @@ other combination):
 - If compute ends before 141 complete seeds, the achieved N is
   reported and **all** H14 hypotheses become exploratory. The run is
   not re-labelled confirmatory after the fact.
-- The CUDA backend is a different backend from the MLX runs. Numbers
-  are never pooled across backends (R1 note in
-  `pilot_cycle3_cuda.py`).
+- Each backend is a different measurement instrument: numbers are
+  never pooled across backends (MLX, CUDA / transformers), and the
+  backend name is part of every cell's run identity; tuning,
+  amendment and confirmatory cells must all come from the registered
+  backend (MLX).
 - All per-profile scalars (and per-benchmark scalars of the smoke), token and step counts,
   drift and collapse diagnostics are reported regardless of outcome.
 
 ## §9 Feasibility, required pre-filing tasks, audit trail
 
-**Memory (arithmetic, bf16, full-parameter SGD).** Weights ≈ 35 B ×
+**Backend (PI decision 2026-10-25): MLX on the Mac Studio.** The
+registered protocol (N, seeds, corpus, budgets, profiles, tuning,
+states and gates) is unchanged; only the instrument changes. Weights:
+the HF checkpoint of the pinned revision already on the Studio, every
+one of its 40 files checked against the HF tree of commit `995ad96`
+(26 safetensors by LFS SHA-256, the other files by git blob id; list
+in `scripts/e1_model_pins.json`, re-checked by the harness at start),
+loaded directly by `mlx_lm` (no conversion, no download). Item draws:
+the `_cell_split` and word-shuffle permutations are those of the torch
+generators, written to a split file by `scripts/e1_splits.py` and
+replayed by the MLX backend with item-hash checks (verified exact in
+tests). Differences the port forces, listed for the PI (none is
+changed silently):
+
+- **D1 Instrument.** Metal kernels instead of CUDA / cuBLAS; the
+  linear-attention (Gated DeltaNet) layers use `mlx_lm`'s
+  differentiable op-by-op recurrence during replay and its Metal kernel
+  for scoring, transformers uses the `fla` chunked kernels on CUDA.
+  Same mathematics, different summation order; numbers differ at the
+  rounding level and are never pooled (§8).
+- **D2 Parameters in scope.** `mlx_lm` loads the language model only:
+  the vision tower and the multi-token-prediction head of the
+  checkpoint are not loaded. "Full-parameter" SGD, DOWNSCALE and the
+  drift / norm-change measures therefore cover the language model
+  (embeddings, every decoder layer with all 256 routed experts, router
+  and shared expert, final norm, LM head). Neither excluded part takes
+  part in a text forward pass, so SGD never changes them on either
+  backend, but on a transformers multimodal load DOWNSCALE would also
+  shrink them and they would enter the norms.
+- **D3 RMSNorm parameterisation.** `mlx_lm` stores the zero-centred
+  RMSNorm weights as `1 + w` in bf16, which rounds the base model
+  (e.g. 1.05 → 1.046875) and makes small SGD steps on those weights
+  vanish and DOWNSCALE act on `1 + w`. The harness restores the HF form
+  (parameter w, `norm(x)·(1 + w)` in float32, cast back), so SGD,
+  DOWNSCALE and drift act on the same parameter as in transformers.
+- **D4 Routed-expert gradients.** MLX forms a dense gradient for the
+  stacked expert tensors (zero rows for experts no token was routed
+  to); transformers also stores the experts as one stacked parameter.
+  With momentumless SGD and no weight decay, unrouted experts are
+  unchanged on both backends. No difference in the update.
+- **D5 Precision.** bf16 parameters and gradients, the SGD update in
+  bf16, loss and scoring log-softmax in float32, on both backends.
+  Discrete MoE routing can flip a token whose top-k router margin is
+  below rounding noise to another expert on one backend only.
+- **D6 Determinism.** MLX replay is not bit-reproducible run to run
+  (parity: after one fp32 cell, 68 of 76 tensors differ, by at most
+  3e-8). E1 cells are therefore not bit-stable; the resumable cache
+  and the run identity are unaffected, and no E1 claim relies on
+  bit-stability.
+- **D7 RESTRUCTURE.** Both backends swap two adjacent entries of the
+  decoder-layer list. MLX picks the attention mask from each layer's
+  own type, transformers from the position (`config.layer_types[i]`);
+  for unpadded batch-1 sequences both give the same outputs (parity:
+  identical post-scores for the swapped cells).
+- **D8 Memory recording.** `mx.get_peak_memory` (unified memory)
+  replaces `torch.cuda.max_memory_allocated`; host RSS as before.
+- **D9 Restore.** MLX arrays are immutable: the snapshot keeps the
+  base arrays and restoring re-binds them (exact, no 70 GB copy).
+- **D10 Tokenizer.** Both backends tokenize with the transformers
+  tokenizer of the pinned files (identical token ids between
+  backends). It differs from the raw `tokenizer.json` (the §5.1b
+  step-3 counter) on 1 of 7 850 corpus prompt / prompt+choice texts (a
+  Devanagari combining mark; 63 vs 66 tokens). Which tokenizer the
+  harness uses is left to the PI (see §10).
+
+**Memory on the Studio (arithmetic, bf16).** Language-model weights
+≈ 35 B × 2 B ≈ 70 GB. During a replay step MLX holds the base
+snapshot (70 GB, kept by reference), the current weights (70 GB once
+they differ from the base), the gradients (70 GB) and, inside the
+optimizer update, the new weights before the old ones are released
+(70 GB): an upper bound of ≈ 280 GB plus activations (a few GB at
+batch 1, ≤ 512 tokens) and the Metal buffer cache. This fits in 512 GB
+of unified memory with the OS and the other resident processes (a
+virtual machine of ≈ 118 GB RSS was resident on 2026-10-25); the
+smoke records the measured peak.
+
+**Memory (CUDA path, arithmetic, bf16, full-parameter SGD; not the
+registered backend since 2026-10-25).** Weights ≈ 35 B ×
 2 B ≈ 70 GB on GPU; gradients up to the same ≈ 70 GB (only routed
 experts receive gradients with `zero_grad(set_to_none=True)`, so this
 is an upper bound); momentumless SGD keeps no optimizer state;
@@ -915,9 +999,10 @@ OPR, + U forward/backward updates (U ≈ T_s / mean record
 length; ≈ 100-200 for fact corpora at m = 5, more for the short
 `p_ctrl_sft` texts), + one 70 GB restore. Wall per cell and peak
 memory are unmeasured at 35B. The smoke on the filing hardware
-(seeds 2000-2002, all 10 profiles = 30 cells, pilot set) must
-record per-cell wall, `torch.cuda.max_memory_allocated` per device
-and host RSS, achieved tokens and update counts. Because the pilot
+(seeds 2000-2002, all 10 profiles = 30 cells, pilot set; on the
+Studio a single cell first) must record per-cell wall, peak memory
+(`mx.get_peak_memory` on MLX, `torch.cuda.max_memory_allocated` per
+device on CUDA) and host RSS, achieved tokens and update counts. Because the pilot
 set has different eval sizes and its own T_s, the projection to the
 1,620 cells scales each component by the actual confirmatory
 workload (scoring forwards at the §5.2 `n_eval`, update tokens,
@@ -1043,12 +1128,10 @@ gated on the independent fact corpus of §5.1, and the pilot
 fixtures are smoke-only. Changing an item below requires editing the
 named section before the lock commit.
 
-1. **CUDA node (§9) — deferred by the PI on 2026-10-24 until the
-   fact corpus exists.** The registered backend is CUDA / HF
-   transformers only; the choice is which multi-GPU node (at least
-   2 × H200-class, 4 × H200 default). Running on Apple MLX instead
-   would be a different backend and requires a protocol revision
-   before filing, not a hardware swap. **Model revision pinned by the
+1. ~~CUDA node (§9)~~ — **decided by the PI on 2026-10-25: the
+   backend is Apple MLX on the Mac Studio M3 Ultra** (a protocol
+   revision before filing, recorded in §9 "Backend" with deviations
+   D1-D10; the CUDA path is kept for the parity check only). **Model revision pinned by the
    PI on 2026-10-25:** `Qwen/Qwen3.6-35B-A3B` at commit
    `995ad96eacd98c81ed38be0c5b274b04031597b0` (last modified
    2026-04-24T02:53:42Z, resolved 2026-10-25). This pin fixes the
@@ -1076,3 +1159,9 @@ named section before the lock commit.
 3. ~~Fact-corpus source~~ — decided by the PI on 2026-10-24: all
    three public sets (§5.1a); the pooled-bank design with `source` as
    a stratum and the `mmlu_cf` cap were confirmed the same day.
+4. **Harness tokenizer (D10, open).** The transformers tokenizer of
+   the pinned files (used by both backends) and the raw
+   `tokenizer.json` (used for the §5.1b step-3 count) differ on 1 of
+   7 850 corpus texts. Either keep the transformers tokenizer for
+   scoring and replay (the default, as in the CUDA design) or switch
+   both backends to the raw `tokenizer.json`.
