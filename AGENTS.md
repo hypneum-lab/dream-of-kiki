@@ -4,7 +4,7 @@ Guidance for AI coding agents (Claude Code, Aider, Cursor, etc.) working in this
 
 ## Project
 
-`dreamofkiki` — substrate-agnostic formal framework for dream-based knowledge consolidation in artificial cognitive systems. Two-paper research output of **Hypneum Lab** (framework C + ablation), 28-week cycle. Current state lives in `STATUS.md` — read it first. Main branch `main`, recent HEAD `81524c0` (2026-05-21), DualVer `C-v0.24.0+PARTIAL`, SemVer alias `0.22.1`.
+`dreamofkiki` — substrate-agnostic formal framework for dream-based knowledge consolidation in artificial cognitive systems. Two-paper research output of **Hypneum Lab** (framework C + ablation), 28-week cycle. Current state lives in `STATUS.md` — read it first. Main branch `main`. DualVer `C-v0.25.0+PARTIAL` (package `0.25.0`) — the single source of truth is the latest released heading of `CHANGELOG.md`, mirrored in `STATUS.md` ; see README → *Versioning*.
 
 ## Tech stack
 
