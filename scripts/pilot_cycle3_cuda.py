@@ -80,12 +80,18 @@ def _device() -> str:
 def _load_model(model_id: str, revision: str | None) -> tuple[Any, Any]:
     if model_id == MODEL_REPO and revision != MODEL_REVISION:
         raise SystemExit(f"{MODEL_REPO} must be loaded at the pinned revision {MODEL_REVISION}")
-    from transformers import AutoModelForCausalLM, AutoTokenizer
+    from transformers import AutoModelForCausalLM
 
     dev = _device()
     dtype = torch.bfloat16 if dev == "cuda" else torch.float32
     trc = os.environ.get("HL_TRUST_REMOTE_CODE", "0") == "1"
-    tok = AutoTokenizer.from_pretrained(model_id, revision=revision, trust_remote_code=trc)
+    if Path(model_id).is_dir():
+        tok_path = Path(model_id) / "tokenizer.json"
+    else:
+        from huggingface_hub import hf_hub_download
+
+        tok_path = Path(hf_hub_download(model_id, "tokenizer.json", revision=revision))
+    tok = hn.RawTokenizer(tok_path, hn.TOKENIZER_SHA256 if model_id == MODEL_REPO else None)
     default_map = "auto" if (dev == "cuda" and torch.cuda.device_count() > 1) else ""
     use_map = os.environ.get("HL_DEVICE_MAP", default_map)
     kw: dict[str, Any] = {"dtype": dtype, "trust_remote_code": trc, "revision": revision}
@@ -114,6 +120,8 @@ def _input_device(model: Any) -> torch.device:
 
 
 def _ids(tok: Any, text: str) -> torch.Tensor:
+    if isinstance(tok, hn.RawTokenizer):
+        return torch.tensor([tok.encode_ids(text)])
     return tok(text, return_tensors="pt").input_ids  # type: ignore[no-any-return]
 
 
@@ -155,10 +163,14 @@ class _RouterCounter:
 
     def _hook(self, name: str) -> Any:
         def fn(_m: Any, _i: Any, out: Any) -> None:
-            logits = out[0] if isinstance(out, tuple) else out
-            top = torch.topk(logits.reshape(-1, logits.shape[-1]).float(), self.k, dim=-1).indices
+            if isinstance(out, tuple) and len(out) == 3:
+                top = out[2]  # the router's own selected experts (transformers top-k router)
+            else:  # a plain nn.Linear router: top-k of its logits
+                logits = out[0] if isinstance(out, tuple) else out
+                top = torch.topk(logits.reshape(-1, logits.shape[-1]).float(), self.k,
+                                 dim=-1).indices
             for e, c in zip(*torch.unique(top, return_counts=True), strict=True):
-                key = f"{name}:{int(e)}"
+                key = f"expert:{int(e)}"  # section 6: summed over layers
                 self.counts[key] = self.counts.get(key, 0) + int(c)
         return fn
 
@@ -192,8 +204,11 @@ class TorchBackend:
     def versions(self) -> dict[str, Any]:
         import transformers
 
-        return {"torch": torch.__version__, "transformers": transformers.__version__,
+        info = {"torch": torch.__version__, "transformers": transformers.__version__,
                 "device": _device()}
+        if isinstance(self.tok, hn.RawTokenizer):
+            info.update(self.tok.info())
+        return info
 
     def snapshot(self) -> None:
         self.base = _snapshot_cpu(self.model)
