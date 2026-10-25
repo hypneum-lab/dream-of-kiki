@@ -12,16 +12,18 @@ from scripts import e1_small_token_ids as ti
 from scripts import e1_sources as src
 
 GOOD = {"logprob_max_abs": 0.1, "logprob_mean_abs": 0.005, "choice_argmax_agree": 1.0,
-        "choice_score_max_abs": 0.01, "loss_rel": 0.001, "grad_cos": 0.999}
+        "choice_score_max_abs": 0.01, "loss_rel": 0.001, "grad_cos": 0.999,
+        "grad_norm_ratio": 1.005, "grad_rel_err": 0.05, "grad_keys_equal": 1.0}
 
 
 def test_verdict_pass_and_each_failure() -> None:
     assert kp.verdict(GOOD)["verdict"] == "PASS"
     bad = {"logprob_max_abs": 0.3, "logprob_mean_abs": 0.03, "choice_argmax_agree": 0.9,
-           "choice_score_max_abs": 0.06, "loss_rel": 0.02, "grad_cos": 0.98}
+           "choice_score_max_abs": 0.06, "loss_rel": 0.02, "grad_cos": 0.98,
+           "grad_norm_ratio": 1.03, "grad_rel_err": 0.2, "grad_keys_equal": 0.0}
     for k, v in bad.items():
         out = kp.verdict({**GOOD, k: v})
-        assert out["verdict"] == "FAIL" and not out["checks"][k.replace("_min", "")]
+        assert out["verdict"] == "FAIL" and not out["checks"][k.removesuffix("_equal")]
     assert kp.verdict({**GOOD, "grad_cos": float("nan")})["verdict"] == "FAIL"
 
 

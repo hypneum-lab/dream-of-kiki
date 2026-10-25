@@ -35,7 +35,7 @@ def small(monkeypatch: pytest.MonkeyPatch) -> Any:
     return _reload(monkeypatch, "e1-small")
 
 
-REG = {"tokenizer": "raw", "linear_attn": "fla+causal_conv1d"}
+REG = {"tokenizer": "raw", "linear_attn": "fla+causal_conv1d", "snapshot": "ram", "sgd": "optim"}
 
 
 def _cell(model: str, revision: str, backend: str = "torch", device: str = "cuda",
@@ -65,7 +65,9 @@ BAD_INSTRUMENTS: tuple[Instrument, ...] = (
                    ("torch", "cuda", ("cuda:0", "cuda:1"), {}),
                    ("torch", "cuda", ("cuda:0",), {"tokenizer": "transformers"}),
                    ("torch", "cuda", ("cuda:0",), {"linear_attn": "torch"}),
-                   ("torch", "cuda", ("cuda:0",), {"linear_attn": "mixed"}))
+                   ("torch", "cuda", ("cuda:0",), {"linear_attn": "mixed"}),
+                   ("torch", "cuda", ("cuda:0",), {"sgd": "fused"}),
+                   ("torch", "cuda", ("cuda:0",), {"snapshot": "disk"}))
 
 
 @pytest.mark.parametrize(("backend", "device", "placement", "over"), BAD_INSTRUMENTS)
@@ -143,7 +145,8 @@ def test_unknown_study_is_refused(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 def test_small_study_mps_instrument_is_smoke_only(small: Any) -> None:
-    mps = {"device": "mps", "placement": ["mps:0"], "tokenizer": "raw", "linear_attn": "torch"}
+    mps = {"device": "mps", "placement": ["mps:0"], "tokenizer": "raw", "linear_attn": "torch",
+           "snapshot": "disk", "sgd": "fused"}
     assert small._study_backend_ok("torch-mps", mps, "e1-small", "smoke")
     for mode in ("headroom", "tuning", "calibrate", "confirmatory"):
         assert not small._study_backend_ok("torch-mps", mps, "e1-small", mode)

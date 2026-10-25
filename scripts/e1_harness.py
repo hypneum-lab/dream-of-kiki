@@ -61,10 +61,10 @@ MODEL_REPO, MODEL_REVISION = src.STUDY_MODELS[STUDY]
 # the two have different backend names and are never pooled.
 STUDY_INSTRUMENTS: dict[str, list[dict[str, Any]]] = {"e1": [], "e1-small": [
     {"backend": "torch", "device": "cuda", "tokenizer": "raw",
-     "linear_attn": "fla+causal_conv1d", "modes": ("smoke", "headroom", "tuning", "calibrate",
-                                                   "confirmatory")},
+     "linear_attn": "fla+causal_conv1d", "snapshot": "ram", "sgd": "optim",
+     "modes": ("smoke", "headroom", "tuning", "calibrate", "confirmatory")},
     {"backend": "torch-mps", "device": "mps", "tokenizer": "raw", "linear_attn": "torch",
-     "modes": ("smoke",)}]}
+     "snapshot": "disk", "sgd": "fused", "modes": ("smoke",)}]}
 # How the harness tokenizes: "raw" = tokenizers.Tokenizer of the pinned
 # tokenizer.json, no special tokens (the corpus-build counter, section 5.1b
 # step 3); "transformers" = AutoTokenizer of the pinned revision.
@@ -82,9 +82,8 @@ def _study_backend_ok(backend: Any, versions: Any, study: Any, mode: Any) -> boo
     where = v.get("placement") or []
     for inst in insts:
         one_device = len(where) == 1 and str(where[0]).split(":")[0] == inst["device"]
-        same = (backend == inst["backend"] and v.get("device") == inst["device"]
-                and v.get("tokenizer") == inst["tokenizer"]
-                and v.get("linear_attn") == inst["linear_attn"])
+        same = backend == inst["backend"] and all(
+            v.get(k) == inst[k] for k in ("device", "tokenizer", "linear_attn", "snapshot", "sgd"))
         if same and one_device and mode in inst["modes"] and study == STUDY:
             return True
     return False

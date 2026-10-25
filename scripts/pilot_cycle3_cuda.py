@@ -166,16 +166,27 @@ def _dist_version(dist: str) -> str | None:
         return None
 
 
+def _from(obj: Any, pkg: str) -> bool:
+    mod = getattr(obj, "__module__", None) or type(obj).__module__
+    return str(mod).split(".")[0] == pkg
+
+
 def linear_attn_impl(model: Any) -> str:
-    """'fla+causal_conv1d', 'torch', 'mixed' or 'none' (no linear-attention layer)."""
+    """'fla+causal_conv1d' (every fast-path component of every linear-attention
+    layer: chunked and recurrent delta rule, gated RMSNorm from fla, causal
+    conv and its update from causal_conv1d), 'torch' (none of them), 'mixed'
+    or 'none' (no linear-attention layer)."""
     kinds = set()
     for m in model.modules():
-        f = getattr(m, "chunk_gated_delta_rule", None)
-        if f is None:
+        if getattr(m, "chunk_gated_delta_rule", None) is None:
             continue
-        fla = str(getattr(f, "__module__", "")).startswith("fla")
-        conv = getattr(m, "causal_conv1d_fn", None) is not None
-        kinds.add("fla+causal_conv1d" if fla and conv else "torch" if not (fla or conv)
+        parts = [_from(getattr(m, "chunk_gated_delta_rule", None), "fla"),
+                 _from(getattr(m, "recurrent_gated_delta_rule", None), "fla"),
+                 _from(getattr(m, "norm", None), "fla"),
+                 getattr(m, "causal_conv1d_fn", None) is not None
+                 and _from(m.causal_conv1d_fn, "causal_conv1d"),
+                 _from(getattr(m, "causal_conv1d_update", None), "causal_conv1d")]
+        kinds.add("fla+causal_conv1d" if all(parts) else "torch" if not any(parts)
                   else "mixed")
     return "none" if not kinds else kinds.pop() if len(kinds) == 1 else "mixed"
 

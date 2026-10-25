@@ -40,21 +40,38 @@ def test_raw_tokenizer_encodes_without_special_tokens(tmp_path: Path,
     assert tok("").input_ids.shape == (1, 0)
 
 
-def _fla_fn() -> Any:
+def _fn(module: str) -> Any:
     def f() -> None:
         return None
 
-    f.__module__ = "fla.ops.gated_delta_rule"
+    f.__module__ = module
     return f
 
 
-@pytest.mark.parametrize(("delta", "conv", "want"), [
-    (_fla_fn(), object(), "fla+causal_conv1d"), (len, None, "torch"),
-    (_fla_fn(), None, "mixed")])
-def test_linear_attn_impl(delta: Any, conv: Any, want: str) -> None:
+class _FlaNorm(torch.nn.Module):  # type: ignore[name-defined,misc]
+    pass
+
+
+_FlaNorm.__module__ = "fla.modules.fused_norm_gate"
+FLA = {"chunk_gated_delta_rule": _fn("fla.ops.gated_delta_rule"),
+       "recurrent_gated_delta_rule": _fn("fla.ops.gated_delta_rule"), "norm": _FlaNorm(),
+       "causal_conv1d_fn": _fn("causal_conv1d.causal_conv1d_interface"),
+       "causal_conv1d_update": _fn("causal_conv1d.causal_conv1d_interface")}
+TORCH = {"chunk_gated_delta_rule": _fn("transformers.models.qwen3_5.modeling_qwen3_5"),
+         "recurrent_gated_delta_rule": _fn("transformers.models.qwen3_5.modeling_qwen3_5"),
+         "norm": torch.nn.LayerNorm(2), "causal_conv1d_fn": None,
+         "causal_conv1d_update": _fn("transformers.models.qwen3_5.modeling_qwen3_5")}
+
+
+@pytest.mark.parametrize(("attrs", "want"), [
+    (FLA, "fla+causal_conv1d"), (TORCH, "torch"),
+    ({**FLA, "causal_conv1d_fn": None}, "mixed"),
+    ({**FLA, "norm": torch.nn.LayerNorm(2)}, "mixed"),
+    ({**FLA, "recurrent_gated_delta_rule": TORCH["recurrent_gated_delta_rule"]}, "mixed")])
+def test_linear_attn_impl(attrs: dict[str, Any], want: str) -> None:
     layer = torch.nn.Module()
-    layer.chunk_gated_delta_rule = delta
-    layer.causal_conv1d_fn = conv
+    for k, v in attrs.items():
+        setattr(layer, k, v)
     model = torch.nn.Sequential(layer, torch.nn.Linear(2, 2))
     assert h.linear_attn_impl(model) == want
     assert h.linear_attn_impl(torch.nn.Linear(2, 2)) == "none"
@@ -76,12 +93,15 @@ def _tiny() -> tuple[Any, Any]:
     return _TinyLM(), _Tok()
 
 
-def test_fused_sgd_gives_identical_weights(monkeypatch: pytest.MonkeyPatch) -> None:
+@pytest.mark.parametrize("tied", [False, True])
+def test_fused_sgd_gives_identical_weights(monkeypatch: pytest.MonkeyPatch, tied: bool) -> None:
     texts = ["alpha beta gamma delta", "epsilon zeta", "eta theta iota kappa lambda"]
     out = {}
     for fused in ("0", "1"):
         monkeypatch.setenv("HL_FUSED_SGD", fused)
         model, tok = _tiny()
+        if tied:  # one leaf used twice (input embedding and output head)
+            model.head.weight = model.emb.weight
         b = h.TorchBackend(model, tok)
         assert b.sgd_kind == ("fused" if fused == "1" else "optim")
         res = hn.replay(b, texts, 3e-2, 2, 60)

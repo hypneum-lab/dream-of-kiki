@@ -34,7 +34,8 @@ if str(ROOT) not in sys.path:
 # Tolerances (bf16, two summation orders of the same mathematics), fixed
 # before the first run on 2026-10-25.
 TOL = {"logprob_max_abs": 0.25, "logprob_mean_abs": 0.02, "choice_argmax_agree_min": 0.95,
-       "choice_score_max_abs": 0.05, "loss_rel": 0.01, "grad_cos_min": 0.99}
+       "choice_score_max_abs": 0.05, "loss_rel": 0.01, "grad_cos_min": 0.99,
+       "grad_norm_ratio_dev": 0.02, "grad_rel_err": 0.15}
 
 
 def verdict(m: Mapping[str, float], tol: Mapping[str, float] = TOL) -> dict[str, Any]:
@@ -46,6 +47,9 @@ def verdict(m: Mapping[str, float], tol: Mapping[str, float] = TOL) -> dict[str,
         "choice_score_max_abs": m["choice_score_max_abs"] <= tol["choice_score_max_abs"],
         "loss_rel": m["loss_rel"] <= tol["loss_rel"],
         "grad_cos": m["grad_cos"] >= tol["grad_cos_min"],
+        "grad_norm_ratio": abs(m["grad_norm_ratio"] - 1.0) <= tol["grad_norm_ratio_dev"],
+        "grad_rel_err": m["grad_rel_err"] <= tol["grad_rel_err"],
+        "grad_keys": m["grad_keys_equal"] == 1.0,
     }
     ok = all(checks.values()) and all(math.isfinite(float(v)) for v in m.values())
     return {"checks": checks, "verdict": "PASS" if ok else "FAIL"}
@@ -93,17 +97,23 @@ def compare(a: Mapping[str, Any], b: Mapping[str, Any]) -> dict[str, float]:
 
     d = torch.cat([(x - y).abs() for x, y in zip(a["lp"], b["lp"], strict=True)])
     sa, sb = torch.tensor(a["scores"]), torch.tensor(b["scores"])
-    dot = na = nb = 0.0
-    for k, g in a["grads"].items():
-        g, o = g.float(), b["grads"][k].float()
+    same_keys = set(a["grads"]) == set(b["grads"])
+    dot = na = nb = nd = 0.0
+    for k in set(a["grads"]) & set(b["grads"]):
+        g, o = a["grads"][k].float(), b["grads"][k].float()
         dot += float((g * o).sum())
         na += float((g * g).sum())
         nb += float((o * o).sum())
+        nd += float(((g - o) ** 2).sum())
+    ok = na > 0 and nb > 0
     return {"logprob_max_abs": float(d.max()), "logprob_mean_abs": float(d.mean()),
             "choice_score_max_abs": float((sa - sb).abs().max()),
             "choice_argmax_agree": float((sa.argmax(1) == sb.argmax(1)).float().mean()),
             "loss_rel": abs(a["loss"] - b["loss"]) / abs(b["loss"]),
-            "grad_cos": dot / math.sqrt(na * nb) if na > 0 and nb > 0 else float("nan")}
+            "grad_cos": dot / math.sqrt(na * nb) if ok else float("nan"),
+            "grad_norm_ratio": math.sqrt(na / nb) if ok else float("nan"),
+            "grad_rel_err": math.sqrt(nd / nb) if ok else float("nan"),
+            "grad_keys_equal": 1.0 if same_keys else 0.0}
 
 
 def main(argv: list[str] | None = None) -> int:

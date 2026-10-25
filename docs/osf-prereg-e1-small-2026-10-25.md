@@ -1009,11 +1009,11 @@ bit-reproducible and no claim relies on it; RESTRUCTURE swaps two
 adjacent entries of the decoder-layer list, masks following
 `config.layer_types` by position (for unpadded batch-1 sequences the
 same outputs as per-layer types). The MLX-only D4, D8 and D9 do not
-apply (their CUDA counterparts: §11 rows 5, 7 and 8b). The harness
+apply (their CUDA counterparts: §11 rows 8, 10 and 6). The harness
 records, in every cell, the backend, the actual parameter placement,
 the tokenizer kind, the linear-attention implementation and the
 versions of torch, transformers, tokenizers, fla-core and
-causal-conv1d, and accepts E1-small cells only from this instrument
+causal-conv1d, the snapshot and SGD implementation, and accepts E1-small cells only from this instrument
 (the `torch-mps` instrument of §9.7 only for the smoke).
 
 **Tokenizer (S8, decided).** Every token id and count of the harness
@@ -1031,7 +1031,10 @@ texts, at most 158 tokens): both versions give the same digest
 
 **Kernels (S6, decided).** Gated DeltaNet runs through `fla-core`
 0.5.2 (chunked and fused-recurrent gated delta rule, fused gated
-RMSNorm) and `causal-conv1d` 1.7.0, the transformers fast path; the
+RMSNorm) and `causal-conv1d` 1.7.0, the transformers fast path; a model counts as
+`fla+causal_conv1d` only if every linear-attention layer uses all five
+fast-path components (chunked and recurrent delta rule and gated
+RMSNorm from fla, causal conv and its update from causal-conv1d). The
 torch fallback stays selectable (`HL_LINEAR_ATTN=torch`) but is not
 the registered instrument. Pins and origins (PyPI):
 
@@ -1060,7 +1063,12 @@ two replay texts: per-token log-probabilities, `_score_choice` scores
 and argmax, the mean replay loss and the full gradient. Tolerances,
 fixed before the run: max |Δ log p| ≤ 0.25, mean |Δ log p| ≤ 0.02,
 max |Δ choice score| ≤ 0.05, argmax agreement ≥ 0.95, relative loss
-difference ≤ 0.01, gradient cosine ≥ 0.99. A failure is reported to
+difference ≤ 0.01, gradient cosine ≥ 0.99, gradient norm ratio within
+1 ± 0.02, relative gradient error ‖g_kernels − g_torch‖ / ‖g_torch‖ ≤
+0.15, and the same set of parameters with a gradient. These are
+sanity bounds for two summation orders of the same bf16 computation;
+they do not make the two implementations interchangeable instruments,
+which is why one implementation is fixed for the whole study. A failure is reported to
 the PI before any further GPU step. Result: *(filled after the run)*.
 
 
@@ -1161,10 +1169,11 @@ headroom first, which the PI has deferred; it was not chosen.
   accepted only from the pinned model of its study.
 - Instruments (`STUDY_INSTRUMENTS`): for `e1-small` the harness accepts
   (a) the registered instrument, backend `torch` with every parameter on
-  one CUDA device, raw tokenizer and fla + causal-conv1d, in every mode,
+  one CUDA device, raw tokenizer, fla + causal-conv1d, RAM snapshot and
+  `torch.optim.SGD`, in every mode,
   and (b) the pipeline-smoke instrument `torch-mps` (every parameter on
-  the MPS device, raw tokenizer, torch fallback kernels) in smoke mode
-  only. The check applies to the running backend (before the base
+  the MPS device, raw tokenizer, torch fallback kernels, disk snapshot,
+  fused SGD) in smoke mode only. The check applies to the running backend (before the base
   snapshot is taken), every tuning / calibration cell it reads (which
   must also carry `study = e1-small`) and the amendment (which records
   `study` and `backend`). CPU, offloaded or multi-device placements and
@@ -1181,8 +1190,9 @@ headroom first, which the PI has deferred; it was not chosen.
   `p -= lr·g` applied per parameter as soon as its gradient is complete,
   then the gradient freed: the same update as `torch.optim.SGD`, no
   full-model gradient buffer). Unit tests check identical weights and an
-  exact restore. Both are recorded in every cell; the registered CUDA
-  instrument uses the defaults (RAM snapshot, `torch.optim.SGD`).
+  exact restore (untied and tied weights). Both are recorded in every
+  cell and are part of the instrument check: the registered CUDA
+  instrument requires the defaults (RAM snapshot, `torch.optim.SGD`).
 - Corpus consumer: tuning, calibration, amendment and confirmatory
   modes refuse a FROZEN manifest whose headroom record does not name
   the study's pinned model and revision, so E1-small can never run on
@@ -1348,7 +1358,24 @@ no number of either enters §3 or any state.
    runs after the kernel parity check (§9.2) and only when the PI
    releases the GPU.
 
-Results of the macM1 smoke: §9.7a (filled after the run).
+Results of the macM1 smoke (§9.7a):
+
+**§9.7a First attempt, 2026-10-25 20:28-20:32 — stopped, no cell
+completed.** Code `62617e6`, weights copied from KXKM-AI and checked
+against `scripts/e1_small_weights.sha256` (10/10). Day model paused at
+20:27:57 (oMLX backend on :8081 stopped), free memory 91 % after the
+pause. The probe cell (`p_max`, seed 2000) loaded the model on MPS and
+wrote the 9.0 GB disk snapshot; at 20:32:18, still inside the first
+cell, the memory-pressure level reached 2 (warn, free 30 %) and the
+driver stopped as required. Two other jobs were running on macM1 at
+that time (a bouba v0.8 capture started at 20:14, which the driver's
+wait pattern did not match, and an E1 MLX parity run started at about
+20:30), so the share of the 4B smoke is not known. The driver lifted
+the pause (:8080 answered HTTP 200 at 20:32:25), but its kill did not
+reach the harness process, which ran until it was killed by hand at
+about 20:37. The driver (`scripts/e1_small_macm1_smoke_driver.sh`) now
+waits for any heavy job, kills the harness process directly and does
+so before lifting the pause. No number from this attempt is used.
 
 ### §9.8 Filing gate (E1-small)
 
