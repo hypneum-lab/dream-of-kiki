@@ -193,7 +193,8 @@ class TorchBackend:
         import transformers
 
         return {"torch": torch.__version__, "transformers": transformers.__version__,
-                "device": _device()}
+                "device": _device(),
+                "placement": sorted({str(p.device) for p in self.model.parameters()})}
 
     def snapshot(self) -> None:
         self.base = _snapshot_cpu(self.model)

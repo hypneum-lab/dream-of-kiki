@@ -35,35 +35,47 @@ def small(monkeypatch: pytest.MonkeyPatch) -> Any:
     return _reload(monkeypatch, "e1-small")
 
 
-def _cell(model: str, revision: str, backend: str = "torch",
-          device: str = "cuda") -> dict[str, Any]:
+def _cell(model: str, revision: str, backend: str = "torch", device: str = "cuda",
+          placement: tuple[str, ...] = ("cuda:0",)) -> dict[str, Any]:
     return {"mode": "tuning", "model": model, "revision": revision, "run_identity": "r",
             "corpus": {"corpus_sha256": "c" * 64, "partition": "tuning"},
-            "backend": backend, "versions": {"device": device}}
+            "backend": backend, "versions": {"device": device, "placement": list(placement)},
+            "study": "e1-small"}
 
 
 class _FakeBackend:
-    def __init__(self, name: str, device: str) -> None:
-        self.name, self.device = name, device
+    def __init__(self, name: str, device: str, placement: tuple[str, ...]) -> None:
+        self.name, self.device, self.placement = name, device, placement
 
     def snapshot(self) -> None:
         pass
 
     def versions(self) -> dict[str, Any]:
-        return {"device": self.device}
+        return {"device": self.device, "placement": list(self.placement)}
 
 
-def test_small_study_enforces_the_cuda_torch_backend(small: Any, tmp_path: Path) -> None:
-    for backend, device in (("torch", "cpu"), ("mlx", "Device(gpu, 0)")):
-        with pytest.raises(SystemExit, match="does not come"):
-            small.check_provenance([_cell(*SMALL, backend, device)], "tuning", "c" * 64)
-        with pytest.raises(SystemExit, match="runs only on"):
-            small.run(argparse.Namespace(
-                mode="smoke", model=SMALL[0], revision=SMALL[1], out=tmp_path,
-                pilot_partition="confirmatory", seeds=None),
-                lambda *a: _FakeBackend(backend, device))
+BAD_INSTRUMENTS = (("torch", "cpu", ("cpu",)), ("mlx", "Device(gpu, 0)", ()),
+                   ("torch", "cuda", ("cpu",)), ("torch", "cuda", ("cpu", "cuda:0")),
+                   ("torch", "cuda", ("cuda:0", "cuda:1")))
+
+
+@pytest.mark.parametrize(("backend", "device", "placement"), BAD_INSTRUMENTS)
+def test_small_study_enforces_one_cuda_torch_device(small: Any, tmp_path: Path, backend: str,
+                                                    device: str,
+                                                    placement: tuple[str, ...]) -> None:
     with pytest.raises(SystemExit, match="does not come"):
-        small.check_provenance([{**_cell(*SMALL), "backend": None}], "tuning", "c" * 64)
+        small.check_provenance([_cell(*SMALL, backend, device, placement)], "tuning", "c" * 64)
+    with pytest.raises(SystemExit, match="runs only on"):
+        small.run(argparse.Namespace(
+            mode="smoke", model=SMALL[0], revision=SMALL[1], out=tmp_path,
+            pilot_partition="confirmatory", seeds=None),
+            lambda *a: _FakeBackend(backend, device, placement))
+
+
+def test_small_study_cells_must_carry_their_study(small: Any) -> None:
+    for change in ({"backend": None}, {"study": None}, {"study": "e1"}):
+        with pytest.raises(SystemExit, match="does not come"):
+            small.check_provenance([{**_cell(*SMALL), **change}], "tuning", "c" * 64)
 
 
 def test_frozen_manifest_must_carry_the_study_headroom(

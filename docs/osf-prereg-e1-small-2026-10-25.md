@@ -299,9 +299,12 @@ headroom first, which the PI has deferred; it is not proposed.
   (load at the pinned revision) reads the selected pin, so a cell is
   accepted only from the pinned model of its study.
 - Registered instrument: for `e1-small` the harness accepts only the
-  PyTorch backend on a CUDA device (`STUDY_BACKEND`), for the running
-  backend, every tuning / calibration cell it reads and the amendment
-  (which records `study` and `backend`). The MLX backend is therefore
+  PyTorch backend with every parameter on one CUDA device (the backend
+  records the actual parameter placement; CPU, offloaded or
+  multi-device placements are refused) (`STUDY_BACKEND`), for the
+  running backend, every tuning / calibration cell it reads (which must
+  also carry `study = e1-small`) and the amendment (which records
+  `study` and `backend`). The MLX backend is therefore
   refused for E1-small (its weight pins are the 35B files).
 - Corpus consumer: tuning, calibration, amendment and confirmatory
   modes refuse a FROZEN manifest whose headroom record does not name

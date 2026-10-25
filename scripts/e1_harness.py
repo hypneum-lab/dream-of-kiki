@@ -49,7 +49,7 @@ from scripts.e1_schedule import schedule, summary, token_budget
 # 35B draft; ``e1-small``: docs/osf-prereg-e1-small-2026-10-25.md). The pin
 # table is ``scripts.e1_sources.STUDY_MODELS``, shared with the corpus freeze;
 # every model check of the harness and its backends reads these two names.
-STUDY = os.environ.get("HL_STUDY", "e1")
+STUDY: str = os.environ.get("HL_STUDY", "e1")
 if STUDY not in src.STUDY_MODELS:
     raise SystemExit(f"HL_STUDY={STUDY!r} is not one of {sorted(src.STUDY_MODELS)}")
 MODEL_REPO, MODEL_REVISION = src.STUDY_MODELS[STUDY]
@@ -58,9 +58,16 @@ MODEL_REPO, MODEL_REVISION = src.STUDY_MODELS[STUDY]
 STUDY_BACKEND: dict[str, tuple[str, str] | None] = {"e1": None, "e1-small": ("torch", "cuda")}
 
 
-def _study_backend_ok(backend: Any, versions: Any) -> bool:
+def _study_backend_ok(backend: Any, versions: Any, study: Any) -> bool:
+    """Backend, device, actual parameter placement (one device of that type)
+    and study label match the study's registered instrument."""
     req = STUDY_BACKEND[STUDY]
-    return req is None or (backend, (versions or {}).get("device")) == req
+    if req is None:
+        return True
+    v = versions or {}
+    where = v.get("placement") or []
+    one_device = len(where) == 1 and str(where[0]).split(":")[0] == req[1]
+    return (backend, v.get("device")) == req and one_device and study == STUDY
 
 
 def check_manifest_study(man: dict[str, Any]) -> None:
@@ -280,7 +287,7 @@ def check_provenance(cells: Sequence[dict[str, Any]], mode: str, corpus_sha256: 
         ok = (c.get("mode") == mode and c.get("model") == MODEL_REPO
               and c.get("revision") == MODEL_REVISION and corp.get("partition") == "tuning"
               and corp.get("corpus_sha256") == corpus_sha256 and c.get("run_identity"))
-        ok = ok and _study_backend_ok(c.get("backend"), c.get("versions"))
+        ok = ok and _study_backend_ok(c.get("backend"), c.get("versions"), c.get("study"))
         if mode == "calibrate":
             ok = ok and c.get("tuning_cells_sha256") == tuning_cells_sha256
         if not ok:
@@ -385,7 +392,7 @@ def run(args: argparse.Namespace, make_backend: BackendFactory) -> int:  # noqa:
     b = make_backend(args, benches, common)
     b.snapshot()
     common.update({"backend": b.name, "versions": b.versions()})
-    if not _study_backend_ok(b.name, common["versions"]):
+    if not _study_backend_ok(b.name, common["versions"], STUDY):
         raise SystemExit(f"{STUDY} runs only on the {STUDY_BACKEND[STUDY]} backend")
     slug = args.model.replace("/", "_")
 
