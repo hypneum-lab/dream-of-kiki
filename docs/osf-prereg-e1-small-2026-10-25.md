@@ -276,10 +276,10 @@ headroom first, which the PI has deferred; it is not proposed.
   tokenizer pin is unchanged.
 - Environment on KXKM-AI: `/ai/saisail/e1-small/venv`, CPython 3.12.3,
   installed with `pip --require-hashes --no-deps --only-binary=:all:`
-  from `requirements-e1-small.lock.txt` (56 packages: torch 2.11.0,
-  transformers 5.7.0, huggingface-hub 1.13.0, tokenizers 0.22.2,
-  safetensors 0.7.0, numpy 2.4.4, pytest 9.0.3, CUDA 13 wheels and
-  their dependencies). Every version **and every hash** is taken from
+  from `scripts/e1_small_cuda_requirements.txt` (57 packages: torch
+  2.11.0, transformers 5.7.0, huggingface-hub 1.13.0, tokenizers
+  0.22.2, safetensors 0.7.0, numpy 2.4.4, scipy 1.17.1, pytest 9.0.3,
+  CUDA 13 wheels and their dependencies). Every version **and every hash** is taken from
   an existing audited lock (the dream-of-kiki `uv.lock` of this branch
   and the nerve-wml `uv.lock` at `06dd573`, which pins the torch
   stack); no package outside those two baselines was installed.
