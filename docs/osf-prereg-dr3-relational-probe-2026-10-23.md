@@ -8,7 +8,8 @@ PI decision of 2026-10-24, no protocol change; revision 6,
 2026-10-24: PI decisions on τ and on c_α of the permutation
 secondary, decision-eligibility rules and the "global" wording
 guard after an independent review; revision 7, 2026-10-25: filing
-smoke on seed 900 recorded in §9, no protocol change)
+smoke on seed 900 recorded in §9, macM1 named the filing host by
+the PI, no protocol change)
 **Parent OSF:** 10.17605/OSF.IO/Q6JYN
 **c_version at drafting:** C-v0.25.0+PARTIAL
 **Claim under test:** the DR-3 anchoring sentence in Paper 1 §8.4
@@ -516,6 +517,9 @@ Split-FMNIST test inputs, same statistics and preprocessing) is
   helper), the recomputed gate, and the restricted "global" wording
   rule (tests for abort, ineligible runs and every row). The v1.9.0
   tag is public on GitHub (verified 2026-10-24).
+- **Filing host (PI decision, 2026-10-25):** the confirmatory export
+  (seeds 100..119) runs on macM1, so the seed-900 smoke below, run on
+  macM1, is the §9 filing smoke on the filing host.
 - **Filing smoke, 2026-10-25 (PI go 2026-10-25).** Seed 900 only
   (not analysed), run on macM1 (M1, 32 GB, macOS 27.0.1, CPU,
   `nice 19`) with the documented invocation of §5: a fresh clone of
