@@ -169,7 +169,7 @@ unpadded batch-1 sequences gives the same outputs as per-layer types);
 (35B D10) the harness tokenizes with the transformers tokenizer of the
 pinned files, which differs from the raw `tokenizer.json` on 1 of
 7 850 corpus texts (**PI decision S8**, the same question as the 35B
-draft §10). The MLX-specific 35B D4, D8 and D9 do not apply. Unlike the
+draft §10). The MLX-specific 35B D4, D8 and D9 do not apply (their CUDA counterparts are rows 5, 7 and 8b of §4). Unlike the
 35B draft's assumption for CUDA, the `fla` linear-attention kernels
 are not installed (S6 of §9 below).
 
@@ -179,17 +179,19 @@ are not installed (S6 of §9 below).
 |---|---|---|---|---|
 | 1 | Model | `Qwen/Qwen3.6-35B-A3B` @ `995ad96e…`, MoE 35B total / 3B active | `Qwen/Qwen3.5-4B` @ `851bf6e8…`, dense 4.21B (text) | PI decision |
 | 2 | Tokenizer | `tokenizer.json` `5f9e4d49…` | identical file (§2) | — (no change) |
-| 3 | Hardware | ≥ 2 × H200-class, 4 × H200 default, `device_map="auto"` | 1 × RTX 4090 24 GB (KXKM-AI), whole model on one device, no device map | size |
-| 4 | Memory arithmetic | ≈ 145 GB GPU peak, ≈ 70 GB host snapshot | §5: ≈ 18-20 GiB GPU peak, 9.7 GB host snapshot | size |
-| 5 | Restore per cell | ≈ 70 GB host → device | ≈ 9.7 GB host → device | size |
+| 3 | Hardware | Mac Studio M3 Ultra, 512 GB unified memory (registered, revision 9) | 1 × RTX 4090 24 GB (KXKM-AI), whole model on one device, no device map | PI decision, size |
+| 4 | Memory arithmetic | ≈ 280 GB upper bound in unified memory (snapshot by reference, weights, gradients, update) | §5: ≈ 18-21 GiB GPU peak (weights + gradients + activations) plus a 9.7 GB host snapshot | size, backend |
+| 5 | Restore per cell | re-binds the immutable base arrays (35B D9, no copy) | `load_state_dict` copy of ≈ 9.7 GB host → device | backend |
 | 6 | MoE drift (E1 §6) | router drift, expert-usage L1 | **not applicable** (no router): recorded as null; the full-parameter drift, collapse, frozen-reference KL, "previously correct, now lost" and mean replay loss are unchanged | dense model |
-| 7 | "Only routed experts receive gradients" (E1 §9) | upper bound on gradient memory | not applicable: every text parameter receives a gradient | dense model |
-| 8 | RESTRUCTURE (`p_max`) | may be skipped when the two blocks sit on different devices | always on one device; adjacent blocks may differ in type (linear vs full attention) and are swapped as modules | single device; hybrid layers |
+| 7 | Routed-expert gradients (35B D4) | dense stacked-expert gradient, zero rows for unrouted experts | not applicable: dense model, every language-model parameter receives a gradient | dense model |
+| 8 | RESTRUCTURE (`p_max`, 35B D7) | swap of two adjacent decoder-layer entries; MLX masks by each layer's type | same swap; transformers masks by position (`config.layer_types[i]`); adjacent layers may differ in type (linear vs full attention) | backend; hybrid layers |
+| 8b | Memory recording (35B D8) | `mx.get_peak_memory` (unified) | `torch.cuda.max_memory_allocated` per device, host RSS | backend |
+| 8c | Weight verification | 40 files of `995ad96` checked by the MLX harness (`scripts/e1_model_pins.json`) | the 10 downloaded files of `851bf6e8` checked by the runner, snapshot must hold exactly these files (§6) | model, backend |
 | 9 | Headroom (step 9, E1 §5.1 property 5) | 35B base on TUNING | 4B base on TUNING only, separately (§5) | model |
 | 10 | Frozen corpus | 35B freeze of the pending corpus | its own freeze of the **same** pending corpus with the 4B headroom scores (§5); hashes filed in this document | model |
 | 11 | Date cutoff rationale | 2026-04-16, after the 35B release (2026-04-15) | same cutoff; it also post-dates the 4B release (2026-02-27) | — |
 | 12 | Runtime | unmeasured at 35B | estimate in §5, measured by the smoke (§7) | size, hardware |
-| 13 | Runner | `scripts/run_e1_cuda_35b.sh` | `scripts/run_e1_small_cuda.sh` (`HL_STUDY=e1-small`) | hardware |
+| 13 | Entry point | `scripts/e1_mlx.py` (registered; `run_e1_cuda_35b.sh` is the CUDA parity path) | `scripts/run_e1_small_cuda.sh` → `scripts/pilot_cycle3_cuda.py` with `HL_STUDY=e1-small`; any other backend or a CPU device is refused (§6) | backend |
 | 14 | Milestones | `docs/milestones/e1-35b-replay-controls-<date>` | `docs/milestones/e1-small-4b-replay-controls-<date>` | separate study |
 | 15 | α family | its own 0.05 | its own 0.05 (§3) | separate study |
 | 16 | Inference | 35B only | 4B only; no inference about 35B (§1) | scope |
@@ -213,15 +215,18 @@ Text parameters P = 4 205 751 296.
   logits with the float cross-entropy: about 2-4 GiB.
 - CUDA context and allocator slack: about 0.5-1 GiB.
 
-Expected peak ≈ 18-20 GiB of the 23.99 GiB card. Other tenants of
+Expected peak ≈ 18-21 GiB of the 23.99 GiB card. Other tenants of
 KXKM-AI's GPU used about 1.4 GiB on 2026-10-25 (a shared model-swap
 proxy can load more), so the runner checks free memory before
 starting (§7). If the smoke shows a peak that does not fit, the
-pre-specified fallback is activation (gradient) checkpointing, which
-leaves the update rule unchanged (**PI decision S5**); a change of
-optimizer, precision or batch is not allowed without an amendment.
-The 35B arithmetic ("only routed experts receive gradients") does not
-apply.
+proposed fallback is activation (gradient) checkpointing, which
+leaves the update rule unchanged (**PI decision S5**). It is **not
+implemented** in the harness today: if the PI selects it, it is
+implemented, tested and recorded in every cell (a flag in the run
+identity) before the smoke is repeated and before filing, and it then
+applies to every cell of the study. A change of optimizer, precision
+or batch is not allowed without an amendment. The 35B arithmetic
+("only routed experts receive gradients") does not apply.
 
 **Host.** The CPU restore snapshot is the full `state_dict` copy:
 9.68 GB (the tied embedding is stored under two keys). KXKM-AI has
@@ -289,13 +294,24 @@ headroom first, which the PI has deferred; it is not proposed.
   `Qwen/Qwen3.5-4B` @ `851bf6e8…`), read by the single
   model-selection spot of `scripts/e1_harness.py` (`MODEL_REPO`,
   `MODEL_REVISION`) according to `HL_STUDY` (default `e1`; an unknown
-  value is refused). Every model-dependent check (per-mode refusal,
-  load at the pinned revision, tuning / calibration provenance) reads
-  the selected pin, so a cell is accepted only from the pinned model of
-  its study.
-- File integrity: `scripts/run_e1_small_cuda.sh` checks every file of
-  the pinned snapshot against `scripts/e1_small_weights.sha256` (the
-  ten SHA-256 of §2) and runs offline (`HF_HUB_OFFLINE=1`).
+  value is refused). Every model check of the harness core (per-mode
+  refusal, tuning / calibration provenance) and of the PyTorch backend
+  (load at the pinned revision) reads the selected pin, so a cell is
+  accepted only from the pinned model of its study.
+- Registered instrument: for `e1-small` the harness accepts only the
+  PyTorch backend on a CUDA device (`STUDY_BACKEND`), for the running
+  backend, every tuning / calibration cell it reads and the amendment
+  (which records `study` and `backend`). The MLX backend is therefore
+  refused for E1-small (its weight pins are the 35B files).
+- Corpus consumer: tuning, calibration, amendment and confirmatory
+  modes refuse a FROZEN manifest whose headroom record does not name
+  the study's pinned model and revision, so E1-small can never run on
+  a corpus frozen with the 35B headroom (and vice versa once the 35B
+  freeze records its model).
+- File integrity: `scripts/run_e1_small_cuda.sh` requires the pinned
+  snapshot to hold exactly the ten files of §2, checks each against
+  `scripts/e1_small_weights.sha256`, checks that PyTorch sees a CUDA
+  device and runs offline (`HF_HUB_OFFLINE=1`).
 - Provenance: each cell and the headroom file record `study`, model
   and revision (model and revision are part of the run identity).
 - Corpus freeze: `scripts/e1_corpus_build.py --freeze --study e1-small`

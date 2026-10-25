@@ -35,6 +35,12 @@ mkdir -p "$OUT"
 "$PY" -c "import torch, transformers" \
   || { echo "[e1-small] install the pinned environment first"; exit 1; }
 if [ "$STEP" != amend ]; then
+  "$PY" -c "import torch, sys; sys.exit(not torch.cuda.is_available())" \
+    || { echo "[e1-small] PyTorch sees no CUDA device"; exit 1; }
+  want=$(awk '{print $2}' "$DOK/scripts/e1_small_weights.sha256" | sort)
+  have=$(cd "$SNAP" && ls -A | sort)
+  [ "$want" = "$have" ] \
+    || { echo "[e1-small] $SNAP does not hold exactly the pinned files"; exit 1; }
   (cd "$SNAP" && sha256sum --strict --quiet -c "$DOK/scripts/e1_small_weights.sha256") \
     || { echo "[e1-small] weights differ from the pinned revision"; exit 1; }
   free=$(nvidia-smi --query-gpu=memory.free --format=csv,noheader,nounits | head -1)

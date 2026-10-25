@@ -35,9 +35,52 @@ def small(monkeypatch: pytest.MonkeyPatch) -> Any:
     return _reload(monkeypatch, "e1-small")
 
 
-def _cell(model: str, revision: str) -> dict[str, Any]:
+def _cell(model: str, revision: str, backend: str = "torch",
+          device: str = "cuda") -> dict[str, Any]:
     return {"mode": "tuning", "model": model, "revision": revision, "run_identity": "r",
-            "corpus": {"corpus_sha256": "c" * 64, "partition": "tuning"}}
+            "corpus": {"corpus_sha256": "c" * 64, "partition": "tuning"},
+            "backend": backend, "versions": {"device": device}}
+
+
+class _FakeBackend:
+    def __init__(self, name: str, device: str) -> None:
+        self.name, self.device = name, device
+
+    def snapshot(self) -> None:
+        pass
+
+    def versions(self) -> dict[str, Any]:
+        return {"device": self.device}
+
+
+def test_small_study_enforces_the_cuda_torch_backend(small: Any, tmp_path: Path) -> None:
+    for backend, device in (("torch", "cpu"), ("mlx", "Device(gpu, 0)")):
+        with pytest.raises(SystemExit, match="does not come"):
+            small.check_provenance([_cell(*SMALL, backend, device)], "tuning", "c" * 64)
+        with pytest.raises(SystemExit, match="runs only on"):
+            small.run(argparse.Namespace(
+                mode="smoke", model=SMALL[0], revision=SMALL[1], out=tmp_path,
+                pilot_partition="confirmatory", seeds=None),
+                lambda *a: _FakeBackend(backend, device))
+    with pytest.raises(SystemExit, match="does not come"):
+        small.check_provenance([{**_cell(*SMALL), "backend": None}], "tuning", "c" * 64)
+
+
+def test_frozen_manifest_must_carry_the_study_headroom(
+        small: Any, monkeypatch: pytest.MonkeyPatch) -> None:
+    def man(model: str | None, revision: str | None) -> dict[str, Any]:
+        hr = {} if model is None else {"model": model, "revision": revision}
+        return {"status": "FROZEN", "headroom": hr}
+
+    small.check_manifest_study(man(*SMALL))
+    for bad in (man(None, None), man(*src.STUDY_MODELS["e1"])):
+        with pytest.raises(SystemExit, match="not frozen with the e1-small"):
+            small.check_manifest_study(bad)
+    big = _reload(monkeypatch, None)
+    big.check_manifest_study(man(None, None))  # legacy manifest, default study
+    big.check_manifest_study(man(*src.STUDY_MODELS["e1"]))
+    with pytest.raises(SystemExit, match="not frozen with the e1 headroom"):
+        big.check_manifest_study(man(*SMALL))
 
 
 def test_default_study_is_the_35b_pin(monkeypatch: pytest.MonkeyPatch) -> None:

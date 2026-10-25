@@ -53,6 +53,25 @@ STUDY = os.environ.get("HL_STUDY", "e1")
 if STUDY not in src.STUDY_MODELS:
     raise SystemExit(f"HL_STUDY={STUDY!r} is not one of {sorted(src.STUDY_MODELS)}")
 MODEL_REPO, MODEL_REVISION = src.STUDY_MODELS[STUDY]
+# Registered (backend, device) of a study, enforced on every cell, the
+# amendment and the backend itself; None leaves it to the study's draft.
+STUDY_BACKEND: dict[str, tuple[str, str] | None] = {"e1": None, "e1-small": ("torch", "cuda")}
+
+
+def _study_backend_ok(backend: Any, versions: Any) -> bool:
+    req = STUDY_BACKEND[STUDY]
+    return req is None or (backend, (versions or {}).get("device")) == req
+
+
+def check_manifest_study(man: dict[str, Any]) -> None:
+    """A FROZEN manifest must have been frozen with this study's headroom model
+    (manifests without that record are accepted for the default study only)."""
+    hr = man.get("headroom") or {}
+    if "model" not in hr and STUDY == "e1":
+        return
+    if (hr.get("model"), hr.get("revision")) != (MODEL_REPO, MODEL_REVISION):
+        raise SystemExit(f"the FROZEN corpus was not frozen with the {STUDY} headroom "
+                         f"of {MODEL_REPO}@{MODEL_REVISION}")
 SEEDS = {"smoke": tuple(range(2000, 2003)), "tuning": tuple(range(1000, 1010)),
          "calibrate": tuple(range(1000, 1010)), "confirmatory": tuple(range(141))}
 N_REPLAY = 40
@@ -261,6 +280,7 @@ def check_provenance(cells: Sequence[dict[str, Any]], mode: str, corpus_sha256: 
         ok = (c.get("mode") == mode and c.get("model") == MODEL_REPO
               and c.get("revision") == MODEL_REVISION and corp.get("partition") == "tuning"
               and corp.get("corpus_sha256") == corpus_sha256 and c.get("run_identity"))
+        ok = ok and _study_backend_ok(c.get("backend"), c.get("versions"))
         if mode == "calibrate":
             ok = ok and c.get("tuning_cells_sha256") == tuning_cells_sha256
         if not ok:
@@ -315,6 +335,7 @@ def run(args: argparse.Namespace, make_backend: BackendFactory) -> int:  # noqa:
         man = json.loads(args.manifest.read_text())
         if man.get("status") != cio.FROZEN:
             raise SystemExit("amend needs the FROZEN manifest")
+        check_manifest_study(man)
         tcells, ccells = read_cells(args.tuning_cells), read_cells(args.calib_cells)
         check_provenance(tcells, "tuning", str(man["corpus_sha256"]))
         check_provenance(ccells, "calibrate", str(man["corpus_sha256"]),
@@ -330,7 +351,8 @@ def run(args: argparse.Namespace, make_backend: BackendFactory) -> int:  # noqa:
         am.update({"manifest_sha256": sha_file(args.manifest),
                    "tuning_cells_sha256": sha_file(args.tuning_cells),
                    "calib_cells_sha256": sha_file(args.calib_cells),
-                   "backend": backends.pop(), "date": time.strftime("%Y-%m-%d")})
+                   "backend": backends.pop(), "study": STUDY,
+                   "date": time.strftime("%Y-%m-%d")})
         out = args.out / "e1-tuning-amendment.json"
         if out.exists():
             raise SystemExit(f"refusing to overwrite {out}")
@@ -346,6 +368,8 @@ def run(args: argparse.Namespace, make_backend: BackendFactory) -> int:  # noqa:
         if not (args.corpus and args.manifest):
             raise SystemExit(f"{args.mode} needs --corpus and --manifest")
         items, prov = cio.load_corpus(args.corpus, args.manifest, args.mode)
+        if prov["status"] == cio.FROZEN:
+            check_manifest_study(json.loads(args.manifest.read_text()))
         benches = {"facts": items}
 
     seeds = SEEDS.get(args.mode, ())
@@ -361,6 +385,8 @@ def run(args: argparse.Namespace, make_backend: BackendFactory) -> int:  # noqa:
     b = make_backend(args, benches, common)
     b.snapshot()
     common.update({"backend": b.name, "versions": b.versions()})
+    if not _study_backend_ok(b.name, common["versions"]):
+        raise SystemExit(f"{STUDY} runs only on the {STUDY_BACKEND[STUDY]} backend")
     slug = args.model.replace("/", "_")
 
     if args.mode == "headroom":
@@ -389,8 +415,10 @@ def run(args: argparse.Namespace, make_backend: BackendFactory) -> int:  # noqa:
             doc = json.loads(args.amendment.read_text())
             if doc.get("manifest_sha256") != sha_file(args.manifest):
                 raise SystemExit("the amendment was frozen against another corpus manifest")
-            if doc.get("backend") not in (None, b.name):
-                raise SystemExit("the amendment was tuned on another backend")
+            if doc.get("backend") not in (None, b.name) or (
+                    STUDY_BACKEND[STUDY] is not None and (doc.get("backend"), doc.get("study"))
+                    != (b.name, STUDY)):
+                raise SystemExit("the amendment was tuned on another backend or study")
             conf_size = int(json.loads(args.manifest.read_text())
                             ["partitions"]["confirmatory"]["n_items"])
             am = pr.validate_amendment(doc, conf_size)
