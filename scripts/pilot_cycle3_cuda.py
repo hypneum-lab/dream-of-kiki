@@ -74,7 +74,41 @@ def _cell_split(benches: hn.Benches, seed: int, n_replay: int,
 
 
 def _device() -> str:
+    """CUDA when available, else CPU; ``HL_TORCH_DEVICE=mps`` selects Apple MPS
+    (the E1-small macM1 smoke; recorded as backend ``torch-mps``)."""
+    if os.environ.get("HL_TORCH_DEVICE", "auto") == "mps":
+        if not torch.backends.mps.is_available():
+            raise SystemExit("HL_TORCH_DEVICE=mps but the MPS device is not available")
+        return "mps"
     return "cuda" if torch.cuda.is_available() else "cpu"
+
+
+class DiskSnapshot:
+    """Base weights kept on disk, one ``torch.save`` file per state-dict tensor
+    (``HL_SNAPSHOT=disk``, for unified-memory hosts). Restore copies each
+    tensor back in place: the same values as the in-RAM snapshot."""
+
+    kind = "disk"
+
+    def __init__(self, model: Any, root: Path) -> None:
+        root.mkdir(parents=True, exist_ok=True)
+        self.files: dict[str, Path] = {}
+        for i, (k, v) in enumerate(model.state_dict().items()):
+            path = root / f"{i:05d}.pt"
+            torch.save(v.detach().to("cpu", copy=True), path)
+            self.files[k] = path
+
+    def __getitem__(self, key: str) -> torch.Tensor:
+        return torch.load(self.files[key], map_location="cpu", mmap=True,  # type: ignore[no-any-return]
+                          weights_only=True)
+
+    @torch.no_grad()
+    def restore(self, model: Any) -> None:
+        sd = model.state_dict()
+        if set(sd) != set(self.files):
+            raise RuntimeError("state-dict keys differ from the disk snapshot")
+        for k, t in sd.items():
+            t.copy_(self[k])
 
 
 class RawTokenizer:
@@ -152,7 +186,7 @@ def _load_model(model_id: str, revision: str | None) -> tuple[Any, Any]:
     from transformers import AutoModelForCausalLM, AutoTokenizer
 
     dev = _device()
-    dtype = torch.bfloat16 if dev == "cuda" else torch.float32
+    dtype = torch.bfloat16 if dev in ("cuda", "mps") else torch.float32
     trc = os.environ.get("HL_TRUST_REMOTE_CODE", "0") == "1"
     if hn.TOKENIZER == "raw":
         from huggingface_hub import hf_hub_download
@@ -266,7 +300,16 @@ class TorchBackend:
 
     def __init__(self, model: Any, tok: Any, base: dict[str, torch.Tensor] | None = None) -> None:
         self.model, self.tok = model, tok
-        self.base = base if base is not None else {}
+        self.base: Any = base if base is not None else {}
+        if model is not None and any(p.device.type == "mps" for p in model.parameters()):
+            self.name = "torch-mps"  # its own instrument: never pooled with CUDA cells
+        # Memory strategies for unified-memory hosts; the update arithmetic is
+        # unchanged (tests check identical weights).
+        self.snapshot_kind = os.environ.get("HL_SNAPSHOT", "ram")
+        self.sgd_kind = "fused" if os.environ.get("HL_FUSED_SGD", "0") == "1" else "optim"
+        if self.snapshot_kind not in ("ram", "disk"):
+            raise SystemExit("HL_SNAPSHOT must be 'ram' or 'disk'")
+        self._mps_peak = 0
 
     def versions(self) -> dict[str, Any]:
         import tokenizers
@@ -277,13 +320,27 @@ class TorchBackend:
                 "placement": sorted({str(p.device) for p in self.model.parameters()}),
                 "tokenizer": getattr(self.tok, "kind", "transformers"),
                 "linear_attn": linear_attn_impl(self.model),
-                "kernels": {d: _dist_version(d) for d in ("fla-core", "causal-conv1d")}}
+                "kernels": {d: _dist_version(d) for d in ("fla-core", "causal-conv1d")},
+                "snapshot": self.snapshot_kind, "sgd": self.sgd_kind}
 
     def snapshot(self) -> None:
-        self.base = _snapshot_cpu(self.model)
+        if self.snapshot_kind == "disk":
+            root = os.environ.get("HL_SNAPSHOT_DIR")
+            if not root:
+                raise SystemExit("HL_SNAPSHOT=disk needs HL_SNAPSHOT_DIR")
+            self.base = DiskSnapshot(self.model, Path(root))
+        else:
+            self.base = _snapshot_cpu(self.model)
 
     def restore(self) -> None:
-        _restore(self.model, self.base)
+        if isinstance(self.base, DiskSnapshot):
+            self.base.restore(self.model)
+        else:
+            _restore(self.model, self.base)
+
+    def _sample_mps(self) -> None:
+        if self.name == "torch-mps":
+            self._mps_peak = max(self._mps_peak, int(torch.mps.driver_allocated_memory()))
 
     def n_tokens(self, text: str) -> int:
         return int(_ids(self.tok, text).shape[1])
@@ -306,21 +363,39 @@ class TorchBackend:
         ids = [_ids(self.tok, t) for t in texts]
         dev = _input_device(self.model)
         opt = torch.optim.SGD(self.model.parameters(), lr=lr)
+        hooks = []
+        if self.sgd_kind == "fused":
+            # Momentumless SGD applied per parameter as soon as its gradient is
+            # complete (p -= lr * g, as torch.optim.SGD), then the gradient is
+            # freed: no full-model gradient buffer is ever held.
+            def step(p: torch.Tensor) -> None:
+                with torch.no_grad():
+                    p.add_(p.grad, alpha=-lr)
+                p.grad = None
+
+            hooks = [p.register_post_accumulate_grad_hook(step)
+                     for p in self.model.parameters() if p.requires_grad]
         self.model.train()
         losses: list[float] = []
         violation = None
         n = 0
-        for u in updates:
-            x = ids[u.record][:, : u.n_input].to(dev)
-            opt.zero_grad(set_to_none=True)
-            loss = self.loss(x)
-            if not torch.isfinite(loss):
-                violation = "S2"
-                break
-            loss.backward()
-            opt.step()
-            losses.append(float(loss.detach()))
-            n += 1
+        try:
+            for u in updates:
+                x = ids[u.record][:, : u.n_input].to(dev)
+                opt.zero_grad(set_to_none=True)
+                loss = self.loss(x)
+                if not torch.isfinite(loss):
+                    violation = "S2"
+                    break
+                loss.backward()
+                self._sample_mps()
+                if not hooks:
+                    opt.step()
+                losses.append(float(loss.detach()))
+                n += 1
+        finally:
+            for hk in hooks:
+                hk.remove()
         opt.zero_grad(set_to_none=True)
         self.model.eval()
         return {"n_executed": n, "losses": losses, "invariant_violation": violation}
@@ -368,14 +443,19 @@ class TorchBackend:
         return _RouterCounter(self.model)
 
     def reset_peak_memory(self) -> None:
+        self._mps_peak = 0
         if torch.cuda.is_available():
             for d in range(torch.cuda.device_count()):
                 torch.cuda.reset_peak_memory_stats(d)
 
     def peak_memory(self) -> dict[str, Any]:
-        return {"cuda_max_memory_allocated": (
+        out: dict[str, Any] = {"cuda_max_memory_allocated": (
             [torch.cuda.max_memory_allocated(d) for d in range(torch.cuda.device_count())]
             if torch.cuda.is_available() else [])}
+        if self.name == "torch-mps":  # sampled after every backward and at cell end
+            self._sample_mps()
+            out["mps_driver_allocated_max_sampled"] = self._mps_peak
+        return out
 
     def cell_split(self, benches: hn.Benches, seed: int, n_replay: int,
                    n_eval: int) -> tuple[hn.Benches, list[dict[str, Any]]]:

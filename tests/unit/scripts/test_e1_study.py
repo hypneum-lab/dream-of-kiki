@@ -140,3 +140,16 @@ def test_small_study_pins_the_4b(small: Any, tmp_path: Path) -> None:
 def test_unknown_study_is_refused(monkeypatch: pytest.MonkeyPatch) -> None:
     with pytest.raises(SystemExit, match="HL_STUDY"):
         _reload(monkeypatch, "e1-tiny")
+
+
+def test_small_study_mps_instrument_is_smoke_only(small: Any) -> None:
+    mps = {"device": "mps", "placement": ["mps:0"], "tokenizer": "raw", "linear_attn": "torch"}
+    assert small._study_backend_ok("torch-mps", mps, "e1-small", "smoke")
+    for mode in ("headroom", "tuning", "calibrate", "confirmatory"):
+        assert not small._study_backend_ok("torch-mps", mps, "e1-small", mode)
+    assert not small._study_backend_ok("torch-mps", {**mps, "linear_attn": "fla+causal_conv1d"},
+                                       "e1-small", "smoke")
+    assert not small._study_backend_ok("torch", mps, "e1-small", "smoke")
+    with pytest.raises(SystemExit, match="does not come"):
+        small.check_provenance([{**_cell(*SMALL), "backend": "torch-mps", "versions": mps}],
+                               "tuning", "c" * 64)

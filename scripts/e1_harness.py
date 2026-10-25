@@ -53,32 +53,41 @@ STUDY: str = os.environ.get("HL_STUDY", "e1")
 if STUDY not in src.STUDY_MODELS:
     raise SystemExit(f"HL_STUDY={STUDY!r} is not one of {sorted(src.STUDY_MODELS)}")
 MODEL_REPO, MODEL_REVISION = src.STUDY_MODELS[STUDY]
-# Registered (backend, device) of a study, enforced on every cell, the
-# amendment and the backend itself; None leaves it to the study's draft.
-STUDY_BACKEND: dict[str, tuple[str, str] | None] = {"e1": None, "e1-small": ("torch", "cuda")}
-# Further registered instrument fields, compared with the backend's versions()
-# (E1-small draft, PI decisions S6 and S8 of 2026-10-25): token ids from the
-# raw pinned tokenizer.json, linear attention through fla + causal-conv1d.
-STUDY_VERSIONS: dict[str, dict[str, str]] = {
-    "e1": {}, "e1-small": {"tokenizer": "raw", "linear_attn": "fla+causal_conv1d"}}
+# Instruments a study accepts, enforced on every cell, the amendment and the
+# backend itself; an empty list leaves it to the study's draft. E1-small
+# (PI decisions S6 / S8 / 2026-10-25 20:06): the registered CUDA instrument
+# (raw pinned tokenizer.json, fla + causal-conv1d) for every mode, and the
+# macM1 MPS instrument (torch fallback kernels) for the smoke only; cells of
+# the two have different backend names and are never pooled.
+STUDY_INSTRUMENTS: dict[str, list[dict[str, Any]]] = {"e1": [], "e1-small": [
+    {"backend": "torch", "device": "cuda", "tokenizer": "raw",
+     "linear_attn": "fla+causal_conv1d", "modes": ("smoke", "headroom", "tuning", "calibrate",
+                                                   "confirmatory")},
+    {"backend": "torch-mps", "device": "mps", "tokenizer": "raw", "linear_attn": "torch",
+     "modes": ("smoke",)}]}
 # How the harness tokenizes: "raw" = tokenizers.Tokenizer of the pinned
 # tokenizer.json, no special tokens (the corpus-build counter, section 5.1b
 # step 3); "transformers" = AutoTokenizer of the pinned revision.
-TOKENIZER = STUDY_VERSIONS[STUDY].get("tokenizer", "transformers")
+TOKENIZER = "raw" if STUDY_INSTRUMENTS[STUDY] else "transformers"
 
 
-def _study_backend_ok(backend: Any, versions: Any, study: Any) -> bool:
+def _study_backend_ok(backend: Any, versions: Any, study: Any, mode: Any) -> bool:
     """Backend, device, actual parameter placement (one device of that type),
-    tokenizer, linear-attention implementation and study label match the
-    study's registered instrument."""
-    req = STUDY_BACKEND[STUDY]
-    if req is None:
+    tokenizer, linear-attention implementation, mode and study label match one
+    of the study's instruments."""
+    insts = STUDY_INSTRUMENTS[STUDY]
+    if not insts:
         return True
     v = versions or {}
     where = v.get("placement") or []
-    one_device = len(where) == 1 and str(where[0]).split(":")[0] == req[1]
-    extra = all(v.get(k) == want for k, want in STUDY_VERSIONS[STUDY].items())
-    return (backend, v.get("device")) == req and one_device and extra and study == STUDY
+    for inst in insts:
+        one_device = len(where) == 1 and str(where[0]).split(":")[0] == inst["device"]
+        same = (backend == inst["backend"] and v.get("device") == inst["device"]
+                and v.get("tokenizer") == inst["tokenizer"]
+                and v.get("linear_attn") == inst["linear_attn"])
+        if same and one_device and mode in inst["modes"] and study == STUDY:
+            return True
+    return False
 
 
 def check_manifest_study(man: dict[str, Any]) -> None:
@@ -300,7 +309,8 @@ def check_provenance(cells: Sequence[dict[str, Any]], mode: str, corpus_sha256: 
         ok = (c.get("mode") == mode and c.get("model") == MODEL_REPO
               and c.get("revision") == MODEL_REVISION and corp.get("partition") == "tuning"
               and corp.get("corpus_sha256") == corpus_sha256 and c.get("run_identity"))
-        ok = ok and _study_backend_ok(c.get("backend"), c.get("versions"), c.get("study"))
+        ok = ok and _study_backend_ok(c.get("backend"), c.get("versions"), c.get("study"),
+                                     c.get("mode"))
         if mode == "calibrate":
             ok = ok and c.get("tuning_cells_sha256") == tuning_cells_sha256
         if not ok:
@@ -403,10 +413,10 @@ def run(args: argparse.Namespace, make_backend: BackendFactory) -> int:  # noqa:
     common: dict[str, Any] = {"mode": args.mode, "model": args.model, "revision": args.revision,
                               "corpus": prov, "study": STUDY}
     b = make_backend(args, benches, common)
-    b.snapshot()
     common.update({"backend": b.name, "versions": b.versions()})
-    if not _study_backend_ok(b.name, common["versions"], STUDY):
-        raise SystemExit(f"{STUDY} runs only on the {STUDY_BACKEND[STUDY]} backend")
+    if not _study_backend_ok(b.name, common["versions"], STUDY, args.mode):
+        raise SystemExit(f"{STUDY} {args.mode} runs only on its registered instruments")
+    b.snapshot()
     slug = args.model.replace("/", "_")
 
     if args.mode == "headroom":
@@ -436,7 +446,7 @@ def run(args: argparse.Namespace, make_backend: BackendFactory) -> int:  # noqa:
             if doc.get("manifest_sha256") != sha_file(args.manifest):
                 raise SystemExit("the amendment was frozen against another corpus manifest")
             if doc.get("backend") not in (None, b.name) or (
-                    STUDY_BACKEND[STUDY] is not None and (doc.get("backend"), doc.get("study"))
+                    bool(STUDY_INSTRUMENTS[STUDY]) and (doc.get("backend"), doc.get("study"))
                     != (b.name, STUDY)):
                 raise SystemExit("the amendment was tuned on another backend or study")
             conf_size = int(json.loads(args.manifest.read_text())
