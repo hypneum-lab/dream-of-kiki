@@ -7,7 +7,7 @@ Research program producing two complementary papers, both released as arXiv prep
 - **Paper 1** — formal framework **C** with axioms **DR-0..DR-4** and invariants families **I / S / K**. Journal submission (PLOS Computational Biology candidate) deferred until preprint signal.
 - **Paper 2** — empirical ablation on the `kiki_oniric` substrate across profiles `P_min`, `P_equ`, `P_max`. Peer-review venue deferred — arXiv preprint first, then decide.
 
-**Status** — DualVer `C-v0.24.0+PARTIAL` (2026-05-21 ; SemVer alias `0.22.0` in `pyproject.toml`). 914 tests, coverage 89 % (Linux gate 30 %, macOS nightly gate 90 %). Last bump 2026-05-21 Wave 3b M3 (MLX latent-diffusion substrate trainer + sampler + R1 entries). Historic Paper 1 v0.2 status: Paper 1 **v0.2** frozen (22 p), release path : arXiv preprint + Zenodo DOI. Journal submission (PLOS Computational Biology candidate) deferred — we want a preprint in the world first and a signal from it before committing to a months-long peer review. Gates **G1, G7, G8, G9 LOCKED** (cycle 2 closed) ; **G10 deferred to Paper 2**. 277 tests / 91.17 % coverage. OSF pre-registration **live** at DOI `10.17605/OSF.IO/Q6JYN` (https://osf.io/q6jyn, DataCite-minted 2026-04-19T00:28:05Z). arXiv deposit ready, only web-UI walkthrough pending. Bonferroni amendment (2026-04-19) still to be filed as a linked OSF registration before submit — see `docs/osf-amendment-submission-package.md`.
+**Status** — DualVer `C-v0.24.0+PARTIAL` (2026-05-21 ; SemVer alias `0.23.0` in `pyproject.toml`). Linux CI run (`uv run pytest --cov-fail-under=30`, 2026-10-25) : 536 passed, 22 skipped, coverage 47 % — the MLX-coupled tests only run on Apple Silicon (Linux gate 30 %, macOS nightly gate 90 %). Last bump 2026-05-21 Wave 3b M3 (MLX latent-diffusion substrate trainer + sampler + R1 entries). Historic Paper 1 v0.2 status: Paper 1 **v0.2** frozen (22 p), release path : arXiv preprint + Zenodo DOI. Journal submission (PLOS Computational Biology candidate) deferred — we want a preprint in the world first and a signal from it before committing to a months-long peer review. Gates **G1, G7, G8, G9 LOCKED** (cycle 2 closed) ; **G10 deferred to Paper 2**. 277 tests / 91.17 % coverage. OSF pre-registration **live** at DOI `10.17605/OSF.IO/Q6JYN` (https://osf.io/q6jyn, DataCite-minted 2026-04-19T00:28:05Z). arXiv deposit ready, only web-UI walkthrough pending. Bonferroni amendment (2026-04-19) still to be filed as a linked OSF registration before submit — see `docs/osf-amendment-submission-package.md`.
 **Author** — Clément Saillant (L'Electron Rare), *dreamOfkiki* program author. Hypneum Lab.
 **License** — MIT (code) + CC-BY-4.0 (docs).
 
@@ -207,20 +207,41 @@ uv sync --all-extras
 
 Python 3.12+, macOS arm64 (MLX) or Linux x86_64 (CPU fallback).
 
+## Reproduce in one command
+
+**Install** — `git clone https://github.com/hypneum-lab/dream-of-kiki.git && cd dream-of-kiki && uv sync --all-extras`
+(Python ≥ 3.12 via uv ; Linux x86_64 CPU-only is enough for the conformance layer).
+
+**Run** — `uv run pytest tests/conformance/ --no-cov`
+(`--no-cov` is required : the `pyproject.toml` coverage gate otherwise fails any sub-suite on exit code.)
+
+**Expected output** — `45 passed, 2 skipped` on Linux (the 2 skips `importorskip` MLX ; the MLX-coupled
+DR-3 / DR-4 / diffusion conformance files are dropped by `conftest.py` off Apple Silicon).
+The CI suite `uv run pytest --cov-fail-under=30` gives `536 passed, 22 skipped`, coverage 47 %.
+
+**Duration & host** — ~6 s (65 s for the CI suite) on Ubuntu 24.04, 8 vCPU, no GPU, Python 3.14 (measured 2026-10-25, commit `e22d2a7`).
+
+**Full reproduction** (R1 bit-exact hashes, pilots, figures) needs Apple Silicon + MLX — see
+`tests/reproducibility/REBASELINE_NOTE.md`, `docs/milestones/conformance-matrix.md` (C1–C3 matrix)
+and `docs/milestones/q2-conformance-negative-2026-05-10.md`.
+
 ## Reproduce the paper v0.4
 
-The draft release includes full experimental data. To re-run:
+The draft release includes full experimental data. To re-run :
 
 ```bash
-# Run the gate-specific pilot
-uv run python scripts/pilot_g4.py --profile P_equ --seed 42
+# Gate / ablation drivers — argument-free, seeds 42 / 123 / 7 are fixed in the script
+uv run python scripts/ablation_g4.py          # G4 ablation (baseline vs P_min vs P_equ)
+uv run python scripts/pilot_g2.py             # G2 pilot (MLX required)
+uv run python scripts/conformance_matrix.py   # C1–C3 conformance matrix
 
-# Run the conformance test suite (axioms + invariants)
-uv run pytest tests/conformance/ -v
-
-# Regenerate paper figures (reads from run registry)
-uv run python scripts/render_figures.py --gate G4
+# Run the conformance test suite (axioms + invariants) — `--no-cov` bypasses the coverage gate
+uv run pytest tests/conformance/ -v --no-cov
 ```
+
+Other drivers : `scripts/pilot_cycle3_*.py`, `scripts/ablation_cycle3*.py`,
+`scripts/run_q2_conformance_audit.py`. A figure-rendering script
+(`scripts/render_figures.py`) is not yet in the repository.
 
 Outputs land in `harness/registry/runs/` (gitignored). Figures go to `papers/figures/`.
 
