@@ -9,7 +9,10 @@ registered as an exploratory arm, fact-corpus sources = RealTime QA +
 Daily Oracle + MMLU-CF (§5.1a); node and HF revision deferred until
 the corpus exists; revision 6, 2026-10-24: PI confirmed the pooled
 bank and the MMLU-CF cap; exact construction, hashes, quotas and
-rebalancing in §5.1b after an independent review)
+rebalancing in §5.1b after an independent review; revision 7,
+2026-10-25: PI decisions — tokenizer and model revision pinned (§9,
+§10 item 1), rule 3 widened to a frozen exact list of
+"none of the above"-type options (§5.1a))
 **Parent OSF:** 10.17605/OSF.IO/Q6JYN
 **Parent backlog item:** `EXPERIMENT-BACKLOG.md` E1 (powered TOST,
 35B run pending).
@@ -21,7 +24,9 @@ fixture leak). It leaves a replay-specific residual
 non-adjudicable candidate, confounded by template / format transfer.
 **c_version at drafting:** C-v0.25.0+PARTIAL
 **Substrate:** Qwen3.6-35B-A3B, bf16, HF transformers
-(`HL_MODEL=Qwen/Qwen3.6-35B-A3B`, revision hash pinned at filing).
+(`HL_MODEL=Qwen/Qwen3.6-35B-A3B`, revision
+`995ad96eacd98c81ed38be0c5b274b04031597b0`, pinned by the PI on
+2026-10-25; §10 item 1).
 **Harness:** `scripts/pilot_cycle3_cuda.py` (load-once + restore) and
 `scripts/run_e1_cuda_35b.sh`, extended as listed in §9 (required
 pre-filing code tasks). Analysis: `scripts/analyze_e1_cuda.py`,
@@ -408,8 +413,42 @@ the §5.1 deduplication, and recorded per item):
    spaces while distractors do, a format leak). After normalisation
    the build reports, per source, how often the gold option is the
    longest; this is descriptive.
-3. **Same-type distractors.** `mmlu_cf` items with a "None of the
-   other choices" option are removed (§5.1, property 1).
+3. **Same-type distractors.** `mmlu_cf` items with a
+   "none of the above"-type option are removed (§5.1, property 1).
+   **Widened by the PI on 2026-10-25 to a frozen exact list**
+   (`NOTA_OPTIONS` in `scripts/e1_sources.py`). An item is removed
+   iff one of its options, after rule 2 (leading / trailing
+   whitespace stripped) and with no other normalisation, equals one
+   of these 27 strings exactly (case-sensitive, no fuzzy match):
+   `None of the other choices`; `None of the mentioned`,
+   `None of the Mentioned`, `none of the mentioned`,
+   `None of the above mentioned`, `none of the above mentioned`;
+   `None of the above`, `None of the above.`, `None of the Above.`,
+   `none of the above`, `none of the above.`, `None of above`;
+   `None of these`, `None of These`, `None of these.`,
+   `none of these`, `none of these.`; `None of the choices`,
+   `none of the choices.`, `none of the options`;
+   `None of the above is correct.`,
+   `None of the above answers is correct.`,
+   `None of the above are true`,
+   `None of these alternatives is correct.`,
+   `None of these answer choices are correct.`,
+   `None of these answers is correct.`; `None is applicable`.
+   The list was enumerated from every distinct option of the pinned
+   `val.csv` that starts with "none" (case-insensitive) and keeps
+   exactly the options that only refer to the other options. Not on
+   the list (kept): bare `None` / `none` / `NONE` / `None.` (can be a
+   substantive answer, e.g. a count) and options that add content
+   (`None of the statements are true`, `None of these (Socrates)`,
+   `None of the above is a difference.`,
+   `None of the above because the temporal method is not allowed
+   under FASB ASC 830.`, `None of the above accurately describe
+   financial reports pre-1900.`, `None of the production and service
+   departments`, `none of the major theories`). "All of the above"
+   and "Both ..." options are not covered. The rule applies to
+   `mmlu_cf` only; matches in the dated sources are counted in the
+   build report, not removed. The build reports, per variant, the
+   number of items carrying it.
 4. **Date injection.** Dated items are prompted as
    `"Date: YYYY-MM-DD\n" + question` with their own date; undated
    items get no prefix. (Many news items say "this week".)
@@ -472,8 +511,10 @@ Construction order (each step logs its in / out counts per source):
 1  load      verify every pin (§5.1a table); map rows to source items
 2  normalise strip question and options (rule 2); NFKC + lower-case +
              whitespace collapse only inside dedup / skeleton keys
-3  exclude   drop: != 4 choices, empty field, "None of the other
-             choices" option (rule 3), question + gold > 256 tokens
+3  exclude   drop: != 4 choices, empty field, invalid gold, a
+             NOTA_OPTIONS option in mmlu_cf (rule 3, exact list),
+             question + gold > 256 tokens (pinned tokenizer: question
+             and gold encoded separately, no special tokens, summed)
 4  date      dated sources: keep date >= 2026-04-16 (rule 1); a kept
              item that is a near-duplicate (§5.1 property 3) of any
              dropped pre-cutoff item of the same source is dropped
@@ -924,13 +965,34 @@ gated on the independent fact corpus of §5.1, and the pilot
 fixtures are smoke-only. Changing an item below requires editing the
 named section before the lock commit.
 
-1. **CUDA node and model revision (§9) — deferred by the PI on
-   2026-10-24 until the fact corpus exists.** The registered backend is
-   CUDA / HF transformers only; the choice is which multi-GPU node
-   (at least 2 × H200-class, 4 × H200 default) and the exact HF
-   revision hash of Qwen3.6-35B-A3B. Running on Apple MLX instead
+1. **CUDA node (§9) — deferred by the PI on 2026-10-24 until the
+   fact corpus exists.** The registered backend is CUDA / HF
+   transformers only; the choice is which multi-GPU node (at least
+   2 × H200-class, 4 × H200 default). Running on Apple MLX instead
    would be a different backend and requires a protocol revision
-   before filing, not a hardware swap.
+   before filing, not a hardware swap. **Model revision pinned by the
+   PI on 2026-10-25:** `Qwen/Qwen3.6-35B-A3B` at commit
+   `995ad96eacd98c81ed38be0c5b274b04031597b0` (last modified
+   2026-04-24T02:53:42Z, resolved 2026-10-25). This pin fixes the
+   tokenizer used by step 3 of §5.1b now and also fixes the model
+   revision of the later scoring node, unless the PI changes it
+   before filing (a change would require rebuilding the corpus).
+   Tokenizer files downloaded at that commit (no weights), SHA-256:
+   `tokenizer.json`
+   `5f9e4d4901a92b997e463c1f46055088b6cca5ca61a6522d1b9f64c4bb81cb42`
+   (12 807 982 B, equal to its LFS oid; the only file the step-3
+   counter reads), `tokenizer_config.json`
+   `5186f0defcd7f232382c7f0aebcd2252d073bb921ab240e407b7ae8745d2b29b`,
+   `vocab.json`
+   `ce99b4cb2983d118806ce0a8b777a35b093e2000a503ebde25853284c9dfa003`,
+   `merges.txt`
+   `a9d356d7bdf1ef4949e3e748e95b8e10ad9d4e2e838eddc38a0a7b6b94d1db8d`
+   (git blob ids of the last three match the pinned commit).
+   Counted with the `tokenizers` package 0.23.3 (wheel
+   `tokenizers-0.23.3-cp310-abi3-macosx_11_0_arm64.whl`, SHA-256
+   `68649e97d5b43c44c031d8d848874a6eecae8f8fe40ea989aa777a5a83aca716`,
+   installed with `pip --require-hashes --no-deps` in a separate
+   environment; no BOS / EOS added).
 2. ~~LR-matched replay arm~~ — decided by the PI on 2026-10-24:
    registered as an exploratory arm (§5.4), reported only.
 3. ~~Fact-corpus source~~ — decided by the PI on 2026-10-24: all

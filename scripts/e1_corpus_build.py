@@ -117,9 +117,12 @@ def build_parts(
 
     kept: list[Item] = []
     reasons: dict[str, Counter[str]] = {s: Counter() for s in SOURCES}
+    nota: dict[str, Counter[str]] = {s: Counter() for s in SOURCES}
     undecided: list[Item] = []
     for r in rows:  # step 3
         why = src.exclusion_reason(r, count)
+        for v in src.nota_variants(r):
+            nota[r["source"]][v] += 1
         if why == "undecided_tokens":
             undecided.append(r)
             if not allow_undecided:
@@ -134,6 +137,9 @@ def build_parts(
                          "--tokenizer or --allow-undecided (provisional build)")
     steps["3_exclude"] = _counts(kept)
     report["exclusions"] = {s: dict(sorted(c.items())) for s, c in reasons.items()}
+    # items carrying each NOTA_OPTIONS variant (after rule 2, before any step-3
+    # reason); removed in mmlu_cf only, counted elsewhere
+    report["nota_variant_items"] = {s: dict(sorted(c.items())) for s, c in nota.items()}
     report["undecided_tokens"] = sorted(
         ({"source": r["source"], "source_id": r["source_id"], "src_hash": src_hash(r)}
          for r in undecided), key=lambda d: (d["source"], d["src_hash"]))
@@ -310,13 +316,20 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--sources", type=Path, required=True)
     ap.add_argument("--out", type=Path, required=True)
     ap.add_argument("--tokenizer", type=Path, help="pinned tokenizer.json")
+    ap.add_argument("--tokenizer-revision", default="Qwen/Qwen3.6-35B-A3B@"
+                    "995ad96eacd98c81ed38be0c5b274b04031597b0")
     ap.add_argument("--allow-undecided", action="store_true")
     ap.add_argument("--check", action="store_true", help="rebuild and compare, write nothing")
     ap.add_argument("--freeze", type=Path, metavar="HEADROOM_JSON",
                     help="apply step 9 from the TUNING-only headroom scores")
     args = ap.parse_args(argv)
     if args.tokenizer:
-        count, name = _tokenizer_counter(args.tokenizer), f"tokenizer:{src.sha256_file(args.tokenizer)}"
+        import tokenizers
+
+        count = _tokenizer_counter(args.tokenizer)
+        name = (f"tokenizer.json sha256 {src.sha256_file(args.tokenizer)}; "
+                f"model {args.tokenizer_revision}; tokenizers {tokenizers.__version__}; "
+                "question and gold encoded separately, no special tokens, summed")
     else:
         count, name = src.byte_bound_counter, "byte-bound (NFC UTF-8 bytes, q + 1 + gold)"
     hr, hr_sha = None, None

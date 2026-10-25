@@ -148,13 +148,28 @@ def test_byte_bound_counter() -> None:
     ({"date": None}, "empty_field"),
     ({"answer": None}, "invalid_gold"),
     ({"answer": 4}, "invalid_gold"),
-    ({"choices": ["a", "b", "c", src.NOTA]}, "nota_option"),
     ({"question": "x" * 300}, "undecided_tokens"),
 ])
 def test_exclusion_reasons(change: dict[str, Any], reason: str) -> None:
     it = {"source": "realtimeqa", "source_id": "p:0", "date": "2026-05-01",
           "question": "Q?", "choices": ["a", "b", "c", "d"], "answer": 0, **change}
     assert src.exclusion_reason(it, src.byte_bound_counter) == reason
+
+
+@pytest.mark.parametrize(("option", "source", "reason"), [
+    (src.NOTA, "mmlu_cf", "nota_option"),
+    ("None of these", "mmlu_cf", "nota_option"),
+    ("None of the above is correct.", "mmlu_cf", "nota_option"),
+    ("NONE OF THESE", "mmlu_cf", None),  # exact, case-sensitive list
+    ("None", "mmlu_cf", None),  # bare "None" is not on the list
+    ("None of the statements are true", "mmlu_cf", None),
+    ("None of the above", "realtimeqa", None),  # rule 3 applies to mmlu_cf only
+])
+def test_rule3_exact_list(option: str, source: str, reason: str | None) -> None:
+    it = {"source": source, "source_id": "x", "date": "2026-05-01" if source != "mmlu_cf" else None,
+          "question": "Q?", "choices": ["a", "b", "c", option], "answer": 0}
+    assert src.exclusion_reason(it, src.byte_bound_counter) == reason
+    assert src.nota_variants(it) == ([option] if option in src.NOTA_OPTIONS else [])
 
 
 def test_exclusion_token_counter_over_limit() -> None:
@@ -179,6 +194,7 @@ def test_build_end_to_end(sources: Path, tmp_path: Path) -> None:
     assert "past/2026/20260501_qa.jsonl:4" not in kept_ids  # two golds
     assert rep["exclusions"]["realtimeqa"] == {"invalid_gold": 1, "not_4_choices": 1}
     assert rep["exclusions"]["mmlu_cf"] == {"nota_option": 1}
+    assert rep["nota_variant_items"]["mmlu_cf"] == {src.NOTA: 1}
     assert rep["exclusions"]["daily_oracle"] == {"invalid_gold": 1}
     assert man["status"] == build.PENDING and not rep["undecided_tokens"]
     # one frozen item per line; its SHA-256 is item_sha256

@@ -48,6 +48,24 @@ from scripts.e1_corpus_core import CUTOFF, DATED
 Item = dict[str, Any]
 
 NOTA = "None of the other choices"
+# Rule 3 as widened by the PI on 2026-10-25: the frozen exact list of
+# "none of the above"-type options of the pinned MMLU-CF validation set.
+# Case-sensitive exact match on the option after rule-2 stripping; no
+# other normalisation, no fuzzy match. Applied to mmlu_cf only (rule 3);
+# matches in the dated sources are counted, not removed.
+NOTA_OPTIONS = frozenset({
+    "None of the other choices",
+    "None of the mentioned", "None of the Mentioned", "none of the mentioned",
+    "None of the above mentioned", "none of the above mentioned",
+    "None of the above", "None of the above.", "None of the Above.",
+    "none of the above", "none of the above.", "None of above",
+    "None of these", "None of These", "None of these.", "none of these", "none of these.",
+    "None of the choices", "none of the choices.", "none of the options",
+    "None of the above is correct.", "None of the above answers is correct.",
+    "None of the above are true", "None of these alternatives is correct.",
+    "None of these answer choices are correct.", "None of these answers is correct.",
+    "None is applicable",
+})
 MAX_TOKENS = 256
 
 REALTIMEQA_COMMIT = "e288dcfe1d7818bf48299249ae892939637775db"
@@ -252,6 +270,15 @@ def byte_bound_counter(question: str, gold: str) -> int | None:
     return 0 if nb <= MAX_TOKENS else None
 
 
+def nota_variants(item: Item) -> list[str]:
+    """Distinct NOTA_OPTIONS strings among an item's options, in option order."""
+    out: list[str] = []
+    for c in item["choices"]:
+        if c in NOTA_OPTIONS and c not in out:
+            out.append(c)
+    return out
+
+
 def gold_of(item: Item) -> str | None:
     ch, a = item.get("choices"), item.get("answer")
     if not isinstance(ch, list) or isinstance(a, bool) or not isinstance(a, int):
@@ -271,7 +298,7 @@ def exclusion_reason(item: Item, count: TokenCounter) -> str | None:
     gold = gold_of(item)
     if gold is None:
         return "invalid_gold"
-    if any(c == NOTA for c in ch):
+    if item["source"] == "mmlu_cf" and any(c in NOTA_OPTIONS for c in ch):
         return "nota_option"
     n = count(item["question"], gold)
     if n is None:
