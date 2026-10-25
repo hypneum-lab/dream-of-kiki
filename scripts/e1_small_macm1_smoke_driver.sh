@@ -75,7 +75,10 @@ run() {  # $1 = out dir, rest = extra env
     sleep 5
   done
   wait $RUNPID; local rc=$?
-  gone || stop_harness
+  if ! { gone || stop_harness; }; then
+    log "launcher group $RUNPID still alive after KILL"
+    exit 9  # RUNPID kept: cleanup retries and leaves the pause if it fails
+  fi
   RUNPID=
   log "$(basename $out) rc=$rc free=$(free_pct)% level=$(level) swap: $(sysctl -n vm.swapusage)"
   return $rc
