@@ -243,3 +243,30 @@ def test_cli_write_refuses_overwrite_and_check(sources: Path, tmp_path: Path,
         build.main(["--sources", str(sources), "--out", str(out)])
     (out / build.CORPUS_FILE).write_text("tampered\n", encoding="utf-8")
     assert build.main(["--sources", str(sources), "--out", str(out), "--check"]) == 1
+
+
+def test_freeze_rejects_below_minima_and_foreign_items(sources: Path) -> None:
+    _, man_text = build.run(sources, src.byte_bound_counter, "b", False,
+                            tree_blobs=_blobs, fixtures_dir=FIX, mega=MEGA)
+    man = json.loads(man_text)
+    tuning = {i["src_hash"]: False for i in man["items"] if i["partition"] == "tuning"}
+    corpus, frozen_text = build.run(sources, src.byte_bound_counter, "b", False,
+                                    tree_blobs=_blobs, fixtures_dir=FIX, mega=MEGA,
+                                    headroom=tuning, headroom_sha256="x")
+    frozen = json.loads(frozen_text)
+    assert frozen["status"] == build.REJECTED and frozen["items"] == [] and corpus == ""
+    assert frozen["headroom"]["reason"].startswith("minima")
+    conf = next(i["src_hash"] for i in man["items"] if i["partition"] == "confirmatory") \
+        if any(i["partition"] == "confirmatory" for i in man["items"]) else "f" * 64
+    with pytest.raises(SystemExit, match="non-TUNING"):
+        build.run(sources, src.byte_bound_counter, "b", False, tree_blobs=_blobs,
+                  fixtures_dir=FIX, mega=MEGA, headroom={**tuning, conf: True})
+    with pytest.raises(ValueError, match="not scored"):
+        build.run(sources, src.byte_bound_counter, "b", False, tree_blobs=_blobs,
+                  fixtures_dir=FIX, mega=MEGA, headroom={})
+
+
+def test_freeze_refuses_provisional(sources: Path) -> None:
+    with pytest.raises(SystemExit, match="PROVISIONAL"):
+        build.run(sources, lambda q, g: None, "c", True, tree_blobs=_blobs,
+                  fixtures_dir=FIX, mega=MEGA, headroom={})

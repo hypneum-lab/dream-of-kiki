@@ -27,8 +27,16 @@ bound of ``scripts.e1_sources.byte_bound_counter`` decides the items it
 can, and ``--allow-undecided`` keeps the others, flagged, in a build
 whose status is ``PROVISIONAL-TOKENIZER`` (never to be frozen).
 
+Step 9: ``--freeze HEADROOM_JSON`` (``{"correct": {src_hash: bool}}`` for
+every TUNING item, written by ``pilot_cycle3_cuda.py --mode headroom``)
+rebuilds, applies ``headroom_rebalance`` and writes
+``e1-corpus-frozen.jsonl`` + ``e1-corpus-frozen-manifest.json`` with
+status FROZEN (or REJECTED, no items). Only a FROZEN corpus feeds
+tuning and confirmatory cells.
+
     python scripts/e1_corpus_build.py --sources <dir> --out <dir> [--allow-undecided]
     python scripts/e1_corpus_build.py --sources <dir> --out <dir> --check
+    python scripts/e1_corpus_build.py --sources <dir> --out <dir> --freeze headroom.json
 """
 from __future__ import annotations
 
@@ -47,6 +55,7 @@ if str(ROOT) not in sys.path:
 
 from scripts import e1_sources as src
 from scripts.e1_corpus_core import (
+    ACCEPT,
     CUTOFF,
     MIN_CONFIRMATORY,
     MIN_TUNING,
@@ -55,6 +64,7 @@ from scripts.e1_corpus_core import (
     contamination_drop,
     dedupe,
     final_item,
+    headroom_rebalance,
     skeleton_cap,
     src_hash,
 )
@@ -66,6 +76,10 @@ MANIFEST_FILE = "e1-corpus-manifest.json"
 SCHEMA = "e1-corpus/1"
 PROVISIONAL = "PROVISIONAL-TOKENIZER"
 PENDING = "PENDING-HEADROOM"
+FROZEN = "FROZEN"
+REJECTED = "REJECTED"
+FROZEN_CORPUS_FILE = "e1-corpus-frozen.jsonl"
+FROZEN_MANIFEST_FILE = "e1-corpus-frozen-manifest.json"
 
 
 def _sha(text: str) -> str:
@@ -84,6 +98,17 @@ def build(
     allow_undecided: bool = False,
 ) -> tuple[list[Item], dict[str, Any]]:
     """Steps 2-8 on loaded rows. Returns (frozen items with partition, report)."""
+    parts, report = build_parts(raw, reference, count, allow_undecided)
+    return freeze_items(parts, report), report
+
+
+def build_parts(
+    raw: list[Item],
+    reference: list[Item],
+    count: src.TokenCounter,
+    allow_undecided: bool = False,
+) -> tuple[dict[str, dict[str, list[Item]]], dict[str, Any]]:
+    """Steps 2-7: source items (pre-permutation) per source and partition."""
     report: dict[str, Any] = {"steps": {}}
     steps = report["steps"]
     steps["1_load"] = _counts(raw)
@@ -134,13 +159,18 @@ def build(
     steps["6_cap"] = {s: len(p["tuning"]) + len(p["confirmatory"]) for s, p in parts.items()}
     report["cap_k"] = max(len(bank[s]) for s in ("realtimeqa", "daily_oracle"))
     steps["7_split"] = {s: {k: len(v) for k, v in p.items()} for s, p in parts.items()}
+    return parts, report
 
+
+def freeze_items(parts: Mapping[str, Mapping[str, list[Item]]],
+                 report: dict[str, Any]) -> list[Item]:
+    """Step 8: permute, prefix, hash; adds the partition and the token flag."""
     undecided_hashes = {d["src_hash"] for d in report["undecided_tokens"]}
     frozen: list[Item] = []  # step 8
     longest: dict[str, Counter[str]] = {s: Counter() for s in SOURCES}
     for s in SOURCES:
         for label in ("tuning", "confirmatory"):
-            for it in parts[s][label]:
+            for it in parts.get(s, {}).get(label, []):
                 f = final_item(it)
                 f["partition"] = label
                 f["undecided_tokens"] = f["src_hash"] in undecided_hashes
@@ -150,7 +180,7 @@ def build(
                 longest[s]["gold_longest" if lens[g] == max(lens) else "other"] += 1
     frozen.sort(key=lambda f: (f["partition"], f["source"], f["src_hash"]))
     report["gold_longest"] = {s: dict(c) for s, c in longest.items()}
-    return frozen, report
+    return frozen
 
 
 def corpus_text(frozen: Iterable[Mapping[str, Any]]) -> str:
@@ -159,7 +189,8 @@ def corpus_text(frozen: Iterable[Mapping[str, Any]]) -> str:
 
 
 def manifest(frozen: list[Item], report: dict[str, Any], pins: dict[str, Any],
-             corpus: str, token_counter: str, reference_info: dict[str, Any]) -> dict[str, Any]:
+             corpus: str, token_counter: str, reference_info: dict[str, Any],
+             headroom: dict[str, Any] | None = None) -> dict[str, Any]:
     parts: dict[str, Any] = {}
     for label in ("confirmatory", "tuning"):
         mem = [f for f in frozen if f["partition"] == label]
@@ -168,15 +199,19 @@ def manifest(frozen: list[Item], report: dict[str, Any], pins: dict[str, Any],
                         "sha256": _sha("\n".join(hs))}
     n_conf = parts["confirmatory"]["n_items"]
     status = PROVISIONAL if report["undecided_tokens"] else PENDING
+    note = ("step 9 (headroom on TUNING only) not run; partitions are pre-headroom"
+            + ("; token rule undecided for flagged items" if status == PROVISIONAL else ""))
+    if headroom is not None:
+        status = headroom["status_label"]
+        note = f"step 9 applied: {headroom['status']} {headroom.get('reason', '')}".strip()
     minima_ok = n_conf >= MIN_CONFIRMATORY and parts["tuning"]["n_items"] >= MIN_TUNING
     return {
+        "headroom": headroom,
         "schema": SCHEMA,
         "prereg": "docs/osf-prereg-e1-replay-controls-2026-10-23.md",
         "script": "scripts/e1_corpus_build.py",
         "status": status,
-        "status_note": ("step 9 (headroom on TUNING only) not run; partitions are "
-                        "pre-headroom" + ("; token rule undecided for flagged items"
-                                          if status == PROVISIONAL else "")),
+        "status_note": note,
         "cutoff": CUTOFF,
         "token_counter": token_counter,
         "sources": pins,
@@ -195,7 +230,7 @@ def manifest(frozen: list[Item], report: dict[str, Any], pins: dict[str, Any],
         "weights_pre_headroom": {s: (c / n_conf if n_conf else 0.0)
                                  for s, c in parts["confirmatory"]["by_source"].items()},
         "partitions": parts,
-        "corpus_file": CORPUS_FILE,
+        "corpus_file": FROZEN_CORPUS_FILE if headroom is not None else CORPUS_FILE,
         "corpus_sha256": _sha(corpus),
         "items": [{"item_sha256": f["item_sha256"], "src_hash": f["src_hash"],
                    "source": f["source"], "source_id": f["source_id"], "date": f["date"],
@@ -214,8 +249,16 @@ def run(sources_dir: Path, count: src.TokenCounter, token_counter: str,
         allow_undecided: bool,
         tree_blobs: Callable[[Path, str], dict[str, str]] = src.git_tree_blobs,
         fixtures_dir: Path = ROOT / "tests" / "fixtures",
-        mega: list[dict[str, Any]] | None = None) -> tuple[str, str]:
-    """Return (corpus text, manifest text)."""
+        mega: list[dict[str, Any]] | None = None,
+        headroom: Mapping[str, bool] | None = None,
+        headroom_sha256: str | None = None) -> tuple[str, str]:
+    """Return (corpus text, manifest text).
+
+    With ``headroom`` (the base checkpoint's correctness on every TUNING
+    item, keyed by src_hash, from ``pilot_cycle3_cuda.py --mode
+    headroom``) step 9 is applied with ``headroom_rebalance``: the
+    result is the FROZEN corpus (or REJECTED, with no items).
+    """
     pins = src.verify_pins(sources_dir, tree_blobs)
     raw = src.load_all(sources_dir)
     facts = mega if mega is not None else mega_v2_facts()
@@ -227,9 +270,26 @@ def run(sources_dir: Path, count: src.TokenCounter, token_counter: str,
         "mega_v2_sha256": _sha(canonical_json({"facts": facts})),
         "n_rows": dict(Counter(r["source"] for r in reference)),
     }
-    frozen, report = build(raw, reference, count, allow_undecided)
+    parts, report = build_parts(raw, reference, count, allow_undecided)
+    hr: dict[str, Any] | None = None
+    if headroom is None:
+        frozen = freeze_items(parts, report)
+    else:
+        if report["undecided_tokens"]:
+            raise SystemExit("refusing to freeze a PROVISIONAL-TOKENIZER build")
+        tuning = {src_hash(x) for p in parts.values() for x in p["tuning"]}
+        foreign = set(headroom) - tuning
+        if foreign:  # confirmatory items are never scored before the first seed
+            raise SystemExit(f"headroom input has {len(foreign)} non-TUNING item(s)")
+        res = headroom_rebalance(parts, headroom)
+        hr = {k: res[k] for k in ("status", "reason", "accuracy", "dropped")}
+        hr["pooled_accuracy"] = res.get("pooled_accuracy")
+        hr["weights"] = res.get("weights")
+        hr["input_sha256"] = headroom_sha256
+        hr["status_label"] = FROZEN if res["status"] == ACCEPT else REJECTED
+        frozen = freeze_items(res["partitions"], report) if res["status"] == ACCEPT else []
     corpus = corpus_text(frozen)
-    man = manifest(frozen, report, pins, corpus, token_counter, ref_info)
+    man = manifest(frozen, report, pins, corpus, token_counter, ref_info, hr)
     return corpus, json.dumps(man, indent=1, sort_keys=True, ensure_ascii=False) + "\n"
 
 
@@ -252,13 +312,22 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--tokenizer", type=Path, help="pinned tokenizer.json")
     ap.add_argument("--allow-undecided", action="store_true")
     ap.add_argument("--check", action="store_true", help="rebuild and compare, write nothing")
+    ap.add_argument("--freeze", type=Path, metavar="HEADROOM_JSON",
+                    help="apply step 9 from the TUNING-only headroom scores")
     args = ap.parse_args(argv)
     if args.tokenizer:
         count, name = _tokenizer_counter(args.tokenizer), f"tokenizer:{src.sha256_file(args.tokenizer)}"
     else:
         count, name = src.byte_bound_counter, "byte-bound (NFC UTF-8 bytes, q + 1 + gold)"
-    corpus, man = run(args.sources, count, name, args.allow_undecided)
-    cpath, mpath = args.out / CORPUS_FILE, args.out / MANIFEST_FILE
+    hr, hr_sha = None, None
+    if args.freeze:
+        hr = {str(k): bool(v) for k, v in
+              json.loads(args.freeze.read_text(encoding="utf-8"))["correct"].items()}
+        hr_sha = src.sha256_file(args.freeze)
+    corpus, man = run(args.sources, count, name, args.allow_undecided,
+                      headroom=hr, headroom_sha256=hr_sha)
+    cpath, mpath = ((args.out / FROZEN_CORPUS_FILE, args.out / FROZEN_MANIFEST_FILE) if args.freeze
+                    else (args.out / CORPUS_FILE, args.out / MANIFEST_FILE))
     if args.check:
         ok = (cpath.is_file() and mpath.is_file()
               and cpath.read_text(encoding="utf-8") == corpus
