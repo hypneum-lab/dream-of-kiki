@@ -9,9 +9,10 @@ backend (``scripts/pilot_cycle3_cuda.py``):
 
 - scoring: length-normalised log-probability of the choice tokens after
   the prompt, log-softmax in float32, argmax ties to the lowest index;
-- replay: full-parameter, momentumless SGD (``mlx.optimizers.SGD``,
-  momentum 0, no weight decay), batch 1, mean next-token cross-entropy
-  in float32 over the sequence, the token-budget schedule of section 5.4;
+- replay: full-parameter, momentumless SGD (direct update computed in
+  float32 and rounded once, no optimizer state), batch 1, mean
+  next-token cross-entropy in float32 over the sequence, the token-budget
+  schedule of section 5.4;
 - DOWNSCALE multiplies every floating parameter by 0.99; RESTRUCTURE
   swaps two adjacent decoder blocks; RECOMBINE is a no-op;
 - restore: MLX arrays are immutable, so the snapshot keeps references to

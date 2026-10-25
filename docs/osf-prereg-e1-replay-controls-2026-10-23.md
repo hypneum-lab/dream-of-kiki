@@ -1009,8 +1009,10 @@ changed silently):
 snapshot (70 GB, kept by reference), the current weights (70 GB once
 they differ from the base), the gradients (70 GB) and, while the
 update is evaluated, the new weights before the old ones are
-released (70 GB): ≈ 280 GB, with no optimizer state (the update is
-computed directly, D5). Activations of the differentiable
+released (70 GB): a nominal tensor subtotal of ≈ 280 GB, with no
+optimizer state (the update is computed directly, D5). It is not a
+complete transient estimate: float32 update intermediates, the
+allocator's cache and activations come on top. Activations of the differentiable
 linear-attention recurrence are not bounded by arithmetic here; the
 single-cell smoke measures the peak (`mx.get_peak_memory`) before
 any further cell runs. Budget: 512 GB of unified memory minus the OS
@@ -1033,7 +1035,8 @@ snapshot holds another ≈ 70 GB of host RAM, and every cell restores
 2 × 130 items × 4 choices; more if §5.2 raises `n_eval`), + 160 for
 OPR, + U forward/backward updates (U ≈ T_s / mean record
 length; ≈ 100-200 for fact corpora at m = 5, more for the short
-`p_ctrl_sft` texts), + one 70 GB restore. Wall per cell and peak
+`p_ctrl_sft` texts), + one restore (a 70 GB host → device copy on
+CUDA; a re-binding of the base arrays on MLX, D9). Wall per cell and peak
 memory are unmeasured at 35B. The smoke on the filing hardware
 (seeds 2000-2002, all 10 profiles = 30 cells, pilot set; on the
 Studio a single cell first) must record per-cell wall, peak memory
