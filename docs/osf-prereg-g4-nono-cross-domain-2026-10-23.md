@@ -7,7 +7,9 @@ and ε applied; ε reverted to 0.01 and N = 108 tier added; revision 5,
 2026-10-24: PI decision removes the N = 30 line of the N-selection
 rule, so N is 95 or 108; revision 7, 2026-10-24: PI amendment after
 the first smoke — epochs 3 → 10, acc20 and DOA descriptive only, and
-P_max runs recombine_full so that P_equ and P_max differ on the CNN)
+P_max runs recombine_full so that P_equ and P_max differ on the CNN;
+revision 9, 2026-10-25: third-smoke N selection re-checked with the
+current aggregator, no protocol change)
 **Parent OSF:** 10.17605/OSF.IO/Q6JYN
 **Sister pre-regs (locked, not modified):**
 `docs/osf-prereg-g4-sexto-pilot.md` (H6-A, CIFAR-100),
@@ -894,6 +896,16 @@ carry a universality claim in either direction.
   - Checklist item 5 passes on this host for the new corpus.
   - Records: macM1 `~/scratch/code/g4-pilot3-out/` (with
     `n-selection.json`).
+  - **Re-check, 2026-10-25 (no rerun).** The aggregator changed after
+    this smoke (`0705440`: exploratory cells split from the
+    confirmatory ones before the abort, exclusion and completeness
+    checks). `--select-n` at `d81652a` on the same 27 cell records
+    (all `status: ok`, `commit_sha` `6f11823`) gives an output
+    identical to the stored `n-selection.json` (24 confirmatory
+    cells, no abort, line 2, **N = 95**). Recomputed by hand: the
+    per-seed `WDPA(P_max/within) − WDPA(P_max/none)` are 0.00374,
+    0.00067 and 0.00191 (seeds 900 / 901 / 902), sd (ddof = 1)
+    0.00155. The smoke was not rerun and N is not re-selected.
 - **Pre-filing smoke:** seeds 900-902, all 8 cells, on the filing
   hardware. It verifies the driver, the checklist tests and per-cell
   wall time, and records SD̂_D for the §3 N-selection rule (and r̂,

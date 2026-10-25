@@ -7,7 +7,8 @@ protocol change; revision 5, 2026-10-24: export helper added per the
 PI decision of 2026-10-24, no protocol change; revision 6,
 2026-10-24: PI decisions on τ and on c_α of the permutation
 secondary, decision-eligibility rules and the "global" wording
-guard after an independent review)
+guard after an independent review; revision 7, 2026-10-25: filing
+smoke on seed 900 recorded in §9, no protocol change)
 **Parent OSF:** 10.17605/OSF.IO/Q6JYN
 **c_version at drafting:** C-v0.25.0+PARTIAL
 **Claim under test:** the DR-3 anchoring sentence in Paper 1 §8.4
@@ -513,10 +514,42 @@ Split-FMNIST test inputs, same statistics and preprocessing) is
   manifest or gate, incomplete seeds, unpinned export, non-primary
   k / τ, wrong shape, mismatched hashes; end to end from the export
   helper), the recomputed gate, and the restricted "global" wording
-  rule (tests for abort, ineligible runs and every row). Open: the
-  filing smoke on seed 900 with the documented invocation on the
-  filing host. The v1.9.0 tag is public on GitHub (verified
-  2026-10-24).
+  rule (tests for abort, ineligible runs and every row). The v1.9.0
+  tag is public on GitHub (verified 2026-10-24).
+- **Filing smoke, 2026-10-25 (PI go 2026-10-25).** Seed 900 only
+  (not analysed), run on macM1 (M1, 32 GB, macOS 27.0.1, CPU,
+  `nice 19`) with the documented invocation of §5: a fresh clone of
+  nerve-wml detached at `v1.9.0` (HEAD
+  `95ac6b78477c3ce999b31bca775769041e082b46`, clean tree before and
+  after), `uv sync --frozen` from the v1.9.0 `uv.lock` (hash-pinned;
+  uv 0.11.19; Python 3.14.4, torch 2.11.0, numpy 2.4.4), then
+  `uv run --frozen python <dream-of-kiki>/scripts/dr3_export_nerve_wml.py
+  --seeds 900 --out <smoke-dumps>` with the helper at dream-of-kiki
+  `d81652a`. Export wall time 5 s; `pinned` true,
+  `confirmatory_eligible` true, 0 gate failures.
+  - Learning gate (threshold 0.25): trained MLP 0.519, trained LIF
+    0.545 (both pass); untrained null MLP 0.104, LIF 0.087 (near the
+    12-class chance of 0.083, so the gate, which reads the trained
+    substrates only, is unaffected by the nulls).
+  - Array SHA-256 values equal those of the 2026-10-24 integration
+    check (the `.npz` container hash differs, the arrays do not), so
+    the export is reproducible across a fresh clone and a fresh
+    `uv sync --frozen` environment.
+  - Export manifest committed verbatim as
+    `docs/milestones/dr3-prefiling-smoke-2026-10-25.json` (SHA-256
+    `153eb68bf549e2be251656e180d6afecfca1d076d77fe493b830feac390c8ab0`);
+    dump SHA-256
+    `f6e8135adcf2a7c97bc5baaa6be33b5231b03d7ee2a191c72fbbbdbe22f9ff3a`.
+  - Pipeline check: `scripts/dr3_relational_probe.py` read the dump
+    with `--require-hash --manifest … --decide`, verified the hashes
+    and, as registered (§8 (i)), marked the run ineligible ("seed set
+    is not exactly 100..119"): no confirmatory field was written. The
+    smoke statistics are not reported and never analysed.
+  - No number of this protocol is derived from the smoke: τ = 0.1,
+    δ = 0.025, n = 20 and the permutation c_α (α = 0.05, rank 476 of
+    501) are fixed by PI decision, not by pilot data.
+  - Records: macM1 `~/scratch/code/pilots-2026-10-25/` (dump, sidecars,
+    manifest, probe check).
 - Milestones: `docs/milestones/dr3-relational-probe-<date>.{json,md}`.
 - Results are appended to `docs/proofs/dr3-substrate-evidence.md` as
   a new dated section (append-only).

@@ -1,0 +1,51 @@
+{
+  "confirmatory_eligible": true,
+  "n_gate_fail": 0,
+  "nerve_wml": {
+    "clean": true,
+    "commit": "95ac6b78477c3ce999b31bca775769041e082b46",
+    "head": "95ac6b78477c3ce999b31bca775769041e082b46",
+    "pinned": true,
+    "problems": [],
+    "tag": "v1.9.0"
+  },
+  "prereg": "docs/osf-prereg-dr3-relational-probe-2026-10-23.md",
+  "protocol": {
+    "dim": 16,
+    "gate_inputs": "task._gen reseeded with seed + 5000",
+    "gate_threshold": 0.25,
+    "layer": "pre-VQ: MlpWML core(x); LifWML input_proj(encoder(x))",
+    "n_classes": 12,
+    "n_eval": 1024,
+    "null": "same constructors and seeds, 0 steps",
+    "steps": 800
+  },
+  "script": "scripts/dr3_export_nerve_wml.py",
+  "seeds": [
+    {
+      "accuracy": {
+        "a_null": 0.1044921875,
+        "a_trained": 0.5185546875,
+        "b_null": 0.0869140625,
+        "b_trained": 0.544921875
+      },
+      "array_sha256": {
+        "a_null": "3811ed0f641d4b1259b7a146af084ecdc4576eb0641b1a7c51f3c30a40af0437",
+        "a_trained": "4cb1a00d3aa018bd57fa8b7aa6f4f1165af1ca00f4be448a87fa0d1a679ba913",
+        "b_null": "a0119034cf607001abbae3cf2551b08d51368cb76d7e8c6d003c85a96c4ab71e",
+        "b_trained": "697e607bdeced43420c42a06f5a4482a0a4abe57af894177dbcfbd4f8d254046"
+      },
+      "file": "dr3-seed900.npz",
+      "gate_pass": true,
+      "gate_reasons": [],
+      "seed": 900,
+      "sha256": "f6e8135adcf2a7c97bc5baaa6be33b5231b03d7ee2a191c72fbbbdbe22f9ff3a"
+    }
+  ],
+  "versions": {
+    "numpy": "2.4.4",
+    "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+    "python": "3.14.4",
+    "torch": "2.11.0"
+  }
+}
