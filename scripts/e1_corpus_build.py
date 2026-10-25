@@ -94,7 +94,11 @@ PROVENANCE = {
                      "author": "agentic-learning-ai-lab (LLM-generated from news articles)",
                      "licence": "CC BY 4.0"},
     "mmlu_cf": {"citation": "MMLU-CF validation set, huggingface.co/datasets/microsoft/MMLU-CF",
-                "author": "Microsoft (MMLU-CF authors)", "licence": "CDLA-Permissive-2.0"},
+                "author": "Microsoft (MMLU-CF authors)", "licence": "CDLA-Permissive-2.0",
+                "source_date": src.MMLU_CF_RELEASE_DATE,
+                "source_date_kind": "release date of the pinned revision c25b89a "
+                                    "(2025-01-08T08:01:02Z); a source date, not an item "
+                                    "creation date"},
 }
 
 
@@ -205,6 +209,15 @@ def freeze_items(parts: Mapping[str, Mapping[str, list[Item]]],
     return frozen
 
 
+def _provenance_date(f: Mapping[str, Any]) -> dict[str, Any]:
+    """Section 5.1 property 4: the item's own date, or (mmlu_cf, undated) the
+    release date of the pinned revision, labelled as a source date."""
+    if f["date"] is not None:
+        return {"provenance_date": f["date"], "provenance_date_kind": "item"}
+    return {"provenance_date": src.MMLU_CF_RELEASE_DATE,
+            "provenance_date_kind": "source_release"}
+
+
 def corpus_text(frozen: Iterable[Mapping[str, Any]]) -> str:
     keys = ("source", "source_id", "date", "prompt", "choices", "answer", "src_hash")
     return "".join(canonical_json({k: f[k] for k in keys}) + "\n" for f in frozen)
@@ -259,7 +272,8 @@ def manifest(frozen: list[Item], report: dict[str, Any], pins: dict[str, Any],
         "corpus_sha256": _sha(corpus),
         "items": [{"item_sha256": f["item_sha256"], "src_hash": f["src_hash"],
                    "source": f["source"], "source_id": f["source_id"], "date": f["date"],
-                   "partition": f["partition"], "undecided_tokens": f["undecided_tokens"]}
+                   "partition": f["partition"], "undecided_tokens": f["undecided_tokens"],
+                   **_provenance_date(f)}
                   for f in frozen],
     }
 

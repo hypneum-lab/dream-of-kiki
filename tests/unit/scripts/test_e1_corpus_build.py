@@ -210,6 +210,12 @@ def test_build_end_to_end(sources: Path, tmp_path: Path) -> None:
     assert "partition" not in first and first["prompt"]
     dated = [json.loads(ln) for ln in lines if json.loads(ln)["date"]]
     assert all(d["prompt"].startswith(f"Date: {d['date']}\n") for d in dated)
+    # provenance date: own date for dated items, release date for mmlu_cf
+    kinds = {(i["source"], i["provenance_date_kind"]) for i in man["items"]}
+    assert all(k == ("source_release" if s == "mmlu_cf" else "item") for s, k in kinds)
+    assert all(i["provenance_date"] == (i["date"] or src.MMLU_CF_RELEASE_DATE)
+               for i in man["items"])
+    assert man["provenance"]["mmlu_cf"]["source_date"] == "2025-01-08"
     # no item text in the manifest (rule 9)
     assert "national park" not in man_text
     # deterministic

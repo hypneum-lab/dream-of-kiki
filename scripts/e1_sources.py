@@ -78,6 +78,11 @@ MMLU_CF_FILE = "mmlu_cf/val.csv"
 MMLU_CF_REVISION = "c25b89a968a2062e422dd96ddf0fe3387507f0dd"
 MMLU_CF_SHA256 = "28816045197decd701b1a0e51923b43684d708d8c06ec62d20541f90939ac49f"
 MMLU_CF_SIZE = 2_247_391
+# Section 5.1 property 4 (PI decision 2026-10-25): MMLU-CF items carry no
+# date; their provenance date is the release date of the pinned revision
+# (commit c25b89a, 2025-01-08T08:01:02Z), labelled as a source date, not an
+# item creation date.
+MMLU_CF_RELEASE_DATE = "2025-01-08"
 
 # Step-3 tokenizer, pinned by the PI on 2026-10-25 (E1 draft section 10 item 1).
 MODEL_REPO = "Qwen/Qwen3.6-35B-A3B"

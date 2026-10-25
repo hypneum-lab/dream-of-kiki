@@ -184,3 +184,22 @@ def test_per_source_descriptive() -> None:
                              else [False, False, False, False])
     ps = an.decide(cells)["per_source"]["H14-A"]
     assert ps["a"]["mean"] == pytest.approx(1.0) and ps["b"]["mean"] == pytest.approx(0.0)
+
+
+def test_h14c_infeasible_per_amendment() -> None:
+    """PI decision 2026-10-25 (2a): the OPR arm is not run, H14-C is INFEASIBLE."""
+    cells = [c for c in _cells({"p_min": 0.03, "p_equ": 0.03}) if c["profile"] != an.OPR]
+    r = an.decide(cells, {"h14c_infeasible": True, "c": 2.0})
+    assert r["states"] == {"H14-A": "SUPERIOR", "H14-B": "SUPERIOR", "H14-C": "INFEASIBLE"}
+    assert r["joint_headline"] == "J4" and r["run_complete"] and r["arms_not_run"] == [an.OPR]
+    assert r["secondary"][f"p_min-{an.OPR}"]["state"] == "INFEASIBLE"
+    with pytest.raises(ValueError, match="not run"):
+        an.decide(_cells(), {"h14c_infeasible": True, "c": 2.0})
+
+
+def test_lr_matching_not_computable() -> None:
+    """PI decision 2026-10-25 (2b)."""
+    cells = [c for c in _cells() if c["profile"] != "p_ctrl_lr_matched"]
+    r = an.decide(cells, {"h14c_infeasible": False, "c": None})
+    assert r["exploratory_arms"]["p_equ-p_ctrl_lr_matched"]["state"] == "NOT-COMPUTABLE"
+    assert r["run_complete"] and r["states"]["H14-C"] != "INFEASIBLE"

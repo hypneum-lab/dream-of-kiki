@@ -589,7 +589,12 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 - one dispatch per
             am = pr.Amendment(pr.DEFAULT, pr.DEFAULT, 1.0, args.smoke_n_eval)
             common["smoke_placeholder_amendment"] = am.as_dict()
             n_eval = args.smoke_n_eval
+        skipped = [p for p in pr.ALL_PROFILES if not am.runs(p)]
+        if skipped:  # declared in the amendment, before any confirmatory seed
+            print(f"[e1] not run per the tuning amendment: {skipped}", flush=True)
         for p in pr.ALL_PROFILES:
+            if p in skipped:
+                continue
             for s in seeds:
                 jobs.append((f"{p}|{s}", {"profile": p, "seed": s, "am": am, "n_eval": n_eval}))
     elif args.mode == "tuning":

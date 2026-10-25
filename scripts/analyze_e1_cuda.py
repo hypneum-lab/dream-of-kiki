@@ -235,8 +235,23 @@ def per_source(idx: Mapping[tuple[str, int], Cell], res: Mapping[str, Any]) -> d
     return out
 
 
-def decide(cells: Iterable[Cell]) -> dict[str, Any]:
+def decide(cells: Iterable[Cell], amendment: Mapping[str, Any] | None = None) -> dict[str, Any]:
+    """Section 2 / 4 / 6 / 7 reading of the confirmatory cells.
+
+    ``amendment`` (the frozen tuning amendment) carries the PI decisions
+    of 2026-10-25: ``h14c_infeasible`` (all tuning OPR corpora empty:
+    H14-C is INFEASIBLE, the OPR arm is not run, the other hypotheses
+    proceed) and ``c = null`` (LR matching not computable: the
+    exploratory LR-matched contrast is NOT-COMPUTABLE).
+    """
     cells = list(cells)
+    am = dict(amendment or {})
+    infeasible = bool(am.get("h14c_infeasible", False))
+    lr_matched = am.get("c", 1.0) is not None
+    not_run = ({OPR} if infeasible else set()) | (set() if lr_matched else set(EXPLORATORY))
+    ran = [c for c in cells if c.get("profile") in not_run]
+    if ran:
+        raise ValueError(f"cells for arms the amendment declares not run: {ran[0]['profile']}")
     bad_mode = {str(c.get("mode")) for c in cells} - {"confirmatory"}
     if bad_mode:
         raise ValueError(f"non-confirmatory cells in the input: {sorted(bad_mode)}")
@@ -250,14 +265,22 @@ def decide(cells: Iterable[Cell]) -> dict[str, Any]:
     outside = sorted({s for (_, s) in idx} - set(SEEDS))
     if outside:
         raise ValueError(f"seeds outside 0..140: {outside[:5]}")
-    complete = [s for s in SEEDS if all((p, s) in idx for p in REGISTERED)]
+    needed = [p for p in REGISTERED if p not in not_run]
+    complete = [s for s in SEEDS if all((p, s) in idx for p in needed)]
     run_complete = len(complete) == N_PLANNED
-    hyps = {h: contrast(idx, x, y, k, ALPHA) for h, (x, y, k) in FAMILY.items()}
+    hyps = {h: ({"x": x, "y": y, "kind": k, "state": "INFEASIBLE", "n": 0,
+                 "note": "declared infeasible in the tuning amendment (no OPR corpus on any "
+                         "tuning seed); not tested"}
+                if OPR in (x, y) and infeasible else contrast(idx, x, y, k, ALPHA))
+            for h, (x, y, k) in FAMILY.items()}
     states = {h: r["state"] for h, r in hyps.items()}
-    secondary = {f"{d}-{c}": contrast(idx, d, c, "superiority", ALPHA_SECONDARY)
+    secondary = {f"{d}-{c}": (contrast(idx, d, c, "superiority", ALPHA_SECONDARY)
+                              if c not in not_run else {"state": "INFEASIBLE", "n": 0})
                  for d in DREAM for c in CONTROLS}
-    explo = {"p_equ-p_ctrl_lr_matched": contrast(idx, "p_equ", EXPLORATORY[0], "superiority",
-                                                 ALPHA_SECONDARY)}
+    explo = {"p_equ-p_ctrl_lr_matched": (
+        contrast(idx, "p_equ", EXPLORATORY[0], "superiority", ALPHA_SECONDARY) if lr_matched
+        else {"state": "NOT-COMPUTABLE", "n": 0,
+              "note": "LR-matching calibration undefined (median norm change <= 0)"})}
     diag: dict[str, Any] = {}
     for p in REGISTERED + EXPLORATORY:
         cs = [idx[(p, s)] for s in SEEDS if (p, s) in idx]
@@ -275,7 +298,8 @@ def decide(cells: Iterable[Cell]) -> dict[str, Any]:
         "hypotheses": hyps, "states": states,
         "joint_headline": joint_headline(states),
         "secondary": secondary, "exploratory_arms": explo,
-        "per_source": {h: per_source(idx, r) for h, r in hyps.items()},
+        "per_source": {h: per_source(idx, r) for h, r in hyps.items() if "kept_seeds" in r},
+        "arms_not_run": sorted(not_run),
         "opr_corpus_size": _size_distribution(idx),
         "diagnostics": diag,
     }
@@ -298,9 +322,16 @@ def load_cells(path: Path) -> list[dict[str, Any]]:
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description="E1 decision code (sections 2, 4, 6, 7)")
     ap.add_argument("cells", type=Path, help="confirmatory *.cells.jsonl")
+    ap.add_argument("--amendment", type=Path, required=True, help="frozen tuning amendment")
     ap.add_argument("--out", type=Path, required=True)
     args = ap.parse_args(argv)
-    res = decide(load_cells(args.cells))
+    cells = load_cells(args.cells)
+    import hashlib
+
+    sha = hashlib.sha256(args.amendment.read_bytes()).hexdigest()
+    if any(c.get("amendment_sha256") != sha for c in cells):
+        raise SystemExit("the cells were not run under this amendment")
+    res = decide(cells, json.loads(args.amendment.read_text(encoding="utf-8")))
     args.out.write_text(json.dumps(res, indent=1, sort_keys=True) + "\n", encoding="utf-8")
     tag = "" if res["confirmatory"] else " (EXPLORATORY: run incomplete)"
     for h, r in res["hypotheses"].items():

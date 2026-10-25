@@ -12,7 +12,9 @@ bank and the MMLU-CF cap; exact construction, hashes, quotas and
 rebalancing in §5.1b after an independent review; revision 7,
 2026-10-25: PI decisions — tokenizer and model revision pinned (§9,
 §10 item 1), rule 3 widened to a frozen exact list of
-"none of the above"-type options (§5.1a))
+"none of the above"-type options (§5.1a); revision 8, 2026-10-25:
+PI decisions — empty-OPR tuning rule and H14-C infeasibility,
+undefined LR matching, MMLU-CF source date (§5.1, §5.4))
 **Parent OSF:** 10.17605/OSF.IO/Q6JYN
 **Parent backlog item:** `EXPERIMENT-BACKLOG.md` E1 (powered TOST,
 35B run pending).
@@ -359,6 +361,13 @@ Required properties:
 4. **Provenance.** Each item records its source (citation, DOI or
    URL, or "authored"), author, licence and creation date. The
    build script and its inputs are versioned in this repository.
+   **PI decision 2026-10-25:** citation, author and licence are
+   recorded per source; each manifest item carries its source,
+   `source_id` and a `provenance_date`: the item's own date for the
+   dated sources (`provenance_date_kind` = `item`) and, for the
+   undated `mmlu_cf` items, the release date of the pinned MMLU-CF
+   revision `c25b89a` (2025-01-08), labelled `source_release`, i.e. a
+   source date, not an item creation date.
 5. **Headroom.** Before freezing, the base checkpoint is scored on
    the tuning partition only. If its accuracy there exceeds 0.80,
    the corpus is not used (too little room for a gain of δ) and is
@@ -751,7 +760,16 @@ for every configuration of a tuning seed. A tuning seed whose OPR
 corpus is empty is dropped, for all configurations alike, from the
 OPR selection, the SD_D proxy and `p̂_disc`, and is reported; if more
 than 2 of the 10 tuning seeds are dropped, OPR keeps the default
-configuration (LR 1e-4, m = 5) and the amendment says so. The two
+configuration (LR 1e-4, m = 5) and the amendment says so.
+**PI decision 2026-10-25:** `p̂_disc` and `n_eval` are computed on the
+tuning seeds whose OPR corpus is non-empty. If all 10 are empty,
+H14-C is declared **INFEASIBLE** in the amendment, before any
+confirmatory seed runs: the OPR arm is not run, H14-C and the
+secondary contrasts against OPR are reported as INFEASIBLE, and
+H14-A and H14-B proceed unchanged (the joint headline then cannot be
+J1). In that case `p̂_disc` is undefined and `n_eval` takes the §5.2
+floor of 130 (the implementation's reading of the decision; to be
+confirmed by the PI before filing). The two
 selections, the SD_D proxy, `p̂_disc` and the resulting `n_eval` (§5.2) are
 frozen in a dated amendment **before** the first confirmatory seed
 runs. `p_min`, `p_max` and the other
@@ -772,7 +790,10 @@ controls keep the defaults (LR 1e-4, m = 5); `p_equ` uses selection
   calibration cells). Contrast `Δacc(p_equ) − Δacc(p_ctrl_lr_matched)`
   is reported with the §2 bounds at nominal α = 0.05; it is never
   confirmatory, outside the family and §7, and never changes a
-  decided state.
+  decided state. **PI decision 2026-10-25:** if the calibration is
+  undefined (a median norm change ≤ 0, so the log ratio does not
+  exist), c is recorded as null, the LR-matched arm is not run and
+  the contrast is reported as "not computable"; nothing else changes.
 
 **Fixed run knobs:** `n_replay = 40`, `n_eval` per §5.2, seeds
 0-140, tuning seeds 1000-1009, smoke seeds 2000-2002 (pilot set,

@@ -142,8 +142,7 @@ def test_amendment_input_validation() -> None:
     bad[0]["seed"] = 999
     with pytest.raises(ValueError, match="outside"):
         pr.tuning_amendment(bad, confirmatory_size=500)
-    with pytest.raises(ValueError, match="PI decision"):
-        pr.tuning_amendment(_cells(empty_opr=tuple(range(1000, 1010))), confirmatory_size=500)
+
 
 
 def test_validate_amendment() -> None:
@@ -171,9 +170,38 @@ def test_tuning_rejects_bad_sizes_and_zero_norms() -> None:
             c["opr_corpus_size"] = -1
     with pytest.raises(ValueError, match="OPR corpus sizes"):
         pr.tuning_amendment(bad, confirmatory_size=500)
+
+
+
+def test_all_opr_empty_declares_h14c_infeasible() -> None:
+    """PI decision 2026-10-25 (2a)."""
+    a = pr.tuning_amendment(_cells(empty_opr=tuple(range(1000, 1010))), confirmatory_size=500)
+    assert a["h14c_infeasible"] and a["p_disc"] is None and a["n_eval"] == 130
+    assert a["selection_opr"] == [1e-4, 5] and a["sd_d_proxy"] is None
+    am = pr.validate_amendment(a, 500)
+    assert am.h14c_infeasible and not am.runs("p_ctrl_onpolicy_replay") and am.runs("p_min")
+    with pytest.raises(ValueError, match="infeasible"):
+        pr.profile_config("p_ctrl_onpolicy_replay", am)
+    with pytest.raises(ValueError):
+        pr.validate_amendment({**a, "p_disc": 0.1}, 500)
+    with pytest.raises(ValueError):
+        pr.validate_amendment({**a, "n_eval": 140}, 500)
+    # some seeds non-empty: p_disc on those seeds only, H14-C feasible
+    b = pr.tuning_amendment(_cells(empty_opr=tuple(range(1000, 1009))), confirmatory_size=500)
+    assert not b["h14c_infeasible"] and b["p_disc"] == pytest.approx(0.25)
+
+
+def test_undefined_calibration_is_not_computable() -> None:
+    """PI decision 2026-10-25 (2b)."""
     bad = _cells()
     for c in bad:
         if c["kind"] == "calib_ref":
             c["norm_change"] = 0.0
-    with pytest.raises(ValueError, match="PI decision"):
-        pr.tuning_amendment(bad, confirmatory_size=500)
+    a = pr.tuning_amendment(bad, confirmatory_size=500)
+    assert a["c"] is None and not a["lr_matched_computable"]
+    am = pr.validate_amendment(a, 500)
+    assert not am.runs("p_ctrl_lr_matched") and am.runs("p_ctrl_onpolicy_replay")
+    with pytest.raises(ValueError, match="not computable"):
+        pr.profile_config("p_ctrl_lr_matched", am)
+    assert pr.profile_config("p_equ", am).lr == a["selection_vanilla"][0]
+    assert pr.calibrate_c({c: [1.0] for c in pr.C_GRID}, [0.0]) is None

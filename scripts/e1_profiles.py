@@ -85,18 +85,31 @@ class Amendment:
 
     selection_vanilla: Config
     selection_opr: Config
-    c: float
+    c: float | None  # None: LR matching not computable (PI decision 2026-10-25)
     n_eval: int
+    h14c_infeasible: bool = False  # all tuning OPR corpora empty (PI decision 2026-10-25)
 
     def as_dict(self) -> dict[str, Any]:
         return {"selection_vanilla": list(self.selection_vanilla),
-                "selection_opr": list(self.selection_opr), "c": self.c, "n_eval": self.n_eval}
+                "selection_opr": list(self.selection_opr), "c": self.c, "n_eval": self.n_eval,
+                "h14c_infeasible": self.h14c_infeasible}
 
     @classmethod
     def from_dict(cls, d: Mapping[str, Any]) -> Amendment:
         sv, so = d["selection_vanilla"], d["selection_opr"]
+        c = d.get("c")
         return cls((float(sv[0]), int(sv[1])), (float(so[0]), int(so[1])),
-                   float(d["c"]), int(d["n_eval"]))
+                   None if c is None else float(c), int(d["n_eval"]),
+                   bool(d.get("h14c_infeasible", False)))
+
+    def runs(self, profile: str) -> bool:
+        """False for the arms the amendment declares not run (H14-C infeasible,
+        LR matching not computable)."""
+        if profile == "p_ctrl_onpolicy_replay":
+            return not self.h14c_infeasible
+        if profile == "p_ctrl_lr_matched":
+            return self.c is not None
+        return True
 
 
 def profile_config(profile: str, amendment: Amendment | None) -> ProfileConfig:
@@ -110,9 +123,13 @@ def profile_config(profile: str, amendment: Amendment | None) -> ProfileConfig:
         lr, m = amendment.selection_vanilla
     elif profile == "p_ctrl_onpolicy_replay":
         assert amendment is not None
+        if amendment.h14c_infeasible:
+            raise ValueError("H14-C was declared infeasible: the OPR arm is not run")
         lr, m = amendment.selection_opr
     elif profile == "p_ctrl_lr_matched":
         assert amendment is not None
+        if amendment.c is None:
+            raise ValueError("LR matching is not computable: the LR-matched arm is not run")
         lr, m = amendment.c * amendment.selection_vanilla[0], amendment.selection_vanilla[1]
     corpus = {"p_ctrl_sft": "neutral", "p_ctrl_shuffle": "shuffled", "p_noise": "none",
               "p_ctrl_template": "prompts", "p_ctrl_onpolicy_replay": "opr"}.get(profile, "facts")
@@ -184,17 +201,23 @@ def validate_amendment(d: Mapping[str, Any], confirmatory_size: int) -> Amendmen
         sel = d.get(key)
         if not (isinstance(sel, list) and len(sel) == 2 and _finite(sel[0]) and is_int(sel[1])):
             raise ValueError(f"{key} must be [lr, integer m]")
-    if not _finite(d.get("c")) or not is_int(d.get("n_eval")):
-        raise ValueError("c must be a number and n_eval an integer")
+    if not (d.get("c") is None or _finite(d.get("c"))) or not is_int(d.get("n_eval")):
+        raise ValueError("c must be a number or null and n_eval an integer")
+    infeasible = d.get("h14c_infeasible", False)
+    if not isinstance(infeasible, bool):
+        raise ValueError("h14c_infeasible must be a boolean")
     p_disc = d.get("p_disc")
-    if not _finite(p_disc) or not 0.0 <= float(p_disc) <= 1.0:
+    if infeasible:
+        if p_disc is not None:
+            raise ValueError("p_disc must be null when H14-C is infeasible")
+    elif not _finite(p_disc) or not 0.0 <= float(p_disc) <= 1.0:
         raise ValueError("p_disc must be a number in [0, 1]")
     am = Amendment.from_dict(d)
     if am.selection_vanilla not in GRID or am.selection_opr not in GRID:
         raise ValueError("selections must be grid configurations")
-    if am.c not in C_GRID:
-        raise ValueError(f"c must be one of {C_GRID}")
-    rule = n_eval_rule(float(p_disc), confirmatory_size)
+    if am.c is not None and am.c not in C_GRID:
+        raise ValueError(f"c must be one of {C_GRID} or null")
+    rule = n_eval_rule(0.0 if infeasible else float(p_disc), confirmatory_size)
     if am.n_eval != rule["n_eval"] or am.n_eval < N_EVAL_FLOOR and not rule["capped"]:
         raise ValueError(f"n_eval {am.n_eval} != section 5.2 rule {rule['n_eval']}")
     return am
@@ -208,15 +231,19 @@ def select_config(mean_delta: Mapping[Config, float]) -> Config:
     return min(cfg for cfg in GRID if mean_delta[cfg] >= top - TIE)  # lower LR, then m
 
 
-def calibrate_c(norms: Mapping[float, Sequence[float]], ref: Sequence[float]) -> float:
-    """c with the smallest |log(median norm(c) / median norm(p_equ))|; ties to smaller c."""
+def calibrate_c(norms: Mapping[float, Sequence[float]], ref: Sequence[float]) -> float | None:
+    """c with the smallest |log(median norm(c) / median norm(p_equ))|; ties to smaller c.
+
+    None when a median norm change is <= 0 (log ratio undefined): per the
+    PI decision of 2026-10-25 the exploratory LR-matched contrast is then
+    "not computable" and nothing else changes.
+    """
     if set(norms) != set(C_GRID):
         raise ValueError(f"calibration needs c in {C_GRID} (got {sorted(norms)})")
     r = statistics.median(ref)
     meds = {c: statistics.median(norms[c]) for c in C_GRID}
     if not r > 0 or not all(v > 0 for v in meds.values()):
-        raise ValueError("a median norm change is not positive: the log ratio is undefined "
-                         "(PI decision needed)")
+        return None
     best, best_v = None, math.inf
     for c in sorted(C_GRID):
         v = abs(math.log(meds[c] / r))
@@ -309,14 +336,19 @@ def tuning_amendment(cells: Sequence[Mapping[str, Any]], confirmatory_size: int)
     norms = {c: [float(calib[(s, c)]["norm_change"]) for s in seeds] for c in C_GRID}
     ref = [float(calib_ref[s]["norm_change"]) for s in seeds]
     c_sel = calibrate_c(norms, ref)
-    if not disc:
-        raise ValueError("no tuning seed has a non-empty OPR corpus: p_disc and n_eval are "
-                         "undefined (PI decision needed)")
-    p_disc = statistics.fmean(disc)
-    rule = n_eval_rule(p_disc, confirmatory_size)
+    # PI decision 2026-10-25: p_disc and n_eval come from the tuning seeds whose
+    # OPR corpus is non-empty; if all 10 are empty, H14-C is infeasible, declared
+    # before any confirmatory seed, and n_eval falls back to the section 5.2 floor.
+    infeasible = not disc
+    p_disc = None if infeasible else statistics.fmean(disc)
+    rule = n_eval_rule(0.0 if p_disc is None else p_disc, confirmatory_size)
     return {
         "selection_vanilla": list(sel_v), "selection_opr": list(sel_o),
         "opr_default_kept": opr_default, "opr_empty_tuning_seeds": empty,
+        "h14c_infeasible": infeasible,
+        "n_eval_basis": ("section 5.2 floor: p_disc undefined, all tuning OPR corpora empty"
+                         if infeasible else "section 5.2 rule on the non-empty OPR seeds"),
+        "lr_matched_computable": c_sel is not None,
         "c": c_sel, "sd_d_proxy": statistics.stdev(diffs) if len(diffs) > 1 else None,
         "sd_d_proxy_exceeds_sd_star": (statistics.stdev(diffs) > SD_STAR
                                        if len(diffs) > 1 else None),
