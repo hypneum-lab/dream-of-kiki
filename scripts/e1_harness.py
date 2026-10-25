@@ -41,11 +41,18 @@ if str(ROOT) not in sys.path:
 from scripts import e1_corpus_io as cio
 from scripts import e1_diagnostics as dg
 from scripts import e1_profiles as pr
+from scripts import e1_sources as src
 from scripts.e1_budget import budget_status, scoring_pass_tokens
 from scripts.e1_schedule import schedule, summary, token_budget
 
-MODEL_REPO = "Qwen/Qwen3.6-35B-A3B"
-MODEL_REVISION = "995ad96eacd98c81ed38be0c5b274b04031597b0"
+# The pinned model of the study selected by HL_STUDY (default ``e1``, the
+# 35B draft; ``e1-small``: docs/osf-prereg-e1-small-2026-10-25.md). The pin
+# table is ``scripts.e1_sources.STUDY_MODELS``, shared with the corpus freeze;
+# every model check of the harness and its backends reads these two names.
+STUDY = os.environ.get("HL_STUDY", "e1")
+if STUDY not in src.STUDY_MODELS:
+    raise SystemExit(f"HL_STUDY={STUDY!r} is not one of {sorted(src.STUDY_MODELS)}")
+MODEL_REPO, MODEL_REVISION = src.STUDY_MODELS[STUDY]
 SEEDS = {"smoke": tuple(range(2000, 2003)), "tuning": tuple(range(1000, 1010)),
          "calibrate": tuple(range(1000, 1010)), "confirmatory": tuple(range(141))}
 N_REPLAY = 40
@@ -350,7 +357,7 @@ def run(args: argparse.Namespace, make_backend: BackendFactory) -> int:  # noqa:
         seeds = tuple(s for s in seeds if s in want)
 
     common: dict[str, Any] = {"mode": args.mode, "model": args.model, "revision": args.revision,
-                              "corpus": prov}
+                              "corpus": prov, "study": STUDY}
     b = make_backend(args, benches, common)
     b.snapshot()
     common.update({"backend": b.name, "versions": b.versions()})
