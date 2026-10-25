@@ -1020,8 +1020,10 @@ Gold option longest (descriptive, rule 2): 199 / 543, 165 / 484,
 tuning `7aea63a8630eac6c9bf045d0644db898c7b779f35bfb98107114905b35afb0f7`;
 manifest (no item text) committed as
 `docs/milestones/e1-corpus-manifest-2026-10-25-pending.json`
-(SHA-256 `7c43284e…68b2bd3`). These hashes are pre-headroom; the
-filed hashes are those of the FROZEN corpus after step 9.
+(SHA-256 `95c69035…d056344`; rebuilt at `e4d85e8` to add the
+provenance dates of the PI decision of 2026-10-25, corpus file
+byte-identical). These hashes are pre-headroom; the filed hashes are
+those of the FROZEN corpus after step 9.
 
 **Audit trail.** Milestones:
 `docs/milestones/e1-35b-replay-controls-<date>.{json,md}`, including
