@@ -79,6 +79,11 @@ MMLU_CF_REVISION = "c25b89a968a2062e422dd96ddf0fe3387507f0dd"
 MMLU_CF_SHA256 = "28816045197decd701b1a0e51923b43684d708d8c06ec62d20541f90939ac49f"
 MMLU_CF_SIZE = 2_247_391
 
+# Step-3 tokenizer, pinned by the PI on 2026-10-25 (E1 draft section 10 item 1).
+MODEL_REPO = "Qwen/Qwen3.6-35B-A3B"
+MODEL_REVISION = "995ad96eacd98c81ed38be0c5b274b04031597b0"
+TOKENIZER_SHA256 = "5f9e4d4901a92b997e463c1f46055088b6cca5ca61a6522d1b9f64c4bb81cb42"
+
 _DATE_RE = re.compile(r"^(\d{4})[-/](\d{2})[-/](\d{2})$")
 
 
@@ -261,12 +266,16 @@ def byte_bound_counter(question: str, gold: str) -> int | None:
 
     A byte-level BPE emits at least one UTF-8 byte per token, so the
     token count of ``question`` and ``gold`` (separately, or joined by
-    one space) never exceeds ``bytes(NFC(question)) + 1 + bytes(NFC(gold))``.
-    Returns 0 ("certainly within") when that bound is <= 256, else
-    None (undecided without the pinned tokenizer).
+    one space) never exceeds their UTF-8 byte length plus one, taken as
+    the larger of the raw text and its NFC form (the tokenizer may
+    normalise). Returns 0 ("certainly within") when that bound is <= 256,
+    else None (undecided). A build counted this way is always
+    PROVISIONAL-TOKENIZER: step 3 needs the pinned tokenizer.
     """
-    nb = (len(unicodedata.normalize("NFC", question).encode("utf-8")) + 1
-          + len(unicodedata.normalize("NFC", gold).encode("utf-8")))
+    def nbytes(t: str) -> int:
+        return max(len(t.encode("utf-8")), len(unicodedata.normalize("NFC", t).encode("utf-8")))
+
+    nb = nbytes(question) + 1 + nbytes(gold)
     return 0 if nb <= MAX_TOKENS else None
 
 

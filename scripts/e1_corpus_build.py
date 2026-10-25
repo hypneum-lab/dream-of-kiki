@@ -82,6 +82,22 @@ FROZEN_CORPUS_FILE = "e1-corpus-frozen.jsonl"
 FROZEN_MANIFEST_FILE = "e1-corpus-frozen-manifest.json"
 
 
+# Section 5.1 property 4 / section 5.1a: source-level provenance; each item
+# entry adds its source, source_id and date (null for mmlu_cf).
+PROVENANCE = {
+    "realtimeqa": {"citation": "RealTime QA, github.com/realtimeqa/realtimeqa_public",
+                   "author": "RealTime QA authors; questions from CNN / The Week news quizzes "
+                             "(question_source per row)",
+                   "licence": "none declared; text not redistributed (rule 9)"},
+    "daily_oracle": {"citation": "Daily Oracle, huggingface.co/datasets/"
+                                 "agentic-learning-ai-lab/daily-oracle",
+                     "author": "agentic-learning-ai-lab (LLM-generated from news articles)",
+                     "licence": "CC BY 4.0"},
+    "mmlu_cf": {"citation": "MMLU-CF validation set, huggingface.co/datasets/microsoft/MMLU-CF",
+                "author": "Microsoft (MMLU-CF authors)", "licence": "CDLA-Permissive-2.0"},
+}
+
+
 def _sha(text: str) -> str:
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
@@ -196,7 +212,8 @@ def corpus_text(frozen: Iterable[Mapping[str, Any]]) -> str:
 
 def manifest(frozen: list[Item], report: dict[str, Any], pins: dict[str, Any],
              corpus: str, token_counter: str, reference_info: dict[str, Any],
-             headroom: dict[str, Any] | None = None) -> dict[str, Any]:
+             headroom: dict[str, Any] | None = None,
+             tokenizer_pinned: bool = False) -> dict[str, Any]:
     parts: dict[str, Any] = {}
     for label in ("confirmatory", "tuning"):
         mem = [f for f in frozen if f["partition"] == label]
@@ -204,9 +221,10 @@ def manifest(frozen: list[Item], report: dict[str, Any], pins: dict[str, Any],
         parts[label] = {"n_items": len(mem), "by_source": _counts(mem),
                         "sha256": _sha("\n".join(hs))}
     n_conf = parts["confirmatory"]["n_items"]
-    status = PROVISIONAL if report["undecided_tokens"] else PENDING
+    status = PROVISIONAL if report["undecided_tokens"] or not tokenizer_pinned else PENDING
     note = ("step 9 (headroom on TUNING only) not run; partitions are pre-headroom"
-            + ("; token rule undecided for flagged items" if status == PROVISIONAL else ""))
+            + ("; step 3 not counted with the pinned tokenizer" if status == PROVISIONAL
+               else ""))
     if headroom is not None:
         status = headroom["status_label"]
         note = f"step 9 applied: {headroom['status']} {headroom.get('reason', '')}".strip()
@@ -221,6 +239,7 @@ def manifest(frozen: list[Item], report: dict[str, Any], pins: dict[str, Any],
         "cutoff": CUTOFF,
         "token_counter": token_counter,
         "sources": pins,
+        "provenance": PROVENANCE,
         "reference_rows": reference_info,
         "row_mapping": {
             "realtimeqa": "question_sentence; choices; answer = one-element list of an "
@@ -256,8 +275,9 @@ def run(sources_dir: Path, count: src.TokenCounter, token_counter: str,
         tree_blobs: Callable[[Path, str], dict[str, str]] = src.git_tree_blobs,
         fixtures_dir: Path = ROOT / "tests" / "fixtures",
         mega: list[dict[str, Any]] | None = None,
-        headroom: Mapping[str, bool] | None = None,
-        headroom_sha256: str | None = None) -> tuple[str, str]:
+        headroom: Mapping[str, Any] | None = None,
+        headroom_sha256: str | None = None,
+        tokenizer_pinned: bool = False) -> tuple[str, str]:
     """Return (corpus text, manifest text).
 
     With ``headroom`` (the base checkpoint's correctness on every TUNING
@@ -281,8 +301,11 @@ def run(sources_dir: Path, count: src.TokenCounter, token_counter: str,
     if headroom is None:
         frozen = freeze_items(parts, report)
     else:
-        if report["undecided_tokens"]:
+        if report["undecided_tokens"] or not tokenizer_pinned:
             raise SystemExit("refusing to freeze a PROVISIONAL-TOKENIZER build")
+        bad = [k for k, v in headroom.items() if not isinstance(v, bool)]
+        if bad:
+            raise SystemExit(f"headroom scores must be JSON booleans ({len(bad)} are not)")
         tuning = {src_hash(x) for p in parts.values() for x in p["tuning"]}
         foreign = set(headroom) - tuning
         if foreign:  # confirmatory items are never scored before the first seed
@@ -295,7 +318,7 @@ def run(sources_dir: Path, count: src.TokenCounter, token_counter: str,
         hr["status_label"] = FROZEN if res["status"] == ACCEPT else REJECTED
         frozen = freeze_items(res["partitions"], report) if res["status"] == ACCEPT else []
     corpus = corpus_text(frozen)
-    man = manifest(frozen, report, pins, corpus, token_counter, ref_info, hr)
+    man = manifest(frozen, report, pins, corpus, token_counter, ref_info, hr, tokenizer_pinned)
     return corpus, json.dumps(man, indent=1, sort_keys=True, ensure_ascii=False) + "\n"
 
 
@@ -315,30 +338,32 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--sources", type=Path, required=True)
     ap.add_argument("--out", type=Path, required=True)
-    ap.add_argument("--tokenizer", type=Path, help="pinned tokenizer.json")
-    ap.add_argument("--tokenizer-revision", default="Qwen/Qwen3.6-35B-A3B@"
-                    "995ad96eacd98c81ed38be0c5b274b04031597b0")
+    ap.add_argument("--tokenizer", type=Path,
+                    help="tokenizer.json of the pinned model revision (SHA-256 checked)")
     ap.add_argument("--allow-undecided", action="store_true")
     ap.add_argument("--check", action="store_true", help="rebuild and compare, write nothing")
     ap.add_argument("--freeze", type=Path, metavar="HEADROOM_JSON",
                     help="apply step 9 from the TUNING-only headroom scores")
     args = ap.parse_args(argv)
+    pinned = False
     if args.tokenizer:
+        got = src.sha256_file(args.tokenizer)
+        if got != src.TOKENIZER_SHA256:
+            raise SystemExit(f"tokenizer.json SHA-256 {got} != pinned {src.TOKENIZER_SHA256}")
         import tokenizers
 
-        count = _tokenizer_counter(args.tokenizer)
-        name = (f"tokenizer.json sha256 {src.sha256_file(args.tokenizer)}; "
-                f"model {args.tokenizer_revision}; tokenizers {tokenizers.__version__}; "
-                "question and gold encoded separately, no special tokens, summed")
+        count, pinned = _tokenizer_counter(args.tokenizer), True
+        name = (f"tokenizer.json sha256 {got}; model {src.MODEL_REPO}@{src.MODEL_REVISION}; "
+                f"tokenizers {tokenizers.__version__}; question and gold encoded "
+                "separately, no special tokens, summed")
     else:
-        count, name = src.byte_bound_counter, "byte-bound (NFC UTF-8 bytes, q + 1 + gold)"
+        count, name = src.byte_bound_counter, "byte-bound (UTF-8 bytes, q + 1 + gold)"
     hr, hr_sha = None, None
     if args.freeze:
-        hr = {str(k): bool(v) for k, v in
-              json.loads(args.freeze.read_text(encoding="utf-8"))["correct"].items()}
+        hr = dict(json.loads(args.freeze.read_text(encoding="utf-8"))["correct"])
         hr_sha = src.sha256_file(args.freeze)
     corpus, man = run(args.sources, count, name, args.allow_undecided,
-                      headroom=hr, headroom_sha256=hr_sha)
+                      headroom=hr, headroom_sha256=hr_sha, tokenizer_pinned=pinned)
     cpath, mpath = ((args.out / FROZEN_CORPUS_FILE, args.out / FROZEN_MANIFEST_FILE) if args.freeze
                     else (args.out / CORPUS_FILE, args.out / MANIFEST_FILE))
     if args.check:

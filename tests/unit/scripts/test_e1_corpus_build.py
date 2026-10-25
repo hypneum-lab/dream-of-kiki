@@ -181,7 +181,8 @@ def test_exclusion_token_counter_over_limit() -> None:
 
 def test_build_end_to_end(sources: Path, tmp_path: Path) -> None:
     corpus, man_text = build.run(sources, src.byte_bound_counter, "byte-bound", False,
-                                 tree_blobs=_blobs, fixtures_dir=FIX, mega=MEGA)
+                                 tree_blobs=_blobs, fixtures_dir=FIX, mega=MEGA,
+                                 tokenizer_pinned=True)
     man = json.loads(man_text)
     rep = man["report"]
     # malformed pre-cutoff row (choices = []) is a reference, and its
@@ -213,7 +214,12 @@ def test_build_end_to_end(sources: Path, tmp_path: Path) -> None:
     assert "national park" not in man_text
     # deterministic
     assert build.run(sources, src.byte_bound_counter, "byte-bound", False,
-                     tree_blobs=_blobs, fixtures_dir=FIX, mega=MEGA) == (corpus, man_text)
+                     tree_blobs=_blobs, fixtures_dir=FIX, mega=MEGA,
+                     tokenizer_pinned=True) == (corpus, man_text)
+    # without the pinned tokenizer the build is always provisional
+    _, prov = build.run(sources, src.byte_bound_counter, "byte-bound", False,
+                        tree_blobs=_blobs, fixtures_dir=FIX, mega=MEGA)
+    assert json.loads(prov)["status"] == build.PROVISIONAL
 
 
 def test_reference_rows_remove_component(sources: Path) -> None:
@@ -259,6 +265,11 @@ def test_cli_write_refuses_overwrite_and_check(sources: Path, tmp_path: Path,
         build.main(["--sources", str(sources), "--out", str(out)])
     (out / build.CORPUS_FILE).write_text("tampered\n", encoding="utf-8")
     assert build.main(["--sources", str(sources), "--out", str(out), "--check"]) == 1
+    fake = tmp_path / "tokenizer.json"
+    fake.write_text("{}", encoding="utf-8")
+    with pytest.raises(SystemExit, match="pinned"):
+        build.main(["--sources", str(sources), "--out", str(tmp_path / "o2"),
+                    "--tokenizer", str(fake)])
 
 
 def test_freeze_rejects_below_minima_and_foreign_items(sources: Path) -> None:
@@ -268,7 +279,8 @@ def test_freeze_rejects_below_minima_and_foreign_items(sources: Path) -> None:
     tuning = {i["src_hash"]: False for i in man["items"] if i["partition"] == "tuning"}
     corpus, frozen_text = build.run(sources, src.byte_bound_counter, "b", False,
                                     tree_blobs=_blobs, fixtures_dir=FIX, mega=MEGA,
-                                    headroom=tuning, headroom_sha256="x")
+                                    headroom=tuning, headroom_sha256="x",
+                                    tokenizer_pinned=True)
     frozen = json.loads(frozen_text)
     assert frozen["status"] == build.REJECTED and frozen["items"] == [] and corpus == ""
     assert frozen["headroom"]["reason"].startswith("minima")
@@ -276,10 +288,20 @@ def test_freeze_rejects_below_minima_and_foreign_items(sources: Path) -> None:
         if any(i["partition"] == "confirmatory" for i in man["items"]) else "f" * 64
     with pytest.raises(SystemExit, match="non-TUNING"):
         build.run(sources, src.byte_bound_counter, "b", False, tree_blobs=_blobs,
-                  fixtures_dir=FIX, mega=MEGA, headroom={**tuning, conf: True})
+                  fixtures_dir=FIX, mega=MEGA, headroom={**tuning, conf: True},
+                  tokenizer_pinned=True)
     with pytest.raises(ValueError, match="not scored"):
         build.run(sources, src.byte_bound_counter, "b", False, tree_blobs=_blobs,
-                  fixtures_dir=FIX, mega=MEGA, headroom={})
+                  fixtures_dir=FIX, mega=MEGA, headroom={}, tokenizer_pinned=True)
+    for bad in (None, 0, "false"):
+        k = next(iter(tuning))
+        with pytest.raises(SystemExit, match="booleans"):
+            build.run(sources, src.byte_bound_counter, "b", False, tree_blobs=_blobs,
+                      fixtures_dir=FIX, mega=MEGA, headroom={**tuning, k: bad},
+                      tokenizer_pinned=True)
+    with pytest.raises(SystemExit, match="PROVISIONAL"):
+        build.run(sources, src.byte_bound_counter, "b", False, tree_blobs=_blobs,
+                  fixtures_dir=FIX, mega=MEGA, headroom=tuning)
 
 
 def test_freeze_refuses_provisional(sources: Path) -> None:

@@ -33,7 +33,7 @@ def _write(tmp: Path, status_label: str | None) -> tuple[Path, Path]:
     corpus = build.corpus_text(frozen)
     hr = None if status_label is None else {"status_label": status_label, "status": "ACCEPT",
                                             "reason": ""}
-    man = build.manifest(frozen, report, {}, corpus, "test", {}, hr)
+    man = build.manifest(frozen, report, {}, corpus, "test", {}, hr, tokenizer_pinned=True)
     c, m = tmp / "c.jsonl", tmp / "m.json"
     c.write_text(corpus, encoding="utf-8")
     m.write_text(json.dumps(man), encoding="utf-8")
