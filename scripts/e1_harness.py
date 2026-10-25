@@ -56,18 +56,29 @@ MODEL_REPO, MODEL_REVISION = src.STUDY_MODELS[STUDY]
 # Registered (backend, device) of a study, enforced on every cell, the
 # amendment and the backend itself; None leaves it to the study's draft.
 STUDY_BACKEND: dict[str, tuple[str, str] | None] = {"e1": None, "e1-small": ("torch", "cuda")}
+# Further registered instrument fields, compared with the backend's versions()
+# (E1-small draft, PI decisions S6 and S8 of 2026-10-25): token ids from the
+# raw pinned tokenizer.json, linear attention through fla + causal-conv1d.
+STUDY_VERSIONS: dict[str, dict[str, str]] = {
+    "e1": {}, "e1-small": {"tokenizer": "raw", "linear_attn": "fla+causal_conv1d"}}
+# How the harness tokenizes: "raw" = tokenizers.Tokenizer of the pinned
+# tokenizer.json, no special tokens (the corpus-build counter, section 5.1b
+# step 3); "transformers" = AutoTokenizer of the pinned revision.
+TOKENIZER = STUDY_VERSIONS[STUDY].get("tokenizer", "transformers")
 
 
 def _study_backend_ok(backend: Any, versions: Any, study: Any) -> bool:
-    """Backend, device, actual parameter placement (one device of that type)
-    and study label match the study's registered instrument."""
+    """Backend, device, actual parameter placement (one device of that type),
+    tokenizer, linear-attention implementation and study label match the
+    study's registered instrument."""
     req = STUDY_BACKEND[STUDY]
     if req is None:
         return True
     v = versions or {}
     where = v.get("placement") or []
     one_device = len(where) == 1 and str(where[0]).split(":")[0] == req[1]
-    return (backend, v.get("device")) == req and one_device and study == STUDY
+    extra = all(v.get(k) == want for k, want in STUDY_VERSIONS[STUDY].items())
+    return (backend, v.get("device")) == req and one_device and extra and study == STUDY
 
 
 def check_manifest_study(man: dict[str, Any]) -> None:
@@ -79,6 +90,8 @@ def check_manifest_study(man: dict[str, Any]) -> None:
     if (hr.get("model"), hr.get("revision")) != (MODEL_REPO, MODEL_REVISION):
         raise SystemExit(f"the FROZEN corpus was not frozen with the {STUDY} headroom "
                          f"of {MODEL_REPO}@{MODEL_REVISION}")
+
+
 SEEDS = {"smoke": tuple(range(2000, 2003)), "tuning": tuple(range(1000, 1010)),
          "calibrate": tuple(range(1000, 1010)), "confirmatory": tuple(range(141))}
 N_REPLAY = 40

@@ -77,6 +77,75 @@ def _device() -> str:
     return "cuda" if torch.cuda.is_available() else "cpu"
 
 
+class RawTokenizer:
+    """The pinned ``tokenizer.json`` through the ``tokenizers`` package, no
+    special tokens: the counter that built the corpus (E1 section 5.1b step 3;
+    E1-small PI decision S8). Called like the transformers tokenizer."""
+
+    kind = "raw"
+
+    def __init__(self, path: str | Path) -> None:
+        from tokenizers import Tokenizer
+
+        got = hn.sha_file(Path(path))
+        if got != hn.src.TOKENIZER_SHA256:
+            raise SystemExit(f"tokenizer.json SHA-256 {got} != pinned {hn.src.TOKENIZER_SHA256}")
+        self.tok = Tokenizer.from_file(str(path))
+
+    def __call__(self, text: str, return_tensors: str = "pt") -> Any:
+        from types import SimpleNamespace
+
+        ids = self.tok.encode(text, add_special_tokens=False).ids
+        return SimpleNamespace(input_ids=torch.tensor([ids], dtype=torch.long))
+
+
+# transformers module globals that select the linear-attention kernels
+# (fla + causal-conv1d when installed, else the torch fallback).
+_LINEAR_ATTN_GLOBALS = ("causal_conv1d_fn", "causal_conv1d_update", "chunk_gated_delta_rule",
+                        "fused_recurrent_gated_delta_rule", "FusedRMSNormGated")
+
+
+def force_torch_linear_attention() -> None:
+    """Make models instantiated afterwards use the transformers torch fallback
+    for Gated DeltaNet even when fla / causal-conv1d are installed
+    (``HL_LINEAR_ATTN=torch``; E1-small S6 keeps the fallback selectable)."""
+    import importlib
+
+    for name in ("qwen3_5", "qwen3_5_moe", "qwen3_next"):
+        try:
+            mod = importlib.import_module(f"transformers.models.{name}.modeling_{name}")
+        except ImportError:
+            continue
+        for attr in _LINEAR_ATTN_GLOBALS:
+            if hasattr(mod, attr):
+                setattr(mod, attr, None)
+        if hasattr(mod, "is_fast_path_available"):
+            mod.is_fast_path_available = False
+
+
+def _dist_version(dist: str) -> str | None:
+    from importlib.metadata import PackageNotFoundError, version
+
+    try:
+        return version(dist)
+    except PackageNotFoundError:
+        return None
+
+
+def linear_attn_impl(model: Any) -> str:
+    """'fla+causal_conv1d', 'torch', 'mixed' or 'none' (no linear-attention layer)."""
+    kinds = set()
+    for m in model.modules():
+        f = getattr(m, "chunk_gated_delta_rule", None)
+        if f is None:
+            continue
+        fla = str(getattr(f, "__module__", "")).startswith("fla")
+        conv = getattr(m, "causal_conv1d_fn", None) is not None
+        kinds.add("fla+causal_conv1d" if fla and conv else "torch" if not (fla or conv)
+                  else "mixed")
+    return "none" if not kinds else kinds.pop() if len(kinds) == 1 else "mixed"
+
+
 def _load_model(model_id: str, revision: str | None) -> tuple[Any, Any]:
     if model_id == MODEL_REPO and revision != MODEL_REVISION:
         raise SystemExit(f"{MODEL_REPO} must be loaded at the pinned revision {MODEL_REVISION}")
@@ -85,7 +154,17 @@ def _load_model(model_id: str, revision: str | None) -> tuple[Any, Any]:
     dev = _device()
     dtype = torch.bfloat16 if dev == "cuda" else torch.float32
     trc = os.environ.get("HL_TRUST_REMOTE_CODE", "0") == "1"
-    tok = AutoTokenizer.from_pretrained(model_id, revision=revision, trust_remote_code=trc)
+    if hn.TOKENIZER == "raw":
+        from huggingface_hub import hf_hub_download
+
+        tok: Any = RawTokenizer(hf_hub_download(model_id, "tokenizer.json", revision=revision))
+    else:
+        tok = AutoTokenizer.from_pretrained(model_id, revision=revision, trust_remote_code=trc)
+    impl = os.environ.get("HL_LINEAR_ATTN", "default")
+    if impl not in ("default", "torch"):
+        raise SystemExit("HL_LINEAR_ATTN must be 'default' or 'torch'")
+    if impl == "torch":
+        force_torch_linear_attention()
     default_map = "auto" if (dev == "cuda" and torch.cuda.device_count() > 1) else ""
     use_map = os.environ.get("HL_DEVICE_MAP", default_map)
     kw: dict[str, Any] = {"dtype": dtype, "trust_remote_code": trc, "revision": revision}
@@ -190,11 +269,15 @@ class TorchBackend:
         self.base = base if base is not None else {}
 
     def versions(self) -> dict[str, Any]:
+        import tokenizers
         import transformers
 
         return {"torch": torch.__version__, "transformers": transformers.__version__,
-                "device": _device(),
-                "placement": sorted({str(p.device) for p in self.model.parameters()})}
+                "tokenizers": tokenizers.__version__, "device": _device(),
+                "placement": sorted({str(p.device) for p in self.model.parameters()}),
+                "tokenizer": getattr(self.tok, "kind", "transformers"),
+                "linear_attn": linear_attn_impl(self.model),
+                "kernels": {d: _dist_version(d) for d in ("fla-core", "causal-conv1d")}}
 
     def snapshot(self) -> None:
         self.base = _snapshot_cpu(self.model)

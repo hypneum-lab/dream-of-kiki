@@ -35,41 +35,56 @@ def small(monkeypatch: pytest.MonkeyPatch) -> Any:
     return _reload(monkeypatch, "e1-small")
 
 
+REG = {"tokenizer": "raw", "linear_attn": "fla+causal_conv1d"}
+
+
 def _cell(model: str, revision: str, backend: str = "torch", device: str = "cuda",
-          placement: tuple[str, ...] = ("cuda:0",)) -> dict[str, Any]:
+          placement: tuple[str, ...] = ("cuda:0",), **over: str) -> dict[str, Any]:
     return {"mode": "tuning", "model": model, "revision": revision, "run_identity": "r",
             "corpus": {"corpus_sha256": "c" * 64, "partition": "tuning"},
-            "backend": backend, "versions": {"device": device, "placement": list(placement)},
-            "study": "e1-small"}
+            "backend": backend, "study": "e1-small",
+            "versions": {"device": device, "placement": list(placement), **REG, **over}}
 
 
 class _FakeBackend:
-    def __init__(self, name: str, device: str, placement: tuple[str, ...]) -> None:
-        self.name, self.device, self.placement = name, device, placement
+    def __init__(self, name: str, device: str, placement: tuple[str, ...],
+                 **over: str) -> None:
+        self.name, self.device, self.placement, self.over = name, device, placement, over
 
     def snapshot(self) -> None:
         pass
 
     def versions(self) -> dict[str, Any]:
-        return {"device": self.device, "placement": list(self.placement)}
+        return {"device": self.device, "placement": list(self.placement), **REG, **self.over}
 
 
-BAD_INSTRUMENTS = (("torch", "cpu", ("cpu",)), ("mlx", "Device(gpu, 0)", ()),
-                   ("torch", "cuda", ("cpu",)), ("torch", "cuda", ("cpu", "cuda:0")),
-                   ("torch", "cuda", ("cuda:0", "cuda:1")))
+Instrument = tuple[str, str, tuple[str, ...], dict[str, str]]
+BAD_INSTRUMENTS: tuple[Instrument, ...] = (
+                   ("torch", "cpu", ("cpu",), {}), ("mlx", "Device(gpu, 0)", (), {}),
+                   ("torch", "cuda", ("cpu",), {}), ("torch", "cuda", ("cpu", "cuda:0"), {}),
+                   ("torch", "cuda", ("cuda:0", "cuda:1"), {}),
+                   ("torch", "cuda", ("cuda:0",), {"tokenizer": "transformers"}),
+                   ("torch", "cuda", ("cuda:0",), {"linear_attn": "torch"}),
+                   ("torch", "cuda", ("cuda:0",), {"linear_attn": "mixed"}))
 
 
-@pytest.mark.parametrize(("backend", "device", "placement"), BAD_INSTRUMENTS)
-def test_small_study_enforces_one_cuda_torch_device(small: Any, tmp_path: Path, backend: str,
-                                                    device: str,
-                                                    placement: tuple[str, ...]) -> None:
+@pytest.mark.parametrize(("backend", "device", "placement", "over"), BAD_INSTRUMENTS)
+def test_small_study_enforces_the_registered_instrument(
+        small: Any, tmp_path: Path, backend: str, device: str, placement: tuple[str, ...],
+        over: dict[str, str]) -> None:
     with pytest.raises(SystemExit, match="does not come"):
-        small.check_provenance([_cell(*SMALL, backend, device, placement)], "tuning", "c" * 64)
+        small.check_provenance([_cell(*SMALL, backend, device, placement, **over)], "tuning",
+                               "c" * 64)
     with pytest.raises(SystemExit, match="runs only on"):
         small.run(argparse.Namespace(
             mode="smoke", model=SMALL[0], revision=SMALL[1], out=tmp_path,
             pilot_partition="confirmatory", seeds=None),
-            lambda *a: _FakeBackend(backend, device, placement))
+            lambda *a: _FakeBackend(backend, device, placement, **over))
+
+
+def test_small_study_tokenizes_raw(small: Any, monkeypatch: pytest.MonkeyPatch) -> None:
+    assert small.TOKENIZER == "raw"
+    assert _reload(monkeypatch, None).TOKENIZER == "transformers"
 
 
 def test_small_study_cells_must_carry_their_study(small: Any) -> None:
