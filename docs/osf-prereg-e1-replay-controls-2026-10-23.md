@@ -955,6 +955,53 @@ into the filed version.
    All code is torch-free and tested, except the harness wiring,
    whose tests run on a tiny CPU model where torch is installed.
 
+**Corpus build, steps 1-8 (2026-10-25, PI go).** Code at `d82a512`
+(build path unchanged since), host macM1 (M1, 32 GB, macOS 27,
+CPU, `nice 19`), Python 3.14.4, tokenizers 0.23.3, pinned tokenizer
+of §10 item 1; sources fetched on macM1 with
+`scripts/e1_fetch_sources.sh` and verified against their pins
+(Daily Oracle and MMLU-CF SHA-256 equal to §5.1a; RealTime QA's
+41 `past/2026/*_qa.jsonl` files equal to the blobs of commit
+`e288dcf`; every raw SHA-256 in the manifest). Wall time 159 s, peak
+RSS 0.6 GB. `--check` rebuilt it bit-identically. Status
+**PENDING-HEADROOM**: step 9 needs the base checkpoint on the CUDA
+node (`--mode headroom`, TUNING only), then `--freeze`. No item was
+scored.
+
+| step (items) | `realtimeqa` | `daily_oracle` | `mmlu_cf` |
+|---|---|---|---|
+| 1 load | 700 | 18 557 | 10 000 |
+| 3 exclude | 700 | 18 556 (1 empty field) | 4 653 (5 346 rule 3, 1 > 256 tokens) |
+| 4 date | 545 | 492 | 4 653 |
+| 4 contamination | 545 | 491 | 4 653 |
+| 5 dedupe / skeleton cap | 543 | 484 | 4 544 |
+| 6 cap (k = 543) | 543 | 484 | 543 |
+| 7 tuning / confirmatory | 163 / 380 | 146 / 338 | 163 / 380 |
+
+Pooled: **confirmatory 1 098** (≥ 300), **tuning 472** (≥ 120);
+pre-headroom weights w = 0.346 / 0.308 / 0.346 (`realtimeqa` /
+`daily_oracle` / `mmlu_cf`). No item fell in a component with a
+reference row; the skeleton cap removed none. Rule 3 removals per
+variant (items carrying it): `None of the other choices` 4 634,
+`None of the mentioned` 178, `None of these` 141, `None of the above`
+137, `none of the mentioned` 87, `none of these` 51,
+`none of the above` 42, `None of the above.` 15,
+`None of the Mentioned` 14, `none of the above.` 10, `none of these.`
+7, `None of these.` 5, `None of the above is correct.` 4,
+`None of These` 3, `None of above` 3, `none of the choices.` 3,
+`None is applicable` 2, `None of these alternatives is correct.` 2,
+and 1 each for the other nine strings (an item can carry two).
+Gold option longest (descriptive, rule 2): 199 / 543, 165 / 484,
+212 / 543. Corpus file SHA-256
+`f8379b810353d25e3c85e4e94b9a8d02553ea8c18abdef631a0289339497c0a2`
+(not committed, rule 9); confirmatory partition
+`546f44c6d2fc23f7a355a9182dd3e635b47cd52082d0b1ac347abbcf4914cb3f`,
+tuning `7aea63a8630eac6c9bf045d0644db898c7b779f35bfb98107114905b35afb0f7`;
+manifest (no item text) committed as
+`docs/milestones/e1-corpus-manifest-2026-10-25-pending.json`
+(SHA-256 `7c43284e…68b2bd3`). These hashes are pre-headroom; the
+filed hashes are those of the FROZEN corpus after step 9.
+
 **Audit trail.** Milestones:
 `docs/milestones/e1-35b-replay-controls-<date>.{json,md}`, including
 the frozen tuning amendment, the SD_D proxy and the HF revision hash.
