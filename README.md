@@ -7,7 +7,7 @@ Research program producing two complementary papers, both released as arXiv prep
 - **Paper 1** — formal framework **C** with axioms **DR-0..DR-4** and invariants families **I / S / K**. Journal submission (PLOS Computational Biology candidate) deferred until preprint signal.
 - **Paper 2** — empirical ablation on the `kiki_oniric` substrate across profiles `P_min`, `P_equ`, `P_max`. Peer-review venue deferred — arXiv preprint first, then decide.
 
-**Status** — DualVer `C-v0.25.0+PARTIAL` (2026-05-21, Wave 3b M7 ; package version `0.25.0` in `pyproject.toml` and `CITATION.cff`). The version has a single source of truth — the latest released heading of `CHANGELOG.md`, mirrored in `STATUS.md` → *Version* — see [Versioning](#versioning-single-source-of-truth) below. Test count and coverage are the values measured by the CI workflow (`.github/workflows/ci.yml`) on `main`, not a hand-written figure ; dated snapshots live in `STATUS.md` → *Test suite*. Paper 1 **v0.2** frozen (22 p, tag `paper-1-v0.2-arxiv`) ; release path : arXiv preprint + Zenodo DOI, **neither deposited as of 2026-10-25** (`docs/milestones/arxiv-submit-log.md`). Journal submission (PLOS Computational Biology candidate) deferred — we want a preprint in the world first and a signal from it before committing to a months-long peer review. Gates **G1, G7, G8, G9 LOCKED** (cycle 2 closed) ; **G10 deferred to Paper 2**. OSF pre-registration **live** at DOI `10.17605/OSF.IO/Q6JYN` (https://osf.io/q6jyn, DataCite-minted 2026-04-19T00:28:05Z) ; Bonferroni amendment filed 2026-04-21 as `10.17605/OSF.IO/TPM5S` (`docs/osf-amendment-bonferroni-cycle3.md`).
+**Status** — DualVer `C-v0.25.0+PARTIAL` (2026-05-21, Wave 3b M7 ; package version `0.25.0` in `pyproject.toml` and `CITATION.cff`). The version has a single source of truth — the latest released heading of `CHANGELOG.md`, mirrored in `STATUS.md` → *Version* — see [Versioning](#versioning-single-source-of-truth) below. Test count and coverage are the values measured by the CI workflow (`.github/workflows/ci.yml`) on `main`, not a hand-written figure — last Linux CI run (`uv run pytest --cov-fail-under=30`, 2026-10-25, commit `e22d2a7`) : 536 passed, 22 skipped, coverage 47 % ; the MLX-coupled tests only run on Apple Silicon (Linux gate 30 %, macOS nightly gate 90 %) ; dated snapshots live in `STATUS.md` → *Test suite*. Paper 1 **v0.2** frozen (22 p, tag `paper-1-v0.2-arxiv`) ; release path : arXiv preprint + Zenodo DOI, **neither deposited as of 2026-10-25** (`docs/milestones/arxiv-submit-log.md`). Journal submission (PLOS Computational Biology candidate) deferred — we want a preprint in the world first and a signal from it before committing to a months-long peer review. Gates **G1, G7, G8, G9 LOCKED** (cycle 2 closed) ; **G10 deferred to Paper 2**. OSF pre-registration **live** at DOI `10.17605/OSF.IO/Q6JYN` (https://osf.io/q6jyn, DataCite-minted 2026-04-19T00:28:05Z) ; Bonferroni amendment filed 2026-04-21 as `10.17605/OSF.IO/TPM5S` (`docs/osf-amendment-bonferroni-cycle3.md`).
 **Author** — Clément Saillant (L'Electron Rare), *dreamOfkiki* program author. Hypneum Lab.
 **License** — MIT (code) + CC-BY-4.0 (docs).
 
@@ -146,7 +146,7 @@ sub-powered, and explicitly a 1.5B pilot, NOT the 35B claim.**
 | H1 vs baseline | rejected 3/3 (`p_min` p≈2.4e-20, `p_equ` p≈1.1e-19, `p_max` p≈1.5e-19, n=20) at α=0.0125 ; gain carried by `mega_v2` |
 | E1 powered TOST harness | **delivered** — Hedges' g, SESOI g=0.29, α=0.0167 (Bonferroni), power analysis |
 | Power deficit (honest) | **≈ 141 pairs** needed for 80 % power ; only 20 seeds available (`adequately_powered=False`) — **not** a nominal-power proof |
-| 35B bf16 pin | **turnkey** — `qwen3p6-35b-bf16-local` resolves `repo_id` via `KIKI_35B_BF16_PATH` ; real 35B run **out of reach of the dev M1 Max (32 GB)**, ready on the Mac Studio |
+| 35B bf16 pin | **turnkey** — `qwen3p6-35b-bf16-local` resolves `repo_id` via `KIKI_35B_BF16_PATH` ; real 35B run **out of reach of the dev M1 Max (32 GB)**, ready on the Mac Studio — host powered down since 2026-10, run on hold |
 | hellaswag fixture | **real** 200-item `rowanz/val` replaces a degenerate 8-item fallback (was saturating ≈1.0) ; now ≈0.38–0.42, gain isolated to `mega_v2` |
 | mmlu loader | **audited, no silent fallback** — raises `ValueError` on missing fixture ; 0.91 is on a real "sanity" subset |
 
@@ -221,20 +221,41 @@ uv sync --all-extras
 
 Python 3.12+, macOS arm64 (MLX) or Linux x86_64 (CPU fallback).
 
+## Reproduce in one command
+
+**Install** — `git clone https://github.com/hypneum-lab/dream-of-kiki.git && cd dream-of-kiki && uv sync --all-extras`
+(Python ≥ 3.12 via uv ; Linux x86_64 CPU-only is enough for the conformance layer).
+
+**Run** — `uv run pytest tests/conformance/ --no-cov`
+(`--no-cov` is required : the `pyproject.toml` coverage gate otherwise fails any sub-suite on exit code.)
+
+**Expected output** — `45 passed, 2 skipped` on Linux (the 2 skips `importorskip` MLX ; the MLX-coupled
+DR-3 / DR-4 / diffusion conformance files are dropped by `conftest.py` off Apple Silicon).
+The CI suite `uv run pytest --cov-fail-under=30` gives `536 passed, 22 skipped`, coverage 47 %.
+
+**Duration & host** — ~6 s (65 s for the CI suite) on Ubuntu 24.04, 8 vCPU, no GPU, Python 3.14 (measured 2026-10-25, commit `e22d2a7`).
+
+**Full reproduction** (R1 bit-exact hashes, pilots, figures) needs Apple Silicon + MLX — see
+`tests/reproducibility/REBASELINE_NOTE.md`, `docs/milestones/conformance-matrix.md` (C1–C3 matrix)
+and `docs/milestones/q2-conformance-negative-2026-05-10.md`.
+
 ## Reproduce the paper
 
-The draft release includes full experimental data. To re-run:
+The draft release includes full experimental data. To re-run :
 
 ```bash
-# Run the gate-specific pilot
-uv run python scripts/pilot_g4.py --profile P_equ --seed 42
+# Gate / ablation drivers — argument-free, seeds 42 / 123 / 7 are fixed in the script
+uv run python scripts/ablation_g4.py          # G4 ablation (baseline vs P_min vs P_equ)
+uv run python scripts/pilot_g2.py             # G2 pilot (MLX required)
+uv run python scripts/conformance_matrix.py   # C1–C3 conformance matrix
 
-# Run the conformance test suite (axioms + invariants)
-uv run pytest tests/conformance/ -v
-
-# Regenerate paper figures (reads from run registry)
-uv run python scripts/render_figures.py --gate G4
+# Run the conformance test suite (axioms + invariants) — `--no-cov` bypasses the coverage gate
+uv run pytest tests/conformance/ -v --no-cov
 ```
+
+Other drivers : `scripts/pilot_cycle3_*.py`, `scripts/ablation_cycle3*.py`,
+`scripts/run_q2_conformance_audit.py`. A figure-rendering script
+(`scripts/render_figures.py`) is not yet in the repository.
 
 Outputs land in `harness/registry/runs/` (gitignored). Figures go to `papers/figures/`.
 
