@@ -26,6 +26,7 @@ def _cells(shift: dict[str, float] | None = None, sd: float = 0.02,
                         "post": 0.5 + d, "collapse": False, "opr_corpus_size": 10,
                         "budget": {"status": "matched"}, "corpus": {"sha": "x"},
                         "model": "m", "revision": "r", "amendment_sha256": "a",
+                        "backend": "mlx",
                         "run_identity": "i"})
     return out
 
