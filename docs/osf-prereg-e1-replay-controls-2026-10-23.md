@@ -1042,24 +1042,43 @@ parity: pending (report to be added).
 verified against the pins, T_s = 18 335 = achieved loss tokens, 400
 updates, 80 eval items, pre 0.563 → post 0.653, no collapse, no
 invariant violation; **wall 1 483 s; peak MLX memory 219.8 GB**
-(active 138.6 GB at the end, host RSS 70.7 GB), inside the 456 GB GPU
-wired limit with the ≈ 120 GB VM resident. Component timings (same
-model, pilot items): one scoring forward ≈ 0.114 s (≈ 27 tokens), one
-replay update ≈ 3.3 s at 27 tokens and ≈ 3.5 s at 47 tokens (≈ 3.0 s
-fixed per full-parameter step + ≈ 0.011 s per token), drift 3.8 s,
-restore 3 ms.
+(active 138.6 GB at the end; the host RSS high-water mark of 70.7 GB
+is a different view of the same memory, not an addition). Limits: the
+GPU wired limit read with `sysctl iogpu.wired_limit_mb` is 466 944 MB
+(456 GiB); MLX reports a recommended working set of 489.6 GB; a
+virtual machine of ≈ 120 GB RSS (another user's) was resident (read
+with `ps`, not part of the record). The peak is well inside the
+≈ 390 GB left for E1. Component timings (`scripts/e1_mlx_timing.py`,
+same model, 20 pilot items): one scoring forward 0.114 s (≈ 27
+tokens); one replay update 3.28 s at 27.2 tokens (20 updates, 544
+input tokens); drift 3.8 s; restore 3 ms. The update-cost model is
+fitted from two points: the timing run (3.28 s at 27.2 tokens) and
+the smoke cell's replay time obtained by subtraction (1 483 s wall −
+640 scoring forwards × 0.114 s − drift ≈ 1 406 s for 400 updates of
+≈ 46.8 input tokens, i.e. ≈ 3.5 s), giving ≈ 3.0 s fixed per
+full-parameter step + ≈ 0.011 s per token. A direct measurement on
+long records replaces this two-point fit in the full smoke.
 *Projection* (confirmatory corpus: fact records ≈ 40.2 tokens, prompts
 ≈ 35.0, choice passes ≈ 40.5, neutral filler ≈ 10.8; scoring forward
-taken as 0.13 s): T_s ≈ 5 × 40 × 39.2 ≈ 7 850 loss tokens, so ≈ 200
-updates for each fact-corpus arm (≈ 680 s), ≈ 230 for the template
-arm, ≈ 800 for `p_ctrl_sft` (≈ 2 500 s), ≈ 145 for OPR, 0 for
-`p_noise`; scoring 8 × n_eval forwards per cell (≈ 135 s at n_eval =
-130, ≈ 265 s at 255). Per confirmatory seed (10 profiles) ≈ 2.6 h at
-n_eval = 130 (≈ 3.0 h at 255); 141 seeds ≈ 363-420 h; tuning (120
-cells, n_eval = the 432 remaining tuning items) ≈ 35 h; calibration
-(60 cells) ≈ 19 h; smoke (30 cells) ≈ 12 h; headroom minutes. **Total
-≈ 430-490 h, i.e. 18-20 days of exclusive Studio time**, dominated by
-the fixed cost of a full-parameter step on 35 B parameters. The PI
+taken as 0.13 s; tuning items assumed to have the same mean lengths
+as the confirmatory ones): T_s ≈ 5 × 40 × 39.2 ≈ 7 840 loss tokens.
+Updates per cell: ≈ 200 (≈ 680 s) for each of the six arms that
+replay fact-length records — `p_min`, `p_equ`, `p_max`,
+`p_ctrl_vanilla_replay_tuned`, the exploratory `p_ctrl_lr_matched`
+and `p_ctrl_shuffle` (the word shuffle can change the token count of a
+record slightly; assumed equal); ≈ 231 for `p_ctrl_template`; ≈ 800
+(≈ 2 500 s) for `p_ctrl_sft`; for OPR the charge is ≈ 2 160 tokens
+(160 extra scoring forwards, ≈ 21 s, reading ≈ 6 480 tokens), leaving
+≈ 5 680 update tokens, ≈ 145 updates (OPR corpus size assumed ≈ 20 of
+40); 0 for `p_noise`. Scoring: 8 × n_eval forwards per cell (≈ 135 s
+at n_eval = 130, ≈ 265 s at 255). Per confirmatory seed (10 profiles)
+≈ 2.6 h at n_eval = 130 (≈ 2.9 h at 255); 141 seeds ≈ 365-416 h;
+tuning (120 cells, n_eval = the 432 remaining tuning items, ≈ 450 s of
+scoring per cell) ≈ 35 h; calibration (60 cells) ≈ 19 h; smoke (30
+cells, rough: 30 × the measured 1 483 s; the `p_ctrl_sft` cells will
+be longer) ≈ 12 h; headroom minutes. **Total ≈ 431-482 h, i.e. about
+18-20 days of exclusive Studio time**, dominated by the fixed cost of
+a full-parameter step on 35 B parameters. The PI
 decides whether this fits the budget before filing; N is not reduced.
 
 **Memory (CUDA path, arithmetic, bf16, full-parameter SGD; not the
@@ -1079,8 +1098,9 @@ snapshot holds another ≈ 70 GB of host RAM, and every cell restores
 OPR, + U forward/backward updates (U ≈ T_s / mean record
 length; ≈ 100-200 for fact corpora at m = 5, more for the short
 `p_ctrl_sft` texts), + one restore (a 70 GB host → device copy on
-CUDA; a re-binding of the base arrays on MLX, D9). Wall per cell and peak
-memory are unmeasured at 35B. The smoke on the filing hardware
+CUDA; a re-binding of the base arrays on MLX, D9). At 35B, wall and
+peak memory are measured for one MLX cell only (above); the other
+profiles and the full smoke workload remain unmeasured. The smoke on the filing hardware
 (seeds 2000-2002, all 10 profiles = 30 cells, pilot set; on the
 Studio a single cell first) must record per-cell wall, peak memory
 (`mx.get_peak_memory` on MLX, `torch.cuda.max_memory_allocated` per
