@@ -12,17 +12,21 @@ mkdir -p $OUT
 log() { echo "$(date "+%F %T") $*" >> $LOG; }
 paused=0
 cleaned=0
-stop_harness() {  # TERM, wait up to 60 s, then KILL; returns 0 once none is left
+gone() {  # no launcher process (the run's process group) and no harness left
+  { [ -z "${RUNPID:-}" ] || ! pgrep -g "$RUNPID" > /dev/null; } && ! pgrep -f "$HARNESS" > /dev/null
+}
+stop_harness() {  # TERM the whole run group and the harness, wait, then KILL
+  [ -n "${RUNPID:-}" ] && kill -TERM -- "-$RUNPID" 2>/dev/null
   pkill -TERM -f "$HARNESS"
-  for _ in $(seq 60); do pgrep -f "$HARNESS" > /dev/null || return 0; sleep 1; done
+  for _ in $(seq 60); do gone && return 0; sleep 1; done
+  [ -n "${RUNPID:-}" ] && kill -KILL -- "-$RUNPID" 2>/dev/null
   pkill -KILL -f "$HARNESS"
-  for _ in $(seq 30); do pgrep -f "$HARNESS" > /dev/null || return 0; sleep 1; done
+  for _ in $(seq 30); do gone && return 0; sleep 1; done
   return 1
 }
 resume() {
   [ "$cleaned" = 1 ] && return
   cleaned=1
-  [ -n "${RUNPID:-}" ] && kill "$RUNPID" 2>/dev/null
   if ! stop_harness; then
     log "HARNESS STILL RUNNING after KILL: day model left paused; manual action needed"
     exit 9
@@ -38,6 +42,7 @@ resume() {
 }
 trap resume EXIT
 trap 'exit 130' INT TERM HUP
+set -m  # each run gets its own process group (PGID = RUNPID)
 free_pct() { memory_pressure | awk -F': ' '/free percentage/{gsub("%","",$2); print $2}'; }
 level() { sysctl -n kern.memorystatus_vm_pressure_level; }
 log "driver start; waiting for other heavy jobs"
@@ -69,7 +74,9 @@ run() {  # $1 = out dir, rest = extra env
     fi
     sleep 5
   done
-  wait $RUNPID; local rc=$?; RUNPID=
+  wait $RUNPID; local rc=$?
+  gone || stop_harness
+  RUNPID=
   log "$(basename $out) rc=$rc free=$(free_pct)% level=$(level) swap: $(sysctl -n vm.swapusage)"
   return $rc
 }

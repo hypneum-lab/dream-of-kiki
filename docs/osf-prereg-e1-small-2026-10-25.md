@@ -1375,7 +1375,8 @@ the pause (:8080 answered HTTP 200 at 20:32:25), but its kill did not
 reach the harness process, which ran until it was killed by hand at
 about 20:37. The driver (`scripts/e1_small_macm1_smoke_driver.sh`) now
 waits for any heavy job (and stops if one starts), stops the harness
-(TERM, then KILL) and lifts the pause only once no harness process is
+(TERM, then KILL, the whole launcher process group and the harness)
+and lifts the pause only once no harness or launcher process is
 left; a signal ends the driver through the same cleanup. No number from this attempt is used.
 
 ### §9.8 Filing gate (E1-small)
