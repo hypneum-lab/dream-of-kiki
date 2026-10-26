@@ -2,7 +2,7 @@
 
 **Status:** DRAFT — not yet filed on OSF (to be filed by the PI).
 **Date:** 2026-10-25 (revision 2: PI decisions of 2026-10-25 19:50 and
-20:06 — model pin, own freeze, fla / causal-conv1d kernels, raw
+20:06, 2026-10-26 22:09 — model pin, own freeze, kernels (dropped), raw
 tokenizer, self-contained text, macM1 pipeline smoke; §10).
 **Origin:** PI decision of 2026-10-25 (14:43): run E1 first at small
 scale on a Qwen 4B dense model on KXKM-AI (one RTX 4090, 24 GB) with the
@@ -28,7 +28,9 @@ non-adjudicable candidate, confounded by template / format transfer.
 `851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a` (PI decision S1, §9.1).
 **Instrument (registered):** PyTorch 2.11.0 + HF transformers 5.7.0 on
 one NVIDIA RTX 4090 (KXKM-AI), every parameter on that device, linear
-attention through fla-core 0.5.2 + causal-conv1d 1.7.0 (S6), token ids
+attention through the transformers torch fallback (S6: the fla /
+causal-conv1d kernels were evaluated and dropped by the pre-fixed fp32
+diagnostic rule, §9.2), token ids
 from the raw pinned `tokenizer.json` (S8); §9.2.
 **Harness:** `scripts/e1_harness.py` with `HL_STUDY=e1-small`, PyTorch
 backend `scripts/pilot_cycle3_cuda.py`, runner
@@ -1029,7 +1031,8 @@ texts, at most 158 tokens): both versions give the same digest
 `41886b68d4737b06010914947689ab9ec75739d25cb425134ec02e298824488c`
 (2026-10-25; 0.23.3 on macM1, 0.22.2 on KXKM-AI).
 
-**Kernels (S6, decided).** Gated DeltaNet runs through `fla-core`
+**Kernels (S6): evaluated, then dropped.** The PI first chose (2026-10-25
+19:50) to run Gated DeltaNet through `fla-core`
 0.5.2 (chunked and fused-recurrent gated delta rule, fused gated
 RMSNorm) and `causal-conv1d` 1.7.0, the transformers fast path; a model counts as
 `fla+causal_conv1d` only if every linear-attention layer uses all five
@@ -1091,8 +1094,30 @@ agreement with fp32. **Rule:** the kernels are the registered
 instrument only if their mean |Δ log p| to fp32 is ≤ the fallback's
 **and** their argmax agreement with fp32 is ≥ the fallback's; otherwise
 the torch fallback is registered and fla / causal-conv1d are dropped
-(ties go to the kernels, "at least as close on both"). Result: *(filled
-after the run)*.
+(ties go to the kernels, "at least as close on both").
+
+Result (2026-10-26, KXKM-AI, code `154341b`;
+`/ai/saisail/e1-small/out/kernel-diag.json` SHA-256 `d6d1a354…21eb21`;
+102 sequences, 5 683 scored tokens; a first attempt at `4a13f9c`
+stopped at the script's own dtype check because the fp32 reference had
+loaded in bf16, and computed no distance):
+
+| distance to fp32 | bf16 kernels | bf16 torch fallback |
+|---|---|---|
+| max |Δ log p| per token | 0.2289 | 0.2576 |
+| mean |Δ log p| per token | **0.021801** | **0.021368** |
+| max |Δ choice score| | 0.1103 | 0.0701 |
+| argmax agreement with fp32 | **1.00** (25/25) | **0.96** (24/25) |
+
+The kernels have the better argmax agreement but a larger mean
+|Δ log p| (by 0.00043), so they are not at least as close on both:
+**by the rule, the transformers torch fallback is the registered
+instrument and fla / causal-conv1d are dropped.** They were uninstalled
+from the run venv on 2026-10-26; the runner sets `HL_LINEAR_ATTN=torch`
+and the harness accepts registered E1-small cells only with
+`linear_attn = torch`. The kernels-versus-fallback distances reproduce
+the failed parity check (max |Δ log p| 0.340, mean 0.0243). Forward-only
+peak `max_memory_allocated`: 9.35 GB (bf16), 17.66 GB (fp32).
 
 
 ### §9.3 Memory, runtime, headroom and corpus
@@ -1130,9 +1155,8 @@ i7-14700KF and 1.8 TB of disk (≈ 700 GB free).
 **Runtime (estimate; the smoke measures it).** Per confirmatory cell
 at `n_eval` = 130: 1 040 scoring forwards (pre + post, 4 choices), +
 160 for OPR, + about 200 forward / backward updates (T_s ≈ 12 000
-loss tokens at m = 5), + one 9.7 GB restore. With the fla /
-causal-conv1d kernels (S6) a rough planning figure is 1-2 min per
-cell, i.e. about 27-54 h for the 1 620 cells (unmeasured). The
+loss tokens at m = 5), + one 9.7 GB restore, with the torch fallback
+for Gated DeltaNet (S6); the measured projection is in §9.7b. The
 measurement smoke on KXKM-AI (30 cells, §9.7) and its projection to
 the confirmatory workload replace this estimate in the
 filed version. If the projection exceeds the available KXKM-AI GPU
@@ -1140,8 +1164,8 @@ time, the PI amends before filing; N is never reduced after filing.
 
 **One kernel implementation for the whole study.** The registered
 measurement smoke, headroom, tuning, calibration and confirmatory cells
-all use fla + causal-conv1d (§9.2); the harness refuses E1-small cells
-with another implementation. Switching mid-study is a deviation.
+all use the transformers torch fallback (§9.2); the harness refuses
+E1-small cells with another implementation. Switching mid-study is a deviation.
 
 **Corpus (same items, model-independent).** E1-small uses the **same**
 PENDING-HEADROOM fact corpus built on 2026-10-25 (corpus file
@@ -1192,7 +1216,7 @@ headroom first, which the PI has deferred; it was not chosen.
   accepted only from the pinned model of its study.
 - Instruments (`STUDY_INSTRUMENTS`): for `e1-small` the harness accepts
   (a) the registered instrument, backend `torch` with every parameter on
-  one CUDA device, raw tokenizer, fla + causal-conv1d, RAM snapshot and
+  one CUDA device, raw tokenizer, torch fallback kernels, RAM snapshot and
   `torch.optim.SGD`, in every mode,
   and (b) the pipeline-smoke instrument `torch-mps` (every parameter on
   the MPS device, raw tokenizer, torch fallback kernels, disk snapshot,
@@ -1239,10 +1263,10 @@ headroom first, which the PI has deferred; it was not chosen.
   CUDA 13 wheels and their dependencies). Every version **and every hash** is taken from
   an existing audited lock (the dream-of-kiki `uv.lock` of this branch
   and the nerve-wml `uv.lock` at `06dd573`, which pins the torch
-  stack). The S6 additions (fla-core, einops, the causal-conv1d wheel
-  built from its pinned sdist) are the only packages outside those two
-  baselines, listed with their hashes in §9.2 and in the requirements
-  file. On macM1 (MPS smoke): `~/scratch/e1-small/venv`, CPython
+  stack). The S6 kernels (fla-core, einops, the causal-conv1d wheel
+  built from its pinned sdist), the only packages that were outside
+  those two baselines, were removed after the diagnostic; their hashes
+  stay recorded in §9.2 and in the requirements file. On macM1 (MPS smoke): `~/scratch/e1-small/venv`, CPython
   3.12.13, 38 packages (torch 2.11.0 macOS arm64 and the same
   transformers / tokenizers / scipy pins), every version and hash from
   the same two locks.
@@ -1402,6 +1426,8 @@ waits for any heavy job (and stops if one starts), stops the harness
 and lifts the pause only once no harness or launcher process is
 left; a signal ends the driver through the same cleanup. No number from this attempt is used.
 
+**§9.7b KXKM-AI measurement smoke.** *(filled after the run)*
+
 ### §9.8 Filing gate (E1-small)
 
 Not filed until: the kernel parity check (§9.2) has passed; the
@@ -1440,11 +1466,12 @@ requires editing the named section before the lock commit.
   implemented only if the measurement smoke shows that memory does not
   fit; it would then be tested, recorded in every cell and applied to
   the whole study before filing (§9.3).
-- **S6 Kernels — decided:** fla-core 0.5.2 + causal-conv1d 1.7.0,
-  hash-pinned (§9.2); the transformers torch fallback stays selectable
-  (`HL_LINEAR_ATTN=torch`) and is checked against the kernels on a
-  short input with tolerances fixed in advance (§9.2). The implementation
-  is fixed for the whole study.
+- **S6 Kernels — decided:** fla-core 0.5.2 + causal-conv1d 1.7.0 were
+  installed and checked against the torch fallback (2026-10-25 19:50);
+  the parity check failed, and by the fp32 diagnostic rule fixed by the
+  PI on 2026-10-26 22:09 the **torch fallback is registered** and the
+  kernels are dropped (§9.2). The implementation is fixed for the whole
+  study.
 - **S7 Text — decided:** this document is self-contained (§1-§8 copy
   revision 9 of the E1 draft with the edits of §11).
 - **S8 Tokenizer — decided:** token ids and counts come from the raw
@@ -1478,7 +1505,7 @@ bullet); §9-§10 are E1-small's own.
 | 12 | Weight verification | 40 files of `995ad96` (`scripts/e1_model_pins.json`) | the 10 downloaded files of `851bf6e8`, exact inventory (§9.1, §9.4) | model, backend |
 | 13 | Headroom and freeze (§5.1 property 5, §5.1b step 9) | 35B base on TUNING | 4B base on TUNING only; its own FROZEN copy of the same pending corpus (§9.3) | PI decision S2 |
 | 14 | Backend | Apple MLX (CUDA kept as a parity path) | CUDA, PyTorch 2.11.0, transformers 5.7.0, hash-pinned (§9.2, §9.4) | PI decision |
-| 15 | Linear-attention kernels | `mlx_lm` Metal kernel / op-by-op recurrence | fla-core 0.5.2 + causal-conv1d 1.7.0, parity-checked against the torch fallback (§9.2) | PI decision S6 |
+| 15 | Linear-attention kernels | `mlx_lm` Metal kernel / op-by-op recurrence | transformers torch fallback; fla-core + causal-conv1d evaluated and dropped by the fp32 diagnostic (§9.2) | PI decision S6 |
 | 16 | Scope (§1) | Qwen3.6-35B-A3B | Qwen3.5-4B; no inference about 35B (§0) | scope |
 | 17 | Instruments (§8) | MLX registered | CUDA registered; `torch-mps` for the macM1 pipeline smoke only; never pooled (§9.7) | PI decisions |
 | 18 | Smokes | one smoke on the filing hardware | two: macM1 pipeline smoke (`torch-mps`) and KXKM-AI measurement smoke (§9.7) | PI decision S9 |

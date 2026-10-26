@@ -35,7 +35,7 @@ def small(monkeypatch: pytest.MonkeyPatch) -> Any:
     return _reload(monkeypatch, "e1-small")
 
 
-REG = {"tokenizer": "raw", "linear_attn": "fla+causal_conv1d", "snapshot": "ram", "sgd": "optim"}
+REG = {"tokenizer": "raw", "linear_attn": "torch", "snapshot": "ram", "sgd": "optim"}
 
 
 def _cell(model: str, revision: str, backend: str = "torch", device: str = "cuda",
@@ -64,7 +64,7 @@ BAD_INSTRUMENTS: tuple[Instrument, ...] = (
                    ("torch", "cuda", ("cpu",), {}), ("torch", "cuda", ("cpu", "cuda:0"), {}),
                    ("torch", "cuda", ("cuda:0", "cuda:1"), {}),
                    ("torch", "cuda", ("cuda:0",), {"tokenizer": "transformers"}),
-                   ("torch", "cuda", ("cuda:0",), {"linear_attn": "torch"}),
+                   ("torch", "cuda", ("cuda:0",), {"linear_attn": "fla+causal_conv1d"}),
                    ("torch", "cuda", ("cuda:0",), {"linear_attn": "mixed"}),
                    ("torch", "cuda", ("cuda:0",), {"sgd": "fused"}),
                    ("torch", "cuda", ("cuda:0",), {"snapshot": "disk"}))

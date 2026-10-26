@@ -56,12 +56,13 @@ MODEL_REPO, MODEL_REVISION = src.STUDY_MODELS[STUDY]
 # Instruments a study accepts, enforced on every cell, the amendment and the
 # backend itself; an empty list leaves it to the study's draft. E1-small
 # (PI decisions S6 / S8 / 2026-10-25 20:06): the registered CUDA instrument
-# (raw pinned tokenizer.json, fla + causal-conv1d) for every mode, and the
+# (raw pinned tokenizer.json, transformers torch fallback for Gated DeltaNet
+# after the S6 diagnostic of 2026-10-26) for every mode, and the
 # macM1 MPS instrument (torch fallback kernels) for the smoke only; cells of
 # the two have different backend names and are never pooled.
 STUDY_INSTRUMENTS: dict[str, list[dict[str, Any]]] = {"e1": [], "e1-small": [
     {"backend": "torch", "device": "cuda", "tokenizer": "raw",
-     "linear_attn": "fla+causal_conv1d", "snapshot": "ram", "sgd": "optim",
+     "linear_attn": "torch", "snapshot": "ram", "sgd": "optim",
      "modes": ("smoke", "headroom", "tuning", "calibrate", "confirmatory")},
     {"backend": "torch-mps", "device": "mps", "tokenizer": "raw", "linear_attn": "torch",
      "snapshot": "disk", "sgd": "fused", "modes": ("smoke",)}]}

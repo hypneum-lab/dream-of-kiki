@@ -522,18 +522,11 @@ typer==0.25.1 \
 typing-extensions==4.15.0 \
     --hash=sha256:0cea48d173cc12fa28ecabc3b837ea3cf6f38c6d1136f85cbaaf598984861466 \
     --hash=sha256:f0fa19c6845758ab08074a0cfa8b7aecb71c999ca73d62883bc25cc018c4e548
-# --- S6 (PI decision 2026-10-25 19:50): linear-attention kernels. NEW
-# packages, not in the uv.lock baselines; origin PyPI wheels. fla-core
-# 0.5.2 (2026-07-27) rather than 0.6.0 (2026-10-23, two days old).
-# causal-conv1d is built from its pinned sdist (e1_small_causal_conv1d_sdist.txt).
-fla-core==0.5.2 \
-    --hash=sha256:5e830c85bad3d0d34677f98ac7074d08687a3756f0f0499d95ceb96eb6920761
-einops==0.8.2 \
-    --hash=sha256:54058201ac7087911181bfec4af6091bb59380360f069276601256a76af08193
-# causal-conv1d 1.7.0 is installed from the wheel built on KXKM-AI on
-# 2026-10-25 from the pinned sdist (e1_small_causal_conv1d_sdist.txt) with
-# the build-only toolchain of e1_small_cuda_build_requirements.txt
-# (nvcc 13.0.88, gcc 13.3.0, CAUSAL_CONV1D_FORCE_BUILD=TRUE, MAX_JOBS=4):
-#   causal_conv1d-1.7.0-cp312-cp312-linux_x86_64.whl (206 783 377 B)
-#   sha256 2bc3ec8e091ab063a819601ee4879046795f8e9b0cf6390fe5c3bb2d10c19d9c
-# installed with pip --require-hashes --no-deps from that local file.
+# --- S6 (PI decisions 2026-10-25 19:50 and 2026-10-26 22:09): the fla /
+# causal-conv1d kernels were installed and evaluated, then DROPPED by the
+# pre-fixed fp32 diagnostic rule (draft section 9.2); they were uninstalled
+# from the run venv on 2026-10-26. Record of what was evaluated (PyPI):
+#   fla-core==0.5.2  wheel sha256 5e830c85bad3d0d34677f98ac7074d08687a3756f0f0499d95ceb96eb6920761
+#   einops==0.8.2    wheel sha256 54058201ac7087911181bfec4af6091bb59380360f069276601256a76af08193
+#   causal-conv1d==1.7.0 sdist sha256 3202758494eaa7b597ce1c282dfa188889506bfcb92cad3c407d26736bfcd32b,
+#   built wheel sha256 2bc3ec8e091ab063a819601ee4879046795f8e9b0cf6390fe5c3bb2d10c19d9c

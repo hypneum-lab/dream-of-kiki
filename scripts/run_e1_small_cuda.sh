@@ -28,7 +28,8 @@ STEP=${HL_STEP:?set HL_STEP}
 export HF_HUB_CACHE=${HL_HF_CACHE:?set HL_HF_CACHE}
 export HF_HUB_OFFLINE=1
 export HL_STUDY=e1-small
-unset HL_DEVICE_MAP HL_MODEL HL_REVISION HL_LINEAR_ATTN
+unset HL_DEVICE_MAP HL_MODEL HL_REVISION
+export HL_LINEAR_ATTN=torch  # registered after the S6 diagnostic (2026-10-26)
 REV=851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a
 SNAP="$HF_HUB_CACHE/models--Qwen--Qwen3.5-4B/snapshots/$REV"
 mkdir -p "$OUT"
