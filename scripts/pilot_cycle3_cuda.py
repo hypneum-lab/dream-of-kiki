@@ -219,6 +219,8 @@ def _load_model(model_id: str, revision: str | None,
     if use_map:
         kw["device_map"] = use_map
     model = AutoModelForCausalLM.from_pretrained(model_id, **kw)
+    if dtype_override is not None and next(model.parameters()).dtype != dtype_override:
+        model = model.to(dtype_override)  # composite configs can keep the checkpoint dtype
     if not use_map:
         model = model.to(dev)
     model.eval()
