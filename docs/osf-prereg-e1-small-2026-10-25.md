@@ -1069,7 +1069,30 @@ difference ≤ 0.01, gradient cosine ≥ 0.99, gradient norm ratio within
 sanity bounds for two summation orders of the same bf16 computation;
 they do not make the two implementations interchangeable instruments,
 which is why one implementation is fixed for the whole study. A failure is reported to
-the PI before any further GPU step. Result: *(filled after the run)*.
+the PI before any further GPU step.
+
+Result (2026-10-26 23:05, KXKM-AI RTX 4090, code `6b25e48`,
+`/ai/saisail/e1-small/out/kernel-parity.json` SHA-256 `37d9789c…727e4e`):
+**FAIL.** max |Δ log p| 0.340 (> 0.25), mean |Δ log p| 0.0242
+(> 0.02), max |Δ choice score| 0.112 (> 0.05) fail; argmax agreement
+0.96, relative loss difference 0.0029, gradient cosine 0.99921, norm
+ratio 1.0053, relative gradient error 0.040 and gradient coverage pass.
+Peak `max_memory_allocated` with a full gradient: 20.87 GB (kernels),
+21.00 GB (fallback). The bounds are not changed and this failure stands.
+
+**Diagnostic (PI decision 2026-10-26 22:09; fixed before the run).**
+`scripts/e1_small_kernel_diag.py`, same inputs as the parity check (25
+pilot MMLU items, 100 prompt + choice sequences and the 2 replay texts,
+whose tokens join the per-token set), forward passes only, three loads
+one at a time: bf16 kernels, fp32 torch fallback (the reference), bf16
+torch fallback. For each bf16 implementation it reports, against fp32,
+max and mean |Δ log p| per token, max |Δ choice score| and argmax
+agreement with fp32. **Rule:** the kernels are the registered
+instrument only if their mean |Δ log p| to fp32 is ≤ the fallback's
+**and** their argmax agreement with fp32 is ≥ the fallback's; otherwise
+the torch fallback is registered and fla / causal-conv1d are dropped
+(ties go to the kernels, "at least as close on both"). Result: *(filled
+after the run)*.
 
 
 ### §9.3 Memory, runtime, headroom and corpus

@@ -41,3 +41,15 @@ def test_token_digest_texts_and_pin(tmp_path: Path) -> None:
     fake.write_text("{}", encoding="utf-8")
     with pytest.raises(SystemExit, match="pinned"):
         ti.main(["--corpus", str(corpus), "--tokenizer", str(fake)])
+
+
+def test_diag_decision_rule() -> None:
+    from scripts import e1_small_kernel_diag as kd
+
+    def m(mean: float, agree: float) -> dict[str, float]:
+        return {"logprob_mean_abs": mean, "argmax_agree": agree}
+
+    assert kd.decide(m(0.01, 1.0), m(0.02, 0.96)) == "fla+causal_conv1d"
+    assert kd.decide(m(0.02, 1.0), m(0.02, 1.0)) == "fla+causal_conv1d"  # ties: at least as close
+    assert kd.decide(m(0.03, 1.0), m(0.02, 0.96)) == "torch"
+    assert kd.decide(m(0.01, 0.92), m(0.02, 0.96)) == "torch"

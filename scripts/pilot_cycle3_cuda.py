@@ -191,13 +191,16 @@ def linear_attn_impl(model: Any) -> str:
     return "none" if not kinds else kinds.pop() if len(kinds) == 1 else "mixed"
 
 
-def _load_model(model_id: str, revision: str | None) -> tuple[Any, Any]:
+def _load_model(model_id: str, revision: str | None,
+                dtype_override: Any = None) -> tuple[Any, Any]:
     if model_id == MODEL_REPO and revision != MODEL_REVISION:
         raise SystemExit(f"{MODEL_REPO} must be loaded at the pinned revision {MODEL_REVISION}")
     from transformers import AutoModelForCausalLM, AutoTokenizer
 
     dev = _device()
     dtype = torch.bfloat16 if dev in ("cuda", "mps") else torch.float32
+    if dtype_override is not None:  # diagnostics only (fp32 reference); never a cell
+        dtype = dtype_override
     trc = os.environ.get("HL_TRUST_REMOTE_CODE", "0") == "1"
     if hn.TOKENIZER == "raw":
         from huggingface_hub import hf_hub_download
