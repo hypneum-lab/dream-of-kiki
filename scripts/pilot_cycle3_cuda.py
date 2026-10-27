@@ -75,7 +75,7 @@ def _cell_split(benches: hn.Benches, seed: int, n_replay: int,
 
 # Deterministic mode (E1-small S10, PI decision 2026-10-27): HL_DETERMINISTIC=1.
 DET_SEED = 0
-_DET_WORKSPACES = (":4096:8", ":16:8")
+_DET_WORKSPACES = (":4096:8",)  # the PI-specified setting only
 
 
 def deterministic() -> bool:

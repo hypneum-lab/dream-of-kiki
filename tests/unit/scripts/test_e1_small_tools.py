@@ -58,8 +58,18 @@ def test_diag_decision_rule() -> None:
 def test_determinism_compare() -> None:
     from scripts import e1_small_determinism_check as dc
 
-    r = {"pre": 0.5, "post": 0.6, "scores": [[[0.1, 0.2]]], "param_sha256": "a"}
-    assert dc.compare([r, dict(r), dict(r)])["verdict"] == "PASS"
+    r = {"pre": 0.5, "post": 0.6, "scores": [[[0.1, 0.2]]], "param_sha256": "a",
+         "invariant_violation": None, "achieved_loss_tokens": 10, "planned_loss_tokens": 10,
+         "n_updates": 3}
+    assert dc.compare([r, dict(r), dict(r)], "base")["verdict"] == "PASS"
     for k, v in (("post", 0.61), ("scores", [[[0.1, 0.3]]]), ("param_sha256", "b")):
-        out = dc.compare([r, {**r, k: v}])
+        out = dc.compare([r, {**r, k: v}], "base")
         assert out["verdict"] == "FAIL" and not out["identical"][k]
+    for change, check in (({"invariant_violation": "S2"}, "no_invariant_violation"),
+                          ({"achieved_loss_tokens": 4}, "budget_achieved"),
+                          ({"n_updates": 0}, "updated")):
+        out = dc.compare([{**r, **change}, {**r, **change}], "base")
+        assert out["verdict"] == "FAIL" and not out["valid_replay"][check]
+    out = dc.compare([r, r], "a")
+    assert out["verdict"] == "FAIL" and not out["valid_replay"]["parameters_changed"]
+    assert dc.compare([], "base")["verdict"] == "FAIL"
