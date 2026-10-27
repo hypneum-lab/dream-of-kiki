@@ -37,7 +37,8 @@ def small(monkeypatch: pytest.MonkeyPatch) -> Any:
 
 DET = {"enabled": True, "use_deterministic_algorithms": True, "warn_only": False,
        "cublas_workspace_config": ":4096:8", "cudnn_deterministic": True,
-       "cudnn_benchmark": False, "seed_per_cell": 0}
+       "cudnn_benchmark": False, "seed_per_cell": 0,
+       "cuda_alloc_conf": "expandable_segments:True"}
 REG: dict[str, Any] = {"tokenizer": "raw", "linear_attn": "torch", "snapshot": "ram",
                        "sgd": "optim", "determinism": DET}
 
@@ -74,7 +75,9 @@ BAD_INSTRUMENTS: tuple[Instrument, ...] = (
                    ("torch", "cuda", ("cuda:0",), {"snapshot": "disk"}),
                    ("torch", "cuda", ("cuda:0",), {"determinism": {**DET, "enabled": False}}),
                    ("torch", "cuda", ("cuda:0",), {"determinism": {**DET, "warn_only": True}}),
-                   ("torch", "cuda", ("cuda:0",), {"determinism": {}}))
+                   ("torch", "cuda", ("cuda:0",), {"determinism": {}}),
+                   ("torch", "cuda", ("cuda:0",),
+                    {"determinism": {**DET, "cuda_alloc_conf": None}}))
 
 
 @pytest.mark.parametrize(("backend", "device", "placement", "over"), BAD_INSTRUMENTS)

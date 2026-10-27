@@ -3,7 +3,8 @@
 deterministic mode, and do identical computations give identical results?
 
 **Gate** : ``docs/osf-prereg-e1-small-2026-10-25.md`` section 9.7c. Run with
-``HL_STUDY=e1-small HL_DETERMINISTIC=1 CUBLAS_WORKSPACE_CONFIG=:4096:8`` and
+``HL_STUDY=e1-small HL_DETERMINISTIC=1 CUBLAS_WORKSPACE_CONFIG=:4096:8``,
+``PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True`` (registered since 2026-10-27) and
 the registered instrument (``HL_LINEAR_ATTN=torch``) on the CUDA node; smoke
 settings (pilot fixtures, confirmatory pilot partition, ``n_eval`` 50,
 placeholder amendment). Never part of the study's cells.

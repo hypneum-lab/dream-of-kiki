@@ -2,8 +2,9 @@
 
 **Status:** DRAFT — not yet filed on OSF (to be filed by the PI).
 **Date:** 2026-10-25 (revision 2: PI decisions of 2026-10-25 19:50 and
-20:06, 2026-10-26 22:09 — model pin, own freeze, kernels (dropped), raw
-tokenizer, self-contained text, macM1 pipeline smoke; §10).
+20:06, 2026-10-26 22:09, 2026-10-27 — model pin, own freeze, kernels (dropped), raw
+tokenizer, self-contained text, macM1 pipeline smoke, determinism,
+allocator; §10).
 **Origin:** PI decision of 2026-10-25 (14:43): run E1 first at small
 scale on a Qwen 4B dense model on KXKM-AI (one RTX 4090, 24 GB) with the
 PyTorch / CUDA harness, as a **separate** pre-registration. The 35B
@@ -32,7 +33,7 @@ attention through the transformers torch fallback (S6: the fla /
 causal-conv1d kernels were evaluated and dropped by the pre-fixed fp32
 diagnostic rule, §9.2), token ids
 from the raw pinned `tokenizer.json` (S8), deterministic mode (S10,
-§9.7c); §9.2.
+§9.7c) and the `expandable_segments:True` CUDA allocator (S11); §9.2.
 **Harness:** `scripts/e1_harness.py` with `HL_STUDY=e1-small`, PyTorch
 backend `scripts/pilot_cycle3_cuda.py`, runner
 `scripts/run_e1_small_cuda.sh`; analysis `scripts/analyze_e1_cuda.py`.
@@ -1219,7 +1220,8 @@ headroom first, which the PI has deferred; it was not chosen.
   (a) the registered instrument, backend `torch` with every parameter on
   one CUDA device, raw tokenizer, torch fallback kernels, RAM snapshot and
   `torch.optim.SGD`, deterministic mode (every field of
-  `determinism_record()` as registered: S10), in every mode,
+  `determinism_record()` as registered: S10; S11 adds the
+  allocator setting `expandable_segments:True` to the checked fields), in every mode,
   and (b) the pipeline-smoke instrument `torch-mps` (every parameter on
   the MPS device, raw tokenizer, torch fallback kernels, disk snapshot,
   fused SGD) in smoke mode only. The check applies to the running backend (before the base
@@ -1537,7 +1539,8 @@ seed 2001) ran out of CUDA memory in backward with 17.0 GiB allocated
 and 3.5 GiB reserved but unallocated (allocator fragmentation; only
 ComfyUI's 0.65 GiB besides). Fix (`2384e19`): the runner sets
 `PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True`, an allocator setting
-with no numerical effect, recorded in every cell's determinism record.
+with no numerical effect, recorded in every cell's determinism record
+(validated by the PI as part of the registered instrument, S11).
 No number of this attempt is used, except as the cross-run check below.
 
 *Rerun (2026-10-27 12:52-14:59, code `2384e19`, tmux `e1s-smoke2`,
@@ -1634,6 +1637,12 @@ requires editing the named section before the lock commit.
   registered for every E1-small CUDA cell and enforced by the instrument
   check (§9.7c); the measurement smoke is repeated in this mode and its
   projection replaces the superseded one (§9.7b, §9.7d).
+- **S11 Allocator — decided (PI, 2026-10-27 15:57):**
+  `PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True` is part of the
+  registered CUDA instrument (no numerical effect; it removed the
+  fragmentation out-of-memory stop of §9.7d). The instrument check
+  refuses a running backend, an imported tuning / calibration cell or an
+  amendment without it, like the determinism fields.
 
 ## §11 Differences from the E1 (35B) draft (revision 9)
 
@@ -1661,6 +1670,7 @@ bullet); §9-§10 are E1-small's own.
 | 14 | Backend | Apple MLX (CUDA kept as a parity path) | CUDA, PyTorch 2.11.0, transformers 5.7.0, hash-pinned (§9.2, §9.4) | PI decision |
 | 15 | Linear-attention kernels | `mlx_lm` Metal kernel / op-by-op recurrence | transformers torch fallback; fla-core + causal-conv1d evaluated and dropped by the fp32 diagnostic (§9.2) | PI decision S6 |
 | 15b | Determinism | not specified (MLX replay not bit-reproducible, 35B D6) | deterministic mode registered for every CUDA cell, enforced (§9.7c) | PI decision S10 |
+| 15c | CUDA allocator | not specified | `expandable_segments:True`, enforced (§9.7d) | PI decision S11 |
 | 16 | Scope (§1) | Qwen3.6-35B-A3B | Qwen3.5-4B; no inference about 35B (§0) | scope |
 | 17 | Instruments (§8) | MLX registered | CUDA registered; `torch-mps` for the macM1 pipeline smoke only; never pooled (§9.7) | PI decisions |
 | 18 | Smokes | one smoke on the filing hardware | two: macM1 pipeline smoke (`torch-mps`) and KXKM-AI measurement smoke (§9.7) | PI decision S9 |

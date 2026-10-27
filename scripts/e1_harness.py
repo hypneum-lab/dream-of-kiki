@@ -64,7 +64,9 @@ MODEL_REPO, MODEL_REVISION = src.STUDY_MODELS[STUDY]
 # field against DETERMINISM.
 DETERMINISM = {"enabled": True, "use_deterministic_algorithms": True, "warn_only": False,
                "cublas_workspace_config": ":4096:8", "cudnn_deterministic": True,
-               "cudnn_benchmark": False, "seed_per_cell": 0}
+               "cudnn_benchmark": False, "seed_per_cell": 0,
+               # allocator setting (PI decision 2026-10-27 15:57), checked with the rest
+               "cuda_alloc_conf": "expandable_segments:True"}
 STUDY_INSTRUMENTS: dict[str, list[dict[str, Any]]] = {"e1": [], "e1-small": [
     {"backend": "torch", "device": "cuda", "tokenizer": "raw",
      "linear_attn": "torch", "snapshot": "ram", "sgd": "optim", "determinism": DETERMINISM,
