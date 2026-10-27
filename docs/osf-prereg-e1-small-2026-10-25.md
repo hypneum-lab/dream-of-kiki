@@ -1157,7 +1157,7 @@ i7-14700KF and 1.8 TB of disk (≈ 700 GB free).
 at `n_eval` = 130: 1 040 scoring forwards (pre + post, 4 choices), +
 160 for OPR, + about 200 forward / backward updates (T_s ≈ 12 000
 loss tokens at m = 5), + one 9.7 GB restore, with the torch fallback
-for Gated DeltaNet (S6); the measured projection is in §9.7b. The
+for Gated DeltaNet (S6); the measured projection is in §9.7d. The
 measurement smoke on KXKM-AI (30 cells, §9.7) and its projection to
 the confirmatory workload replace this estimate in the
 filed version. If the projection exceeds the available KXKM-AI GPU
@@ -1529,13 +1529,60 @@ on rerun. The PI agreed: the measurement smoke is repeated in
 deterministic mode (§9.7d) and its projection replaces §9.7b.
 
 **§9.7d KXKM-AI measurement smoke in deterministic mode (registered
-instrument).** *(filled after the run)*
+instrument; replaces §9.7b).**
+
+*First attempt (2026-10-27 08:38-10:10, code `46d7f95`): stopped.* The
+probe cell and 19 smoke cells completed; cell 20 (`p_ctrl_template`,
+seed 2001) ran out of CUDA memory in backward with 17.0 GiB allocated
+and 3.5 GiB reserved but unallocated (allocator fragmentation; only
+ComfyUI's 0.65 GiB besides). Fix (`2384e19`): the runner sets
+`PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True`, an allocator setting
+with no numerical effect, recorded in every cell's determinism record.
+No number of this attempt is used, except as the cross-run check below.
+
+*Rerun (2026-10-27 12:52-14:59, code `2384e19`, tmux `e1s-smoke2`,
+cell cache SHA-256 `32576f21…e0696f96`).* Probe (`p_max`, seed 2000):
+198.1 s, post 0.593, identical to the first attempt's probe. Then 30 /
+30 cells completed: **0 invariant violations, every budget matched,
+peak `max_memory_allocated` ≤ 20.08 GB (18.7 GiB), host RSS ≤ 14.0 GB,
+total wall 2.05 h**. Every cell records the full determinism record and
+the registered instrument (torch fallback, raw tokenizer, RAM snapshot,
+`torch.optim.SGD`). One cell carries the collapse flag
+(`p_ctrl_shuffle` seed 2002, −0.103); the smoke is never analysed.
+
+| profile | wall per cell (s) | updates | peak (GB) |
+|---|---|---|---|
+| `p_min`, `p_equ`, `p_max`, `p_ctrl_vanilla_replay_tuned`, `p_ctrl_lr_matched` | 194-197 | 400 | 20.08 |
+| `p_ctrl_shuffle` | 196-197 | 403-405 | 20.03 |
+| `p_ctrl_onpolicy_replay` | 190-209 | 310-365 | 19.43 |
+| `p_ctrl_template` | 242-256 | 539-582 | 19.92 |
+| `p_ctrl_sft` | 686-918 | 1 871-2 567 | 19.43 |
+| `p_noise` | 56.8-57.3 | 0 | 16.11 |
+
+**Determinism, at scale.** `p_min`, `p_ctrl_vanilla_replay_tuned` and
+`p_ctrl_lr_matched` (the same computation) give identical Δ on every
+seed (+0.033, +0.083, +0.060), and the 19 cells common to the first
+attempt and the rerun, in two processes, are identical in pre and post
+accuracy, every per-item correctness, the frozen-reference KL, the
+drift and the mean replay loss (19 / 19).
+
+**Projection to the 1,620 cells (replaces §9.7b).** Same method
+(`scripts/e1_small_projection.py`, result SHA-256 `82a59f14…a53c3655`):
+wall = 0.0814 s × scoring forwards + 0.3335 s × updates + 0.00022 s ×
+loss tokens + 5.1 s; T_s = 7 847.
+
+| `n_eval` | confirmatory 1,410 | tuning 120 | calibration 60 | smoke 30 (measured) | **total** |
+|---|---|---|---|---|---|
+| 130 (floor) | 63.2 h (161 s per cell) | 11.6 h | 5.6 h | 2.1 h | **82.4 h** |
+| 255 (§5.2 at p_disc 0.20) | 95.0 h (243 s per cell) | 11.6 h | 5.6 h | 2.1 h | **114.3 h** |
+
+About 3.5-5 days of the RTX 4090. Memory fits without activation
+checkpointing (S5 not triggered).
 
 ### §9.8 Filing gate (E1-small)
 
-Not filed until: the PI has decided S10; the measurement smoke on
-KXKM-AI has run on the registered instrument (done, §9.7b; to be
-repeated if S10 changes the instrument); the 4B headroom has run and the E1-small
+Not filed until: the measurement smoke on KXKM-AI has run on the
+registered instrument, deterministic mode included (done, §9.7d); the 4B headroom has run and the E1-small
 FROZEN corpus and manifest hashes are written here; the decision code
 has been run on synthetic paired data covering every §2 state and §7
 row; the harness code is merged at a pinned commit with passing tests.
