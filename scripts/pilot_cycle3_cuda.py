@@ -118,7 +118,8 @@ def determinism_record() -> dict[str, Any]:
             "cublas_workspace_config": os.environ.get("CUBLAS_WORKSPACE_CONFIG"),
             "cudnn_deterministic": bool(torch.backends.cudnn.deterministic),
             "cudnn_benchmark": bool(torch.backends.cudnn.benchmark),
-            "seed_per_cell": DET_SEED if deterministic() else None}
+            "seed_per_cell": DET_SEED if deterministic() else None,
+            "cuda_alloc_conf": os.environ.get("PYTORCH_CUDA_ALLOC_CONF")}
 
 
 def _device() -> str:

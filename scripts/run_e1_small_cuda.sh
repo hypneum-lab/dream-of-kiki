@@ -33,6 +33,10 @@ export HL_LINEAR_ATTN=torch  # registered after the S6 diagnostic (2026-10-26)
 # S10 (PI decision 2026-10-27): deterministic mode is registered; the cuBLAS
 # workspace must be set before CUDA starts.
 export HL_DETERMINISTIC=1 CUBLAS_WORKSPACE_CONFIG=:4096:8
+# Allocator only (no numerical effect): the deterministic smoke of 2026-10-27
+# ran out of memory from fragmentation (17.0 GiB allocated, 3.5 GiB reserved
+# but unallocated) in a p_ctrl_template backward.
+export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 REV=851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a
 SNAP="$HF_HUB_CACHE/models--Qwen--Qwen3.5-4B/snapshots/$REV"
 mkdir -p "$OUT"
