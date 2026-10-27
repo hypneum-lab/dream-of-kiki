@@ -53,3 +53,13 @@ def test_diag_decision_rule() -> None:
     assert kd.decide(m(0.02, 1.0), m(0.02, 1.0)) == "fla+causal_conv1d"  # ties: at least as close
     assert kd.decide(m(0.03, 1.0), m(0.02, 0.96)) == "torch"
     assert kd.decide(m(0.01, 0.92), m(0.02, 0.96)) == "torch"
+
+
+def test_determinism_compare() -> None:
+    from scripts import e1_small_determinism_check as dc
+
+    r = {"pre": 0.5, "post": 0.6, "scores": [[[0.1, 0.2]]], "param_sha256": "a"}
+    assert dc.compare([r, dict(r), dict(r)])["verdict"] == "PASS"
+    for k, v in (("post", 0.61), ("scores", [[[0.1, 0.3]]]), ("param_sha256", "b")):
+        out = dc.compare([r, {**r, k: v}])
+        assert out["verdict"] == "FAIL" and not out["identical"][k]

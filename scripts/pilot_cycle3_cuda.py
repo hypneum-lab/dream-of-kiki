@@ -73,6 +73,54 @@ def _cell_split(benches: hn.Benches, seed: int, n_replay: int,
 # --- model -------------------------------------------------------------------
 
 
+# Deterministic mode (E1-small S10, PI decision 2026-10-27): HL_DETERMINISTIC=1.
+DET_SEED = 0
+_DET_WORKSPACES = (":4096:8", ":16:8")
+
+
+def deterministic() -> bool:
+    return os.environ.get("HL_DETERMINISTIC", "0") == "1"
+
+
+def seed_all(seed: int = DET_SEED) -> None:
+    """Seed every RNG a cell could touch (Python, NumPy if present, torch CPU / CUDA)."""
+    import random
+
+    random.seed(seed)
+    try:
+        import numpy as np
+
+        np.random.seed(seed)
+    except ImportError:
+        pass
+    torch.manual_seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(seed)
+
+
+def enable_determinism() -> None:
+    """Deterministic kernels only: an op without a deterministic implementation
+    raises (``warn_only=False``) instead of falling back silently."""
+    ws = os.environ.get("CUBLAS_WORKSPACE_CONFIG")
+    if ws not in _DET_WORKSPACES:
+        raise SystemExit(f"HL_DETERMINISTIC=1 needs CUBLAS_WORKSPACE_CONFIG in {_DET_WORKSPACES}, "
+                         "set before the process starts")
+    torch.use_deterministic_algorithms(True, warn_only=False)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+    seed_all()
+
+
+def determinism_record() -> dict[str, Any]:
+    return {"enabled": deterministic(),
+            "use_deterministic_algorithms": torch.are_deterministic_algorithms_enabled(),
+            "warn_only": torch.is_deterministic_algorithms_warn_only_enabled(),
+            "cublas_workspace_config": os.environ.get("CUBLAS_WORKSPACE_CONFIG"),
+            "cudnn_deterministic": bool(torch.backends.cudnn.deterministic),
+            "cudnn_benchmark": bool(torch.backends.cudnn.benchmark),
+            "seed_per_cell": DET_SEED if deterministic() else None}
+
+
 def _device() -> str:
     """CUDA when available, else CPU; ``HL_TORCH_DEVICE=mps`` selects Apple MPS
     (the E1-small macM1 smoke; recorded as backend ``torch-mps``)."""
@@ -213,6 +261,8 @@ def _load_model(model_id: str, revision: str | None,
         raise SystemExit("HL_LINEAR_ATTN must be 'default' or 'torch'")
     if impl == "torch":
         force_torch_linear_attention()
+    if deterministic():
+        enable_determinism()
     default_map = "auto" if (dev == "cuda" and torch.cuda.device_count() > 1) else ""
     use_map = os.environ.get("HL_DEVICE_MAP", default_map)
     kw: dict[str, Any] = {"dtype": dtype, "trust_remote_code": trc, "revision": revision}
@@ -337,7 +387,8 @@ class TorchBackend:
                 "tokenizer": getattr(self.tok, "kind", "transformers"),
                 "linear_attn": linear_attn_impl(self.model),
                 "kernels": {d: _dist_version(d) for d in ("fla-core", "causal-conv1d")},
-                "snapshot": self.snapshot_kind, "sgd": self.sgd_kind}
+                "snapshot": self.snapshot_kind, "sgd": self.sgd_kind,
+                "determinism": determinism_record()}
 
     def snapshot(self) -> None:
         if self.snapshot_kind == "disk":
@@ -348,7 +399,9 @@ class TorchBackend:
         else:
             self.base = _snapshot_cpu(self.model)
 
-    def restore(self) -> None:
+    def restore(self) -> None:  # called at the start of every cell
+        if deterministic():
+            seed_all()
         if isinstance(self.base, DiskSnapshot):
             self.base.restore(self.model)
         else:

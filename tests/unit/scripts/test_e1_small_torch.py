@@ -128,3 +128,32 @@ def test_disk_snapshot_restores_exactly(tmp_path: Path, monkeypatch: pytest.Monk
     monkeypatch.setenv("HL_SNAPSHOT", "bad")
     with pytest.raises(SystemExit, match="HL_SNAPSHOT"):
         h.TorchBackend(model, tok)
+
+
+def test_determinism_needs_the_cublas_workspace(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("HL_DETERMINISTIC", "1")
+    monkeypatch.delenv("CUBLAS_WORKSPACE_CONFIG", raising=False)
+    with pytest.raises(SystemExit, match="CUBLAS_WORKSPACE_CONFIG"):
+        h.enable_determinism()
+    assert h.determinism_record()["enabled"] is True
+
+
+def test_seed_all_resets_every_rng() -> None:
+    import random
+
+    h.seed_all(3)
+    a = (random.random(), float(torch.rand(1)))
+    h.seed_all(3)
+    assert (random.random(), float(torch.rand(1))) == a
+
+
+def test_deterministic_restore_reseeds(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("HL_DETERMINISTIC", "1")
+    model, tok = _tiny()
+    b = h.TorchBackend(model, tok)
+    b.snapshot()
+    b.restore()
+    x = float(torch.rand(1))
+    torch.rand(5)
+    b.restore()
+    assert float(torch.rand(1)) == x
