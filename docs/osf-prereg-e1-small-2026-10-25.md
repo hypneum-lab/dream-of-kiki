@@ -1539,7 +1539,9 @@ seed 2001) ran out of CUDA memory in backward with 17.0 GiB allocated
 and 3.5 GiB reserved but unallocated (allocator fragmentation; only
 ComfyUI's 0.65 GiB besides). Fix (`2384e19`): the runner sets
 `PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True`, an allocator setting
-with no numerical effect, recorded in every cell's determinism record
+that changes memory allocation, not the update arithmetic (no numerical
+difference was observed in the 19 cells shared by both runs, below),
+recorded in every cell's determinism record
 (validated by the PI as part of the registered instrument, S11).
 No number of this attempt is used, except as the cross-run check below.
 
@@ -1639,8 +1641,10 @@ requires editing the named section before the lock commit.
   projection replaces the superseded one (§9.7b, §9.7d).
 - **S11 Allocator — decided (PI, 2026-10-27 15:57):**
   `PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True` is part of the
-  registered CUDA instrument (no numerical effect; it removed the
-  fragmentation out-of-memory stop of §9.7d). The instrument check
+  registered CUDA instrument (it changes memory allocation, not the
+  update arithmetic; no numerical difference was observed in the 19
+  overlapping smoke cells; it removed the fragmentation out-of-memory
+  stop of §9.7d). The instrument check
   refuses a running backend, an imported tuning / calibration cell or an
   amendment without it, like the determinism fields.
 
