@@ -1484,6 +1484,46 @@ are assumed to cost as much as those of the pilot items (both ≤ 160
 tokens). Memory fits without activation checkpointing (S5 not
 triggered).
 
+**§9.7c Determinism check (S10; PI decision 2026-10-27; 2026-10-27
+08:12-08:26, KXKM-AI, code `75b27f0`).** Deterministic mode
+(`HL_DETERMINISTIC=1`): `torch.use_deterministic_algorithms(True,
+warn_only=False)`, `CUBLAS_WORKSPACE_CONFIG=:4096:8` (required exactly,
+set before the process starts), cuDNN deterministic on and benchmark
+off, Python / NumPy / torch CPU and CUDA RNGs reseeded to 0 at the start
+of every cell; all of it is recorded in every cell's `versions`.
+`scripts/e1_small_determinism_check.py` ran, with one model load, the
+smoke-setting cells `p_min`, `p_ctrl_vanilla_replay_tuned`,
+`p_ctrl_lr_matched` (the same computation under the placeholder
+amendment) and `p_min` again, all on seed 2000, restoring the base
+weights between cells (result file SHA-256 `26119d1f…da913b7`):
+
+- **PASS:** the four cells are identical in pre accuracy (0.5433), post
+  accuracy (0.5767), every per-item choice score (pre and post; one
+  scores digest `e2d63a21…`) and the SHA-256 of all parameters after the
+  cell (`adc47906…eafa9845`, different from the base `c1b469d8…`); each
+  ran 400 updates with all 18 335 planned loss tokens and no invariant
+  violation. The restore path therefore returns the cell to the same
+  state every time.
+- **No op lacks a deterministic implementation** on this path (no error,
+  no warning; `warn_only=False`).
+- **Cost:** 195.4-196.2 s per cell against 163.6 s for the same
+  non-deterministic smoke cell (`p_min`, seed 2000; §9.7b), i.e. about
+  **+20 %** wall; peak memory unchanged (19.55-19.57 GB). Scaling the
+  §9.7b projection by 1.2 gives about **82 h** at `n_eval` 130 and
+  **113 h** at `n_eval` 255 (an estimate: only this cell type was timed).
+- The non-deterministic `p_min` seed-2000 smoke cell had post 0.610;
+  the deterministic one has 0.577: the earlier spread is run-to-run
+  noise of the non-deterministic kernels, not a restore defect.
+
+**Proposed S10 decision (pending the PI).** Register deterministic mode
+for every E1-small CUDA cell (headroom, smoke, tuning, calibration,
+confirmatory), enforced by the instrument check, at a cost of about
++20 % wall (≈ 82-113 h in total). Reason: without it, identical
+computations differ by up to 0.21 in Δ, twenty times δ, which inflates
+SD_D and makes no cell reproducible; with it, a cell is bit-identical
+on rerun. If the PI agrees, the measurement smoke is repeated in
+deterministic mode before filing and its projection replaces §9.7b.
+
 ### §9.8 Filing gate (E1-small)
 
 Not filed until: the PI has decided S10; the measurement smoke on
@@ -1536,10 +1576,12 @@ requires editing the named section before the lock commit.
   version check.
 - **S9 macM1 pipeline smoke — decided (20:06):** run in addition to the
   KXKM-AI measurement smoke, on the `torch-mps` instrument (§9.7).
-- **S10 Determinism — open:** CUDA replay is not bit-reproducible and
-  same-configuration smoke cells differ by up to 0.21 in Δ (§9.7b);
-  either accept it (it enters SD_D) or enforce deterministic kernels and
-  re-measure before filing.
+- **S10 Determinism — measured, decision pending:** the PI chose on
+  2026-10-27 to force determinism and measure. Deterministic mode makes
+  the same cell bit-identical on rerun and identical computations
+  identical (§9.7c) at about +20 % wall. **Proposed:** register it for
+  every E1-small CUDA cell and repeat the measurement smoke before
+  filing (§9.7c).
 
 ## §11 Differences from the E1 (35B) draft (revision 9)
 
