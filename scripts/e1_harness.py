@@ -98,6 +98,13 @@ def _study_backend_ok(backend: Any, versions: Any, study: Any, mode: Any) -> boo
     return False
 
 
+def check_amendment_instrument(doc: dict[str, Any]) -> None:
+    """An amendment must record source cells of a registered instrument (S10)."""
+    if STUDY_INSTRUMENTS[STUDY] and not _study_backend_ok(
+            doc.get("backend"), doc.get("versions"), doc.get("study"), "tuning"):
+        raise SystemExit("the amendment was not tuned on the registered instrument")
+
+
 def check_manifest_study(man: dict[str, Any]) -> None:
     """A FROZEN manifest must have been frozen with this study's headroom model
     (manifests without that record are accepted for the default study only)."""
@@ -390,6 +397,9 @@ def run(args: argparse.Namespace, make_backend: BackendFactory) -> int:  # noqa:
                    "tuning_cells_sha256": sha_file(args.tuning_cells),
                    "calib_cells_sha256": sha_file(args.calib_cells),
                    "backend": backends.pop(), "study": STUDY,
+                   # the instrument of the (validated) source cells, re-checked
+                   # when the amendment is used
+                   "versions": tcells[0].get("versions"),
                    "date": time.strftime("%Y-%m-%d")})
         out = args.out / "e1-tuning-amendment.json"
         if out.exists():
@@ -457,6 +467,7 @@ def run(args: argparse.Namespace, make_backend: BackendFactory) -> int:  # noqa:
                     bool(STUDY_INSTRUMENTS[STUDY]) and (doc.get("backend"), doc.get("study"))
                     != (b.name, STUDY)):
                 raise SystemExit("the amendment was tuned on another backend or study")
+            check_amendment_instrument(doc)
             conf_size = int(json.loads(args.manifest.read_text())
                             ["partitions"]["confirmatory"]["n_items"])
             am = pr.validate_amendment(doc, conf_size)
