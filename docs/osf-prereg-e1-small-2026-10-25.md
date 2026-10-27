@@ -31,7 +31,8 @@ one NVIDIA RTX 4090 (KXKM-AI), every parameter on that device, linear
 attention through the transformers torch fallback (S6: the fla /
 causal-conv1d kernels were evaluated and dropped by the pre-fixed fp32
 diagnostic rule, §9.2), token ids
-from the raw pinned `tokenizer.json` (S8); §9.2.
+from the raw pinned `tokenizer.json` (S8), deterministic mode (S10,
+§9.7c); §9.2.
 **Harness:** `scripts/e1_harness.py` with `HL_STUDY=e1-small`, PyTorch
 backend `scripts/pilot_cycle3_cuda.py`, runner
 `scripts/run_e1_small_cuda.sh`; analysis `scripts/analyze_e1_cuda.py`.
@@ -1217,7 +1218,8 @@ headroom first, which the PI has deferred; it was not chosen.
 - Instruments (`STUDY_INSTRUMENTS`): for `e1-small` the harness accepts
   (a) the registered instrument, backend `torch` with every parameter on
   one CUDA device, raw tokenizer, torch fallback kernels, RAM snapshot and
-  `torch.optim.SGD`, in every mode,
+  `torch.optim.SGD`, deterministic mode (every field of
+  `determinism_record()` as registered: S10), in every mode,
   and (b) the pipeline-smoke instrument `torch-mps` (every parameter on
   the MPS device, raw tokenizer, torch fallback kernels, disk snapshot,
   fused SGD) in smoke mode only. The check applies to the running backend (before the base
@@ -1426,7 +1428,9 @@ waits for any heavy job (and stops if one starts), stops the harness
 and lifts the pause only once no harness or launcher process is
 left; a signal ends the driver through the same cleanup. No number from this attempt is used.
 
-**§9.7b KXKM-AI measurement smoke (2026-10-26 23:15 → 2026-10-27
+**§9.7b KXKM-AI measurement smoke, non-deterministic — SUPERSEDED by
+§9.7d for every measurement and the projection (S10); kept as run
+(2026-10-26 23:15 → 2026-10-27
 00:59; registered instrument after the S6 diagnostic: torch, one CUDA
 device, raw tokenizer, torch fallback, RAM snapshot, `torch.optim.SGD`;
 code `cce9ba7`; torch 2.11.0+cu130, transformers 5.7.0, tokenizers
@@ -1515,14 +1519,17 @@ weights between cells (result file SHA-256 `26119d1f…da913b7`):
   the deterministic one has 0.577: the earlier spread is run-to-run
   noise of the non-deterministic kernels, not a restore defect.
 
-**Proposed S10 decision (pending the PI).** Register deterministic mode
-for every E1-small CUDA cell (headroom, smoke, tuning, calibration,
+**S10 decision (PI, 2026-10-27): registered.** The proposal was to
+register deterministic mode for every E1-small CUDA cell (headroom, smoke, tuning, calibration,
 confirmatory), enforced by the instrument check, at a cost of about
 +20 % wall (≈ 82-113 h in total). Reason: without it, identical
 computations differ by up to 0.21 in Δ, twenty times δ, which inflates
 SD_D and makes no cell reproducible; with it, a cell is bit-identical
-on rerun. If the PI agrees, the measurement smoke is repeated in
-deterministic mode before filing and its projection replaces §9.7b.
+on rerun. The PI agreed: the measurement smoke is repeated in
+deterministic mode (§9.7d) and its projection replaces §9.7b.
+
+**§9.7d KXKM-AI measurement smoke in deterministic mode (registered
+instrument).** *(filled after the run)*
 
 ### §9.8 Filing gate (E1-small)
 
@@ -1576,12 +1583,10 @@ requires editing the named section before the lock commit.
   version check.
 - **S9 macM1 pipeline smoke — decided (20:06):** run in addition to the
   KXKM-AI measurement smoke, on the `torch-mps` instrument (§9.7).
-- **S10 Determinism — measured, decision pending:** the PI chose on
-  2026-10-27 to force determinism and measure. Deterministic mode makes
-  the same cell bit-identical on rerun and identical computations
-  identical (§9.7c) at about +20 % wall. **Proposed:** register it for
-  every E1-small CUDA cell and repeat the measurement smoke before
-  filing (§9.7c).
+- **S10 Determinism — decided (PI, 2026-10-27):** deterministic mode is
+  registered for every E1-small CUDA cell and enforced by the instrument
+  check (§9.7c); the measurement smoke is repeated in this mode and its
+  projection replaces the superseded one (§9.7b, §9.7d).
 
 ## §11 Differences from the E1 (35B) draft (revision 9)
 
@@ -1608,6 +1613,7 @@ bullet); §9-§10 are E1-small's own.
 | 13 | Headroom and freeze (§5.1 property 5, §5.1b step 9) | 35B base on TUNING | 4B base on TUNING only; its own FROZEN copy of the same pending corpus (§9.3) | PI decision S2 |
 | 14 | Backend | Apple MLX (CUDA kept as a parity path) | CUDA, PyTorch 2.11.0, transformers 5.7.0, hash-pinned (§9.2, §9.4) | PI decision |
 | 15 | Linear-attention kernels | `mlx_lm` Metal kernel / op-by-op recurrence | transformers torch fallback; fla-core + causal-conv1d evaluated and dropped by the fp32 diagnostic (§9.2) | PI decision S6 |
+| 15b | Determinism | not specified (MLX replay not bit-reproducible, 35B D6) | deterministic mode registered for every CUDA cell, enforced (§9.7c) | PI decision S10 |
 | 16 | Scope (§1) | Qwen3.6-35B-A3B | Qwen3.5-4B; no inference about 35B (§0) | scope |
 | 17 | Instruments (§8) | MLX registered | CUDA registered; `torch-mps` for the macM1 pipeline smoke only; never pooled (§9.7) | PI decisions |
 | 18 | Smokes | one smoke on the filing hardware | two: macM1 pipeline smoke (`torch-mps`) and KXKM-AI measurement smoke (§9.7) | PI decision S9 |

@@ -30,8 +30,9 @@ export HF_HUB_OFFLINE=1
 export HL_STUDY=e1-small
 unset HL_DEVICE_MAP HL_MODEL HL_REVISION
 export HL_LINEAR_ATTN=torch  # registered after the S6 diagnostic (2026-10-26)
-# S10 (pending): HL_DETERMINISTIC=1 needs the cuBLAS workspace before CUDA starts
-[ "${HL_DETERMINISTIC:-0}" = 1 ] && export CUBLAS_WORKSPACE_CONFIG=:4096:8
+# S10 (PI decision 2026-10-27): deterministic mode is registered; the cuBLAS
+# workspace must be set before CUDA starts.
+export HL_DETERMINISTIC=1 CUBLAS_WORKSPACE_CONFIG=:4096:8
 REV=851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a
 SNAP="$HF_HUB_CACHE/models--Qwen--Qwen3.5-4B/snapshots/$REV"
 mkdir -p "$OUT"

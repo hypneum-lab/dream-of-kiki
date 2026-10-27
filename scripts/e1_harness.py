@@ -59,10 +59,15 @@ MODEL_REPO, MODEL_REVISION = src.STUDY_MODELS[STUDY]
 # (raw pinned tokenizer.json, transformers torch fallback for Gated DeltaNet
 # after the S6 diagnostic of 2026-10-26) for every mode, and the
 # macM1 MPS instrument (torch fallback kernels) for the smoke only; cells of
-# the two have different backend names and are never pooled.
+# the two have different backend names and are never pooled. S10 (PI decision
+# 2026-10-27): every CUDA cell runs in deterministic mode, checked field by
+# field against DETERMINISM.
+DETERMINISM = {"enabled": True, "use_deterministic_algorithms": True, "warn_only": False,
+               "cublas_workspace_config": ":4096:8", "cudnn_deterministic": True,
+               "cudnn_benchmark": False, "seed_per_cell": 0}
 STUDY_INSTRUMENTS: dict[str, list[dict[str, Any]]] = {"e1": [], "e1-small": [
     {"backend": "torch", "device": "cuda", "tokenizer": "raw",
-     "linear_attn": "torch", "snapshot": "ram", "sgd": "optim",
+     "linear_attn": "torch", "snapshot": "ram", "sgd": "optim", "determinism": DETERMINISM,
      "modes": ("smoke", "headroom", "tuning", "calibrate", "confirmatory")},
     {"backend": "torch-mps", "device": "mps", "tokenizer": "raw", "linear_attn": "torch",
      "snapshot": "disk", "sgd": "fused", "modes": ("smoke",)}]}
@@ -74,8 +79,8 @@ TOKENIZER = "raw" if STUDY_INSTRUMENTS[STUDY] else "transformers"
 
 def _study_backend_ok(backend: Any, versions: Any, study: Any, mode: Any) -> bool:
     """Backend, device, actual parameter placement (one device of that type),
-    tokenizer, linear-attention implementation, mode and study label match one
-    of the study's instruments."""
+    tokenizer, linear-attention implementation, snapshot, SGD, determinism (when the
+    instrument requires it), mode and study label match one of the instruments."""
     insts = STUDY_INSTRUMENTS[STUDY]
     if not insts:
         return True
@@ -85,6 +90,9 @@ def _study_backend_ok(backend: Any, versions: Any, study: Any, mode: Any) -> boo
         one_device = len(where) == 1 and str(where[0]).split(":")[0] == inst["device"]
         same = backend == inst["backend"] and all(
             v.get(k) == inst[k] for k in ("device", "tokenizer", "linear_attn", "snapshot", "sgd"))
+        if "determinism" in inst:
+            det = v.get("determinism") or {}
+            same = same and all(det.get(k) == want for k, want in inst["determinism"].items())
         if same and one_device and mode in inst["modes"] and study == STUDY:
             return True
     return False

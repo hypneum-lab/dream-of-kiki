@@ -35,11 +35,15 @@ def small(monkeypatch: pytest.MonkeyPatch) -> Any:
     return _reload(monkeypatch, "e1-small")
 
 
-REG = {"tokenizer": "raw", "linear_attn": "torch", "snapshot": "ram", "sgd": "optim"}
+DET = {"enabled": True, "use_deterministic_algorithms": True, "warn_only": False,
+       "cublas_workspace_config": ":4096:8", "cudnn_deterministic": True,
+       "cudnn_benchmark": False, "seed_per_cell": 0}
+REG: dict[str, Any] = {"tokenizer": "raw", "linear_attn": "torch", "snapshot": "ram",
+                       "sgd": "optim", "determinism": DET}
 
 
 def _cell(model: str, revision: str, backend: str = "torch", device: str = "cuda",
-          placement: tuple[str, ...] = ("cuda:0",), **over: str) -> dict[str, Any]:
+          placement: tuple[str, ...] = ("cuda:0",), **over: Any) -> dict[str, Any]:
     return {"mode": "tuning", "model": model, "revision": revision, "run_identity": "r",
             "corpus": {"corpus_sha256": "c" * 64, "partition": "tuning"},
             "backend": backend, "study": "e1-small",
@@ -48,7 +52,7 @@ def _cell(model: str, revision: str, backend: str = "torch", device: str = "cuda
 
 class _FakeBackend:
     def __init__(self, name: str, device: str, placement: tuple[str, ...],
-                 **over: str) -> None:
+                 **over: Any) -> None:
         self.name, self.device, self.placement, self.over = name, device, placement, over
 
     def snapshot(self) -> None:
@@ -58,7 +62,7 @@ class _FakeBackend:
         return {"device": self.device, "placement": list(self.placement), **REG, **self.over}
 
 
-Instrument = tuple[str, str, tuple[str, ...], dict[str, str]]
+Instrument = tuple[str, str, tuple[str, ...], dict[str, Any]]
 BAD_INSTRUMENTS: tuple[Instrument, ...] = (
                    ("torch", "cpu", ("cpu",), {}), ("mlx", "Device(gpu, 0)", (), {}),
                    ("torch", "cuda", ("cpu",), {}), ("torch", "cuda", ("cpu", "cuda:0"), {}),
@@ -67,13 +71,16 @@ BAD_INSTRUMENTS: tuple[Instrument, ...] = (
                    ("torch", "cuda", ("cuda:0",), {"linear_attn": "fla+causal_conv1d"}),
                    ("torch", "cuda", ("cuda:0",), {"linear_attn": "mixed"}),
                    ("torch", "cuda", ("cuda:0",), {"sgd": "fused"}),
-                   ("torch", "cuda", ("cuda:0",), {"snapshot": "disk"}))
+                   ("torch", "cuda", ("cuda:0",), {"snapshot": "disk"}),
+                   ("torch", "cuda", ("cuda:0",), {"determinism": {**DET, "enabled": False}}),
+                   ("torch", "cuda", ("cuda:0",), {"determinism": {**DET, "warn_only": True}}),
+                   ("torch", "cuda", ("cuda:0",), {"determinism": {}}))
 
 
 @pytest.mark.parametrize(("backend", "device", "placement", "over"), BAD_INSTRUMENTS)
 def test_small_study_enforces_the_registered_instrument(
         small: Any, tmp_path: Path, backend: str, device: str, placement: tuple[str, ...],
-        over: dict[str, str]) -> None:
+        over: dict[str, Any]) -> None:
     with pytest.raises(SystemExit, match="does not come"):
         small.check_provenance([_cell(*SMALL, backend, device, placement, **over)], "tuning",
                                "c" * 64)
