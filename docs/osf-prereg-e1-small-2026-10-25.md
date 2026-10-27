@@ -1426,13 +1426,69 @@ waits for any heavy job (and stops if one starts), stops the harness
 and lifts the pause only once no harness or launcher process is
 left; a signal ends the driver through the same cleanup. No number from this attempt is used.
 
-**§9.7b KXKM-AI measurement smoke.** *(filled after the run)*
+**§9.7b KXKM-AI measurement smoke (2026-10-26 23:15 → 2026-10-27
+00:59; registered instrument after the S6 diagnostic: torch, one CUDA
+device, raw tokenizer, torch fallback, RAM snapshot, `torch.optim.SGD`;
+code `cce9ba7`; torch 2.11.0+cu130, transformers 5.7.0, tokenizers
+0.22.2).** Probe cell (`p_max`, seed 2000): 162.2 s, peak
+`max_memory_allocated` 19.52 GB, host RSS 13.97 GB, 400 updates,
+18 335 / 18 335 loss tokens, no invariant violation. Then the 30 smoke
+cells (seeds 2000-2002 × 10 profiles, pilot fixtures, 80 eval items per
+cell, placeholder amendment), cell cache SHA-256 `bf719418…cfab3e`:
+**30 / 30 completed, 0 invariant violations, every budget matched**
+(achieved = planned loss tokens), peak `max_memory_allocated` ≤ 20.39 GB
+(18.99 GiB) of 23.99 GiB, host RSS ≤ 13.99 GB, total wall 1.73 h.
+
+| profile | wall per cell (s) | updates | peak (GB) |
+|---|---|---|---|
+| `p_min`, `p_equ`, `p_max`, `p_ctrl_vanilla_replay_tuned`, `p_ctrl_lr_matched` | 163-165 | 400 | 20.36-20.39 |
+| `p_ctrl_shuffle` | 165-167 | 403-405 | 20.35 |
+| `p_ctrl_template` | 205-216 | 539-582 | 20.06 |
+| `p_ctrl_onpolicy_replay` | 159-175 | 310-365 (charged budget) | 19.50 |
+| `p_ctrl_sft` | 581-779 | 1 871-2 567 (short texts) | 19.50 |
+| `p_noise` | 46.5-47.0 | 0 | 16.16 |
+
+Two cells carry the collapse flag (`p_ctrl_template` seed 2002, post
+− pre = −0.113; `p_ctrl_vanilla_replay_tuned` seed 2000, −0.147); the
+smoke is never analysed.
+
+**Run-to-run variability (finding for the PI).** In the smoke the
+untuned arms all run the default configuration, so `p_min`,
+`p_ctrl_vanilla_replay_tuned` and `p_ctrl_lr_matched` (placeholder
+c = 1) are the same computation on the same seed, yet their Δ differ:
+seed 2000 +0.067 / −0.147 / +0.027, seed 2001 +0.110 / +0.060 / +0.050,
+seed 2002 +0.070 / +0.053 / +0.060; the probe and the smoke `p_max`
+seed-2000 cells also differ (post 0.577 vs 0.593). CUDA replay is not
+bit-reproducible (most likely non-deterministic reductions in backward;
+not isolated here), and 400 SGD steps can amplify it. This is noise within an arm that §3 does not
+model separately (it enters SD_D); whether to enforce deterministic
+kernels (`torch.use_deterministic_algorithms`, cuBLAS workspace) before
+filing is a PI decision (S10, §10).
+
+**Projection to the 1,620 cells** (`scripts/e1_small_projection.py`):
+least-squares fit over the 30 cells, wall = 0.0655 s × scoring
+forwards + 0.2835 s × updates + 0.00020 s × loss tokens + 5.0 s; the
+fit reproduces the measured cells (e.g. `p_min` 164 s, `p_ctrl_sft`
+637 s predicted). Workload: T_s = 5 × 40 × 39.2 mean loss tokens of a
+corpus fact text = 7 847, updates per profile scaled from the smoke by
+T_s; confirmatory `n_eval` 130 (1 040 scoring forwards, + 160 for OPR);
+tuning and calibration on the 432 remaining TUNING items.
+
+| `n_eval` | confirmatory 1,410 | tuning 120 | calibration 60 | smoke 30 (measured) | **total** |
+|---|---|---|---|---|---|
+| 130 (floor) | 52.5 h (134 s per cell) | 9.4 h | 4.6 h | 1.7 h | **68.2 h** |
+| 255 (§5.2 at p_disc 0.20) | 78.1 h (199 s per cell) | 9.4 h | 4.6 h | 1.7 h | **93.8 h** |
+
+About 3-4 days of the RTX 4090; scoring forwards of the corpus items
+are assumed to cost as much as those of the pilot items (both ≤ 160
+tokens). Memory fits without activation checkpointing (S5 not
+triggered).
 
 ### §9.8 Filing gate (E1-small)
 
-Not filed until: the kernel parity check (§9.2) has passed; the
-measurement smoke on KXKM-AI has run and its measurements and
-projection are written here; the 4B headroom has run and the E1-small
+Not filed until: the PI has decided S10; the measurement smoke on
+KXKM-AI has run on the registered instrument (done, §9.7b; to be
+repeated if S10 changes the instrument); the 4B headroom has run and the E1-small
 FROZEN corpus and manifest hashes are written here; the decision code
 has been run on synthetic paired data covering every §2 state and §7
 row; the harness code is merged at a pinned commit with passing tests.
@@ -1480,6 +1536,10 @@ requires editing the named section before the lock commit.
   version check.
 - **S9 macM1 pipeline smoke — decided (20:06):** run in addition to the
   KXKM-AI measurement smoke, on the `torch-mps` instrument (§9.7).
+- **S10 Determinism — open:** CUDA replay is not bit-reproducible and
+  same-configuration smoke cells differ by up to 0.21 in Δ (§9.7b);
+  either accept it (it enters SD_D) or enforce deterministic kernels and
+  re-measure before filing.
 
 ## §11 Differences from the E1 (35B) draft (revision 9)
 
