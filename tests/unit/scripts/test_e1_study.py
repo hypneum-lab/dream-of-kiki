@@ -164,8 +164,8 @@ def test_small_study_mps_instrument_is_smoke_only(small: Any) -> None:
 
 
 def test_amendment_must_record_the_registered_instrument(small: Any) -> None:
-    good = {"backend": "torch", "study": "e1-small",
-            "versions": {"device": "cuda", "placement": ["cuda:0"], **REG}}
+    good: dict[str, Any] = {"backend": "torch", "study": "e1-small",
+                            "versions": {"device": "cuda", "placement": ["cuda:0"], **REG}}
     small.check_amendment_instrument(good)
     nondet = {**good, "versions": {**good["versions"], "determinism": {**DET, "enabled": False}}}
     for bad in (nondet, {**good, "versions": None}, {**good, "study": "e1"}):
