@@ -1,0 +1,800 @@
+{
+ "cells": {
+  "p_ctrl_onpolicy_replay|2000": {
+   "close_ok": true,
+   "decisions": {
+    "collapse": true,
+    "post": true,
+    "post_correct": true,
+    "pre": true,
+    "pre_correct": true,
+    "restructure": true
+   },
+   "drift_rel": 6.154049548349088e-08,
+   "exact": {
+    "achieved_loss_tokens": [
+     4354,
+     4354
+    ],
+    "budget": [
+     {
+      "charge": 1656,
+      "matched": true,
+      "status": "matched",
+      "t_s": 6010,
+      "update_tokens": 4354
+     },
+     {
+      "charge": 1656,
+      "matched": true,
+      "status": "matched",
+      "t_s": 6010,
+      "update_tokens": 4354
+     }
+    ],
+    "n_eval_items": [
+     12,
+     12
+    ],
+    "n_truncated": [
+     1,
+     1
+    ],
+    "n_updates": [
+     141,
+     141
+    ],
+    "opr_corpus_size": [
+     10,
+     10
+    ],
+    "s_opr": [
+     4968,
+     4968
+    ],
+    "t_s": [
+     6010,
+     6010
+    ]
+   },
+   "exact_equal": true,
+   "kl_diff": 1.0031391998316375e-07,
+   "norm_change_rel": 1.261262427401782e-08,
+   "post_diff": 0.0,
+   "pre_diff": 0.0,
+   "restructure": [
+    null,
+    null
+   ],
+   "router_drift_rel": 1.9824805788035778e-06,
+   "usage_l1_diff": 0.0
+  },
+  "p_ctrl_onpolicy_replay|2001": {
+   "close_ok": true,
+   "decisions": {
+    "collapse": true,
+    "post": true,
+    "post_correct": true,
+    "pre": true,
+    "pre_correct": true,
+    "restructure": true
+   },
+   "drift_rel": 3.8495312444438696e-07,
+   "exact": {
+    "achieved_loss_tokens": [
+     4333,
+     4333
+    ],
+    "budget": [
+     {
+      "charge": 1657,
+      "matched": true,
+      "status": "matched",
+      "t_s": 5990,
+      "update_tokens": 4333
+     },
+     {
+      "charge": 1657,
+      "matched": true,
+      "status": "matched",
+      "t_s": 5990,
+      "update_tokens": 4333
+     }
+    ],
+    "n_eval_items": [
+     12,
+     12
+    ],
+    "n_truncated": [
+     1,
+     1
+    ],
+    "n_updates": [
+     141,
+     141
+    ],
+    "opr_corpus_size": [
+     12,
+     12
+    ],
+    "s_opr": [
+     4970,
+     4970
+    ],
+    "t_s": [
+     5990,
+     5990
+    ]
+   },
+   "exact_equal": true,
+   "kl_diff": 3.3008766192610395e-08,
+   "norm_change_rel": 3.36025237490733e-07,
+   "post_diff": 0.0,
+   "pre_diff": 0.0,
+   "restructure": [
+    null,
+    null
+   ],
+   "router_drift_rel": 1.5832740096417575e-06,
+   "usage_l1_diff": 0.0
+  },
+  "p_ctrl_shuffle|2000": {
+   "close_ok": true,
+   "decisions": {
+    "collapse": true,
+    "post": true,
+    "post_correct": true,
+    "pre": true,
+    "pre_correct": true,
+    "restructure": true
+   },
+   "drift_rel": 2.814353973693004e-07,
+   "exact": {
+    "achieved_loss_tokens": [
+     6010,
+     6010
+    ],
+    "budget": [
+     {
+      "charge": 0,
+      "matched": true,
+      "status": "matched",
+      "t_s": 6010,
+      "update_tokens": 6010
+     },
+     {
+      "charge": 0,
+      "matched": true,
+      "status": "matched",
+      "t_s": 6010,
+      "update_tokens": 6010
+     }
+    ],
+    "n_eval_items": [
+     12,
+     12
+    ],
+    "n_truncated": [
+     1,
+     1
+    ],
+    "n_updates": [
+     214,
+     214
+    ],
+    "t_s": [
+     6010,
+     6010
+    ]
+   },
+   "exact_equal": true,
+   "kl_diff": 1.9156051278210184e-08,
+   "norm_change_rel": 2.3250751557766376e-07,
+   "post_diff": 0.0,
+   "pre_diff": 0.0,
+   "restructure": [
+    null,
+    null
+   ],
+   "router_drift_rel": 2.338341370157945e-06,
+   "usage_l1_diff": 0.0
+  },
+  "p_ctrl_shuffle|2001": {
+   "close_ok": true,
+   "decisions": {
+    "collapse": true,
+    "post": true,
+    "post_correct": true,
+    "pre": true,
+    "pre_correct": true,
+    "restructure": true
+   },
+   "drift_rel": 5.134714482313586e-08,
+   "exact": {
+    "achieved_loss_tokens": [
+     5990,
+     5990
+    ],
+    "budget": [
+     {
+      "charge": 0,
+      "matched": true,
+      "status": "matched",
+      "t_s": 5990,
+      "update_tokens": 5990
+     },
+     {
+      "charge": 0,
+      "matched": true,
+      "status": "matched",
+      "t_s": 5990,
+      "update_tokens": 5990
+     }
+    ],
+    "n_eval_items": [
+     12,
+     12
+    ],
+    "n_truncated": [
+     1,
+     1
+    ],
+    "n_updates": [
+     215,
+     215
+    ],
+    "t_s": [
+     5990,
+     5990
+    ]
+   },
+   "exact_equal": true,
+   "kl_diff": 1.07608499259719e-08,
+   "norm_change_rel": 2.419274057772176e-09,
+   "post_diff": 0.0,
+   "pre_diff": 0.0,
+   "restructure": [
+    null,
+    null
+   ],
+   "router_drift_rel": 6.234833462217049e-08,
+   "usage_l1_diff": 0.0
+  },
+  "p_ctrl_template|2000": {
+   "close_ok": true,
+   "decisions": {
+    "collapse": true,
+    "post": true,
+    "post_correct": true,
+    "pre": true,
+    "pre_correct": true,
+    "restructure": true
+   },
+   "drift_rel": 1.1984760939113675e-07,
+   "exact": {
+    "achieved_loss_tokens": [
+     6010,
+     6010
+    ],
+    "budget": [
+     {
+      "charge": 0,
+      "matched": true,
+      "status": "matched",
+      "t_s": 6010,
+      "update_tokens": 6010
+     },
+     {
+      "charge": 0,
+      "matched": true,
+      "status": "matched",
+      "t_s": 6010,
+      "update_tokens": 6010
+     }
+    ],
+    "n_eval_items": [
+     12,
+     12
+    ],
+    "n_truncated": [
+     1,
+     1
+    ],
+    "n_updates": [
+     225,
+     225
+    ],
+    "t_s": [
+     6010,
+     6010
+    ]
+   },
+   "exact_equal": true,
+   "kl_diff": 2.137909268411578e-08,
+   "norm_change_rel": 7.09197353620288e-08,
+   "post_diff": 0.0,
+   "pre_diff": 0.0,
+   "restructure": [
+    null,
+    null
+   ],
+   "router_drift_rel": 2.9297960459187015e-06,
+   "usage_l1_diff": 0.0
+  },
+  "p_ctrl_template|2001": {
+   "close_ok": true,
+   "decisions": {
+    "collapse": true,
+    "post": true,
+    "post_correct": true,
+    "pre": true,
+    "pre_correct": true,
+    "restructure": true
+   },
+   "drift_rel": 2.0478194829819388e-07,
+   "exact": {
+    "achieved_loss_tokens": [
+     5990,
+     5990
+    ],
+    "budget": [
+     {
+      "charge": 0,
+      "matched": true,
+      "status": "matched",
+      "t_s": 5990,
+      "update_tokens": 5990
+     },
+     {
+      "charge": 0,
+      "matched": true,
+      "status": "matched",
+      "t_s": 5990,
+      "update_tokens": 5990
+     }
+    ],
+    "n_eval_items": [
+     12,
+     12
+    ],
+    "n_truncated": [
+     1,
+     1
+    ],
+    "n_updates": [
+     224,
+     224
+    ],
+    "t_s": [
+     5990,
+     5990
+    ]
+   },
+   "exact_equal": true,
+   "kl_diff": 9.34020181683759e-09,
+   "norm_change_rel": 1.5585407017058537e-07,
+   "post_diff": 0.0,
+   "pre_diff": 0.0,
+   "restructure": [
+    null,
+    null
+   ],
+   "router_drift_rel": 1.0743124593820714e-06,
+   "usage_l1_diff": 0.0
+  },
+  "p_equ|2000": {
+   "close_ok": true,
+   "decisions": {
+    "collapse": true,
+    "post": true,
+    "post_correct": true,
+    "pre": true,
+    "pre_correct": true,
+    "restructure": true
+   },
+   "drift_rel": 1.8846158844809297e-08,
+   "exact": {
+    "achieved_loss_tokens": [
+     6010,
+     6010
+    ],
+    "budget": [
+     {
+      "charge": 0,
+      "matched": true,
+      "status": "matched",
+      "t_s": 6010,
+      "update_tokens": 6010
+     },
+     {
+      "charge": 0,
+      "matched": true,
+      "status": "matched",
+      "t_s": 6010,
+      "update_tokens": 6010
+     }
+    ],
+    "n_eval_items": [
+     12,
+     12
+    ],
+    "n_truncated": [
+     0,
+     0
+    ],
+    "n_updates": [
+     200,
+     200
+    ],
+    "t_s": [
+     6010,
+     6010
+    ]
+   },
+   "exact_equal": true,
+   "kl_diff": 1.3001416670696542e-08,
+   "norm_change_rel": 3.0081710109876695e-08,
+   "post_diff": 0.0,
+   "pre_diff": 0.0,
+   "restructure": [
+    null,
+    null
+   ],
+   "router_drift_rel": 3.24621254674587e-08,
+   "usage_l1_diff": 0.0
+  },
+  "p_equ|2001": {
+   "close_ok": true,
+   "decisions": {
+    "collapse": true,
+    "post": true,
+    "post_correct": true,
+    "pre": true,
+    "pre_correct": true,
+    "restructure": true
+   },
+   "drift_rel": 4.458219784528874e-09,
+   "exact": {
+    "achieved_loss_tokens": [
+     5990,
+     5990
+    ],
+    "budget": [
+     {
+      "charge": 0,
+      "matched": true,
+      "status": "matched",
+      "t_s": 5990,
+      "update_tokens": 5990
+     },
+     {
+      "charge": 0,
+      "matched": true,
+      "status": "matched",
+      "t_s": 5990,
+      "update_tokens": 5990
+     }
+    ],
+    "n_eval_items": [
+     12,
+     12
+    ],
+    "n_truncated": [
+     0,
+     0
+    ],
+    "n_updates": [
+     200,
+     200
+    ],
+    "t_s": [
+     5990,
+     5990
+    ]
+   },
+   "exact_equal": true,
+   "kl_diff": 5.885857541371858e-10,
+   "norm_change_rel": 4.446964866981616e-08,
+   "post_diff": 0.0,
+   "pre_diff": 0.0,
+   "restructure": [
+    null,
+    null
+   ],
+   "router_drift_rel": 5.918316309603304e-08,
+   "usage_l1_diff": 0.0
+  },
+  "p_max|2000": {
+   "close_ok": true,
+   "decisions": {
+    "collapse": true,
+    "post": true,
+    "post_correct": true,
+    "pre": true,
+    "pre_correct": true,
+    "restructure": true
+   },
+   "drift_rel": 1.8622645789922075e-08,
+   "exact": {
+    "achieved_loss_tokens": [
+     6010,
+     6010
+    ],
+    "budget": [
+     {
+      "charge": 0,
+      "matched": true,
+      "status": "matched",
+      "t_s": 6010,
+      "update_tokens": 6010
+     },
+     {
+      "charge": 0,
+      "matched": true,
+      "status": "matched",
+      "t_s": 6010,
+      "update_tokens": 6010
+     }
+    ],
+    "n_eval_items": [
+     12,
+     12
+    ],
+    "n_truncated": [
+     0,
+     0
+    ],
+    "n_updates": [
+     200,
+     200
+    ],
+    "t_s": [
+     6010,
+     6010
+    ]
+   },
+   "exact_equal": true,
+   "kl_diff": 1.7580348840758042e-08,
+   "norm_change_rel": 3.0305223292010473e-08,
+   "post_diff": 0.0,
+   "pre_diff": 0.0,
+   "restructure": [
+    2,
+    2
+   ],
+   "router_drift_rel": 5.995554681976717e-08,
+   "usage_l1_diff": 0.0
+  },
+  "p_max|2001": {
+   "close_ok": true,
+   "decisions": {
+    "collapse": true,
+    "post": true,
+    "post_correct": true,
+    "pre": true,
+    "pre_correct": true,
+    "restructure": true
+   },
+   "drift_rel": 4.404756905799186e-09,
+   "exact": {
+    "achieved_loss_tokens": [
+     5990,
+     5990
+    ],
+    "budget": [
+     {
+      "charge": 0,
+      "matched": true,
+      "status": "matched",
+      "t_s": 5990,
+      "update_tokens": 5990
+     },
+     {
+      "charge": 0,
+      "matched": true,
+      "status": "matched",
+      "t_s": 5990,
+      "update_tokens": 5990
+     }
+    ],
+    "n_eval_items": [
+     12,
+     12
+    ],
+    "n_truncated": [
+     0,
+     0
+    ],
+    "n_updates": [
+     200,
+     200
+    ],
+    "t_s": [
+     5990,
+     5990
+    ]
+   },
+   "exact_equal": true,
+   "kl_diff": 4.962971979563524e-09,
+   "norm_change_rel": 4.4523111519782886e-08,
+   "post_diff": 0.0,
+   "pre_diff": 0.0,
+   "restructure": [
+    0,
+    0
+   ],
+   "router_drift_rel": 5.001855133452443e-08,
+   "usage_l1_diff": 0.0
+  },
+  "p_min|2000": {
+   "close_ok": true,
+   "decisions": {
+    "collapse": true,
+    "post": true,
+    "post_correct": true,
+    "pre": true,
+    "pre_correct": true,
+    "restructure": true
+   },
+   "drift_rel": 2.121482282793281e-07,
+   "exact": {
+    "achieved_loss_tokens": [
+     6010,
+     6010
+    ],
+    "budget": [
+     {
+      "charge": 0,
+      "matched": true,
+      "status": "matched",
+      "t_s": 6010,
+      "update_tokens": 6010
+     },
+     {
+      "charge": 0,
+      "matched": true,
+      "status": "matched",
+      "t_s": 6010,
+      "update_tokens": 6010
+     }
+    ],
+    "n_eval_items": [
+     12,
+     12
+    ],
+    "n_truncated": [
+     0,
+     0
+    ],
+    "n_updates": [
+     200,
+     200
+    ],
+    "t_s": [
+     6010,
+     6010
+    ]
+   },
+   "exact_equal": true,
+   "kl_diff": 2.4149614990046087e-09,
+   "norm_change_rel": 1.6322034988949492e-07,
+   "post_diff": 0.0,
+   "pre_diff": 0.0,
+   "restructure": [
+    null,
+    null
+   ],
+   "router_drift_rel": 8.167732934934852e-07,
+   "usage_l1_diff": 0.0
+  },
+  "p_min|2001": {
+   "close_ok": true,
+   "decisions": {
+    "collapse": true,
+    "post": true,
+    "post_correct": true,
+    "pre": true,
+    "pre_correct": true,
+    "restructure": true
+   },
+   "drift_rel": 3.088370763677278e-07,
+   "exact": {
+    "achieved_loss_tokens": [
+     5990,
+     5990
+    ],
+    "budget": [
+     {
+      "charge": 0,
+      "matched": true,
+      "status": "matched",
+      "t_s": 5990,
+      "update_tokens": 5990
+     },
+     {
+      "charge": 0,
+      "matched": true,
+      "status": "matched",
+      "t_s": 5990,
+      "update_tokens": 5990
+     }
+    ],
+    "n_eval_items": [
+     12,
+     12
+    ],
+    "n_truncated": [
+     0,
+     0
+    ],
+    "n_updates": [
+     200,
+     200
+    ],
+    "t_s": [
+     5990,
+     5990
+    ]
+   },
+   "exact_equal": true,
+   "kl_diff": 1.051832880061103e-08,
+   "norm_change_rel": 2.5990919320798623e-07,
+   "post_diff": 0.0,
+   "pre_diff": 0.0,
+   "restructure": [
+    null,
+    null
+   ],
+   "router_drift_rel": 1.5613825640414833e-06,
+   "usage_l1_diff": 0.0
+  }
+ },
+ "cells_close_ok": true,
+ "cells_exact_ok": true,
+ "dtype": "float32",
+ "mlx_deterministic": {
+  "bit_identical": false,
+  "envelope": 1e-06,
+  "max_abs_diff": 5.960464477539063e-08,
+  "n_tensors_differing": 65,
+  "ok": true
+ },
+ "ok": true,
+ "raw_vs_transformers_tokens_equal_on_probe": true,
+ "restore_exact": {
+  "mlx": true,
+  "torch": true
+ },
+ "routing_base_identical": true,
+ "scores": {
+  "argmax_equal": true,
+  "max_abs_diff": 3.814697265625e-06,
+  "ok": true
+ },
+ "sgd_step": {
+  "max_rel_diff": 0.00016267879241168562,
+  "n_changed_torch": 76,
+  "n_tensors": 76,
+  "ok": true,
+  "spurious_mlx_changes": [],
+  "worst_tensor": "language_model.model.layers.2.linear_attn.in_proj_a.weight"
+ },
+ "token_ce": {
+  "max_abs_diff_excl_flips": 6.67572021484375e-06,
+  "n_positions": 590,
+  "n_positions_diff_gt_1e-2": 0,
+  "ok": true
+ },
+ "tokens_identical": true,
+ "tolerances": {
+  "delta_rel": 0.01,
+  "determinism_abs": 1e-06,
+  "drift_rel": 0.01,
+  "loss": 0.001,
+  "score": 0.001
+ },
+ "versions": {
+  "mlx": "0.31.1",
+  "torch": "2.11.0"
+ }
+}
