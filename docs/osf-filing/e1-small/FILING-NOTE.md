@@ -1,6 +1,8 @@
 # OSF filing note — E1-small (4B dense) replay controls
 
-**Status:** prepared 2026-10-28 for the PI, **not submitted**. The PI
+**Status:** prepared 2026-10-28 for the PI, **not submitted**, and **not
+yet fileable**: two conditions of the draft's filing gate are open (see
+"Filing-gate status"). The PI
 files on OSF himself. The KXKM-AI run waits for the PI's confirmation
 that the pre-registration is filed.
 
@@ -15,7 +17,7 @@ that the pre-registration is filed.
 | Frozen at commit | `0fb1e68db39ca09082d7f7d7105ac864a92a135b` (2026-10-27T16:01:42Z), the last commit that changed the draft |
 | Draft SHA-256 | `7c613a66161b6263611fa969f3f95d5448f3feb8a11b87598cd50467bf082c5a` |
 | Frozen copy | `docs/osf-filing/e1-small/osf-prereg-e1-small-2026-10-25.frozen.md` (byte-identical to the draft at that commit, same SHA-256) |
-| PDF rendering | `docs/osf-filing/e1-small/osf-prereg-e1-small-2026-10-25.frozen.pdf` (24 pages; SHA-256 `0b40a3e9d8fce9c92141e3db13389528af67f7c048287b04b4c20878d2f8a7ae`) |
+| PDF rendering | `docs/osf-filing/e1-small/osf-prereg-e1-small-2026-10-25.frozen.pdf` (24 pages; SHA-256 in `SHA256SUMS`) |
 | Rendering | `render.sh` + `render.lua` in the same folder: pandoc 3.12.1, xelatex (TeX Live 2026), layout only (column widths, line breaks in code); the text is the frozen Markdown. The PDF is not byte-reproducible (embedded dates); the Markdown and its SHA-256 are the reference. |
 | Pull request | `https://github.com/hypneum-lab/dream-of-kiki/pull/68` (draft, branch `docs/osf-prereg-e1-small`) |
 | Commit | `https://github.com/hypneum-lab/dream-of-kiki/commit/0fb1e68db39ca09082d7f7d7105ac864a92a135b` |
@@ -75,11 +77,17 @@ confirmatory partition size − 40).
 **Conflict to resolve.** The draft's own gate (§5.1 property 5, §9.8;
 inherited from the 35B draft) requires the corpus to be frozen with the
 headroom scores **before filing**, while the current instruction is that
-the KXKM run waits for the filing. Options: (A) authorise the short
-TUNING-only headroom run and the freeze first, then refresh this
-package (new frozen draft with the FROZEN hashes) and file; (B) file
-this snapshot and record the headroom / freeze as a documented
-pre-run deviation. (A) keeps the protocol as written.
+the KXKM run waits for the filing; §9.8 also requires the harness to
+be merged at a pinned commit with passing tests. **This snapshot
+therefore does not satisfy the draft's filing gate and should not be
+filed as is.** Path that keeps the protocol as written: (1) authorise
+the short TUNING-only headroom run and the freeze; (2) write the
+FROZEN corpus and manifest hashes into the draft; (3) merge PR #68 (or
+pin the harness commit with a passing CI run); (4) refresh this package
+(new frozen draft, PDF, SHA-256) and file. Filing earlier would need an
+explicit protocol amendment by the PI that changes §9.8 (and the §5.1
+property 5 timing) before filing; a post-hoc deviation note would not
+satisfy the gate.
 
 ## Package contents (`docs/osf-filing/e1-small/`)
 

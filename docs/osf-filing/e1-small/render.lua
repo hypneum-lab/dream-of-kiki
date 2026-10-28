@@ -29,12 +29,12 @@ function Table(tbl)
   return tbl
 end
 
-local function tex_escape(s)
-  s = s:gsub("\\", "\\textbackslash{}")
-  s = s:gsub("([#$%%&_{}])", "\\%1")
-  s = s:gsub("~", "\\textasciitilde{}")
-  s = s:gsub("%^", "\\textasciicircum{}")
-  return s
+local ESC = {["\\"] = "\\textbackslash{}", ["#"] = "\\#", ["$"] = "\\$", ["%"] = "\\%",
+             ["&"] = "\\&", ["_"] = "\\_", ["{"] = "\\{", ["}"] = "\\}",
+             ["~"] = "\\textasciitilde{}", ["^"] = "\\textasciicircum{}"}
+
+local function tex_escape(ch)  -- one character, escaped exactly once
+  return ESC[ch] or ch
 end
 
 function Code(el)
