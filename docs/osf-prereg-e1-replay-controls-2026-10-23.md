@@ -773,8 +773,7 @@ confirmatory seed runs: the OPR arm is not run, H14-C and the
 secondary contrasts against OPR are reported as INFEASIBLE, and
 H14-A and H14-B proceed unchanged (the joint headline then cannot be
 J1). In that case `p̂_disc` is undefined and `n_eval` takes the §5.2
-floor of 130 (the implementation's reading of the decision; to be
-confirmed by the PI before filing). The two
+floor of 130 (confirmed by the PI on 2026-10-28). The two
 selections, the SD_D proxy, `p̂_disc` and the resulting `n_eval` (§5.2) are
 frozen in a dated amendment **before** the first confirmatory seed
 runs. `p_min`, `p_max` and the other
@@ -924,9 +923,10 @@ changed silently):
   differentiable op-by-op recurrence during replay and its Metal kernel
   for scoring, transformers uses the `fla` chunked kernels on CUDA.
   Numbers differ at the rounding level and are never pooled (§8);
-  D11 and D12 are two places where `mlx_lm` also uses a slightly
-  different formula.
-- **D2 Parameters in scope.** `mlx_lm` loads the language model only:
+  D11 and D12 were two places where `mlx_lm` also used a different
+  formula; both are aligned since 2026-10-28.
+- **D2 Parameters in scope (accepted and declared by the PI,
+  2026-10-28).** `mlx_lm` loads the language model only:
   the vision tower and the multi-token-prediction head of the
   checkpoint are not loaded. "Full-parameter" SGD, DOWNSCALE and the
   drift / norm-change measures therefore cover the language model
@@ -957,7 +957,7 @@ changed silently):
   elements; it is not the reference. Discrete MoE routing can still
   flip a token whose top-k margin is below rounding noise to another
   expert on one backend only.
-- **D6 Determinism.** MLX replay is not bit-reproducible run to run
+- **D6 Determinism (accepted and declared by the PI, 2026-10-28).** MLX replay is not bit-reproducible run to run
   (parity: after one fp32 cell, 68 of 76 tensors differ, by at most
   3e-8). E1 cells are therefore not bit-stable; the resumable cache
   and the run identity are unaffected, and no E1 claim relies on
@@ -973,16 +973,17 @@ changed silently):
   replaces `torch.cuda.max_memory_allocated`; host RSS as before.
 - **D9 Restore.** MLX arrays are immutable: the snapshot keeps the
   base arrays and restoring re-binds them (exact, no 70 GB copy).
-- **D11 Linear-attention q / k normalisation.** `mlx_lm` normalises q
-  and k with an RMS norm whose ε is added to the mean square; the
-  transformers reference L2-normalises with ε added to the sum of
-  squares, so the effective ε differs by the head dimension (128×,
-  1e-6 vs 1.28e-4 in sum space). It only matters for near-zero q / k
-  vectors. Not aligned (it would mean re-implementing the Gated
-  DeltaNet layer); disclosed as an instrument difference for the PI.
-- **D12 Decay-gate precision.** `mlx_lm` computes
-  `softplus(a + dt_bias)` in the activation dtype (bf16), transformers
-  promotes `a` to float32 first. Not aligned; disclosed.
+- **D11 Linear-attention q / k normalisation (aligned, PI decision
+  2026-10-28).** `mlx_lm` normalises q and k with an RMS norm whose ε
+  is added to the mean square (an ε larger by the head dimension, 128×,
+  in sum space); the harness replaces the Gated DeltaNet forward so
+  that q and k are L2-normalised as in transformers / FLA
+  (`x · rsqrt(Σx² + 1e-6)`, in float32) and q is scaled by
+  `d_k^-0.5`, then cast back to the activation dtype.
+- **D12 Decay-gate precision (aligned, PI decision 2026-10-28).** The
+  replaced forward computes `g = exp(−exp(A_log) · softplus(a +
+  dt_bias))` with `a` and `dt_bias` promoted to float32 first, as
+  transformers does (`mlx_lm` adds and applies softplus in bf16).
 - **D13 Router arithmetic (aligned).** `mlx_lm` selects the top-k
   experts on softmax probabilities rounded to bf16, where distinct
   logits can tie; transformers selects on float32 probabilities and
@@ -1019,37 +1020,51 @@ any further cell runs. Budget: 512 GB of unified memory minus the OS
 and other resident processes (a virtual machine of ≈ 118 GB RSS was
 resident on 2026-10-25), i.e. ≈ 390 GB for E1.
 
-**Port revalidation (2026-10-25).** *Parity, PyTorch vs MLX* (macM1,
+**Port revalidation.** *Parity, PyTorch vs MLX* (macM1,
 `scripts/e1_mlx_parity.py`, tiny Qwen3.5-MoE with the 35B's
-architecture and the same weights, float32; tolerances fixed in the
-script before the run): token ids identical; base-model routing
-identical; choice scores max |Δ| 2.0e-4 (tol 1e-3) with identical
+architecture and the same weights; tolerances fixed in the script).
+
+*First run, 2026-10-25, before the D11 / D12 alignment (float32;
+accepted as is by the PI on 2026-10-28):* token ids and base-model
+routing identical; choice scores max |Δ| 2.0e-4 (tol 1e-3), identical
 argmax; per-token cross-entropy max |Δ| 1.005e-3 against a 1e-3
-tolerance — a marginal **fail**, reported and not re-toleranced, with
-no position above 1e-2; one SGD step: every tensor changes on both,
-max relative difference 5.7e-3 (tol 1e-2), no spurious change; 12
-harness cells (p_min, p_equ, p_max, OPR, shuffle, template × 2 seeds):
-identical budgets, token and step counts, OPR corpus sizes, per-item
-correctness, accuracies and RESTRUCTURE index; drift / norm change
-rel. Δ ≤ 3.6e-4, router drift ≤ 2.2e-3, KL ≤ 2.3e-4, usage L1
-≤ 6.9e-3 (a tolerance of 1e-2 set after a first run showed non-zero
-values; disclosed); restore bit-exact on both backends; MLX run to run
-max |Δ| 3e-8 (not bit-identical, within the 1e-6 envelope). Overall
-verdict of the fp32 report: `ok: false` (the CE tolerance).
-*bf16 parity* (same script, `--quick`: one seed, p_min / p_equ /
-p_max / OPR; reported, its envelope is for the PI to ratify): token
-ids identical; choice argmax identical (max |Δ| 0.057 nat); all four
-cells identical in budgets, counts, per-item correctness, accuracies
-and RESTRUCTURE index; drift / norm change rel. Δ ≤ 2.1e-3, router
-drift ≤ 7.7e-2, KL ≤ 4.3e-4, usage L1 ≤ 4.0e-3; restore bit-exact.
-But the per-operation agreement is not at rounding level: the base
-model's expert-usage histogram differs (near-tie routing in bf16), 64
-of 590 positions have a per-token cross-entropy difference above 1e-2
-(max 9.9e-3 among the others), one SGD step at lr 1e-2 differs by up
-to 69 % (relative) on a norm weight (bf16 quantisation of small
-updates), and MLX bf16 run-to-run differences reach 1.8e-4. Reports:
-`docs/milestones/e1-mlx-parity-{fp32,bf16}-2026-10-25.json`; both
-reports' overall verdict is `ok: false`.
+tolerance (a marginal fail, reported, not re-toleranced); one SGD step
+max relative Δ 5.7e-3; 12 cells with identical decisions and budgets;
+overall `ok: false`. Reports
+`docs/milestones/e1-mlx-parity-{fp32,bf16}-2026-10-25.json`.
+
+*After the D11 / D12 alignment, 2026-10-28 (code at the commit that
+records this paragraph; run under the macM1 heavy-job lock).*
+**float32: every check passes (`ok: true`).** Token ids and base-model
+routing identical; choice scores max |Δ| 3.9e-6, identical argmax;
+per-token cross-entropy max |Δ| 6.7e-6, no position above 1e-2; one
+SGD step: all 76 tensors change on both, max relative Δ 1.7e-4, no
+spurious change; 12 harness cells (p_min, p_equ, p_max, OPR, shuffle,
+template × 2 seeds) with identical budgets, token and step counts,
+OPR corpus sizes, per-item correctness, accuracies and RESTRUCTURE
+index; drift / norm change rel. Δ ≤ 3.9e-7, router drift ≤ 3.0e-6,
+KL ≤ 1.1e-7, usage L1 Δ 0; restore bit-exact on both backends; MLX
+run to run max |Δ| 6e-8 (not bit-identical, within the 1e-6
+envelope). The q / k normalisation and decay-gate formulas were the
+source of the earlier float32 differences.
+**bf16 agreement envelope (`--quick`: one seed, p_min / p_equ / p_max
+/ OPR; accepted and declared by the PI on 2026-10-28; overall report
+verdict `ok: false`):** token ids identical; base-model expert-usage
+histogram not identical (near-tie routing in bf16); choice scores max
+|Δ| 0.062 nat with identical argmax on the scored eval items; OPR
+reward selection differed on 1 of 40 replay items (OPR corpus 9 vs
+10, so one OPR cell's budget split differs; its eval decisions are
+identical); per-token cross-entropy: 67 of 590 positions differ by
+more than 1e-2, the others by less than 1e-2 (max 9.93e-3); one SGD step at lr 1e-2:
+69 of 76 tensors change on the PyTorch side and the same on MLX (no
+spurious change), max relative Δ 0.69 on a norm weight (bf16
+quantisation of small updates); in the four cells, per-item
+correctness pre and post, accuracies, collapse flags and RESTRUCTURE
+index identical, drift / norm change rel. Δ ≤ 4.0e-3, router drift
+≤ 1.8e-2, KL ≤ 5.4e-4, usage L1 Δ ≤ 1.0e-2; restore bit-exact; MLX
+bf16 run to run max |Δ| 2.5e-4 (50 tensors). The PyTorch side of this
+comparison is the CPU bf16 path (its own bf16 rounding, D5), not CUDA.
+Reports: `docs/milestones/e1-mlx-parity-{fp32,bf16}-aligned-2026-10-28.json`.
 *Single 35B cell on the Studio* (smoke mode, pilot fixtures, seed
 2000, `p_min`, code `8f2173e`, record
 `docs/milestones/e1-mlx-smoke-1cell-2026-10-25.json`): weights
@@ -1247,7 +1262,11 @@ named section before the lock commit.
 1. ~~CUDA node (§9)~~ — **decided by the PI on 2026-10-25: the
    backend is Apple MLX on the Mac Studio M3 Ultra** (a protocol
    revision before filing, recorded in §9 "Backend" with deviations
-   D1-D14; the CUDA path is kept for the parity check only). **Model revision pinned by the
+   D1-D14; the CUDA path is kept for the parity check only).
+   **Pending (PI, 2026-10-28):** the hardware for the full run — the
+   Mac Studio (≈ 18-20 days of exclusive time, §9 projection) or a
+   rented 2-4 × H200 node — is still open; nothing else in this item
+   changes until the PI decides. **Model revision pinned by the
    PI on 2026-10-25:** `Qwen/Qwen3.6-35B-A3B` at commit
    `995ad96eacd98c81ed38be0c5b274b04031597b0` (last modified
    2026-04-24T02:53:42Z, resolved 2026-10-25). This pin fixes the

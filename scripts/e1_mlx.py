@@ -130,6 +130,96 @@ def _aligned_moe_call(self: Any, x: mx.array) -> mx.array:
     return y + shared_y
 
 
+def _l2norm_f32(x: mx.array, eps: float = 1e-6) -> mx.array:
+    """transformers / FLA ``l2norm``: ``x * rsqrt(sum(x^2) + eps)``, in float32."""
+    xf = x.astype(mx.float32)
+    return xf * mx.rsqrt(mx.sum(xf * xf, axis=-1, keepdims=True) + eps)
+
+
+def _aligned_gdn_call(self: Any, inputs: mx.array, mask: mx.array | None = None,
+                      cache: Any | None = None) -> mx.array:
+    """Gated DeltaNet forward of ``mlx_lm`` with the transformers arithmetic for
+    q / k normalisation (D11) and the decay gate (D12), PI decision 2026-10-28.
+
+    - D11: q and k are L2-normalised with ε added to the sum of squares, in
+      float32 (``mlx_lm`` uses an RMS norm, ε on the mean square, i.e. an ε
+      larger by the head dimension in sum space); q is then scaled by
+      ``d_k^-0.5`` as in transformers, and both are cast back.
+    - D12: ``g = exp(-exp(A_log) * softplus(a + dt_bias))`` with ``a`` promoted
+      to float32 before the softplus (``mlx_lm`` adds and applies softplus in
+      the activation dtype).
+
+    Everything else (projections, causal convolution, recurrence, gated
+    norm, cache handling) is the ``mlx_lm`` code path unchanged.
+    """
+    from mlx_lm.models.gated_delta import gated_delta_kernel, gated_delta_ops
+
+    B, S, _ = inputs.shape
+    qkv = self.in_proj_qkv(inputs)
+    z = self.in_proj_z(inputs).reshape(B, S, self.num_v_heads, self.head_v_dim)
+    b = self.in_proj_b(inputs)
+    a = self.in_proj_a(inputs)
+    if cache is not None and cache[0] is not None:
+        conv_state = cache[0]
+    else:
+        conv_state = mx.zeros((B, self.conv_kernel_size - 1, self.conv_dim), dtype=inputs.dtype)
+    if mask is not None:
+        qkv = mx.where(mask[..., None], qkv, 0)
+    conv_input = mx.concatenate([conv_state, qkv], axis=1)
+    if cache is not None:
+        n_keep = self.conv_kernel_size - 1
+        if cache.lengths is not None:
+            ends = mx.clip(cache.lengths, 0, S)
+            positions = (ends[:, None] + mx.arange(n_keep))[..., None]
+            cache[0] = mx.take_along_axis(conv_input, positions, axis=1)
+        else:
+            cache[0] = mx.contiguous(conv_input[:, -n_keep:, :])
+    conv_out = nn.silu(self.conv1d(conv_input))
+    q, k, v = [
+        t.reshape(B, S, h, d)
+        for t, h, d in zip(
+            mx.split(conv_out, [self.key_dim, 2 * self.key_dim], -1),
+            [self.num_k_heads, self.num_k_heads, self.num_v_heads],
+            [self.head_k_dim, self.head_k_dim, self.head_v_dim],
+            strict=True,
+        )
+    ]
+    state = cache[1] if cache else None
+    q = (_l2norm_f32(q) * (self.head_k_dim ** -0.5)).astype(inputs.dtype)
+    k = _l2norm_f32(k).astype(inputs.dtype)
+    beta = mx.sigmoid(b)
+    g = mx.exp(-mx.exp(self.A_log.astype(mx.float32))
+               * nn.softplus(a.astype(mx.float32) + self.dt_bias.astype(mx.float32)))
+    if state is None:
+        state = mx.zeros((B, self.num_v_heads, self.head_v_dim, self.head_k_dim),
+                         dtype=mx.float32)
+    if self.training or mx.default_device() != mx.gpu or not mx.metal.is_available():
+        out, state = gated_delta_ops(q, k, v, g, beta, state, mask)
+    else:
+        out, state = gated_delta_kernel(q, k, v, g, beta, state, mask)
+    if cache is not None:
+        cache[1] = state
+        cache.advance(S)
+    out = self.norm(out, z)
+    return self.out_proj(out.reshape(B, S, -1))  # type: ignore[no-any-return]
+
+
+def align_linear_attention(model: Any) -> int:
+    """Give every Gated DeltaNet layer the transformers q / k normalisation and
+    decay-gate arithmetic (D11, D12); returns the count."""
+    n = 0
+    for layer in _layers(model):
+        gdn = getattr(layer, "linear_attn", None)
+        if gdn is None:
+            continue
+        if getattr(gdn, "sharding_group", None) is not None:
+            raise SystemExit("sharded linear attention is not supported")
+        cls = gdn.__class__
+        gdn.__class__ = type(f"E1Aligned{cls.__name__}", (cls,), {"__call__": _aligned_gdn_call})
+        n += 1
+    return n
+
+
 def align_moe(model: Any) -> int:
     """Give every sparse-MoE block the HF router arithmetic; returns the count."""
     n = 0
@@ -400,6 +490,10 @@ def load(weights_dir: Path, tokenizer_sha256: str | None = None) -> tuple[Any, A
     n_moe = align_moe(model)
     if n_moe != n_layers:
         raise SystemExit(f"aligned {n_moe} MoE blocks, expected {n_layers}")
+    n_lin = align_linear_attention(model)
+    if n_lin != n_layers - n_layers // interval:
+        raise SystemExit(f"aligned {n_lin} linear-attention layers, expected "
+                         f"{n_layers - n_layers // interval}")
     model.eval()
     cfg = json.loads((weights_dir / "config.json").read_text())
     text = cfg.get("text_config", cfg)
