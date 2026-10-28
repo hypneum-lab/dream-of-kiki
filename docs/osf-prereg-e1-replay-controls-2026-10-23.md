@@ -16,7 +16,10 @@ rebalancing in §5.1b after an independent review; revision 7,
 PI decisions — empty-OPR tuning rule and H14-C infeasibility,
 undefined LR matching, MMLU-CF source date (§5.1, §5.4); revision 9,
 2026-10-25: PI decision — backend changed to Apple MLX on the Mac
-Studio M3 Ultra (§9 "Backend", deviations D1-D14))
+Studio M3 Ultra (§9 "Backend", deviations D1-D14); revision 10,
+2026-10-28: PI decisions — D11 / D12 aligned, launch condition from
+E1-small, target hardware a single GB300 on CUDA / PyTorch with the
+MLX port in reserve (§10 item 1))
 **Parent OSF:** 10.17605/OSF.IO/Q6JYN
 **Parent backlog item:** `EXPERIMENT-BACKLOG.md` E1 (powered TOST,
 35B run pending).
@@ -34,6 +37,10 @@ pre-filing): Apple MLX** (mlx 0.31.1, mlx-lm 0.31.2, the versions
 hash-pinned in this repository's `uv.lock`) on the Mac Studio M3
 Ultra (512 GB unified memory), instead of HF transformers on CUDA;
 §9 "Backend" lists every difference this forces (D1-D14).
+**Superseded for the run by the PI on 2026-10-28:** if the study is
+launched, it runs on a rented single GB300 on the CUDA / PyTorch path
+(`scripts/pilot_cycle3_cuda.py`), protocol as originally written; the
+MLX backend and its revalidation are kept in reserve (§10 item 1).
 **Harness:** `scripts/e1_harness.py` (modes, cell, run identity),
 backends `scripts/e1_mlx.py` (registered) and
 `scripts/pilot_cycle3_cuda.py` (PyTorch, kept for the parity check
@@ -57,6 +64,20 @@ arm: 1,416.
 **Power script:** `scripts/prereg_power_2026_10.py` (§3).
 **Lock commit:** *(filled by introducing commit hash at filing)*
 **Lock timestamp:** *(filled at filing, pre-run)*
+**Launch condition (PI decision 2026-10-28, fixed before the E1-small
+run; no E1-small result existed when it was written).** This study is
+launched only by the rule of
+`docs/milestones/e1-35b-go-rule-2026-10-28.md` (on `main`, PR #75),
+applied to the E1-small confirmatory states (E1-small §2, frozen draft
+SHA-256 `6d47d8b7…208463`), first matching line: (1) POSTPONE if
+E1-small is not confirmatory (fewer than 141 complete seeds, or not
+the registered instrument); (2) POSTPONE if any of H14-A, H14-B, H14-C
+is UNINTERPRETABLE; (3) GO if H14-A or H14-B is SUPERIOR or
+POSITIVE-BELOW-SESOI (the superiority test rejects at α = 1/60);
+(4) POSTPONE otherwise (both BOUNDED-NO-GAIN or INCONCLUSIVE, whatever
+H14-C is), E1-small then being reported as a null at 4B. H14-C never
+triggers GO; secondary and exploratory results never enter the rule.
+The note lists its interpretation choices for the PI.
 
 ## §1 Background
 
@@ -1272,10 +1293,13 @@ named section before the lock commit.
    backend is Apple MLX on the Mac Studio M3 Ultra** (a protocol
    revision before filing, recorded in §9 "Backend" with deviations
    D1-D14; the CUDA path is kept for the parity check only).
-   **Pending (PI, 2026-10-28):** the hardware for the full run — the
-   Mac Studio (≈ 18-20 days of exclusive time, §9 projection) or a
-   rented 2-4 × H200 node — is still open; nothing else in this item
-   changes until the PI decides. **Model revision pinned by the
+   **PI decision 2026-10-28 (≈ 19:00): if the 35B runs, the target
+   hardware is a rented single GB300 on the CUDA / PyTorch path,
+   protocol as originally written; the MLX port (and its Studio
+   revalidation above) is kept in reserve.** The Studio smoke is on
+   hold and the Studio weights are not re-downloaded (the verified
+   checkpoint was deleted from the Studio on 2026-10-28 by a disk
+   cleanup; any later use re-verifies a fresh copy against the pins). **Model revision pinned by the
    PI on 2026-10-25:** `Qwen/Qwen3.6-35B-A3B` at commit
    `995ad96eacd98c81ed38be0c5b274b04031597b0` (last modified
    2026-04-24T02:53:42Z, resolved 2026-10-25). This pin fixes the
