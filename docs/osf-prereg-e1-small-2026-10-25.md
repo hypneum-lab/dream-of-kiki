@@ -1203,6 +1203,39 @@ sources, so the expected E1-small outcome is ACCEPT with no drop.
 the stricter of the two headroom results — would need the 35B
 headroom first, which the PI has deferred; it was not chosen.
 
+**Headroom and freeze — done (PI go 2026-10-28 15:45).** Headroom:
+KXKM-AI, registered deterministic instrument, code `bca6170`,
+2026-10-28 15:44:57-15:47, TUNING items only (472; no confirmatory item
+was scored), 152 / 472 correct; result file
+`docs/milestones/e1-small/headroom-2026-10-28.json` (SHA-256
+`b0622633…51302044`). An N10-C measurement job of another agent started
+on the GPU at 15:46:03, during the last minute of this run; the run is
+forward-only in deterministic mode and completed normally. Freeze:
+macM1, `scripts/e1_corpus_build.py --freeze --study e1-small` with the
+pinned 35B / 4B `tokenizer.json` and `tokenizers` 0.23.3 (the corpus
+build environment, Python 3.14.4), 152 s:
+
+| | `realtimeqa` | `daily_oracle` | `mmlu_cf` | pooled |
+|---|---|---|---|---|
+| 4B TUNING accuracy | 0.393 | 0.185 | 0.374 | 0.322 |
+| weight `w_s` | 0.346 | 0.308 | 0.346 | — |
+
+`headroom_rebalance`: **ACCEPT**, no source dropped (every source and the
+pool ≤ 0.80); the `daily_oracle` accuracy is below the 4-choice chance
+level 0.25, which the rule does not constrain. **E1-small FROZEN
+corpus:** file SHA-256
+`f8379b810353d25e3c85e4e94b9a8d02553ea8c18abdef631a0289339497c0a2`
+(byte-identical to the pending corpus: no item was removed),
+confirmatory partition (1,098 items)
+`546f44c6d2fc23f7a355a9182dd3e635b47cd52082d0b1ac347abbcf4914cb3f`,
+tuning partition (472 items)
+`7aea63a8630eac6c9bf045d0644db898c7b779f35bfb98107114905b35afb0f7`;
+**FROZEN manifest** (no item text)
+`docs/milestones/e1-small/corpus-manifest-frozen-2026-10-28.json`,
+SHA-256 `093fdf610b2c7304a3d8249d2563af777f6ea35ce4379aa008dbc12de77202ab`.
+These are the hashes every E1-small tuning, calibration and
+confirmatory cell must load.
+
 
 ### §9.4 Code (harness support for the 4B)
 
@@ -1587,8 +1620,9 @@ checkpointing (S5 not triggered).
 ### §9.8 Filing gate (E1-small)
 
 Not filed until: the measurement smoke on KXKM-AI has run on the
-registered instrument, deterministic mode included (done, §9.7d); the 4B headroom has run and the E1-small
-FROZEN corpus and manifest hashes are written here; the decision code
+registered instrument, deterministic mode included (done, §9.7d); the
+4B headroom has run and the E1-small FROZEN corpus and manifest hashes
+are written here (done, §9.3); the decision code
 has been run on synthetic paired data covering every §2 state and §7
 row; the harness code is merged at a pinned commit with passing tests.
 If the projection exceeds the available KXKM-AI GPU time, the PI
@@ -1596,7 +1630,9 @@ amends before filing; N is never reduced after filing.
 
 ### §9.9 Audit trail
 
-Milestones: `docs/milestones/e1-small-4b-replay-controls-<date>.{json,md}`,
+Pre-run records: `docs/milestones/e1-small/` (kernel parity and fp32
+diagnostic, determinism check, both smokes, projection, headroom, FROZEN
+manifest). Milestones: `docs/milestones/e1-small-4b-replay-controls-<date>.{json,md}`,
 including the frozen tuning amendment, the SD_D proxy, the HF revision,
 the instrument record of every cell (backend, device placement,
 tokenizer, linear-attention implementation and kernel versions) and
