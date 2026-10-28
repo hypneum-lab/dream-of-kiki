@@ -1,7 +1,8 @@
 # OSF filing note — G4-nono cross-domain RECOMBINE (H12)
 
-**Status:** prepared 2026-10-28 for the PI, **not submitted**. The PI
-files on OSF himself. No confirmatory cell runs before the PI confirms
+**Status:** prepared 2026-10-28 for the PI, **not submitted**. One PI
+decision remains before filing: the filing host (§10 item 3, below).
+The PI files on OSF himself. No confirmatory cell runs before the PI confirms
 the filing.
 
 ## What is filed
@@ -35,7 +36,7 @@ filled at filing, as for every pre-registration in this repository.
 - **2026-10-24:** domain corpus CIFAR-10 (grayscale) + Quick, Draw! (§5), replacing the CIFAR-100 split.
 - **2026-10-24:** un-mixed control arm registered as an **exploratory** arm, reported only (§5).
 - **2026-10-24 (amendment after the first smoke):** epochs 3 → 10; acc20 and DOA descriptive only; `P_max` runs `recombine_full` (§2, §5, §6).
-- **2026-10-24 (hardware, partly decided):** smokes on macM1; the hardware of the confirmatory campaign is chosen after the N10-C campaign. The protocol does not change; R1 run_ids are per machine. **Still open (§10 item 3):** the PI names the confirmatory host before or at the start of the campaign.
+- **2026-10-24 (hardware, partly decided):** smokes on macM1; the hardware of the confirmatory campaign is chosen after the N10-C campaign. The protocol does not change; R1 run_ids are per machine. **To resolve before filing (§10 item 3):** §10 asks that open items be resolved before filing, and §9 defines the pre-filing smoke as run "on the filing hardware". All smokes ran on macM1. Either the PI names macM1 the filing host (as for DR-3), or he names another host, on which the §9 smoke and checklist item 5 are rerun before filing. The frozen draft is not edited; the PI's choice goes in the OSF filing.
 - **2026-10-28:** split out of PR #41 so it is filed without waiting for E1; the smoke records are archived in the repository (draft header "Split" line).
 
 ## Pilots / smokes (draft §9) and archived records
@@ -61,7 +62,7 @@ file byte-identical to `smoke3/n-selection.json`; repeated on
 | condition | status |
 |---|---|
 | (a) driver, `recombine_cross.py` and aggregator at a pinned commit | **done** — pinned by the lock commit `14c3d5f` |
-| (b) passing test for every §5 fidelity-checklist item | **done** — items 1-4 and 6-8 on synthetic data; item 5 (new corpus) passes on macM1. Per the draft, item 5 must be rebuilt and pass on the confirmatory host once the PI names it. |
+| (b) passing test for every §5 fidelity-checklist item | **done** — items 1-4 and 6-8 on synthetic data; item 5 (new corpus) passes on macM1. Per the draft, item 5 must be rebuilt and pass on the filing host: met if the PI names macM1, otherwise to rerun there before filing (see PI decisions). |
 | (c) aggregator on synthetic paired data covering every §2 state and §7 row | **done** — `tests/unit/test_g4_nono_aggregator.py`, CI |
 | (d) smoke results and the selected N written into the filed version | **done** — §9, N = 95 |
 
