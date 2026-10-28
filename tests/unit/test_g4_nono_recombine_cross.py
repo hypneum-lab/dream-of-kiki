@@ -193,3 +193,94 @@ def test_ladder_module_untouched() -> None:
     from experiments.g4_quater_test import recombine_strategies as r
 
     assert get_args(r.RecombineStrategy) == ("mog", "ae", "none")
+
+
+# --- P_max recombine_full variant (PI decision 2026-10-24) -----------------
+
+
+def test_light_is_the_default_variant() -> None:
+    lat, lab = _buffer(FULL)
+    a = sample_cross_domain_latents(strategy="cross", latents=lat, labels=lab,
+                                    n_synthetic=16, seed=5)
+    b = sample_cross_domain_latents(strategy="cross", latents=lat, labels=lab,
+                                    n_synthetic=16, seed=5, variant="light")
+    a, b = _ok(a), _ok(b)
+    assert np.array_equal(a["x"], b["x"]) and np.array_equal(a["y"], b["y"])
+
+
+@pytest.mark.parametrize("strategy", ["cross", "within"])
+def test_full_variant_keeps_draws_and_adds_generative_noise(strategy: CrossStrategy) -> None:
+    lat, lab = _buffer(FULL)
+    lat = np.abs(lat)  # post-ReLU latents are non-negative
+    light = _ok(sample_cross_domain_latents(strategy=strategy, latents=lat, labels=lab,
+                                            n_synthetic=16, seed=5, variant="light"))
+    full = _ok(sample_cross_domain_latents(strategy=strategy, latents=lat, labels=lab,
+                                           n_synthetic=16, seed=5, variant="full"))
+    # same lambda, pairs and soft targets: only the latent differs
+    assert np.array_equal(light["lam"], full["lam"])
+    assert np.array_equal(light["pairs"], full["pairs"])
+    assert np.array_equal(light["y"], full["y"])
+    assert not np.array_equal(light["x"], full["x"])
+    assert (full["x"] >= 0).all()  # ReLU decoder keeps the latent space
+    again = _ok(sample_cross_domain_latents(strategy=strategy, latents=lat, labels=lab,
+                                            n_synthetic=16, seed=5, variant="full"))
+    assert np.array_equal(full["x"], again["x"])
+
+
+def test_full_variant_noise_scale_is_buffer_sd() -> None:
+    # zero spread in every latent dimension -> no generative noise
+    lat, lab = _buffer(FULL)
+    lat = np.ones_like(lat)
+    light = _ok(sample_cross_domain_latents(strategy="cross", latents=lat, labels=lab,
+                                            n_synthetic=16, seed=5, variant="light"))
+    full = _ok(sample_cross_domain_latents(strategy="cross", latents=lat, labels=lab,
+                                           n_synthetic=16, seed=5, variant="full"))
+    assert np.array_equal(light["x"], full["x"])
+
+
+def test_unknown_variant_raises() -> None:
+    lat, lab = _buffer(FULL)
+    with pytest.raises(ValueError, match="variant"):
+        sample_cross_domain_latents(strategy="cross", latents=lat, labels=lab,
+                                    n_synthetic=16, seed=5, variant="vae")  # type: ignore[arg-type]
+
+
+# --- un-mixed exploratory control (PI decision 2026-10-24) -----------------
+
+
+@pytest.mark.parametrize("variant", ["light", "full"])
+def test_unmixed_replays_the_cross_records_with_hard_labels(variant: str) -> None:
+    lat, lab = _buffer(FULL)
+    lat = np.abs(lat)
+    cross = _ok(sample_cross_domain_latents(strategy="cross", latents=lat, labels=lab,
+                                            n_synthetic=16, seed=5))
+    un = _ok(sample_cross_domain_latents(strategy="unmixed", latents=lat, labels=lab,
+                                         n_synthetic=16, seed=5, variant=variant))  # type: ignore[arg-type]
+    rec = cross["records"]
+    assert np.array_equal(un["records"], rec) and np.array_equal(un["pairs"], cross["pairs"])
+    assert un["x"].shape == (32, D) and un["y"].shape == (32, N_CLASSES)
+    # hard one-hot labels of the two records of each pair, a then b
+    want = np.zeros((32, N_CLASSES), np.float32)
+    want[np.arange(0, 32, 2), cross["pairs"][:, 0]] = 1.0
+    want[np.arange(1, 32, 2), cross["pairs"][:, 1]] = 1.0
+    assert np.array_equal(un["y"], want)
+    if variant == "light":
+        assert np.array_equal(un["x"], lat[rec.ravel()])
+    else:
+        assert not np.array_equal(un["x"], lat[rec.ravel()]) and (un["x"] >= 0).all()
+
+
+def test_unmixed_noop_when_only_one_domain() -> None:
+    lat, lab = _buffer(list(DOMAIN_A[:3]))
+    assert sample_cross_domain_latents(strategy="unmixed", latents=lat, labels=lab,
+                                       n_synthetic=16, seed=5) is None
+
+
+def test_records_audit_field_does_not_change_cross_draws() -> None:
+    lat, lab = _buffer(FULL)
+    b = _ok(sample_cross_domain_latents(strategy="cross", latents=lat, labels=lab,
+                                        n_synthetic=16, seed=5))
+    # each mixed latent is the convex mix of its two audited records
+    lam = b["lam"][:, None]
+    mix = lam * lat[b["records"][:, 0]] + (1 - lam) * lat[b["records"][:, 1]]
+    assert np.allclose(b["x"], mix)
