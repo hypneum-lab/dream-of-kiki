@@ -1,0 +1,60 @@
+{
+ "checks": {
+  "choice_argmax_agree": true,
+  "choice_score_max_abs": false,
+  "grad_cos": true,
+  "grad_keys": true,
+  "grad_norm_ratio": true,
+  "grad_rel_err": true,
+  "logprob_max_abs": false,
+  "logprob_mean_abs": false,
+  "loss_rel": true
+ },
+ "gpu": "NVIDIA GeForce RTX 4090",
+ "loss": {
+  "fla+causal_conv1d": 2.0029799342155457,
+  "torch": 1.9970942735671997
+ },
+ "metrics": {
+  "choice_argmax_agree": 0.9599999785423279,
+  "choice_score_max_abs": 0.1119842529296875,
+  "grad_cos": 0.9992052237727965,
+  "grad_keys_equal": 1.0,
+  "grad_norm_ratio": 1.0053387289793183,
+  "grad_rel_err": 0.04033119477650867,
+  "logprob_max_abs": 0.34016990661621094,
+  "logprob_mean_abs": 0.024237414821982384,
+  "loss_rel": 0.0029471120749012063
+ },
+ "model": "Qwen/Qwen3.5-4B",
+ "n_items": 25,
+ "n_sequences": 100,
+ "n_texts": 2,
+ "peak_bytes": {
+  "fla+causal_conv1d": 20874087936,
+  "torch": 20995658240
+ },
+ "revision": "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a",
+ "tol": {
+  "choice_argmax_agree_min": 0.95,
+  "choice_score_max_abs": 0.05,
+  "grad_cos_min": 0.99,
+  "grad_norm_ratio_dev": 0.02,
+  "grad_rel_err": 0.15,
+  "logprob_max_abs": 0.25,
+  "logprob_mean_abs": 0.02,
+  "loss_rel": 0.01
+ },
+ "verdict": "FAIL",
+ "versions": {
+  "causal-conv1d": "1.7.0",
+  "fla-core": "0.5.2",
+  "tokenizers": "0.22.2",
+  "torch": "2.11.0",
+  "transformers": "5.7.0"
+ },
+ "wall_s": {
+  "fla+causal_conv1d": 58.2,
+  "torch": 17.2
+ }
+}

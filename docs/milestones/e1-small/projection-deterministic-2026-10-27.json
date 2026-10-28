@@ -1,0 +1,40 @@
+{
+ "130": {
+  "coef_s": {
+   "per_cell": 5.117369550235374,
+   "per_forward": 0.0813771773465811,
+   "per_loss_token": 0.00021750058561964547,
+   "per_update": 0.333533320281521
+  },
+  "hours": {
+   "calibration_60": 5.621920166505147,
+   "confirmatory_1410": 63.16689876965965,
+   "smoke_30_measured": 2.0541944444444447,
+   "total_1620": 82.38934523027076,
+   "tuning_120": 11.546331849661518
+  },
+  "n_eval": 130,
+  "per_confirmatory_cell_s": 161.2771883480672,
+  "t_s_confirmatory": 7846.624203821656,
+  "tuning_eval_items": 432
+ },
+ "255": {
+  "coef_s": {
+   "per_cell": 5.117369550235374,
+   "per_forward": 0.0813771773465811,
+   "per_loss_token": 0.00021750058561964547,
+   "per_update": 0.333533320281521
+  },
+  "hours": {
+   "calibration_60": 5.621920166505147,
+   "confirmatory_1410": 95.03962656373726,
+   "smoke_30_measured": 2.0541944444444447,
+   "total_1620": 114.26207302434835,
+   "tuning_120": 11.546331849661518
+  },
+  "n_eval": 255,
+  "per_confirmatory_cell_s": 242.6543656946483,
+  "t_s_confirmatory": 7846.624203821656,
+  "tuning_eval_items": 432
+ }
+}
