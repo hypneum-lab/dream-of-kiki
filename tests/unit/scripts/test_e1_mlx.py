@@ -144,3 +144,12 @@ def test_file_splits_reject_malformed_orders() -> None:
         e1_splits.FileSplits(bad, b)
     with pytest.raises(SystemExit, match="mode"):
         e1_splits.FileSplits(doc, b, "smoke", {})
+
+
+def test_mlx_backend_refuses_other_studies(monkeypatch: pytest.MonkeyPatch,
+                                           tmp_path: Path) -> None:
+    from scripts import e1_harness as hn
+
+    monkeypatch.setattr(hn, "STUDY", "e1-small")
+    with pytest.raises(SystemExit, match="study e1 only"):
+        e1_mlx.main(["--mode", "smoke", "--weights-dir", str(tmp_path), "--out", str(tmp_path)])

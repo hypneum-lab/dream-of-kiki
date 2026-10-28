@@ -513,6 +513,8 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--no-verify-weights", action="store_true",
                     help="tiny test models only; refused for the pinned model")
     args = ap.parse_args(argv)
+    if hn.STUDY != "e1":  # the MLX backend is an instrument of the 35B draft only
+        raise SystemExit(f"the MLX backend serves study e1 only (HL_STUDY={hn.STUDY})")
 
     def factory(a: argparse.Namespace, benches: hn.Benches,
                 common: dict[str, Any]) -> MLXBackend:
