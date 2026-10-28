@@ -1031,23 +1031,25 @@ max relative difference 5.7e-3 (tol 1e-2), no spurious change; 12
 harness cells (p_min, p_equ, p_max, OPR, shuffle, template × 2 seeds):
 identical budgets, token and step counts, OPR corpus sizes, per-item
 correctness, accuracies and RESTRUCTURE index; drift / norm change
-rel. Δ ≤ 3.5e-4, router drift ≤ 2.1e-3, KL ≤ 2.2e-4, usage L1
+rel. Δ ≤ 3.6e-4, router drift ≤ 2.2e-3, KL ≤ 2.3e-4, usage L1
 ≤ 6.9e-3 (a tolerance of 1e-2 set after a first run showed non-zero
 values; disclosed); restore bit-exact on both backends; MLX run to run
-max |Δ| 3e-8 (not bit-identical, within the 1e-6 envelope).
+max |Δ| 3e-8 (not bit-identical, within the 1e-6 envelope). Overall
+verdict of the fp32 report: `ok: false` (the CE tolerance).
 *bf16 parity* (same script, `--quick`: one seed, p_min / p_equ /
 p_max / OPR; reported, its envelope is for the PI to ratify): token
 ids identical; choice argmax identical (max |Δ| 0.057 nat); all four
 cells identical in budgets, counts, per-item correctness, accuracies
-and RESTRUCTURE index; drift / norm change rel. Δ ≤ 2.0e-3, router
-drift ≤ 7.6e-2, KL ≤ 4.3e-4, usage L1 ≤ 4.0e-3; restore bit-exact.
+and RESTRUCTURE index; drift / norm change rel. Δ ≤ 2.1e-3, router
+drift ≤ 7.7e-2, KL ≤ 4.3e-4, usage L1 ≤ 4.0e-3; restore bit-exact.
 But the per-operation agreement is not at rounding level: the base
 model's expert-usage histogram differs (near-tie routing in bf16), 64
 of 590 positions have a per-token cross-entropy difference above 1e-2
 (max 9.9e-3 among the others), one SGD step at lr 1e-2 differs by up
 to 69 % (relative) on a norm weight (bf16 quantisation of small
 updates), and MLX bf16 run-to-run differences reach 1.8e-4. Reports:
-`docs/milestones/e1-mlx-parity-{fp32,bf16}-2026-10-25.json`.
+`docs/milestones/e1-mlx-parity-{fp32,bf16}-2026-10-25.json`; both
+reports' overall verdict is `ok: false`.
 *Single 35B cell on the Studio* (smoke mode, pilot fixtures, seed
 2000, `p_min`, code `8f2173e`, record
 `docs/milestones/e1-mlx-smoke-1cell-2026-10-25.json`): weights
