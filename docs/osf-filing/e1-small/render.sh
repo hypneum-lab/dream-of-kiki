@@ -14,4 +14,4 @@ pandoc -f markdown+lists_without_preceding_blankline "$SRC" \
   -V monofont="Menlo" -V geometry:margin=2cm -V fontsize=10pt \
   -V colorlinks=true -V pagestyle=plain \
   --metadata title="E1-small pre-registration — frozen snapshot" \
-  --metadata subtitle="docs/osf-prereg-e1-small-2026-10-25.md at commit 0fb1e68db39c (file SHA-256 7c613a66…bf082c5a)"
+  --metadata subtitle="docs/osf-prereg-e1-small-2026-10-25.md at commit 804b6d14c7cc (file SHA-256 6d47d8b7…93208463)"
