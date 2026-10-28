@@ -82,8 +82,8 @@ be merged at a pinned commit with passing tests. **This snapshot
 therefore does not satisfy the draft's filing gate and should not be
 filed as is.** Path that keeps the protocol as written: (1) authorise
 the short TUNING-only headroom run and the freeze; (2) write the
-FROZEN corpus and manifest hashes into the draft; (3) merge PR #68 (or
-pin the harness commit with a passing CI run); (4) refresh this package
+FROZEN corpus and manifest hashes into the draft; (3) merge the harness
+code (PR #68) at a pinned commit with passing tests; (4) refresh this package
 (new frozen draft, PDF, SHA-256) and file. Filing earlier would need an
 explicit protocol amendment by the PI that changes §9.8 (and the §5.1
 property 5 timing) before filing; a post-hoc deviation note would not
