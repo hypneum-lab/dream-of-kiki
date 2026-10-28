@@ -144,7 +144,10 @@ def _aligned_gdn_call(self: Any, inputs: mx.array, mask: mx.array | None = None,
     - D11: q and k are L2-normalised with ε added to the sum of squares, in
       float32 (``mlx_lm`` uses an RMS norm, ε on the mean square, i.e. an ε
       larger by the head dimension in sum space); q is then scaled by
-      ``d_k^-0.5`` as in transformers, and both are cast back.
+      ``d_k^-0.5`` as in transformers, and both are cast back. The formula
+      is the transformers / FLA one; the float32 order follows FLA's
+      kernels, not the transformers CPU fallback (which normalises in the
+      incoming dtype before promoting).
     - D12: ``g = exp(-exp(A_log) * softplus(a + dt_bias))`` with ``a`` promoted
       to float32 before the softplus (``mlx_lm`` adds and applies softplus in
       the activation dtype).

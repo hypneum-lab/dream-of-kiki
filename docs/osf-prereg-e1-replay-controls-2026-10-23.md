@@ -979,7 +979,10 @@ changed silently):
   in sum space); the harness replaces the Gated DeltaNet forward so
   that q and k are L2-normalised as in transformers / FLA
   (`x · rsqrt(Σx² + 1e-6)`, in float32) and q is scaled by
-  `d_k^-0.5`, then cast back to the activation dtype.
+  `d_k^-0.5`, then cast back to the activation dtype. The formula is
+  the transformers / FLA one; the bf16 operation order matches FLA's
+  float32 kernels, not the transformers CPU fallback, which normalises
+  in the incoming dtype before promoting.
 - **D12 Decay-gate precision (aligned, PI decision 2026-10-28).** The
   replaced forward computes `g = exp(−exp(A_log) · softplus(a +
   dt_bias))` with `a` and `dt_bias` promoted to float32 first, as
@@ -1051,10 +1054,12 @@ source of the earlier float32 differences.
 / OPR; accepted and declared by the PI on 2026-10-28; overall report
 verdict `ok: false`):** token ids identical; base-model expert-usage
 histogram not identical (near-tie routing in bf16); choice scores max
-|Δ| 0.062 nat with identical argmax on the scored eval items; OPR
-reward selection differed on 1 of 40 replay items (OPR corpus 9 vs
-10, so one OPR cell's budget split differs; its eval decisions are
-identical); per-token cross-entropy: 67 of 590 positions differ by
+|Δ| 0.062 nat with identical argmax on the scored eval items; the OPR
+corpus size differed in the one OPR cell (9 on PyTorch, 10 on MLX: the
+pre-replay reward selection differs on at least one replay item; the
+report does not compare selections item by item), with identical
+budgets (T_s, charge, update tokens, 141 updates) and identical eval
+decisions; per-token cross-entropy: 67 of 590 positions differ by
 more than 1e-2, the others by less than 1e-2 (max 9.93e-3); one SGD step at lr 1e-2:
 69 of 76 tensors change on the PyTorch side and the same on MLX (no
 spurious change), max relative Δ 0.69 on a norm weight (bf16
@@ -1063,7 +1068,11 @@ correctness pre and post, accuracies, collapse flags and RESTRUCTURE
 index identical, drift / norm change rel. Δ ≤ 4.0e-3, router drift
 ≤ 1.8e-2, KL ≤ 5.4e-4, usage L1 Δ ≤ 1.0e-2; restore bit-exact; MLX
 bf16 run to run max |Δ| 2.5e-4 (50 tensors). The PyTorch side of this
-comparison is the CPU bf16 path (its own bf16 rounding, D5), not CUDA.
+comparison is the CPU bf16 path (its own bf16 rounding, D5), not CUDA;
+in particular its fallback L2-normalises q and k in bf16 before
+promoting to float32, while the aligned MLX forward normalises and
+scales in float32 and casts back (same formula, different bf16
+operation order; D11).
 Reports: `docs/milestones/e1-mlx-parity-{fp32,bf16}-aligned-2026-10-28.json`.
 *Single 35B cell on the Studio* (smoke mode, pilot fixtures, seed
 2000, `p_min`, code `8f2173e`, record
