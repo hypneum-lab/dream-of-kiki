@@ -2,7 +2,7 @@
 
 **Status:** refreshed 2026-10-28 for the PI, **not submitted**. One
 condition of the draft's filing gate remains: the harness must be
-**merged** (PR #72, CI green at the pinned head below); after the merge
+**merged** (PR #72, CI green at the pinned commit below); after the merge
 this package is re-pinned to the merge commit. The PI files on OSF
 himself. The KXKM-AI run waits for the PI's confirmation that the
 pre-registration is filed.
@@ -15,14 +15,14 @@ pre-registration is filed.
 | Authors | Clément Saillant (L'Electron Rare, Grandris, France), as in `CITATION.cff` |
 | Parent OSF project | 10.17605/OSF.IO/Q6JYN (`https://osf.io/q6jyn`) |
 | Source draft | `docs/osf-prereg-e1-small-2026-10-25.md` |
-| Pinned commit | `804b6d14c7ccea8eb862e1f289fde49ecbd17d6a`, head of PR #72 to `main` with CI green (workflow run 40712908611); the draft is byte-identical there (last changed in `0f3104389590797ac0936d70468718c3d2c7bba7` on that branch, same content as `cc0bc66` on PR #68) |
+| Pinned commit | `82dc277df209708d7ed08f6808e9926667d2f891`, head of PR #72 to `main` with CI green (workflow run 40714009612); the commit that adds this package on top changes only `docs/osf-filing/`; the draft is byte-identical there (last changed in `0f3104389590797ac0936d70468718c3d2c7bba7` on that branch, same content as `cc0bc66` on PR #68) |
 | Draft SHA-256 | `6d47d8b71829d884d3a18dda84cd21aa080f1090101d62a4bafe6bc493208463` |
 | Frozen copy | `docs/osf-filing/e1-small/osf-prereg-e1-small-2026-10-25.frozen.md` (byte-identical, same SHA-256) |
 | PDF rendering | `docs/osf-filing/e1-small/osf-prereg-e1-small-2026-10-25.frozen.pdf` (SHA-256 in `SHA256SUMS`) |
 | Rendering | `render.sh` + `render.lua` in the same folder: pandoc 3.12.1, xelatex (TeX Live 2026), layout only (column widths, line breaks in code); the text is the frozen Markdown. The PDF is not byte-reproducible (embedded dates); the Markdown and its SHA-256 are the reference. |
 | Merge PR | `https://github.com/hypneum-lab/dream-of-kiki/pull/72` (E1 core + E1-small to `main`) |
 | Working PR | `https://github.com/hypneum-lab/dream-of-kiki/pull/68` (history of the E1-small work) |
-| Commit | `https://github.com/hypneum-lab/dream-of-kiki/commit/804b6d14c7ccea8eb862e1f289fde49ecbd17d6a` |
+| Commit | `https://github.com/hypneum-lab/dream-of-kiki/commit/82dc277df209708d7ed08f6808e9926667d2f891` |
 | Corpus | E1-small FROZEN corpus: file `f8379b81…c0a2`, confirmatory `546f44c6…cb3f`, tuning `7aea63a8…b0f7`; manifest `docs/milestones/e1-small/corpus-manifest-frozen-2026-10-28.json`, SHA-256 `093fdf61…7202ab` (draft §9.3) |
 | Sibling study | 35B draft `docs/osf-prereg-e1-replay-controls-2026-10-23.md` (PR #41, not yet on `main`); E1-small reproduces its revision 9 (`9172768`, SHA-256 `ae00aea5…bf71b5`) as §1-§8. Results are never pooled across sizes, studies or instruments. |
 
@@ -75,7 +75,7 @@ confirmatory partition size − 40).
 | Measurement smoke on the registered instrument | **done** (§9.7d: 30/30 cells, deterministic, 82.4 h / 114.3 h) |
 | 4B headroom run and E1-small FROZEN corpus / manifest hashes written into the draft | **done** (§9.3; headroom 2026-10-28, freeze ACCEPT) |
 | Decision code exercised on synthetic paired data covering every §2 state and §7 row | covered by the unit tests of `scripts/analyze_e1_cuda.py` (`tests/unit/scripts/test_analyze_e1_cuda.py`), run by CI on PR #72; no separate recorded run |
-| Harness code merged at a pinned commit with passing tests | **pending the PI's merge** — PR #72, CI green at `804b6d1`; torch tests also pass on macM1 (55) and KXKM CPU |
+| Harness code merged at a pinned commit with passing tests | **pending the PI's merge** — PR #72, CI green at `82dc277`; torch tests also pass on macM1 (55) and KXKM CPU |
 
 Remaining steps: (1) the PI merges PR #72; (2) this package is
 re-pinned to the merge commit (draft and frozen copy unchanged unless
