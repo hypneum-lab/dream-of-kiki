@@ -1,0 +1,190 @@
+16:14:52 start; n10c alive=yes
+16:14:52 guard swap_free=1114.50M mem_free=23%
+16:15:02 guard swap_free=1114.50M mem_free=14%
+16:15:12 guard swap_free=1114.50M mem_free=17%
+16:15:22 guard swap_free=1114.50M mem_free=18%
+16:15:32 guard swap_free=1114.50M mem_free=18%
+16:15:42 guard swap_free=1114.50M mem_free=18%
+Wrote /Users/electron/scratch/code/g4-pilot2-out/cells/s900_baseline_na.json
+16:15:52 guard swap_free=1114.50M mem_free=22%
+16:15:52 seed=900 baseline/na rc=0 wall=60s n10c=alive
+16:15:52 guard swap_free=1114.50M mem_free=22%
+16:16:02 guard swap_free=1114.50M mem_free=14%
+16:16:12 guard swap_free=1114.50M mem_free=18%
+16:16:22 guard swap_free=1114.50M mem_free=18%
+Wrote /Users/electron/scratch/code/g4-pilot2-out/cells/s900_P_min_na.json
+16:16:32 guard swap_free=1114.50M mem_free=24%
+16:16:32 seed=900 P_min/na rc=0 wall=40s n10c=alive
+16:16:32 guard swap_free=1114.50M mem_free=22%
+16:16:42 guard swap_free=1114.50M mem_free=75%
+16:16:52 guard swap_free=1114.50M mem_free=16%
+16:17:02 guard swap_free=1114.50M mem_free=16%
+Wrote /Users/electron/scratch/code/g4-pilot2-out/cells/s900_P_equ_cross.json
+16:17:12 guard swap_free=1114.50M mem_free=21%
+16:17:12 seed=900 P_equ/cross rc=0 wall=40s n10c=alive
+16:17:12 guard swap_free=1114.50M mem_free=21%
+16:17:22 guard swap_free=1114.50M mem_free=13%
+16:17:33 guard swap_free=1114.50M mem_free=16%
+16:17:43 guard swap_free=1114.50M mem_free=18%
+Wrote /Users/electron/scratch/code/g4-pilot2-out/cells/s900_P_equ_within.json
+16:17:53 guard swap_free=1114.50M mem_free=21%
+16:17:53 seed=900 P_equ/within rc=0 wall=41s n10c=alive
+16:17:53 guard swap_free=1114.50M mem_free=21%
+16:18:03 guard swap_free=878.88M mem_free=12%
+16:18:13 guard swap_free=878.88M mem_free=17%
+16:18:23 guard swap_free=878.88M mem_free=18%
+Wrote /Users/electron/scratch/code/g4-pilot2-out/cells/s900_P_equ_none.json
+16:18:33 guard swap_free=878.88M mem_free=23%
+16:18:33 seed=900 P_equ/none rc=0 wall=40s n10c=alive
+16:18:33 guard swap_free=878.88M mem_free=23%
+16:18:43 guard swap_free=878.88M mem_free=14%
+16:18:53 guard swap_free=878.88M mem_free=18%
+16:19:03 guard swap_free=878.88M mem_free=19%
+16:19:13 guard swap_free=878.88M mem_free=15%
+16:19:23 guard swap_free=878.88M mem_free=18%
+Wrote /Users/electron/scratch/code/g4-pilot2-out/cells/s900_P_max_cross.json
+16:19:33 guard swap_free=878.88M mem_free=21%
+16:19:33 seed=900 P_max/cross rc=0 wall=60s n10c=alive
+16:19:33 guard swap_free=878.88M mem_free=21%
+16:19:43 guard swap_free=836.31M mem_free=13%
+16:19:53 guard swap_free=844.31M mem_free=77%
+16:20:03 guard swap_free=844.31M mem_free=19%
+16:20:13 guard swap_free=844.31M mem_free=17%
+16:20:23 guard swap_free=844.31M mem_free=18%
+Wrote /Users/electron/scratch/code/g4-pilot2-out/cells/s900_P_max_within.json
+16:20:33 guard swap_free=844.31M mem_free=22%
+16:20:33 seed=900 P_max/within rc=0 wall=60s n10c=alive
+16:20:33 guard swap_free=844.31M mem_free=22%
+16:20:43 guard swap_free=844.31M mem_free=17%
+16:20:53 guard swap_free=844.31M mem_free=14%
+Wrote /Users/electron/scratch/code/g4-pilot2-out/cells/s900_P_max_none.json
+16:21:03 guard swap_free=844.31M mem_free=15%
+16:21:13 guard swap_free=844.31M mem_free=19%
+16:21:13 seed=900 P_max/none rc=0 wall=40s n10c=alive
+16:21:13 guard swap_free=844.31M mem_free=19%
+16:21:23 guard swap_free=765.44M mem_free=68%
+16:21:33 guard swap_free=711.88M mem_free=16%
+16:21:43 guard swap_free=727.88M mem_free=17%
+16:21:53 guard swap_free=727.88M mem_free=18%
+16:22:03 guard swap_free=727.88M mem_free=66%
+Wrote /Users/electron/scratch/code/g4-pilot2-out/cells/s901_baseline_na.json
+16:22:14 guard swap_free=727.88M mem_free=82%
+16:22:14 seed=901 baseline/na rc=0 wall=61s n10c=alive
+16:22:14 guard swap_free=727.88M mem_free=82%
+16:22:24 guard swap_free=701.19M mem_free=13%
+16:22:34 guard swap_free=701.19M mem_free=15%
+16:22:44 guard swap_free=701.19M mem_free=16%
+Wrote /Users/electron/scratch/code/g4-pilot2-out/cells/s901_P_min_na.json
+16:22:54 guard swap_free=701.19M mem_free=21%
+16:22:54 seed=901 P_min/na rc=0 wall=40s n10c=alive
+16:22:54 guard swap_free=701.19M mem_free=21%
+16:23:04 guard swap_free=701.19M mem_free=15%
+16:23:14 guard swap_free=717.19M mem_free=53%
+16:23:24 guard swap_free=717.19M mem_free=19%
+16:23:34 guard swap_free=717.19M mem_free=20%
+16:23:44 guard swap_free=717.19M mem_free=20%
+Wrote /Users/electron/scratch/code/g4-pilot2-out/cells/s901_P_equ_cross.json
+16:23:54 guard swap_free=717.19M mem_free=22%
+16:23:54 seed=901 P_equ/cross rc=0 wall=60s n10c=alive
+16:23:54 guard swap_free=717.19M mem_free=22%
+16:24:04 guard swap_free=725.19M mem_free=16%
+16:24:14 guard swap_free=733.19M mem_free=13%
+16:24:24 guard swap_free=805.19M mem_free=17%
+Wrote /Users/electron/scratch/code/g4-pilot2-out/cells/s901_P_equ_within.json
+16:24:34 guard swap_free=805.19M mem_free=24%
+16:24:34 seed=901 P_equ/within rc=0 wall=40s n10c=alive
+16:24:34 guard swap_free=805.19M mem_free=24%
+16:24:44 guard swap_free=805.19M mem_free=16%
+16:24:54 guard swap_free=805.19M mem_free=15%
+16:25:04 guard swap_free=805.19M mem_free=56%
+16:25:14 guard swap_free=805.19M mem_free=21%
+16:25:24 guard swap_free=805.19M mem_free=22%
+Wrote /Users/electron/scratch/code/g4-pilot2-out/cells/s901_P_equ_none.json
+16:25:34 guard swap_free=805.19M mem_free=25%
+16:25:34 seed=901 P_equ/none rc=0 wall=60s n10c=alive
+16:25:34 guard swap_free=805.19M mem_free=25%
+16:25:44 guard swap_free=805.19M mem_free=17%
+16:25:54 guard swap_free=805.19M mem_free=57%
+16:26:04 guard swap_free=805.19M mem_free=17%
+Wrote /Users/electron/scratch/code/g4-pilot2-out/cells/s901_P_max_cross.json
+16:26:14 guard swap_free=805.19M mem_free=24%
+16:26:14 seed=901 P_max/cross rc=0 wall=40s n10c=alive
+16:26:14 guard swap_free=805.19M mem_free=24%
+16:26:24 guard swap_free=805.19M mem_free=22%
+16:26:34 guard swap_free=805.19M mem_free=23%
+16:26:44 guard swap_free=805.19M mem_free=19%
+16:26:54 guard swap_free=805.19M mem_free=77%
+16:27:05 guard swap_free=805.19M mem_free=18%
+Wrote /Users/electron/scratch/code/g4-pilot2-out/cells/s901_P_max_within.json
+16:27:15 guard swap_free=805.19M mem_free=24%
+16:27:15 seed=901 P_max/within rc=0 wall=61s n10c=alive
+16:27:15 guard swap_free=805.19M mem_free=24%
+16:27:25 guard swap_free=805.19M mem_free=22%
+16:27:35 guard swap_free=805.19M mem_free=22%
+16:27:45 guard swap_free=805.19M mem_free=69%
+Wrote /Users/electron/scratch/code/g4-pilot2-out/cells/s901_P_max_none.json
+16:27:55 guard swap_free=805.19M mem_free=30%
+16:27:55 seed=901 P_max/none rc=0 wall=40s n10c=alive
+16:27:55 guard swap_free=805.19M mem_free=30%
+16:28:05 guard swap_free=805.19M mem_free=19%
+16:28:15 guard swap_free=805.19M mem_free=17%
+16:28:25 guard swap_free=805.19M mem_free=18%
+16:28:35 guard swap_free=805.19M mem_free=18%
+16:28:45 guard swap_free=805.19M mem_free=51%
+Wrote /Users/electron/scratch/code/g4-pilot2-out/cells/s902_baseline_na.json
+16:28:55 guard swap_free=805.19M mem_free=85%
+16:28:55 seed=902 baseline/na rc=0 wall=60s n10c=alive
+16:28:55 guard swap_free=805.19M mem_free=85%
+16:29:05 guard swap_free=805.19M mem_free=16%
+16:29:15 guard swap_free=805.19M mem_free=17%
+16:29:25 guard swap_free=805.19M mem_free=17%
+Wrote /Users/electron/scratch/code/g4-pilot2-out/cells/s902_P_min_na.json
+16:29:35 guard swap_free=805.19M mem_free=24%
+16:29:35 seed=902 P_min/na rc=0 wall=40s n10c=alive
+16:29:35 guard swap_free=805.19M mem_free=24%
+16:29:45 guard swap_free=805.19M mem_free=19%
+16:29:55 guard swap_free=805.19M mem_free=77%
+16:30:05 guard swap_free=805.19M mem_free=15%
+16:30:15 guard swap_free=805.19M mem_free=16%
+16:30:25 guard swap_free=805.19M mem_free=17%
+Wrote /Users/electron/scratch/code/g4-pilot2-out/cells/s902_P_equ_cross.json
+16:30:35 guard swap_free=805.19M mem_free=24%
+16:30:35 seed=902 P_equ/cross rc=0 wall=60s n10c=alive
+16:30:35 guard swap_free=805.19M mem_free=24%
+16:30:45 guard swap_free=805.19M mem_free=14%
+16:30:55 guard swap_free=829.19M mem_free=17%
+16:31:05 guard swap_free=829.19M mem_free=19%
+Wrote /Users/electron/scratch/code/g4-pilot2-out/cells/s902_P_equ_within.json
+16:31:15 guard swap_free=829.19M mem_free=24%
+16:31:15 seed=902 P_equ/within rc=0 wall=40s n10c=alive
+16:31:15 guard swap_free=829.19M mem_free=24%
+16:31:25 guard swap_free=829.19M mem_free=16%
+16:31:35 guard swap_free=829.19M mem_free=54%
+16:31:46 guard swap_free=829.19M mem_free=17%
+Wrote /Users/electron/scratch/code/g4-pilot2-out/cells/s902_P_equ_none.json
+16:31:56 guard swap_free=829.19M mem_free=23%
+16:31:56 seed=902 P_equ/none rc=0 wall=41s n10c=alive
+16:31:56 guard swap_free=829.19M mem_free=23%
+16:32:06 guard swap_free=829.19M mem_free=14%
+16:32:16 guard swap_free=845.19M mem_free=19%
+16:32:26 guard swap_free=845.19M mem_free=79%
+Wrote /Users/electron/scratch/code/g4-pilot2-out/cells/s902_P_max_cross.json
+16:32:36 guard swap_free=845.19M mem_free=23%
+16:32:36 seed=902 P_max/cross rc=0 wall=40s n10c=alive
+16:32:36 guard swap_free=845.19M mem_free=23%
+16:32:46 guard swap_free=845.19M mem_free=15%
+16:32:56 guard swap_free=845.19M mem_free=19%
+16:33:06 guard swap_free=845.19M mem_free=20%
+16:33:16 guard swap_free=845.19M mem_free=21%
+16:33:26 guard swap_free=861.19M mem_free=55%
+Wrote /Users/electron/scratch/code/g4-pilot2-out/cells/s902_P_max_within.json
+16:33:36 guard swap_free=861.19M mem_free=23%
+16:33:36 seed=902 P_max/within rc=0 wall=60s n10c=alive
+16:33:36 guard swap_free=861.19M mem_free=23%
+16:33:46 guard swap_free=861.19M mem_free=17%
+16:33:56 guard swap_free=861.19M mem_free=20%
+16:34:06 guard swap_free=861.19M mem_free=21%
+Wrote /Users/electron/scratch/code/g4-pilot2-out/cells/s902_P_max_none.json
+16:34:16 guard swap_free=861.19M mem_free=24%
+16:34:16 seed=902 P_max/none rc=0 wall=40s n10c=alive
+16:34:16 done total=1164s n10c=alive
