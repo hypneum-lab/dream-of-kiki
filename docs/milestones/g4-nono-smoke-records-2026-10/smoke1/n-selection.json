@@ -1,0 +1,19 @@
+{
+  "abort": true,
+  "abort_reasons": [
+    "manipulation check failed on 2 of 3 smoke seeds"
+  ],
+  "line": null,
+  "manip_fail_seeds": [
+    901,
+    902
+  ],
+  "n": null,
+  "n_cells": 24,
+  "n_manip_fail": 2,
+  "smoke_seeds": [
+    900,
+    901,
+    902
+  ]
+}

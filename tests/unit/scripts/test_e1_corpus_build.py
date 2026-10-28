@@ -322,6 +322,25 @@ def test_freeze_rejects_below_minima_and_foreign_items(sources: Path) -> None:
                   fixtures_dir=FIX, mega=MEGA, headroom=tuning, headroom_meta=meta)
 
 
+def test_freeze_study_selects_the_headroom_model(sources: Path) -> None:
+    kw: dict[str, Any] = {"tree_blobs": _blobs, "fixtures_dir": FIX, "mega": MEGA,
+                          "tokenizer_pinned": True}
+    _, man_text = build.run(sources, src.byte_bound_counter, "b", False, **kw)
+    man = json.loads(man_text)
+    tuning = {i["src_hash"]: False for i in man["items"] if i["partition"] == "tuning"}
+    small_repo, small_rev = src.STUDY_MODELS["e1-small"]
+    assert src.STUDY_MODELS["e1"] == (src.MODEL_REPO, src.MODEL_REVISION)
+    small = {**_meta(man), "model": small_repo, "revision": small_rev}
+    _, text = build.run(sources, src.byte_bound_counter, "b", False, headroom=tuning,
+                        headroom_meta=small, study="e1-small", **kw)
+    hr = json.loads(text)["headroom"]
+    assert (hr["study"], hr["model"], hr["revision"]) == ("e1-small", small_repo, small_rev)
+    for meta, study in ((_meta(man), "e1-small"), (small, "e1")):
+        with pytest.raises(SystemExit, match="provenance"):
+            build.run(sources, src.byte_bound_counter, "b", False, headroom=tuning,
+                      headroom_meta=meta, study=study, **kw)
+
+
 def test_freeze_refuses_provisional(sources: Path) -> None:
     with pytest.raises(SystemExit, match="PROVISIONAL"):
         build.run(sources, lambda q, g: None, "c", True, tree_blobs=_blobs,

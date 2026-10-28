@@ -1,5 +1,6 @@
 # Erratum: power sentences in locked G4 / G5-bis pre-registrations
 
+**Split:** 2026-10-28, moved unchanged from branch `docs/osf-prereg-2026-10` (PR #41) so it can be filed without waiting for E1.
 **Date:** 2026-10-23
 **Status:** erratum note. The locked pre-registrations listed below
 are **not edited**; this file records the corrected arithmetic. It

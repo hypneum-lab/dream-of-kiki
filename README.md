@@ -7,7 +7,7 @@ Research program producing two complementary papers, both released as arXiv prep
 - **Paper 1** — formal framework **C** with axioms **DR-0..DR-4** and invariants families **I / S / K**. Journal submission (PLOS Computational Biology candidate) deferred until preprint signal.
 - **Paper 2** — empirical ablation on the `kiki_oniric` substrate across profiles `P_min`, `P_equ`, `P_max`. Peer-review venue deferred — arXiv preprint first, then decide.
 
-**Status** — DualVer `C-v0.24.0+PARTIAL` (2026-05-21 ; SemVer alias `0.22.0` in `pyproject.toml`). 914 tests, coverage 89 % (Linux gate 30 %, macOS nightly gate 90 %). Last bump 2026-05-21 Wave 3b M3 (MLX latent-diffusion substrate trainer + sampler + R1 entries). Historic Paper 1 v0.2 status: Paper 1 **v0.2** frozen (22 p), release path : arXiv preprint + Zenodo DOI. Journal submission (PLOS Computational Biology candidate) deferred — we want a preprint in the world first and a signal from it before committing to a months-long peer review. Gates **G1, G7, G8, G9 LOCKED** (cycle 2 closed) ; **G10 deferred to Paper 2**. 277 tests / 91.17 % coverage. OSF pre-registration **live** at DOI `10.17605/OSF.IO/Q6JYN` (https://osf.io/q6jyn, DataCite-minted 2026-04-19T00:28:05Z). arXiv deposit ready, only web-UI walkthrough pending. Bonferroni amendment (2026-04-19) still to be filed as a linked OSF registration before submit — see `docs/osf-amendment-submission-package.md`.
+**Status** — DualVer `C-v0.25.0+PARTIAL` (2026-05-21, Wave 3b M7 ; package version `0.25.0` in `pyproject.toml` and `CITATION.cff`). The version has a single source of truth — the latest released heading of `CHANGELOG.md`, mirrored in `STATUS.md` → *Version* — see [Versioning](#versioning-single-source-of-truth) below. Test count and coverage are the values measured by the CI workflow (`.github/workflows/ci.yml`) on `main`, not a hand-written figure — last Linux CI run (`uv run pytest --cov-fail-under=30`, 2026-10-25, commit `e22d2a7`) : 536 passed, 22 skipped, coverage 47 % ; the MLX-coupled tests only run on Apple Silicon (Linux gate 30 %, macOS nightly gate 90 %) ; dated snapshots live in `STATUS.md` → *Test suite*. Paper 1 **v0.2** frozen (22 p, tag `paper-1-v0.2-arxiv`) ; release path : arXiv preprint + Zenodo DOI, **neither deposited as of 2026-10-25** (`docs/milestones/arxiv-submit-log.md`). Journal submission (PLOS Computational Biology candidate) deferred — we want a preprint in the world first and a signal from it before committing to a months-long peer review. Gates **G1, G7, G8, G9 LOCKED** (cycle 2 closed) ; **G10 deferred to Paper 2**. OSF pre-registration **live** at DOI `10.17605/OSF.IO/Q6JYN` (https://osf.io/q6jyn, DataCite-minted 2026-04-19T00:28:05Z) ; Bonferroni amendment filed 2026-04-21 as `10.17605/OSF.IO/TPM5S` (`docs/osf-amendment-bonferroni-cycle3.md`).
 **Author** — Clément Saillant (L'Electron Rare), *dreamOfkiki* program author. Hypneum Lab.
 **License** — MIT (code) + CC-BY-4.0 (docs).
 
@@ -33,20 +33,24 @@ Conformance Criterion was strengthened to **C+** and now requires
 **both** structural invariants and **C2 substrate-specific axiom
 property tests** — validated against 25 substrates from 6 categories
 through the sister-repo `nerve-wml` N8 Q2 + N9 Q2+ negative-tests
-audit (cumulative 25 / 25 FP; structural layer alone is insufficient).
+audit (cumulative 25 / 25 structural-layer false positives — 22
+deterministic, 3 statistical ; the structural layer is necessary but
+insufficient).
 
 | Item | State |
 |---|---|
 | Paper 1 §5.8 reformulation | shipped (per-substrate FP, no Cat C overstatement) |
 | Conformance Criterion | upgraded **C → C+** (C1 + C2 + C3) |
 | C2 axiom property tests | mandated for any substrate compliance claim |
-| Negative-tests audit | 25 / 25 substrates rejected (Cat A–F), upstream `nerve-wml` |
+| Negative-tests audit | 25 / 25 adversarial substrates (Cat A–F) produce false positives at the structural layer — 22 deterministic, 3 statistical (Cat C) ; structural layer necessary but insufficient, hence C2. Upstream `nerve-wml` ; artefact `docs/milestones/q2plus-conformance-negative-results.json` |
 | Critic-driven fixes | 6 / 6 closed (CRITICAL #1 ablation void, CRITICAL #2 degenerate metrics, MAJOR #3 Cat C overstatement, MAJOR #4 Jonckheere wrong test, MAJOR #5 β-VAE confound, MAJOR #6 paper/JSON count mismatch) |
 
-Cumulative on main HEAD `15efb95` : **479 commits**, internal
-DualVer `C-v0.10.0`, 277+ tests / 91 % coverage. Paper 1 v0.2 still
-points at PLOS Computational Biology as primary venue, arXiv deposit
-ready.
+Cumulative on main HEAD `15efb95` : **479 commits**, DualVer
+`C-v0.12.0+PARTIAL` at the time (per `CHANGELOG.md` ; this section
+previously said `C-v0.10.0`, corrected 2026-10-25), test count and
+coverage as audited 2026-05-10 in `STATUS.md` → *Test suite*.
+Paper 1 v0.2 still points at PLOS Computational Biology as primary
+venue, arXiv deposit ready.
 
 ---
 
@@ -142,7 +146,7 @@ sub-powered, and explicitly a 1.5B pilot, NOT the 35B claim.**
 | H1 vs baseline | rejected 3/3 (`p_min` p≈2.4e-20, `p_equ` p≈1.1e-19, `p_max` p≈1.5e-19, n=20) at α=0.0125 ; gain carried by `mega_v2` |
 | E1 powered TOST harness | **delivered** — Hedges' g, SESOI g=0.29, α=0.0167 (Bonferroni), power analysis |
 | Power deficit (honest) | **≈ 141 pairs** needed for 80 % power ; only 20 seeds available (`adequately_powered=False`) — **not** a nominal-power proof |
-| 35B bf16 pin | **turnkey** — `qwen3p6-35b-bf16-local` resolves `repo_id` via `KIKI_35B_BF16_PATH` ; real 35B run **out of reach of the dev M1 Max (32 GB)**, ready on the Mac Studio |
+| 35B bf16 pin | **turnkey** — `qwen3p6-35b-bf16-local` resolves `repo_id` via `KIKI_35B_BF16_PATH` ; real 35B run **out of reach of the dev M1 Max (32 GB)**, ready on the Mac Studio — host powered down since 2026-10, run on hold |
 | hellaswag fixture | **real** 200-item `rowanz/val` replaces a degenerate 8-item fallback (was saturating ≈1.0) ; now ≈0.38–0.42, gain isolated to `mega_v2` |
 | mmlu loader | **audited, no silent fallback** — raises `ValueError` on missing fixture ; 0.91 is on a real "sanity" subset |
 
@@ -160,6 +164,16 @@ not be presented as a nominal-power result, nor as the 35B claim.
   - The **formal framework C** — 8 primitives, 4 channels, DR-axioms, Conformance Criterion.
   - The **`kiki_oniric`** substrate, forked from `kiki-flow-core`, implementing Track A.
 - Dual-axis versioning (**DualVer**): `C-vX.Y.Z+{STABLE,UNSTABLE}` — the formal axis (FC) and the empirical axis (EC) bump independently. See `docs/specs/2026-04-17-dreamofkiki-framework-C-design.md` §12.
+
+## Versioning (single source of truth)
+
+- The framework version is the DualVer string `C-vX.Y.Z+{STABLE,PARTIAL,…}` (spec §12). Its **single source of truth is the most recent released heading of `CHANGELOG.md`** ; `STATUS.md` → *Version* mirrors it.
+- `pyproject.toml` `version` and `CITATION.cff` `version` carry the FC triple `X.Y.Z` of that DualVer (the SemVer alias) ; `CITATION.cff` `date-released` is the date of that CHANGELOG heading. Substrate-internal versions (e.g. `MLX_LATENT_DIFFUSION_SUBSTRATE_VERSION`) never drive `pyproject.toml`.
+- A DualVer bump is one commit that touches `CHANGELOG.md`, `STATUS.md`, `pyproject.toml`, `uv.lock` and `CITATION.cff` together (and `.zenodo.json` once a Zenodo deposit exists — there is none yet).
+- Git tags `v0.9.0`–`v0.9.2` (April 2026) predate this rule ; the last GitHub release is `v0.9.2`. New tags follow `vX.Y.Z` = the FC triple.
+- Test counts and coverage are never hand-written here : cite the CI run or a dated `STATUS.md` snapshot.
+
+Alignment applied 2026-10-25 (issue #55) : `C-v0.25.0+PARTIAL` ↔ `0.25.0` (previously README `C-v0.24.0`, `pyproject.toml` `0.23.0`, `CITATION.cff` `0.10.0`, `AGENTS.md` `0.22.1`).
 
 ## Repo layout
 
@@ -207,20 +221,41 @@ uv sync --all-extras
 
 Python 3.12+, macOS arm64 (MLX) or Linux x86_64 (CPU fallback).
 
-## Reproduce the paper v0.4
+## Reproduce in one command
 
-The draft release includes full experimental data. To re-run:
+**Install** — `git clone https://github.com/hypneum-lab/dream-of-kiki.git && cd dream-of-kiki && uv sync --all-extras`
+(Python ≥ 3.12 via uv ; Linux x86_64 CPU-only is enough for the conformance layer).
+
+**Run** — `uv run pytest tests/conformance/ --no-cov`
+(`--no-cov` is required : the `pyproject.toml` coverage gate otherwise fails any sub-suite on exit code.)
+
+**Expected output** — `45 passed, 2 skipped` on Linux (the 2 skips `importorskip` MLX ; the MLX-coupled
+DR-3 / DR-4 / diffusion conformance files are dropped by `conftest.py` off Apple Silicon).
+The CI suite `uv run pytest --cov-fail-under=30` gives `536 passed, 22 skipped`, coverage 47 %.
+
+**Duration & host** — ~6 s (65 s for the CI suite) on Ubuntu 24.04, 8 vCPU, no GPU, Python 3.14 (measured 2026-10-25, commit `e22d2a7`).
+
+**Full reproduction** (R1 bit-exact hashes, pilots, figures) needs Apple Silicon + MLX — see
+`tests/reproducibility/REBASELINE_NOTE.md`, `docs/milestones/conformance-matrix.md` (C1–C3 matrix)
+and `docs/milestones/q2-conformance-negative-2026-05-10.md`.
+
+## Reproduce the paper
+
+The draft release includes full experimental data. To re-run :
 
 ```bash
-# Run the gate-specific pilot
-uv run python scripts/pilot_g4.py --profile P_equ --seed 42
+# Gate / ablation drivers — argument-free, seeds 42 / 123 / 7 are fixed in the script
+uv run python scripts/ablation_g4.py          # G4 ablation (baseline vs P_min vs P_equ)
+uv run python scripts/pilot_g2.py             # G2 pilot (MLX required)
+uv run python scripts/conformance_matrix.py   # C1–C3 conformance matrix
 
-# Run the conformance test suite (axioms + invariants)
-uv run pytest tests/conformance/ -v
-
-# Regenerate paper figures (reads from run registry)
-uv run python scripts/render_figures.py --gate G4
+# Run the conformance test suite (axioms + invariants) — `--no-cov` bypasses the coverage gate
+uv run pytest tests/conformance/ -v --no-cov
 ```
+
+Other drivers : `scripts/pilot_cycle3_*.py`, `scripts/ablation_cycle3*.py`,
+`scripts/run_q2_conformance_audit.py`. A figure-rendering script
+(`scripts/render_figures.py`) is not yet in the repository.
 
 Outputs land in `harness/registry/runs/` (gitignored). Figures go to `papers/figures/`.
 
@@ -233,16 +268,21 @@ Outputs land in `harness/registry/runs/` (gitignored). Figures go to `papers/fig
 
 ## Citation
 
-Draft pre-print, tag [`paper-v0.4-draft`](https://github.com/hypneum-lab/dream-of-kiki/releases/tag/paper-v0.4-draft):
+Machine-readable metadata : `CITATION.cff` (single author, version
+`0.25.0`). Paper 1 draft v0.2 is frozen at tag
+[`paper-1-v0.2-arxiv`](https://github.com/hypneum-lab/dream-of-kiki/releases/tag/paper-1-v0.2-arxiv) (no arXiv or Zenodo deposit yet) :
 
 ```bibtex
 @unpublished{dreamofkiki-2026,
   author = {Saillant, Clément},
-  title  = {Dream-Based Knowledge Consolidation in Artificial
-            Cognitive Systems: A Formal Framework},
+  title  = {dreamOfkiki: A Substrate-Agnostic Formal Framework for
+            Dream-Based Knowledge Consolidation in Artificial
+            Cognitive Systems},
   year   = 2026,
   url    = {https://github.com/hypneum-lab/dream-of-kiki},
-  note   = {Draft v0.4; MIT code + CC-BY-4.0 docs}
+  note   = {Paper 1 draft v0.2 ; software version 0.25.0
+            (DualVer C-v0.25.0+PARTIAL) ; MIT code + CC-BY-4.0 docs ;
+            OSF pre-registration DOI 10.17605/OSF.IO/Q6JYN}
 }
 ```
 

@@ -36,7 +36,8 @@ substrate:
 > leaves the MLP non-callable with the canonical `(2, 4)` input
 > shape consumed by REPLAY.
 
-12 of the 24 permutations are in this class. See
+12 of the 24 permutations are in this class ; the other 12 (REPLAY
+before RESTRUCTURE, canonical order included) are closure-safe. See
 `tests/conformance/axioms/test_dr2_compositionality_empirical.py`
 for the full enumeration (Hypothesis `@parametrize`-materialised
 plus a generic probe).
@@ -90,7 +91,7 @@ errata commit and a DualVer bump on the formal axis.
 
 ## Recommendation
 
-**Option B adopted 2026-04-21** (FC-PATCH bump C-v0.7.0 → C-v0.7.1). The precondition-bounded DR-2 is empirically validated by the 11 passing permutations in the test suite. Option C (demote DR-2 entirely) remains available for Paper 2 if substrate-survey results warrant it.
+**Option B adopted 2026-04-21** (FC-PATCH bump C-v0.7.0 → C-v0.7.1). The precondition-bounded DR-2 is empirically validated by the 12 closure-safe permutations : the 11 non-canonical ones probed by the Hypothesis strategy in `test_dr2_compositionality_empirical.py`, plus the canonical order covered by `test_dr2_prime_canonical_order.py` (see *Correction (2026-10-25)* below). Option C (demote DR-2 entirely) remains available for Paper 2 if substrate-survey results warrant it.
 
 ## DualVer implication
 
@@ -100,10 +101,47 @@ errata commit and a DualVer bump on the formal axis.
   form has been re-tested substrate-wide.
 - **Option C**: formal-axis bump `+UNSTABLE` with an errata commit.
 
+## Correction (2026-10-25)
+
+Earlier revisions of this amendment gave two different counts for
+the permutation classes : "12 of the 24" (*Empirical result*,
+*References*) and "11 passing permutations" (*Recommendation*). The
+figures are reconciled below from the repository's own artefacts,
+without re-running anything :
+
+- **12 / 24 permutations raise `ValueError`** (RESTRUCTURE strictly
+  before REPLAY). For every permutation of the four operations
+  exactly one of RESTRUCTURE-before-REPLAY or REPLAY-before-RESTRUCTURE
+  holds, so the two classes have equal size (12 and 12). The test
+  module enumerates the falsifying class in
+  `_enumerate_closure_falsifiers()` (complement of `DR2.predicate`),
+  and the committed run records carry the same count :
+  `STATUS.md` → *Test suite* ("693 passing, 12 xfailed", audited
+  2026-05-10) and
+  `docs/milestones/r1-cross-machine-m5-vs-m1-2026-05-20.json`
+  (`functional_verdict.pytest_xfailed` = 12 on M5, M3 Ultra and
+  M1 Max).
+- **12 / 24 permutations are closure-safe.** The "11" came from the
+  implementation plan
+  (`docs/superpowers/plans/2026-04-21-dr2-option-b-weakening.md`,
+  "≥ 11 passed + 12 xfailed") : it counts only the non-canonical safe
+  permutations exercised by the Hypothesis strategy, which excludes
+  the canonical order because DR-2' already covers it
+  (`test_dr2_prime_canonical_order.py`). 11 + 1 = 12.
+
+Retained figures : **12 falsified / 12 closure-safe of 24**,
+consistent with `docs/proofs/dr2-compositionality.md`,
+`docs/axioms/AXIOMS.md`, the framework-C spec §6.2 and the test
+module docstring. Paper 1 §4.5 names the excluded class without a
+count, so no erratum is needed there. No dedicated JSON artefact
+records this count ; producing one requires a test run and is left
+to a later phase. Tracking issue : hypneum-lab/dream-of-kiki#54.
+
 ## References
 
 - `tests/conformance/axioms/test_dr2_compositionality_empirical.py`
-  — the 12 xfailing cases and the closure-safe passing cases.
+  — the 12 xfailing cases and the 12 closure-safe passing cases
+  (11 non-canonical + the canonical order).
 - `tests/conformance/axioms/test_dr2_prime_canonical_order.py` —
   DR-2' (fallback, still enforceable).
 - `docs/specs/2026-04-17-dreamofkiki-framework-C-design.md` §6.2 —

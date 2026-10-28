@@ -1,5 +1,6 @@
 # DR-3 global relational probe pre-registration
 
+**Split:** 2026-10-28, moved from branch `docs/osf-prereg-2026-10` (PR #41) so it can be filed without waiting for E1; only change: the §9 smoke-record pointer now names `docs/milestones/dr3-prefiling-smoke-2026-10-25-records/` (archived from macM1 by PI decision, SHA-256 in its `SHA256SUMS`).
 **Status:** DRAFT — not yet filed on OSF (to be filed by the PI).
 **Date:** 2026-10-23 (revision 3: PI decisions of 2026-10-23 on δ
 and n applied; revision 4, 2026-10-24: pre-filing code status, no
@@ -552,8 +553,8 @@ Split-FMNIST test inputs, same statistics and preprocessing) is
   - No number of this protocol is derived from the smoke: τ = 0.1,
     δ = 0.025, n = 20 and the permutation c_α (α = 0.05, rank 476 of
     501) are fixed by PI decision, not by pilot data.
-  - Records: macM1 `~/scratch/code/pilots-2026-10-25/` (dump, sidecars,
-    manifest, probe check).
+  - Records: `docs/milestones/dr3-prefiling-smoke-2026-10-25-records/` (dump, sidecars, probe check; manifest above;
+    the nerve-wml v1.9.0 clone stays on macM1 `~/scratch/code/pilots-2026-10-25/`).
 - Milestones: `docs/milestones/dr3-relational-probe-<date>.{json,md}`.
 - Results are appended to `docs/proofs/dr3-substrate-evidence.md` as
   a new dated section (append-only).

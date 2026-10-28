@@ -12,6 +12,41 @@ see `docs/specs/2026-04-17-dreamofkiki-framework-C-design.md` §12).
 
 ## [Unreleased]
 
+### Docs (phase 0 "truth" corrections — M0, 2026-10-25)
+
+- **DR-2 amendment permutation count harmonised** (issue #54).
+  `docs/specs/amendments/2026-04-21-dr2-empirical-falsification.md`
+  said "12 of 24" in two places and "11 passing permutations" in a
+  third. Retained figures : 12 / 24 falsified (RESTRUCTURE before
+  REPLAY, xfail) and 12 / 24 closure-safe (11 non-canonical probed by
+  Hypothesis + the canonical order covered by DR-2'). Dated correction
+  note added to the amendment. Evidence : `_enumerate_closure_falsifiers()`
+  in the test module, `STATUS.md` test-suite snapshot (12 xfailed) and
+  `docs/milestones/r1-cross-machine-m5-vs-m1-2026-05-20.json`
+  (`pytest_xfailed` = 12 on 3 machines). Nothing re-run. Stale "five
+  permutations" docstring in
+  `tests/conformance/axioms/test_dr2_compositionality_empirical.py` fixed.
+- **Version metadata aligned on `C-v0.25.0+PARTIAL`** (issue #55) :
+  `pyproject.toml` + `uv.lock` `0.23.0 → 0.25.0`, `CITATION.cff`
+  `0.10.0 → 0.25.0`
+  (`date-released` 2026-05-21), README status `C-v0.24.0 → C-v0.25.0`,
+  `AGENTS.md` `0.22.1 → 0.25.0`, `STATUS.md` *Version* line. Rule
+  documented in README → *Versioning* : the latest released CHANGELOG
+  heading drives `pyproject.toml` / `CITATION.cff` / `STATUS.md`. Bare
+  test counts removed from the README status line (CI is the measure).
+  No `.zenodo.json` created : no Zenodo deposit exists yet.
+- **Q2 / Q2+ wording in README** : "25 / 25 substrates rejected" →
+  "25 / 25 adversarial substrates produce false positives at the
+  structural layer (22 deterministic, 3 statistical) — structural layer
+  necessary but insufficient", matching
+  `docs/milestones/q2plus-10-more-adversarial-2026-05-11.md` (critic
+  clarification) and `q2plus-conformance-negative-results.json`.
+- README housekeeping : citation block pointed at the real tag
+  `paper-1-v0.2-arxiv` (the referenced `paper-v0.4-draft` tag never
+  existed) ; Bonferroni amendment recorded as filed
+  (`10.17605/OSF.IO/TPM5S`, 2026-04-21) ; the 2026-05-11 section's
+  "C-v0.10.0" corrected to `C-v0.12.0+PARTIAL`.
+
 ### Added (E1 CUDA port — full study runnable on sovereign GPU cloud, 2026-06-18)
 
 - **`scripts/pilot_cycle3_cuda.py` — torch/transformers port of the E1 cell**

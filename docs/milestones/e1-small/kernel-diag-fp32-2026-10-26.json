@@ -1,0 +1,46 @@
+{
+ "distance_to_fp32": {
+  "bf16_fallback": {
+   "argmax_agree": 0.96,
+   "choice_score_max_abs": 0.07008504867553711,
+   "logprob_max_abs": 0.257631778717041,
+   "logprob_mean_abs": 0.021367626739761583
+  },
+  "bf16_kernels": {
+   "argmax_agree": 1.0,
+   "choice_score_max_abs": 0.1102592945098877,
+   "logprob_max_abs": 0.2289130687713623,
+   "logprob_mean_abs": 0.021800637614585106
+  },
+  "kernels_vs_fallback": {
+   "argmax_agree": 0.96,
+   "choice_score_max_abs": 0.1119842529296875,
+   "logprob_max_abs": 0.34016990661621094,
+   "logprob_mean_abs": 0.024304491994231632
+  }
+ },
+ "gpu": "NVIDIA GeForce RTX 4090",
+ "model": "Qwen/Qwen3.5-4B",
+ "n_items": 25,
+ "n_sequences": 102,
+ "n_tokens": 5683,
+ "peak_bytes": {
+  "bf16_fallback": 9351188992,
+  "bf16_kernels": 9351188992,
+  "fp32_fallback": 17663368704
+ },
+ "registered_linear_attn": "torch",
+ "revision": "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a",
+ "versions": {
+  "causal-conv1d": "1.7.0",
+  "fla-core": "0.5.2",
+  "tokenizers": "0.22.2",
+  "torch": "2.11.0",
+  "transformers": "5.7.0"
+ },
+ "wall_s": {
+  "bf16_fallback": 14.5,
+  "bf16_kernels": 8.6,
+  "fp32_fallback": 16.8
+ }
+}

@@ -1,0 +1,15 @@
+# E1-small S6 (PI decision 2026-10-25 19:50): BUILD-ONLY toolchain for the
+# causal-conv1d CUDA extension, installed with pip --target into a separate
+# directory (never into the run venv). CUDA 13.0 components matching the
+# torch 2.11.0 cu13 wheels (cuda-toolkit 13.0.2 pins these exact versions).
+# Origin: PyPI, linux x86_64 wheels.
+nvidia-cuda-nvcc==13.0.88 \
+    --hash=sha256:56fe502eb77625a12f25172caa3cdddb4e4c8ba2c8c17dba44b164761b380f03
+nvidia-cuda-cccl==13.0.85 \
+    --hash=sha256:e0da7ad981f3a8aff08241b5bfc1af868742a63e2762f53a5171c492ef242649
+nvidia-cuda-crt==13.0.88 \
+    --hash=sha256:2c8043c7c9e02492716426e9919fc78d2c5b3b2a7a768a88e952676b08aa55a4
+nvidia-nvvm==13.0.88 \
+    --hash=sha256:c5f41ffeb6466944a026dfa5317d7d85355c119bbec279205d22f1869d1054e0
+ninja==1.13.0 \
+    --hash=sha256:fb46acf6b93b8dd0322adc3a4945452a4e774b75b91293bafcc7b7f8e6517dfa

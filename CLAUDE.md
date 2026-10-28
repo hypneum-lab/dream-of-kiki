@@ -61,11 +61,11 @@ All invocations go through `uv` (no Makefile / justfile). Python ≥3.12.
 # Install — pulls dev, fmri, teacher extras (MLX, hypothesis, nilearn, llama-cpp-python)
 uv sync --all-extras
 
-# Full test suite with coverage gate (fails under 90 %)
+# Full test suite with coverage gate (fails under 40 %, see pyproject.toml)
 uv run pytest
 
 # Narrow scopes
-uv run pytest tests/conformance/ -v                 # axioms + invariants
+uv run pytest tests/conformance/ -v --no-cov        # axioms + invariants (bypass coverage gate)
 uv run pytest tests/reproducibility/ -v --no-cov    # R1 bit-exact (MLX/Metal on Apple Silicon)
 uv run pytest tests/unit/test_foo.py::test_bar      # single test
 uv run pytest -k "dr2 and not slow"                 # keyword selection
@@ -77,13 +77,13 @@ uv run mypy harness tests          # strict mode (pyproject.toml)
 # Harness CLI (entry point defined in pyproject.toml)
 uv run dream-harness --help
 
-# Pilot / gate drivers — one per G-gate, always pass explicit seed
-uv run python scripts/pilot_g2.py --profile P_equ --seed 42
-uv run python scripts/pilot_cycle3_sanity.py --seed 42
+# Pilot / gate drivers — one per G-gate ; seeds are fixed inside each script (no --seed flag)
+uv run python scripts/pilot_g2.py
+uv run python scripts/pilot_cycle3_sanity.py --dry-run   # or --smoke-cell
 uv run python scripts/conformance_matrix.py
 
-# Render paper figures from registered runs
-uv run python scripts/render_figures.py --gate G4
+# Render paper figures from registered runs — script not yet in the repository
+# uv run python scripts/render_figures.py --gate G4
 ```
 
 CI runs on push/PR : `ci.yml` (ubuntu-latest, ruff + mypy + pytest)

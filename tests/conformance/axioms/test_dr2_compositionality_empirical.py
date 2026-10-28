@@ -280,7 +280,7 @@ def test_dr2_empirical_closure_falsified_restructure_then_replay(
 ) -> None:
     """XFAIL (out of scope of weakened DR-2): RESTRUCTURE-before-REPLAY class excluded by the precondition. See spec §6.2.
 
-    These five permutations are an empirical counter-example to the
+    These twelve permutations are an empirical counter-example to the
     closure sub-claim of DR-2 as stated in spec §6.2 (``op_2 ∘ op_1
     ∈ Op``). They xfail rather than pass so the refutation remains
     visible on every CI run — a green bar would hide the gap.
