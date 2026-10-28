@@ -1,6 +1,6 @@
 # G4-nono cross-domain RECOMBINE pre-registration
 
-**Split:** 2026-10-28, moved unchanged from branch `docs/osf-prereg-2026-10` (PR #41) so it can be filed without waiting for E1.
+**Split:** 2026-10-28, moved from branch `docs/osf-prereg-2026-10` (PR #41) so it can be filed without waiting for E1; only change: the three §9 smoke-record pointers now name `docs/milestones/g4-nono-smoke-records-2026-10/` (archived from macM1 by PI decision, SHA-256 in its `SHA256SUMS`).
 **Status:** DRAFT — not yet filed on OSF (to be filed by the PI).
 **Date:** 2026-10-23 (revision 4: PI decisions of 2026-10-23 on N
 and ε applied; ε reverted to 0.01 and N = 108 tier added; revision 5,
@@ -836,8 +836,8 @@ carry a universality claim in either direction.
   - Per the deviation envelope (b) below, this needs an amendment
     before any confirmatory cell runs (for example more epochs per
     G4-sexto §9.1); the choice is left to the PI. The smoke records
-    are kept (macM1 `~/scratch/code/g4-pilot-out/`, with the runner
-    log and the refused `n-selection.json`).
+    are kept (`docs/milestones/g4-nono-smoke-records-2026-10/smoke1/`, ex macM1 `~/scratch/code/g4-pilot-out/`,
+    with the runner log and the refused `n-selection.json`).
   - Checklist item 5 was not run: no host has both pinned CIFAR-100
     files (macM1 and Studio hold only the parquet mirror;
     electron-server holds neither).
@@ -867,8 +867,8 @@ carry a universality claim in either direction.
     cell (descriptive only, §6).
   - Exploratory `P_max/unmixed` (run separately at `0b2b48e`, 3
     cells): CDPA 0.5474 / 0.5257 / 0.5269, driver wall 24-46 s.
-  - Records: macM1 `~/scratch/code/g4-pilot2-out/` (with
-    `n-selection.json`) and `~/scratch/code/g4-pilot2-unmixed/`.
+  - Records: `docs/milestones/g4-nono-smoke-records-2026-10/smoke2/` (with
+    `n-selection.json`) and `docs/milestones/g4-nono-smoke-records-2026-10/smoke2-unmixed/`.
   **Third smoke, 2026-10-24 (new corpus, PI decision; this is the
   smoke whose N is filed).** Code at `6f11823` (CIFAR-10 grayscale +
   Quick, Draw!, 10 epochs, P_max recombine_full), corpus
@@ -895,7 +895,7 @@ carry a universality claim in either direction.
     `none`, as designed. Exploratory `unmixed` CDPA 0.795 / 0.687 /
     0.810.
   - Checklist item 5 passes on this host for the new corpus.
-  - Records: macM1 `~/scratch/code/g4-pilot3-out/` (with
+  - Records: `docs/milestones/g4-nono-smoke-records-2026-10/smoke3/` (with
     `n-selection.json`).
   - **Re-check, 2026-10-25 (no rerun).** The aggregator changed after
     this smoke (`0705440`: exploratory cells split from the

@@ -5,6 +5,7 @@ Reproduces every power / minimum-detectable-effect figure quoted in
 
 - docs/osf-prereg-g4-nono-cross-domain-2026-10-23.md   (H12)
 - docs/osf-prereg-dr3-relational-probe-2026-10-23.md   (H13)
+- docs/osf-prereg-e1-replay-controls-2026-10-23.md     (H14)
 - docs/osf-prereg-erratum-g4-power-2026-10-23.md       (erratum)
 
 Two kinds of numbers are produced:
@@ -19,13 +20,16 @@ Two kinds of numbers are produced:
    samples when the rule needs the per-arm SDs (g_av floor).
 3. *"No practical effect" rules* at the margins fixed by the PI on
    2026-10-23 (G4 eps = 0.01, reverted from 0.005 by a later PI
-   decision the same day; DR-3 delta = 0.025):
+   decision the same day; DR-3 delta = 0.025, E1 delta = 0.01):
    power at true difference 0, the largest SD of the paired
    difference at which the registered n still reaches 80 %, and the
    n needed for 80 % at the planning SD. One-sided bound rules
    (U < margin, or L > -margin) at mu = 0 are exact: the event is
    {noncentral t(df = n - 1, ncp = margin sqrt(n) / SD) > t_crit}.
    TOST powers are Monte Carlo (fixed seeds).
+4. *E1 corpus size*: the minimum number of eval items per seed that
+   keeps the item-sampling part of SD_D within half of the variance
+   budget that N = 141 allows at delta = 0.01.
 
 numpy + scipy only. Deterministic (fixed seeds). Runs in < 1 min.
 
@@ -209,6 +213,7 @@ def _fmt_row(cells) -> str:
 def main() -> None:
     a_g4 = 0.05 / 3      # 0.0167
     a_dr3 = 0.05 / 4     # 0.0125
+    a_e1 = 0.05 / 3      # 0.0167
 
     print("## 1. Test-rejection MDE at 80 % power (exact noncentral t)\n")
     for label, n, a, sided in [
@@ -223,6 +228,7 @@ def main() -> None:
         ("DR3 paired, n=20, one-sided a=.0125", 20, a_dr3),
         ("G4 paired, n=95, one-sided a=1/60", 95, a_g4),
         ("G4 paired, n=108, one-sided a=1/60", 108, a_g4),
+        ("E1 paired, n=141, one-sided a=1/60", 141, a_e1),
     ]:
         dz = mde_paired(n, a)
         print(f"- {label}: d_z = {dz:.3f}, g_z = {dz * hedges_j(n - 1):.3f}")
@@ -375,6 +381,43 @@ def main() -> None:
     print(f"- n = 20 reaches 80 % iff SD(D) <= "
           f"{max_sd_bound(d3, n_dr3, a_dr3):.4f}")
 
+    print("\n## 7. E1 (n = 141, a = 1/60), delta = 0.01\n")
+    print("Standardised check, margin = 0.29 SD, true diff 0:"
+          f" NI = {power_noninferiority(0, 1, 141, a_e1, 0.29):.3f},"
+          f" TOST = {power_tost(0, 1, 141, a_e1, 0.29):.3f}\n")
+    delta = 0.01
+    sds = (0.015, 0.02, 0.028, 0.035, 0.05, 0.069)
+    print(f"Raw SESOI delta = {delta} (fact-corpus accuracy).\n")
+    print(_fmt_row(["SD_D", "delta/SD_D", "SUP mu=0.01", "SUP mu=0.015",
+                    "SUP mu=0.02", "BOUNDED / NI mu=0", "TOST mu=0"]))
+    print(_fmt_row(["---"] * 7))
+    for x in sds:
+        print(_fmt_row([
+            str(x), f"{delta / x:.2f}",
+            f"{power_superiority_floor(0.01, x, 141, a_e1, delta):.2f}",
+            f"{power_superiority_floor(0.015, x, 141, a_e1, delta):.2f}",
+            f"{power_superiority_floor(0.02, x, 141, a_e1, delta):.2f}",
+            f"{power_bound_exact(delta / x, 141, a_e1):.2f}",
+            f"{power_tost(0.0, x, 141, a_e1, delta):.2f}",
+        ]))
+    sd_star = max_sd_bound(delta, 141, a_e1)
+    print(f"\n- n = 141 reaches 80 % iff SD_D <= {sd_star:.4f}"
+          f" (BOUNDED-NO-GAIN / NI), <= {max_sd_tost(delta, 141, a_e1):.4f}"
+          " (TOST)")
+    for x in (0.028, 0.035, 0.05, 0.069):
+        print(f"- SD_D = {x}: n for 80 % = {n_needed_bound(delta, x, a_e1)}"
+              f" (BOUNDED / NI), {n_needed_tost(delta, x, a_e1)} (TOST)")
+
+    print("\n## 8. E1 fact-corpus size (item-sampling budget)\n")
+    budget = sd_star / np.sqrt(2)
+    print(f"SD* = {sd_star:.6f}; item-sampling SD budget ="
+          f" SD* / sqrt(2) = {budget:.4f}"
+          " (half of the variance SD*^2).")
+    print("n_eval_min = ceil(p_disc / budget^2), p_disc = fraction of eval"
+          " items on which the two post-checkpoints differ in correctness.\n")
+    for pdisc in (0.05, 0.10, 0.15, 0.20):
+        print(f"- p_disc = {pdisc:.2f}: n_eval_min = "
+              f"{int(np.ceil(pdisc / budget ** 2))}")
 
 if __name__ == "__main__":
     main()
