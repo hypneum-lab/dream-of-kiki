@@ -89,6 +89,13 @@ MODEL_REPO = "Qwen/Qwen3.6-35B-A3B"
 MODEL_REVISION = "995ad96eacd98c81ed38be0c5b274b04031597b0"
 TOKENIZER_SHA256 = "5f9e4d4901a92b997e463c1f46055088b6cca5ca61a6522d1b9f64c4bb81cb42"
 
+# Base checkpoint whose step-9 headroom scores may freeze the corpus, per
+# study: E1 (35B, E1 draft section 10 item 1) and E1-small (4B,
+# docs/osf-prereg-e1-small-2026-10-25.md section 2). The step-3 tokenizer
+# above is the same for both (byte-identical tokenizer.json).
+STUDY_MODELS = {"e1": (MODEL_REPO, MODEL_REVISION),
+                "e1-small": ("Qwen/Qwen3.5-4B", "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a")}
+
 _DATE_RE = re.compile(r"^(\d{4})[-/](\d{2})[-/](\d{2})$")
 
 

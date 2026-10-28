@@ -1,0 +1,107 @@
+{
+ "base_sha256": "c1b469d8d93ec5ffebd6fdd102296f1b2689d5966bc4fe3077e2f699b887267e",
+ "error": null,
+ "identical": {
+  "param_sha256": true,
+  "post": true,
+  "pre": true,
+  "scores": true
+ },
+ "jobs": [
+  "p_min",
+  "p_ctrl_vanilla_replay_tuned",
+  "p_ctrl_lr_matched",
+  "p_min"
+ ],
+ "model": "Qwen/Qwen3.5-4B",
+ "revision": "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a",
+ "runs": [
+  {
+   "achieved_loss_tokens": 18335,
+   "invariant_violation": null,
+   "n_updates": 400,
+   "param_sha256": "adc47906e8b6a1182d1647313a5bec45810ea0a4a83104a7dd33bf8beafa9845",
+   "peak_bytes": 19565089280,
+   "planned_loss_tokens": 18335,
+   "post": 0.5766666666666667,
+   "pre": 0.5433333333333333,
+   "profile": "p_min",
+   "wall_s": 195.8
+  },
+  {
+   "achieved_loss_tokens": 18335,
+   "invariant_violation": null,
+   "n_updates": 400,
+   "param_sha256": "adc47906e8b6a1182d1647313a5bec45810ea0a4a83104a7dd33bf8beafa9845",
+   "peak_bytes": 19550409216,
+   "planned_loss_tokens": 18335,
+   "post": 0.5766666666666667,
+   "pre": 0.5433333333333333,
+   "profile": "p_ctrl_vanilla_replay_tuned",
+   "wall_s": 195.4
+  },
+  {
+   "achieved_loss_tokens": 18335,
+   "invariant_violation": null,
+   "n_updates": 400,
+   "param_sha256": "adc47906e8b6a1182d1647313a5bec45810ea0a4a83104a7dd33bf8beafa9845",
+   "peak_bytes": 19548312064,
+   "planned_loss_tokens": 18335,
+   "post": 0.5766666666666667,
+   "pre": 0.5433333333333333,
+   "profile": "p_ctrl_lr_matched",
+   "wall_s": 196.0
+  },
+  {
+   "achieved_loss_tokens": 18335,
+   "invariant_violation": null,
+   "n_updates": 400,
+   "param_sha256": "adc47906e8b6a1182d1647313a5bec45810ea0a4a83104a7dd33bf8beafa9845",
+   "peak_bytes": 19548312064,
+   "planned_loss_tokens": 18335,
+   "post": 0.5766666666666667,
+   "pre": 0.5433333333333333,
+   "profile": "p_min",
+   "wall_s": 196.2
+  }
+ ],
+ "scores_sha256": [
+  "e2d63a212f2d831f9cf893754890248ee7e136ed39a760579f900d65fee762c6",
+  "e2d63a212f2d831f9cf893754890248ee7e136ed39a760579f900d65fee762c6",
+  "e2d63a212f2d831f9cf893754890248ee7e136ed39a760579f900d65fee762c6",
+  "e2d63a212f2d831f9cf893754890248ee7e136ed39a760579f900d65fee762c6"
+ ],
+ "valid_replay": {
+  "budget_achieved": true,
+  "no_invariant_violation": true,
+  "parameters_changed": true,
+  "updated": true
+ },
+ "verdict": "PASS",
+ "versions": {
+  "determinism": {
+   "cublas_workspace_config": ":4096:8",
+   "cudnn_benchmark": false,
+   "cudnn_deterministic": true,
+   "enabled": true,
+   "seed_per_cell": 0,
+   "use_deterministic_algorithms": true,
+   "warn_only": false
+  },
+  "device": "cuda",
+  "kernels": {
+   "causal-conv1d": null,
+   "fla-core": null
+  },
+  "linear_attn": "torch",
+  "placement": [
+   "cuda:0"
+  ],
+  "sgd": "optim",
+  "snapshot": "ram",
+  "tokenizer": "raw",
+  "tokenizers": "0.22.2",
+  "torch": "2.11.0+cu130",
+  "transformers": "5.7.0"
+ }
+}

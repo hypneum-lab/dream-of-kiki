@@ -292,7 +292,8 @@ def run(sources_dir: Path, count: src.TokenCounter, token_counter: str,
         headroom: Mapping[str, Any] | None = None,
         headroom_sha256: str | None = None,
         tokenizer_pinned: bool = False,
-        headroom_meta: Mapping[str, Any] | None = None) -> tuple[str, str]:
+        headroom_meta: Mapping[str, Any] | None = None,
+        study: str = "e1") -> tuple[str, str]:
     """Return (corpus text, manifest text).
 
     With ``headroom`` (the base checkpoint's correctness on every TUNING
@@ -300,8 +301,8 @@ def run(sources_dir: Path, count: src.TokenCounter, token_counter: str,
     headroom``) step 9 is applied with ``headroom_rebalance``: the
     result is the FROZEN corpus (or REJECTED, with no items).
     ``headroom_meta`` (the rest of the headroom JSON) must name the
-    pinned model and revision and the rebuilt PENDING-HEADROOM corpus and
-    its TUNING partition.
+    pinned model and revision of ``study`` (``src.STUDY_MODELS``) and the
+    rebuilt PENDING-HEADROOM corpus and its TUNING partition.
     """
     pins = src.verify_pins(sources_dir, tree_blobs)
     raw = src.load_all(sources_dir)
@@ -326,7 +327,8 @@ def run(sources_dir: Path, count: src.TokenCounter, token_counter: str,
             raise SystemExit(f"headroom scores must be JSON booleans ({len(bad)} are not)")
         pending = freeze_items(parts, dict(report))
         tuning_hashes = sorted(f["item_sha256"] for f in pending if f["partition"] == "tuning")
-        want = {"model": src.MODEL_REPO, "revision": src.MODEL_REVISION,
+        model, revision = src.STUDY_MODELS[study]
+        want = {"model": model, "revision": revision,
                 "corpus_sha256": _sha(corpus_text(pending)),
                 "partition": "tuning", "partition_sha256": _sha("\n".join(tuning_hashes)),
                 "status": PENDING}
@@ -348,6 +350,7 @@ def run(sources_dir: Path, count: src.TokenCounter, token_counter: str,
         hr["pooled_accuracy"] = res.get("pooled_accuracy")
         hr["weights"] = res.get("weights")
         hr["input_sha256"] = headroom_sha256
+        hr.update(study=study, model=model, revision=revision)
         hr["status_label"] = FROZEN if res["status"] == ACCEPT else REJECTED
         frozen = freeze_items(res["partitions"], report) if res["status"] == ACCEPT else []
     corpus = corpus_text(frozen)
@@ -377,6 +380,8 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--check", action="store_true", help="rebuild and compare, write nothing")
     ap.add_argument("--freeze", type=Path, metavar="HEADROOM_JSON",
                     help="apply step 9 from the TUNING-only headroom scores")
+    ap.add_argument("--study", default="e1", choices=sorted(src.STUDY_MODELS),
+                    help="study whose pinned base model scored the headroom")
     args = ap.parse_args(argv)
     pinned = False
     if args.tokenizer:
@@ -399,7 +404,7 @@ def main(argv: list[str] | None = None) -> int:
         hr_sha = src.sha256_file(args.freeze)
     corpus, man = run(args.sources, count, name, args.allow_undecided,
                       headroom=hr, headroom_sha256=hr_sha, tokenizer_pinned=pinned,
-                      headroom_meta=hr_meta)
+                      headroom_meta=hr_meta, study=args.study)
     cpath, mpath = ((args.out / FROZEN_CORPUS_FILE, args.out / FROZEN_MANIFEST_FILE) if args.freeze
                     else (args.out / CORPUS_FILE, args.out / MANIFEST_FILE))
     if args.check:

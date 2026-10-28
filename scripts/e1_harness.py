@@ -41,11 +41,81 @@ if str(ROOT) not in sys.path:
 from scripts import e1_corpus_io as cio
 from scripts import e1_diagnostics as dg
 from scripts import e1_profiles as pr
+from scripts import e1_sources as src
 from scripts.e1_budget import budget_status, scoring_pass_tokens
 from scripts.e1_schedule import schedule, summary, token_budget
 
-MODEL_REPO = "Qwen/Qwen3.6-35B-A3B"
-MODEL_REVISION = "995ad96eacd98c81ed38be0c5b274b04031597b0"
+# The pinned model of the study selected by HL_STUDY (default ``e1``, the
+# 35B draft; ``e1-small``: docs/osf-prereg-e1-small-2026-10-25.md). The pin
+# table is ``scripts.e1_sources.STUDY_MODELS``, shared with the corpus freeze;
+# every model check of the harness and its backends reads these two names.
+STUDY: str = os.environ.get("HL_STUDY", "e1")
+if STUDY not in src.STUDY_MODELS:
+    raise SystemExit(f"HL_STUDY={STUDY!r} is not one of {sorted(src.STUDY_MODELS)}")
+MODEL_REPO, MODEL_REVISION = src.STUDY_MODELS[STUDY]
+# Instruments a study accepts, enforced on every cell, the amendment and the
+# backend itself; an empty list leaves it to the study's draft. E1-small
+# (PI decisions S6 / S8 / 2026-10-25 20:06): the registered CUDA instrument
+# (raw pinned tokenizer.json, transformers torch fallback for Gated DeltaNet
+# after the S6 diagnostic of 2026-10-26) for every mode, and the
+# macM1 MPS instrument (torch fallback kernels) for the smoke only; cells of
+# the two have different backend names and are never pooled. S10 (PI decision
+# 2026-10-27): every CUDA cell runs in deterministic mode, checked field by
+# field against DETERMINISM.
+# Label RawTokenizer.info() records (PI decision S8: raw pinned tokenizer.json).
+RAW_TOKENIZER = "tokenizers raw tokenizer.json"
+DETERMINISM = {"enabled": True, "use_deterministic_algorithms": True, "warn_only": False,
+               "cublas_workspace_config": ":4096:8", "cudnn_deterministic": True,
+               "cudnn_benchmark": False, "seed_per_cell": 0,
+               # allocator setting (PI decision 2026-10-27 15:57), checked with the rest
+               "cuda_alloc_conf": "expandable_segments:True"}
+STUDY_INSTRUMENTS: dict[str, list[dict[str, Any]]] = {"e1": [], "e1-small": [
+    {"backend": "torch", "device": "cuda", "tokenizer": RAW_TOKENIZER,
+     "linear_attn": "torch", "snapshot": "ram", "sgd": "optim", "determinism": DETERMINISM,
+     "modes": ("smoke", "headroom", "tuning", "calibrate", "confirmatory")},
+    {"backend": "torch-mps", "device": "mps", "tokenizer": RAW_TOKENIZER, "linear_attn": "torch",
+     "snapshot": "disk", "sgd": "fused", "modes": ("smoke",)}]}
+
+
+def _study_backend_ok(backend: Any, versions: Any, study: Any, mode: Any) -> bool:
+    """Backend, device, actual parameter placement (one device of that type),
+    tokenizer, linear-attention implementation, snapshot, SGD, determinism (when the
+    instrument requires it), mode and study label match one of the instruments."""
+    insts = STUDY_INSTRUMENTS[STUDY]
+    if not insts:
+        return True
+    v = versions or {}
+    where = v.get("placement") or []
+    for inst in insts:
+        one_device = len(where) == 1 and str(where[0]).split(":")[0] == inst["device"]
+        same = backend == inst["backend"] and all(
+            v.get(k) == inst[k] for k in ("device", "tokenizer", "linear_attn", "snapshot", "sgd"))
+        if "determinism" in inst:
+            det = v.get("determinism") or {}
+            same = same and all(det.get(k) == want for k, want in inst["determinism"].items())
+        if same and one_device and mode in inst["modes"] and study == STUDY:
+            return True
+    return False
+
+
+def check_amendment_instrument(doc: dict[str, Any]) -> None:
+    """An amendment must record source cells of a registered instrument (S10)."""
+    if STUDY_INSTRUMENTS[STUDY] and not _study_backend_ok(
+            doc.get("backend"), doc.get("versions"), doc.get("study"), "tuning"):
+        raise SystemExit("the amendment was not tuned on the registered instrument")
+
+
+def check_manifest_study(man: dict[str, Any]) -> None:
+    """A FROZEN manifest must have been frozen with this study's headroom model
+    (manifests without that record are accepted for the default study only)."""
+    hr = man.get("headroom") or {}
+    if "model" not in hr and STUDY == "e1":
+        return
+    if (hr.get("model"), hr.get("revision")) != (MODEL_REPO, MODEL_REVISION):
+        raise SystemExit(f"the FROZEN corpus was not frozen with the {STUDY} headroom "
+                         f"of {MODEL_REPO}@{MODEL_REVISION}")
+
+
 SEEDS = {"smoke": tuple(range(2000, 2003)), "tuning": tuple(range(1000, 1010)),
          "calibrate": tuple(range(1000, 1010)), "confirmatory": tuple(range(141))}
 N_REPLAY = 40
@@ -77,7 +147,7 @@ class RawTokenizer:
     def info(self) -> dict[str, Any]:
         import tokenizers
 
-        return {"tokenizer": "tokenizers raw tokenizer.json", "tokenizers": tokenizers.__version__,
+        return {"tokenizer": RAW_TOKENIZER, "tokenizers": tokenizers.__version__,
                 "tokenizer_json_sha256": self.sha256}
 
 
@@ -288,6 +358,8 @@ def check_provenance(cells: Sequence[dict[str, Any]], mode: str, corpus_sha256: 
         ok = (c.get("mode") == mode and c.get("model") == MODEL_REPO
               and c.get("revision") == MODEL_REVISION and corp.get("partition") == "tuning"
               and corp.get("corpus_sha256") == corpus_sha256 and c.get("run_identity"))
+        ok = ok and _study_backend_ok(c.get("backend"), c.get("versions"), c.get("study"),
+                                     c.get("mode"))
         if mode == "calibrate":
             ok = ok and c.get("tuning_cells_sha256") == tuning_cells_sha256
         if not ok:
@@ -343,6 +415,7 @@ def run(args: argparse.Namespace, make_backend: BackendFactory) -> int:  # noqa:
         man = json.loads(args.manifest.read_text())
         if man.get("status") != cio.FROZEN:
             raise SystemExit("amend needs the FROZEN manifest")
+        check_manifest_study(man)
         tcells, ccells = read_cells(args.tuning_cells), read_cells(args.calib_cells)
         backend = check_provenance(tcells, "tuning", str(man["corpus_sha256"]))
         check_provenance(ccells, "calibrate", str(man["corpus_sha256"]),
@@ -355,7 +428,11 @@ def run(args: argparse.Namespace, make_backend: BackendFactory) -> int:  # noqa:
         am.update({"manifest_sha256": sha_file(args.manifest),
                    "tuning_cells_sha256": sha_file(args.tuning_cells),
                    "calib_cells_sha256": sha_file(args.calib_cells),
-                   "backend": backend, "date": time.strftime("%Y-%m-%d")})
+                   "backend": backend, "study": STUDY,
+                   # the instrument of the (validated) source cells, re-checked
+                   # when the amendment is used
+                   "versions": tcells[0].get("versions"),
+                   "date": time.strftime("%Y-%m-%d")})
         out = args.out / "e1-tuning-amendment.json"
         if out.exists():
             raise SystemExit(f"refusing to overwrite {out}")
@@ -371,6 +448,8 @@ def run(args: argparse.Namespace, make_backend: BackendFactory) -> int:  # noqa:
         if not (args.corpus and args.manifest):
             raise SystemExit(f"{args.mode} needs --corpus and --manifest")
         items, prov = cio.load_corpus(args.corpus, args.manifest, args.mode)
+        if prov["status"] == cio.FROZEN:
+            check_manifest_study(json.loads(args.manifest.read_text()))
         benches = {"facts": items}
 
     seeds = SEEDS.get(args.mode, ())
@@ -382,10 +461,12 @@ def run(args: argparse.Namespace, make_backend: BackendFactory) -> int:  # noqa:
         seeds = tuple(s for s in seeds if s in want)
 
     common: dict[str, Any] = {"mode": args.mode, "model": args.model, "revision": args.revision,
-                              "corpus": prov}
+                              "corpus": prov, "study": STUDY}
     b = make_backend(args, benches, common)
-    b.snapshot()
     common.update({"backend": b.name, "versions": b.versions()})
+    if not _study_backend_ok(b.name, common["versions"], STUDY, args.mode):
+        raise SystemExit(f"{STUDY} {args.mode} runs only on its registered instruments")
+    b.snapshot()
     slug = args.model.replace("/", "_")
 
     if args.mode == "headroom":
@@ -417,6 +498,9 @@ def run(args: argparse.Namespace, make_backend: BackendFactory) -> int:  # noqa:
             if doc.get("backend") != b.name:
                 raise SystemExit(f"the amendment was tuned on backend {doc.get('backend')}, "
                                  f"not {b.name}")
+            if STUDY_INSTRUMENTS[STUDY] and doc.get("study") != STUDY:
+                raise SystemExit(f"the amendment was tuned for study {doc.get('study')}")
+            check_amendment_instrument(doc)
             conf_size = int(json.loads(args.manifest.read_text())
                             ["partitions"]["confirmatory"]["n_items"])
             am = pr.validate_amendment(doc, conf_size)

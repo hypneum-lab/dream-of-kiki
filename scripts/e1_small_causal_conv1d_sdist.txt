@@ -1,0 +1,5 @@
+# E1-small S6: causal-conv1d source (no published wheel for torch 2.11),
+# built with CAUSAL_CONV1D_FORCE_BUILD=TRUE (no prebuilt download) against
+# the run venv's torch; origin PyPI sdist, uploaded 2026-08-20.
+causal-conv1d==1.7.0 \
+    --hash=sha256:3202758494eaa7b597ce1c282dfa188889506bfcb92cad3c407d26736bfcd32b
