@@ -75,8 +75,12 @@ the registered instrument); (2) POSTPONE if any of H14-A, H14-B, H14-C
 is UNINTERPRETABLE; (3) GO if H14-A or H14-B is SUPERIOR or
 POSITIVE-BELOW-SESOI (the superiority test rejects at α = 1/60);
 (4) POSTPONE otherwise (both BOUNDED-NO-GAIN or INCONCLUSIVE, whatever
-H14-C is), E1-small then being reported as a null at 4B. H14-C never
-triggers GO; secondary and exploratory results never enter the rule.
+H14-C is), E1-small then being reported as having no qualifying
+positive H14-A / H14-B result at 4B (the PI's "null at 4B"; each
+hypothesis keeps its registered reading, INCONCLUSIVE is not read as
+absence). H14-C never triggers GO (NON-INFERIOR is not a non-zero
+effect, INFERIOR is exploratory); secondary and exploratory results
+never enter the rule.
 The note lists its interpretation choices for the PI.
 
 ## §1 Background
