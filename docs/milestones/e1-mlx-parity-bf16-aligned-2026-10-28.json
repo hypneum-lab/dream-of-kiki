@@ -1,0 +1,304 @@
+{
+ "cells": {
+  "p_ctrl_onpolicy_replay|2000": {
+   "close_ok": true,
+   "decisions": {
+    "collapse": true,
+    "post": true,
+    "post_correct": true,
+    "pre": true,
+    "pre_correct": true,
+    "restructure": true
+   },
+   "drift_rel": 0.0039135088288846,
+   "exact": {
+    "achieved_loss_tokens": [
+     4354,
+     4354
+    ],
+    "budget": [
+     {
+      "charge": 1656,
+      "matched": true,
+      "status": "matched",
+      "t_s": 6010,
+      "update_tokens": 4354
+     },
+     {
+      "charge": 1656,
+      "matched": true,
+      "status": "matched",
+      "t_s": 6010,
+      "update_tokens": 4354
+     }
+    ],
+    "n_eval_items": [
+     12,
+     12
+    ],
+    "n_truncated": [
+     1,
+     1
+    ],
+    "n_updates": [
+     141,
+     141
+    ],
+    "opr_corpus_size": [
+     9,
+     10
+    ],
+    "s_opr": [
+     4968,
+     4968
+    ],
+    "t_s": [
+     6010,
+     6010
+    ]
+   },
+   "exact_equal": false,
+   "kl_diff": 0.000537159841787334,
+   "norm_change_rel": 0.003913435642955337,
+   "post_diff": 0.0,
+   "pre_diff": 0.0,
+   "restructure": [
+    null,
+    null
+   ],
+   "router_drift_rel": 0.017925722317532568,
+   "usage_l1_diff": 0.005142667551426727
+  },
+  "p_equ|2000": {
+   "close_ok": true,
+   "decisions": {
+    "collapse": true,
+    "post": true,
+    "post_correct": true,
+    "pre": true,
+    "pre_correct": true,
+    "restructure": true
+   },
+   "drift_rel": 2.259964297997588e-07,
+   "exact": {
+    "achieved_loss_tokens": [
+     6010,
+     6010
+    ],
+    "budget": [
+     {
+      "charge": 0,
+      "matched": true,
+      "status": "matched",
+      "t_s": 6010,
+      "update_tokens": 6010
+     },
+     {
+      "charge": 0,
+      "matched": true,
+      "status": "matched",
+      "t_s": 6010,
+      "update_tokens": 6010
+     }
+    ],
+    "n_eval_items": [
+     12,
+     12
+    ],
+    "n_truncated": [
+     0,
+     0
+    ],
+    "n_updates": [
+     200,
+     200
+    ],
+    "t_s": [
+     6010,
+     6010
+    ]
+   },
+   "exact_equal": true,
+   "kl_diff": 1.5723332084917872e-05,
+   "norm_change_rel": 1.5309578127279563e-07,
+   "post_diff": 0.0,
+   "pre_diff": 0.0,
+   "restructure": [
+    null,
+    null
+   ],
+   "router_drift_rel": 7.253371580370364e-08,
+   "usage_l1_diff": 0.003317850033178499
+  },
+  "p_max|2000": {
+   "close_ok": true,
+   "decisions": {
+    "collapse": true,
+    "post": true,
+    "post_correct": true,
+    "pre": true,
+    "pre_correct": true,
+    "restructure": true
+   },
+   "drift_rel": 6.757689057190523e-08,
+   "exact": {
+    "achieved_loss_tokens": [
+     6010,
+     6010
+    ],
+    "budget": [
+     {
+      "charge": 0,
+      "matched": true,
+      "status": "matched",
+      "t_s": 6010,
+      "update_tokens": 6010
+     },
+     {
+      "charge": 0,
+      "matched": true,
+      "status": "matched",
+      "t_s": 6010,
+      "update_tokens": 6010
+     }
+    ],
+    "n_eval_items": [
+     12,
+     12
+    ],
+    "n_truncated": [
+     0,
+     0
+    ],
+    "n_updates": [
+     200,
+     200
+    ],
+    "t_s": [
+     6010,
+     6010
+    ]
+   },
+   "exact_equal": true,
+   "kl_diff": 7.95419024436127e-05,
+   "norm_change_rel": 5.323746294615583e-09,
+   "post_diff": 0.0,
+   "pre_diff": 0.0,
+   "restructure": [
+    2,
+    2
+   ],
+   "router_drift_rel": 7.253371580370364e-08,
+   "usage_l1_diff": 0.0011612475116124787
+  },
+  "p_min|2000": {
+   "close_ok": true,
+   "decisions": {
+    "collapse": true,
+    "post": true,
+    "post_correct": true,
+    "pre": true,
+    "pre_correct": true,
+    "restructure": true
+   },
+   "drift_rel": 0.0005905237663269079,
+   "exact": {
+    "achieved_loss_tokens": [
+     6010,
+     6010
+    ],
+    "budget": [
+     {
+      "charge": 0,
+      "matched": true,
+      "status": "matched",
+      "t_s": 6010,
+      "update_tokens": 6010
+     },
+     {
+      "charge": 0,
+      "matched": true,
+      "status": "matched",
+      "t_s": 6010,
+      "update_tokens": 6010
+     }
+    ],
+    "n_eval_items": [
+     12,
+     12
+    ],
+    "n_truncated": [
+     0,
+     0
+    ],
+    "n_updates": [
+     200,
+     200
+    ],
+    "t_s": [
+     6010,
+     6010
+    ]
+   },
+   "exact_equal": true,
+   "kl_diff": 7.622503962505895e-05,
+   "norm_change_rel": 0.0005905966239093141,
+   "post_diff": 0.0,
+   "pre_diff": 0.0,
+   "restructure": [
+    null,
+    null
+   ],
+   "router_drift_rel": 0.014181199541822677,
+   "usage_l1_diff": 0.009953550099535552
+  }
+ },
+ "cells_close_ok": true,
+ "cells_exact_ok": false,
+ "dtype": "bfloat16",
+ "mlx_deterministic": {
+  "bit_identical": false,
+  "envelope": null,
+  "max_abs_diff": 0.000244140625,
+  "n_tensors_differing": 50,
+  "ok": true
+ },
+ "ok": false,
+ "raw_vs_transformers_tokens_equal_on_probe": true,
+ "restore_exact": {
+  "mlx": true,
+  "torch": true
+ },
+ "routing_base_identical": false,
+ "scores": {
+  "argmax_equal": true,
+  "max_abs_diff": 0.06130790710449219,
+  "ok": true
+ },
+ "sgd_step": {
+  "max_rel_diff": 0.6896924424435654,
+  "n_changed_torch": 69,
+  "n_tensors": 76,
+  "ok": false,
+  "spurious_mlx_changes": [],
+  "worst_tensor": "language_model.model.layers.2.post_attention_layernorm.weight"
+ },
+ "token_ce": {
+  "max_abs_diff_excl_flips": 0.009929656982421875,
+  "n_positions": 590,
+  "n_positions_diff_gt_1e-2": 67,
+  "ok": false
+ },
+ "tokens_identical": true,
+ "tolerances": {
+  "delta_rel": 0.2,
+  "determinism_abs": null,
+  "drift_rel": 0.2,
+  "loss": 0.1,
+  "score": 0.1
+ },
+ "versions": {
+  "mlx": "0.31.1",
+  "torch": "2.11.0"
+ }
+}

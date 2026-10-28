@@ -48,9 +48,22 @@ TOKENIZER_FILES = ("tokenizer.json", "tokenizer_config.json", "vocab.json", "mer
 # that top-k routing has clear margins: a near-tie flips a token to another
 # expert on one backend only (a discrete, backend-specific outcome, counted
 # separately below), which no tolerance can absorb.
-TOL = {"float32": {"score": 1e-3, "loss": 1e-3, "delta_rel": 1e-2, "drift_rel": 1e-2},
-       "bfloat16": {"score": 1e-1, "loss": 1e-1, "delta_rel": 2e-1, "drift_rel": 2e-1}}
+TOL = {"float32": {"score": 1e-3, "loss": 1e-3, "delta_rel": 1e-2, "drift_rel": 1e-2,
+                   "determinism_abs": 1e-6},
+       "bfloat16": {"score": 1e-1, "loss": 1e-1, "delta_rel": 2e-1, "drift_rel": 2e-1,
+                    "determinism_abs": None}}
+# In both dtypes the decisions must agree exactly: tokens, choice argmax,
+# per-item correctness pre and post, accuracies, every budget / token / step
+# count, OPR corpus size, the RESTRUCTURE index and the expert-usage
+# histograms; and restore must be bit-exact. The continuous tolerances above
+# apply to scores, losses, the SGD step and the drift measures; for bf16 they
+# are reported, and the PI ratifies the bf16 envelope (D5, D6).
 ROUTER_STD = 0.5
+# Expert-usage L1 (pre vs post) is a diagnostic: pre-replay counts must be
+# identical (tested), post-replay a few near-tie tokens may route differently
+# after rounding-level weight differences. Set after a first run showed
+# non-zero differences; disclosed as such.
+USAGE_L1_TOL = 1e-2
 
 
 def text_config(vocab: int) -> dict[str, Any]:
@@ -148,12 +161,23 @@ def _mlx_tree(weights_dir: Path) -> dict[str, Any]:
     return dict(tree_flatten(model.parameters()))
 
 
+def _np32(v: Any) -> np.ndarray:
+    """float32 numpy copy of an MLX array (numpy has no bf16; exact widening)."""
+    import mlx.core as mx
+
+    return np.asarray(v.astype(mx.float32)) if mx.issubdtype(v.dtype, mx.floating) \
+        else np.asarray(v)
+
+
 def _rel(a: np.ndarray, b: np.ndarray) -> float:
     den = float(np.linalg.norm(b))
     return float(np.linalg.norm(a - b)) / den if den > 0 else float(np.linalg.norm(a))
 
 
-def run(tok_dir: Path, dtype: str, work: Path) -> dict[str, Any]:
+def run(tok_dir: Path, dtype: str, work: Path, cell_seeds: tuple[int, ...] = (2000, 2001),
+        cell_profiles: tuple[str, ...] = ("p_min", "p_equ", "p_max", "p_ctrl_onpolicy_replay",
+                                          "p_ctrl_shuffle", "p_ctrl_template")
+        ) -> dict[str, Any]:
     import mlx.core as mx
     import torch
     from transformers import AutoTokenizer
@@ -169,26 +193,34 @@ def run(tok_dir: Path, dtype: str, work: Path) -> dict[str, Any]:
                            "versions": {"torch": torch.__version__, "mlx": mx.__version__}}
     d0 = work / "tiny"
     tmodel = build_tiny(tok_dir, d0, dtype)
-    ttok = AutoTokenizer.from_pretrained(str(d0))
-    mmodel, mtok, k = load(d0)
+    ttok = hn.RawTokenizer(d0 / "tokenizer.json")  # S8: the pinned raw tokenizer.json
+    mmodel, mtok, k = load(d0, hn.TOKENIZER_SHA256)
     tb = pt.TorchBackend(tmodel, ttok)
+    hf_tok = AutoTokenizer.from_pretrained(str(d0))
     items = _items(60)
 
     # 0. tokenisation
     texts = [it["prompt"] + c for it in items[:10] for c in it["choices"]]
-    rep["tokens_identical"] = all(ttok(t).input_ids == mtok(t)["input_ids"] for t in texts)
+    rep["tokens_identical"] = all(ttok.encode_ids(t) == mtok.encode_ids(t) for t in texts)
+    rep["raw_vs_transformers_tokens_equal_on_probe"] = all(
+        ttok.encode_ids(t) == hf_tok(t)["input_ids"] for t in texts)
 
-    # 1. scores
+    # 1. scores (and the base model's routing decisions, counted on both)
     mb = MLXBackend(mmodel, mtok, None, k)
-    ts, ta = tb.score_items(items[:12])
-    ms, ma = mb.score_items(items[:12])
+    with tb.router_counter() as rt:
+        ts, ta = tb.score_items(items[:12])
+    with mb.router_counter() as rm:
+        ms, ma = mb.score_items(items[:12])
+
+    rep["routing_base_identical"] = rt.counts == rm.counts
     diff = float(np.max(np.abs(np.asarray(ts) - np.asarray(ms))))
-    rep["scores"] = {"max_abs_diff": diff, "argmax_equal": ta == ma, "ok": diff <= tol["score"]}
+    rep["scores"] = {"max_abs_diff": diff, "argmax_equal": ta == ma,
+                     "ok": ta == ma and diff <= tol["score"]}
 
     # 2. per-token losses
     worst, n_pos, flips = 0.0, 0, 0
     for it in items[:20]:
-        ids = ttok(pr.fact_text(it)).input_ids
+        ids = ttok.encode_ids(pr.fact_text(it))
         d = np.abs(_torch_token_ce(tmodel, ids) - _mlx_token_ce(mmodel, ids))
         n_pos += d.size
         flips += int(np.sum(d > 1e-2))  # routing flips (discrete), reported apart
@@ -200,7 +232,7 @@ def run(tok_dir: Path, dtype: str, work: Path) -> dict[str, Any]:
     # 3. one SGD step (lr 1e-2) on the same text: parameter change, compared in
     # the MLX parameter space (torch result exported through the same loader)
     base_tree = _mlx_tree(d0)
-    ids = ttok(pr.fact_text(items[0])).input_ids
+    ids = ttok.encode_ids(pr.fact_text(items[0]))
     lengths = [len(ids)]
     from scripts.e1_schedule import Update
 
@@ -219,28 +251,32 @@ def run(tok_dir: Path, dtype: str, work: Path) -> dict[str, Any]:
 
     mlx_step = dict(tree_flatten(mmodel.parameters()))
     mb.restore()
-    rels, changed = {}, 0
+    rels, changed, spurious = {}, 0, []
     for key, b0 in base_tree.items():
         dt = np.asarray((torch_step[key].astype(mx.float32) - b0.astype(mx.float32)))
         dm = np.asarray((mlx_step[key].astype(mx.float32) - b0.astype(mx.float32)))
         if float(np.linalg.norm(dt)) > 0:
             changed += 1
             rels[key] = _rel(dm, dt)
+        elif float(np.linalg.norm(dm)) > 0:
+            spurious.append(key)  # MLX changed a tensor torch left unchanged
     worst_key = max(rels, key=lambda k_: rels[k_])
     rep["sgd_step"] = {"n_tensors": len(base_tree), "n_changed_torch": changed,
+                       "spurious_mlx_changes": spurious,
                        "max_rel_diff": rels[worst_key], "worst_tensor": worst_key,
-                       "ok": rels[worst_key] <= tol["delta_rel"]}
+                       "ok": rels[worst_key] <= tol["delta_rel"] and not spurious}
 
     # 4. harness cells on both backends, identical item draws
     benches = {"facts": items}
-    seeds = [2000, 2001]
+    seeds = list(cell_seeds)
     doc = e1_splits.build(benches, seeds, {"test": True})
     mb.splits = e1_splits.FileSplits(doc, benches)
+    t_base = {k_: v.clone() for k_, v in tb.base.items()}
+    m_base = dict(tree_flatten(mmodel.parameters()))
     am = pr.Amendment(pr.DEFAULT, (3e-4, 2), 2.0, 12)
     cells: dict[str, Any] = {}
     exact_ok = close_ok = True
-    for prof in ("p_min", "p_equ", "p_max", "p_ctrl_onpolicy_replay", "p_ctrl_shuffle",
-                 "p_ctrl_template"):
+    for prof in cell_profiles:
         for s in seeds:  # each cell restores the base snapshot first
             ct = hn.profile_cell(tb, benches, prof, s, am, am.n_eval)
             cm = hn.profile_cell(mb, benches, prof, s, am, am.n_eval)
@@ -248,34 +284,58 @@ def run(tok_dir: Path, dtype: str, work: Path) -> dict[str, Any]:
                                                   "n_truncated", "budget", "n_eval_items",
                                                   "opr_corpus_size", "s_opr") if f in ct}
             ex = all(a == b for a, b in exact.values())
-            close = {"pre_diff": abs(ct["pre"] - cm["pre"]),
+            decisions = {f: ct.get(f) == cm.get(f) for f in (
+                "pre", "post", "pre_correct", "post_correct", "collapse")}
+            decisions["restructure"] = (ct["ops"]["restructure_idx"]
+                                        == cm["ops"]["restructure_idx"])
+            ex = ex and all(decisions.values())
+            close = {"decisions": decisions,
+                     "pre_diff": abs(ct["pre"] - cm["pre"]),
                      "post_diff": abs(ct["post"] - cm["post"]),
+                     "router_drift_rel": abs((ct["router_drift"] or 0) - (cm["router_drift"] or 0))
+                     / max(ct["router_drift"] or 0, 1e-12),
                      "norm_change_rel": abs(ct["norm_change"] - cm["norm_change"])
                      / max(ct["norm_change"], 1e-12),
                      "drift_rel": abs(ct["drift"] - cm["drift"]) / max(ct["drift"], 1e-12),
                      "kl_diff": abs((ct.get("kl_ref") or 0) - (cm.get("kl_ref") or 0)),
+                     # post-replay routing can flip near-tie tokens (D5): diagnostic
+                     "usage_l1_diff": abs((ct.get("usage_l1") or 0) - (cm.get("usage_l1") or 0)),
                      "restructure": (ct["ops"]["restructure_idx"], cm["ops"]["restructure_idx"])}
             ok = (close["norm_change_rel"] <= tol["drift_rel"]
-                  and close["drift_rel"] <= tol["drift_rel"])
+                  and close["drift_rel"] <= tol["drift_rel"]
+                  and close["router_drift_rel"] <= tol["drift_rel"]
+                  and close["kl_diff"] <= tol["score"]
+                  and close["usage_l1_diff"] <= USAGE_L1_TOL)
             cells[f"{prof}|{s}"] = {"exact_equal": ex, "exact": exact, **close, "close_ok": ok}
             exact_ok &= ex
             close_ok &= ok
     rep["cells"] = cells
+    # explicit restore exactness on both backends
+    tb.restore()
+    mb.restore()
+    rep["restore_exact"] = {
+        "torch": all(torch.equal(v, t_base[k_]) for k_, v in tmodel.state_dict().items()),
+        "mlx": all(np.array_equal(_np32(v), _np32(m_base[k_]))
+                   for k_, v in tree_flatten(mmodel.parameters()))}
     rep["cells_exact_ok"] = exact_ok
     rep["cells_close_ok"] = close_ok
 
     # 5. MLX determinism: the same cell twice gives bit-identical parameters
     hn.profile_cell(mb, benches, "p_min", 2000, am, am.n_eval)
-    a = {k_: np.asarray(v) for k_, v in tree_flatten(mmodel.parameters())}
+    a = {k_: _np32(v) for k_, v in tree_flatten(mmodel.parameters())}
     hn.profile_cell(mb, benches, "p_min", 2000, am, am.n_eval)
-    b = {k_: np.asarray(v) for k_, v in tree_flatten(mmodel.parameters())}
+    b = {k_: _np32(v) for k_, v in tree_flatten(mmodel.parameters())}
     diffs = {k_: float(np.max(np.abs(a[k_].astype(np.float64) - b[k_].astype(np.float64))))
              for k_ in a}
+    env = tol["determinism_abs"]
     rep["mlx_deterministic"] = {"bit_identical": all(v == 0.0 for v in diffs.values()),
                                 "n_tensors_differing": sum(v > 0 for v in diffs.values()),
-                                "max_abs_diff": max(diffs.values())}
-    rep["ok"] = bool(rep["tokens_identical"] and rep["scores"]["ok"] and rep["token_ce"]["ok"]
-                     and rep["sgd_step"]["ok"] and exact_ok and close_ok)
+                                "max_abs_diff": max(diffs.values()), "envelope": env,
+                                "ok": env is None or max(diffs.values()) <= env}
+    rep["ok"] = bool(rep["tokens_identical"] and rep["routing_base_identical"]
+                     and rep["scores"]["ok"] and rep["token_ce"]["ok"]
+                     and rep["sgd_step"]["ok"] and exact_ok and close_ok
+                     and all(rep["restore_exact"].values()) and rep["mlx_deterministic"]["ok"])
     return rep
 
 
@@ -284,9 +344,14 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--tokenizer-dir", type=Path, required=True)
     ap.add_argument("--dtype", default="float32", choices=sorted(TOL))
     ap.add_argument("--out", type=Path, required=True)
+    ap.add_argument("--quick", action="store_true", help="one seed, four profiles")
     args = ap.parse_args(argv)
+    kw: dict[str, Any] = {}
+    if args.quick:
+        kw = {"cell_seeds": (2000,),
+              "cell_profiles": ("p_min", "p_equ", "p_max", "p_ctrl_onpolicy_replay")}
     with tempfile.TemporaryDirectory() as tmp:
-        rep = run(args.tokenizer_dir, args.dtype, Path(tmp))
+        rep = run(args.tokenizer_dir, args.dtype, Path(tmp), **kw)
     args.out.write_text(json.dumps(rep, indent=1, sort_keys=True, default=str) + "\n")
     print(json.dumps({k: v for k, v in rep.items() if k != "cells"}, indent=1, default=str))
     return 0 if rep["ok"] else 1

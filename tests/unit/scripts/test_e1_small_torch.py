@@ -13,7 +13,6 @@ torch = pytest.importorskip("torch")
 pytest.importorskip("tokenizers")
 
 from scripts import e1_harness as hn
-from scripts import e1_sources as src
 from scripts import pilot_cycle3_cuda as h
 
 
@@ -21,11 +20,10 @@ def test_raw_tokenizer_refuses_another_file(tmp_path: Path) -> None:
     fake = tmp_path / "tokenizer.json"
     fake.write_text("{}", encoding="utf-8")
     with pytest.raises(SystemExit, match="pinned"):
-        h.RawTokenizer(fake)
+        hn.RawTokenizer(fake)
 
 
-def test_raw_tokenizer_encodes_without_special_tokens(tmp_path: Path,
-                                                     monkeypatch: pytest.MonkeyPatch) -> None:
+def test_raw_tokenizer_encodes_without_special_tokens(tmp_path: Path) -> None:
     from tokenizers import Tokenizer, models, pre_tokenizers  # type: ignore[import-untyped]
 
     vocab = {"[UNK]": 0, "a": 1, "b": 2}
@@ -33,11 +31,10 @@ def test_raw_tokenizer_encodes_without_special_tokens(tmp_path: Path,
     t.pre_tokenizer = pre_tokenizers.Whitespace()
     path = tmp_path / "tokenizer.json"
     t.save(str(path))
-    monkeypatch.setattr(src, "TOKENIZER_SHA256", hn.sha_file(path))
-    tok = h.RawTokenizer(path)
-    assert tok.kind == "raw"
-    assert tok("a b a").input_ids.tolist() == [[1, 2, 1]]
-    assert tok("").input_ids.shape == (1, 0)
+    tok = hn.RawTokenizer(path, hn.sha_file(path))
+    assert tok.info()["tokenizer"] == hn.RAW_TOKENIZER
+    assert h._ids(tok, "a b a").tolist() == [[1, 2, 1]]
+    assert h._ids(tok, "").numel() == 0
 
 
 def _fn(module: str) -> Any:

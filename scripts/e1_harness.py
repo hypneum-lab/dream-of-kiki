@@ -62,21 +62,19 @@ MODEL_REPO, MODEL_REVISION = src.STUDY_MODELS[STUDY]
 # the two have different backend names and are never pooled. S10 (PI decision
 # 2026-10-27): every CUDA cell runs in deterministic mode, checked field by
 # field against DETERMINISM.
+# Label RawTokenizer.info() records (PI decision S8: raw pinned tokenizer.json).
+RAW_TOKENIZER = "tokenizers raw tokenizer.json"
 DETERMINISM = {"enabled": True, "use_deterministic_algorithms": True, "warn_only": False,
                "cublas_workspace_config": ":4096:8", "cudnn_deterministic": True,
                "cudnn_benchmark": False, "seed_per_cell": 0,
                # allocator setting (PI decision 2026-10-27 15:57), checked with the rest
                "cuda_alloc_conf": "expandable_segments:True"}
 STUDY_INSTRUMENTS: dict[str, list[dict[str, Any]]] = {"e1": [], "e1-small": [
-    {"backend": "torch", "device": "cuda", "tokenizer": "raw",
+    {"backend": "torch", "device": "cuda", "tokenizer": RAW_TOKENIZER,
      "linear_attn": "torch", "snapshot": "ram", "sgd": "optim", "determinism": DETERMINISM,
      "modes": ("smoke", "headroom", "tuning", "calibrate", "confirmatory")},
-    {"backend": "torch-mps", "device": "mps", "tokenizer": "raw", "linear_attn": "torch",
+    {"backend": "torch-mps", "device": "mps", "tokenizer": RAW_TOKENIZER, "linear_attn": "torch",
      "snapshot": "disk", "sgd": "fused", "modes": ("smoke",)}]}
-# How the harness tokenizes: "raw" = tokenizers.Tokenizer of the pinned
-# tokenizer.json, no special tokens (the corpus-build counter, section 5.1b
-# step 3); "transformers" = AutoTokenizer of the pinned revision.
-TOKENIZER = "raw" if STUDY_INSTRUMENTS[STUDY] else "transformers"
 
 
 def _study_backend_ok(backend: Any, versions: Any, study: Any, mode: Any) -> bool:
@@ -125,6 +123,32 @@ NOISE_SEED_OFFSET = 9973
 FIX = ROOT / "tests" / "fixtures"
 Item = dict[str, Any]
 Benches = dict[str, list[Item]]
+
+
+TOKENIZER_SHA256 = "5f9e4d4901a92b997e463c1f46055088b6cca5ca61a6522d1b9f64c4bb81cb42"
+
+
+class RawTokenizer:
+    """The pinned ``tokenizer.json`` through the ``tokenizers`` library, no
+    special tokens: the tokenizer that counted §5.1b step 3 (PI decision S8,
+    2026-10-25). Both backends use it for every token count and every id."""
+
+    def __init__(self, path: Path, expect_sha256: str | None = TOKENIZER_SHA256) -> None:
+        from tokenizers import Tokenizer
+
+        self.sha256 = hashlib.sha256(path.read_bytes()).hexdigest()
+        if expect_sha256 is not None and self.sha256 != expect_sha256:
+            raise SystemExit(f"{path}: SHA-256 {self.sha256} != pinned {expect_sha256}")
+        self.tok = Tokenizer.from_file(str(path))
+
+    def encode_ids(self, text: str) -> list[int]:
+        return [int(i) for i in self.tok.encode(text, add_special_tokens=False).ids]
+
+    def info(self) -> dict[str, Any]:
+        import tokenizers
+
+        return {"tokenizer": RAW_TOKENIZER, "tokenizers": tokenizers.__version__,
+                "tokenizer_json_sha256": self.sha256}
 
 
 class Backend(Protocol):
@@ -315,11 +339,19 @@ def read_cells(path: Path) -> list[dict[str, Any]]:
 
 
 def check_provenance(cells: Sequence[dict[str, Any]], mode: str, corpus_sha256: str,
-                     tuning_cells_sha256: str | None = None) -> None:
+                     tuning_cells_sha256: str | None = None,
+                     backend: str | None = None) -> str:
     """Tuning / calibration records must come from one run of ``mode`` on the
-    pinned model and on the TUNING partition of the given (FROZEN) corpus."""
+    pinned model, one named backend (``backend`` if given) and the TUNING
+    partition of the given (FROZEN) corpus. Returns the backend name."""
     if not cells:
         raise SystemExit(f"no {mode} cells")
+    names = {c.get("backend") for c in cells}
+    if len(names) != 1 or not isinstance(next(iter(names)), str) or not next(iter(names)):
+        raise SystemExit(f"{mode} cells do not name exactly one backend")
+    name = str(next(iter(names)))
+    if backend is not None and name != backend:
+        raise SystemExit(f"{mode} cells come from backend {name}, not {backend}")
     ids = {c.get("run_identity") for c in cells}
     for c in cells:
         corp = c.get("corpus") or {}
@@ -335,11 +367,12 @@ def check_provenance(cells: Sequence[dict[str, Any]], mode: str, corpus_sha256: 
                              "the pinned model or the given tuning cells")
     if len(ids) != 1:
         raise SystemExit(f"{mode} cells come from more than one run identity")
+    return name
 
 
-def selection_i(tuning_cells: Path, corpus_sha256: str) -> pr.Config:
+def selection_i(tuning_cells: Path, corpus_sha256: str, backend: str | None = None) -> pr.Config:
     cells = read_cells(tuning_cells)
-    check_provenance(cells, "tuning", corpus_sha256)
+    check_provenance(cells, "tuning", corpus_sha256, backend=backend)
     seeds = SEEDS["tuning"]
     by = {(c["seed"], float(c["lr"]), int(c["m"])): float(c["delta"]) for c in cells
           if c.get("kind") == "tune_vanilla"}
@@ -384,21 +417,18 @@ def run(args: argparse.Namespace, make_backend: BackendFactory) -> int:  # noqa:
             raise SystemExit("amend needs the FROZEN manifest")
         check_manifest_study(man)
         tcells, ccells = read_cells(args.tuning_cells), read_cells(args.calib_cells)
-        check_provenance(tcells, "tuning", str(man["corpus_sha256"]))
+        backend = check_provenance(tcells, "tuning", str(man["corpus_sha256"]))
         check_provenance(ccells, "calibrate", str(man["corpus_sha256"]),
-                         sha_file(args.tuning_cells))
-        sel = selection_i(args.tuning_cells, str(man["corpus_sha256"]))
+                         sha_file(args.tuning_cells), backend=backend)
+        sel = selection_i(args.tuning_cells, str(man["corpus_sha256"]), backend)
         if any(c.get("selection_vanilla") != list(sel) for c in ccells):
             raise SystemExit("calibration cells were not run at selection (i)")
-        backends = {c.get("backend") for c in tcells + ccells}
-        if len(backends) != 1:
-            raise SystemExit("tuning and calibration cells come from different backends")
         am = pr.tuning_amendment(tcells + ccells,
                                  int(man["partitions"]["confirmatory"]["n_items"]))
         am.update({"manifest_sha256": sha_file(args.manifest),
                    "tuning_cells_sha256": sha_file(args.tuning_cells),
                    "calib_cells_sha256": sha_file(args.calib_cells),
-                   "backend": backends.pop(), "study": STUDY,
+                   "backend": backend, "study": STUDY,
                    # the instrument of the (validated) source cells, re-checked
                    # when the amendment is used
                    "versions": tcells[0].get("versions"),
@@ -465,10 +495,11 @@ def run(args: argparse.Namespace, make_backend: BackendFactory) -> int:  # noqa:
             doc = json.loads(args.amendment.read_text())
             if doc.get("manifest_sha256") != sha_file(args.manifest):
                 raise SystemExit("the amendment was frozen against another corpus manifest")
-            if doc.get("backend") not in (None, b.name) or (
-                    bool(STUDY_INSTRUMENTS[STUDY]) and (doc.get("backend"), doc.get("study"))
-                    != (b.name, STUDY)):
-                raise SystemExit("the amendment was tuned on another backend or study")
+            if doc.get("backend") != b.name:
+                raise SystemExit(f"the amendment was tuned on backend {doc.get('backend')}, "
+                                 f"not {b.name}")
+            if STUDY_INSTRUMENTS[STUDY] and doc.get("study") != STUDY:
+                raise SystemExit(f"the amendment was tuned for study {doc.get('study')}")
             check_amendment_instrument(doc)
             conf_size = int(json.loads(args.manifest.read_text())
                             ["partitions"]["confirmatory"]["n_items"])
@@ -501,7 +532,7 @@ def run(args: argparse.Namespace, make_backend: BackendFactory) -> int:  # noqa:
     elif args.mode == "calibrate":
         if not args.tuning_cells:
             raise SystemExit("calibrate needs --tuning-cells (selection (i))")
-        lr_i, m_i = selection_i(args.tuning_cells, str(prov["corpus_sha256"]))
+        lr_i, m_i = selection_i(args.tuning_cells, str(prov["corpus_sha256"]), b.name)
         common["selection_vanilla"] = [lr_i, m_i]
         for s in seeds:
             for c in pr.C_GRID:

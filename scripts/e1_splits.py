@@ -72,7 +72,8 @@ def build(benches: hn.Benches, seeds: list[int], prov: dict[str, Any]) -> dict[s
 class FileSplits:
     """``cell_split`` / ``shuffle`` replayed from a split file."""
 
-    def __init__(self, doc: dict[str, Any], benches: hn.Benches) -> None:
+    def __init__(self, doc: dict[str, Any], benches: hn.Benches, mode: str | None = None,
+                 prov: dict[str, Any] | None = None) -> None:
         if doc.get("schema") != SCHEMA:
             raise SystemExit("not an E1 split file")
         got = {b: [it["item_sha256"] for it in items] for b, items in benches.items()}
@@ -80,6 +81,29 @@ class FileSplits:
             raise SystemExit("the split file was written for other items")
         if doc["n_replay"] != hn.N_REPLAY or doc["noise_seed_offset"] != hn.NOISE_SEED_OFFSET:
             raise SystemExit("the split file uses other split constants")
+        if mode is not None:
+            dprov = doc.get("provenance") or {}
+            if dprov.get("mode") != mode:
+                raise SystemExit(f"the split file was written for mode {dprov.get('mode')}")
+            for k in ("corpus_sha256", "partition", "partition_sha256", "pilot_manifest_sha256"):
+                if prov is not None and k in prov and dprov.get(k) != prov[k]:
+                    raise SystemExit(f"the split file does not match the loaded items ({k})")
+            want = set(hn.SEEDS[mode])
+            if set(doc["seeds"]) != want:
+                raise SystemExit("the split file does not cover exactly the mode's seeds")
+        for s in doc["seeds"]:
+            for seed in (s, s + hn.NOISE_SEED_OFFSET):
+                orders = doc["orders"].get(str(seed))
+                if orders is None or set(orders) != set(benches):
+                    raise SystemExit(f"split file: no order for seed {seed}")
+                for b, items in benches.items():
+                    if sorted(orders[b]) != list(range(len(items))):
+                        raise SystemExit(f"split file: order of {b}, seed {seed} is not a "
+                                         "permutation of the items")
+        for key, perm in doc["shuffle"].items():
+            n = int(key.split(":")[1])
+            if sorted(perm) != list(range(n)):
+                raise SystemExit(f"split file: shuffle {key} is not a permutation")
         self.doc = doc
 
     def cell_split(self, benches: hn.Benches, seed: int, n_replay: int,

@@ -97,5 +97,50 @@ def test_torch_mlx_parity_float32(tmp_path: Path) -> None:
     from scripts import e1_mlx_parity
 
     rep = e1_mlx_parity.run(Path(os.environ["E1_PARITY_TOKENIZER_DIR"]), "float32", tmp_path)
-    assert rep["tokens_identical"] and rep["cells_exact_ok"] and rep["sgd_step"]["ok"]
-    assert rep["scores"]["ok"] and rep["token_ce"]["n_positions_diff_gt_1e-2"] == 0
+    assert rep["ok"], {k: v for k, v in rep.items() if k != "cells"}
+
+
+@pytest.mark.parametrize("lr", [3e-5, 1e-4, 3e-4, 6e-4])
+def test_bf16_sgd_step_single_rounding(lr: float) -> None:
+    """The MLX update is the exact update rounded once to bf16 (float32 opmath).
+    torch's CPU bf16 ``add_`` rounds differently on about 1 % of elements
+    (measured 46 of 4096 at lr 1e-4); it is not reproduced."""
+    import numpy as np
+
+    g0 = torch.Generator().manual_seed(1)
+    p = (torch.randn(4096, generator=g0) * 0.05).to(torch.bfloat16)
+    g = (torch.randn(4096, generator=g0) * 3.0).to(torch.bfloat16)
+    exact = (p.double() - lr * g.double()).float().to(torch.bfloat16).float().numpy()
+    got = np.asarray(e1_mlx.sgd_step(mx.array(p.float().numpy()).astype(mx.bfloat16),
+                                     mx.array(g.float().numpy()).astype(mx.bfloat16), lr)
+                     .astype(mx.float32))
+    assert np.array_equal(got, exact)
+
+
+def test_bf16_downscale_matches_torch_bitwise() -> None:
+    import numpy as np
+
+    p = (torch.randn(4096, generator=torch.Generator().manual_seed(2)) * 0.7).to(torch.bfloat16)
+    want = p.clone().mul_(0.99).float().numpy()
+    got = np.asarray(e1_mlx.downscale_array(
+        mx.array(p.float().numpy()).astype(mx.bfloat16), 0.99).astype(mx.float32))
+    assert np.array_equal(got, want)
+    naive = np.asarray((mx.array(p.float().numpy()).astype(mx.bfloat16) * 0.99)
+                       .astype(mx.float32))
+    assert not np.array_equal(naive, want)  # the scalar rounding the helper avoids
+
+
+def test_file_splits_reject_malformed_orders() -> None:
+    b = _bench()
+    doc = e1_splits.build(b, [5], {})
+    bad = json.loads(json.dumps(doc))
+    bad["orders"]["5"]["facts"][1] = bad["orders"]["5"]["facts"][0]
+    with pytest.raises(SystemExit, match="permutation"):
+        e1_splits.FileSplits(bad, b)
+    bad = json.loads(json.dumps(doc))
+    key = next(iter(bad["shuffle"]))
+    bad["shuffle"][key][0] = bad["shuffle"][key][1]
+    with pytest.raises(SystemExit, match="permutation"):
+        e1_splits.FileSplits(bad, b)
+    with pytest.raises(SystemExit, match="mode"):
+        e1_splits.FileSplits(doc, b, "smoke", {})

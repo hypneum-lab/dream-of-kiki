@@ -16,7 +16,7 @@ rebalancing in §5.1b after an independent review; revision 7,
 PI decisions — empty-OPR tuning rule and H14-C infeasibility,
 undefined LR matching, MMLU-CF source date (§5.1, §5.4); revision 9,
 2026-10-25: PI decision — backend changed to Apple MLX on the Mac
-Studio M3 Ultra (§9 "Backend", deviations D1-D10))
+Studio M3 Ultra (§9 "Backend", deviations D1-D14))
 **Parent OSF:** 10.17605/OSF.IO/Q6JYN
 **Parent backlog item:** `EXPERIMENT-BACKLOG.md` E1 (powered TOST,
 35B run pending).
@@ -33,7 +33,7 @@ on 2026-10-25; §10 item 1). **Backend (PI decision 2026-10-25,
 pre-filing): Apple MLX** (mlx 0.31.1, mlx-lm 0.31.2, the versions
 hash-pinned in this repository's `uv.lock`) on the Mac Studio M3
 Ultra (512 GB unified memory), instead of HF transformers on CUDA;
-§9 "Backend" lists every difference this forces (D1-D10).
+§9 "Backend" lists every difference this forces (D1-D14).
 **Harness:** `scripts/e1_harness.py` (modes, cell, run identity),
 backends `scripts/e1_mlx.py` (registered) and
 `scripts/pilot_cycle3_cuda.py` (PyTorch, kept for the parity check
@@ -773,8 +773,7 @@ confirmatory seed runs: the OPR arm is not run, H14-C and the
 secondary contrasts against OPR are reported as INFEASIBLE, and
 H14-A and H14-B proceed unchanged (the joint headline then cannot be
 J1). In that case `p̂_disc` is undefined and `n_eval` takes the §5.2
-floor of 130 (the implementation's reading of the decision; to be
-confirmed by the PI before filing). The two
+floor of 130 (confirmed by the PI on 2026-10-28). The two
 selections, the SD_D proxy, `p̂_disc` and the resulting `n_eval` (§5.2) are
 frozen in a dated amendment **before** the first confirmatory seed
 runs. `p_min`, `p_max` and the other
@@ -923,9 +922,11 @@ changed silently):
   linear-attention (Gated DeltaNet) layers use `mlx_lm`'s
   differentiable op-by-op recurrence during replay and its Metal kernel
   for scoring, transformers uses the `fla` chunked kernels on CUDA.
-  Same mathematics, different summation order; numbers differ at the
-  rounding level and are never pooled (§8).
-- **D2 Parameters in scope.** `mlx_lm` loads the language model only:
+  Numbers differ at the rounding level and are never pooled (§8);
+  D11 and D12 were two places where `mlx_lm` also used a different
+  formula; both are aligned since 2026-10-28.
+- **D2 Parameters in scope (accepted and declared by the PI,
+  2026-10-28).** `mlx_lm` loads the language model only:
   the vision tower and the multi-token-prediction head of the
   checkpoint are not loaded. "Full-parameter" SGD, DOWNSCALE and the
   drift / norm-change measures therefore cover the language model
@@ -945,11 +946,18 @@ changed silently):
   to); transformers also stores the experts as one stacked parameter.
   With momentumless SGD and no weight decay, unrouted experts are
   unchanged on both backends. No difference in the update.
-- **D5 Precision.** bf16 parameters and gradients, the SGD update in
-  bf16, loss and scoring log-softmax in float32, on both backends.
-  Discrete MoE routing can flip a token whose top-k router margin is
-  below rounding noise to another expert on one backend only.
-- **D6 Determinism.** MLX replay is not bit-reproducible run to run
+- **D5 Precision.** bf16 parameters and gradients, loss and scoring
+  log-softmax in float32, on both backends. The SGD update and
+  DOWNSCALE are computed in float32 and rounded once to bf16 (as
+  torch's float32 "opmath"): the harness does not use
+  `mlx.optimizers.SGD`, which casts the learning rate to bf16 and keeps
+  a zero momentum buffer the size of the model, nor a bf16 × Python
+  float product, which would turn 0.99 into 0.98828125 (both tested
+  bit-exactly). torch's CPU bf16 `add_` rounds differently on ~1 % of
+  elements; it is not the reference. Discrete MoE routing can still
+  flip a token whose top-k margin is below rounding noise to another
+  expert on one backend only.
+- **D6 Determinism (accepted and declared by the PI, 2026-10-28).** MLX replay is not bit-reproducible run to run
   (parity: after one fp32 cell, 68 of 76 tensors differ, by at most
   3e-8). E1 cells are therefore not bit-stable; the resumable cache
   and the run identity are unaffected, and no E1 claim relies on
@@ -957,29 +965,150 @@ changed silently):
 - **D7 RESTRUCTURE.** Both backends swap two adjacent entries of the
   decoder-layer list. MLX picks the attention mask from each layer's
   own type, transformers from the position (`config.layer_types[i]`);
-  for unpadded batch-1 sequences both give the same outputs (parity:
-  identical post-scores for the swapped cells).
+  for unpadded batch-1 sequences both give the same outputs (parity,
+  asserted: identical per-item correctness, accuracies and
+  RESTRUCTURE index for the swapped cells; KL to the frozen reference
+  within 1e-3).
 - **D8 Memory recording.** `mx.get_peak_memory` (unified memory)
   replaces `torch.cuda.max_memory_allocated`; host RSS as before.
 - **D9 Restore.** MLX arrays are immutable: the snapshot keeps the
   base arrays and restoring re-binds them (exact, no 70 GB copy).
-- **D10 Tokenizer.** Both backends tokenize with the transformers
-  tokenizer of the pinned files (identical token ids between
-  backends). It differs from the raw `tokenizer.json` (the §5.1b
-  step-3 counter) on 1 of 7 850 corpus prompt / prompt+choice texts (a
-  Devanagari combining mark; 63 vs 66 tokens). Which tokenizer the
-  harness uses is left to the PI (see §10).
+- **D11 Linear-attention q / k normalisation (aligned, PI decision
+  2026-10-28).** `mlx_lm` normalises q and k with an RMS norm whose ε
+  is added to the mean square (an ε larger by the head dimension, 128×,
+  in sum space); the harness replaces the Gated DeltaNet forward so
+  that q and k are L2-normalised as in transformers / FLA
+  (`x · rsqrt(Σx² + 1e-6)`, in float32) and q is scaled by
+  `d_k^-0.5`, then cast back to the activation dtype.
+- **D12 Decay-gate precision (aligned, PI decision 2026-10-28).** The
+  replaced forward computes `g = exp(−exp(A_log) · softplus(a +
+  dt_bias))` with `a` and `dt_bias` promoted to float32 first, as
+  transformers does (`mlx_lm` adds and applies softplus in bf16).
+- **D13 Router arithmetic (aligned).** `mlx_lm` selects the top-k
+  experts on softmax probabilities rounded to bf16, where distinct
+  logits can tie; transformers selects on float32 probabilities and
+  renormalises in float32. The harness replaces the MoE forward with
+  the transformers arithmetic, and the expert-usage histogram counts
+  the router's actual selections, summed over layers (§6).
+- **D14 Expert-usage histogram scope (both backends, fixed).** The
+  histogram is keyed by expert and summed over layers, as §6 states
+  (an earlier draft of the code keyed it by layer, which made it
+  depend on RESTRUCTURE's layer order).
+- **D10 Tokenizer (PI decision S8, 2026-10-25).** Every token count
+  and every token id in the harness (scoring, T_s, the replay
+  schedule, OPR's S_OPR) comes from the pinned raw `tokenizer.json`
+  through the `tokenizers` library without special tokens, the
+  tokenizer that counted §5.1b step 3, on both backends (its SHA-256 is
+  checked at load). The transformers tokenizer of the same files
+  differs on 1 of 7 850 corpus prompt / prompt+choice texts (a
+  Devanagari combining mark; 63 vs 66 tokens) and is not used. The
+  `tokenizers` versions in use (0.22.2 in the locked environment,
+  0.23.3 for the corpus build) give identical ids on all 7 850 texts.
 
 **Memory on the Studio (arithmetic, bf16).** Language-model weights
 ≈ 35 B × 2 B ≈ 70 GB. During a replay step MLX holds the base
 snapshot (70 GB, kept by reference), the current weights (70 GB once
-they differ from the base), the gradients (70 GB) and, inside the
-optimizer update, the new weights before the old ones are released
-(70 GB): an upper bound of ≈ 280 GB plus activations (a few GB at
-batch 1, ≤ 512 tokens) and the Metal buffer cache. This fits in 512 GB
-of unified memory with the OS and the other resident processes (a
-virtual machine of ≈ 118 GB RSS was resident on 2026-10-25); the
-smoke records the measured peak.
+they differ from the base), the gradients (70 GB) and, while the
+update is evaluated, the new weights before the old ones are
+released (70 GB): a nominal tensor subtotal of ≈ 280 GB, with no
+optimizer state (the update is computed directly, D5). It is not a
+complete transient estimate: float32 update intermediates, the
+allocator's cache and activations come on top. Activations of the differentiable
+linear-attention recurrence are not bounded by arithmetic here; the
+single-cell smoke measures the peak (`mx.get_peak_memory`) before
+any further cell runs. Budget: 512 GB of unified memory minus the OS
+and other resident processes (a virtual machine of ≈ 118 GB RSS was
+resident on 2026-10-25), i.e. ≈ 390 GB for E1.
+
+**Port revalidation.** *Parity, PyTorch vs MLX* (macM1,
+`scripts/e1_mlx_parity.py`, tiny Qwen3.5-MoE with the 35B's
+architecture and the same weights; tolerances fixed in the script).
+
+*First run, 2026-10-25, before the D11 / D12 alignment (float32;
+accepted as is by the PI on 2026-10-28):* token ids and base-model
+routing identical; choice scores max |Δ| 2.0e-4 (tol 1e-3), identical
+argmax; per-token cross-entropy max |Δ| 1.005e-3 against a 1e-3
+tolerance (a marginal fail, reported, not re-toleranced); one SGD step
+max relative Δ 5.7e-3; 12 cells with identical decisions and budgets;
+overall `ok: false`. Reports
+`docs/milestones/e1-mlx-parity-{fp32,bf16}-2026-10-25.json`.
+
+*After the D11 / D12 alignment, 2026-10-28 (code at the commit that
+records this paragraph; run under the macM1 heavy-job lock).*
+**float32: every check passes (`ok: true`).** Token ids and base-model
+routing identical; choice scores max |Δ| 3.9e-6, identical argmax;
+per-token cross-entropy max |Δ| 6.7e-6, no position above 1e-2; one
+SGD step: all 76 tensors change on both, max relative Δ 1.7e-4, no
+spurious change; 12 harness cells (p_min, p_equ, p_max, OPR, shuffle,
+template × 2 seeds) with identical budgets, token and step counts,
+OPR corpus sizes, per-item correctness, accuracies and RESTRUCTURE
+index; drift / norm change rel. Δ ≤ 3.9e-7, router drift ≤ 3.0e-6,
+KL ≤ 1.1e-7, usage L1 Δ 0; restore bit-exact on both backends; MLX
+run to run max |Δ| 6e-8 (not bit-identical, within the 1e-6
+envelope). The q / k normalisation and decay-gate formulas were the
+source of the earlier float32 differences.
+**bf16 agreement envelope (`--quick`: one seed, p_min / p_equ / p_max
+/ OPR; accepted and declared by the PI on 2026-10-28; overall report
+verdict `ok: false`):** token ids identical; base-model expert-usage
+histogram not identical (near-tie routing in bf16); choice scores max
+|Δ| 0.062 nat with identical argmax on the scored eval items; OPR
+reward selection differed on 1 of 40 replay items (OPR corpus 9 vs
+10, so one OPR cell's budget split differs; its eval decisions are
+identical); per-token cross-entropy: 67 of 590 positions differ by
+more than 1e-2, the others by less than 1e-2 (max 9.93e-3); one SGD step at lr 1e-2:
+69 of 76 tensors change on the PyTorch side and the same on MLX (no
+spurious change), max relative Δ 0.69 on a norm weight (bf16
+quantisation of small updates); in the four cells, per-item
+correctness pre and post, accuracies, collapse flags and RESTRUCTURE
+index identical, drift / norm change rel. Δ ≤ 4.0e-3, router drift
+≤ 1.8e-2, KL ≤ 5.4e-4, usage L1 Δ ≤ 1.0e-2; restore bit-exact; MLX
+bf16 run to run max |Δ| 2.5e-4 (50 tensors). The PyTorch side of this
+comparison is the CPU bf16 path (its own bf16 rounding, D5), not CUDA.
+Reports: `docs/milestones/e1-mlx-parity-{fp32,bf16}-aligned-2026-10-28.json`.
+*Single 35B cell on the Studio* (smoke mode, pilot fixtures, seed
+2000, `p_min`, code `8f2173e`, record
+`docs/milestones/e1-mlx-smoke-1cell-2026-10-25.json`): weights
+verified against the pins, T_s = 18 335 = achieved loss tokens, 400
+updates, 80 eval items, pre 0.563 → post 0.653, no collapse, no
+invariant violation; **wall 1 483 s; peak MLX memory 219.8 GB**
+(active 138.6 GB at the end; the host RSS high-water mark of 70.7 GB
+is a different view of the same memory, not an addition). Limits: the
+GPU wired limit read with `sysctl iogpu.wired_limit_mb` is 466 944 MB
+(456 GiB); MLX reports a recommended working set of 489.6 GB; a
+virtual machine of ≈ 120 GB RSS (another user's) was resident (read
+with `ps`, not part of the record). The peak is well inside the
+≈ 390 GB left for E1. Component timings (`scripts/e1_mlx_timing.py`,
+same model, 20 pilot items): one scoring forward 0.114 s (≈ 27
+tokens); one replay update 3.28 s at 27.2 tokens (20 updates, 544
+input tokens); drift 3.8 s; restore 3 ms. The update-cost model is
+fitted from two points: the timing run (3.28 s at 27.2 tokens) and
+the smoke cell's replay time obtained by subtraction (1 483 s wall −
+640 scoring forwards × 0.114 s − drift ≈ 1 406 s for 400 updates of
+≈ 46.8 input tokens, i.e. ≈ 3.5 s), giving ≈ 3.0 s fixed per
+full-parameter step + ≈ 0.011 s per token. A direct measurement on
+long records replaces this two-point fit in the full smoke.
+*Projection* (confirmatory corpus: fact records ≈ 40.2 tokens, prompts
+≈ 35.0, choice passes ≈ 40.5, neutral filler ≈ 10.8; scoring forward
+taken as 0.13 s; tuning items assumed to have the same mean lengths
+as the confirmatory ones): T_s ≈ 5 × 40 × 39.2 ≈ 7 840 loss tokens.
+Updates per cell: ≈ 200 (≈ 680 s) for each of the six arms that
+replay fact-length records — `p_min`, `p_equ`, `p_max`,
+`p_ctrl_vanilla_replay_tuned`, the exploratory `p_ctrl_lr_matched`
+and `p_ctrl_shuffle` (the word shuffle can change the token count of a
+record slightly; assumed equal); ≈ 231 for `p_ctrl_template`; ≈ 800
+(≈ 2 500 s) for `p_ctrl_sft`; for OPR the charge is ≈ 2 160 tokens
+(160 extra scoring forwards, ≈ 21 s, reading ≈ 6 480 tokens), leaving
+≈ 5 680 update tokens, ≈ 145 updates (OPR corpus size assumed ≈ 20 of
+40); 0 for `p_noise`. Scoring: 8 × n_eval forwards per cell (≈ 135 s
+at n_eval = 130, ≈ 265 s at 255). Per confirmatory seed (10 profiles)
+≈ 2.6 h at n_eval = 130 (≈ 2.9 h at 255); 141 seeds ≈ 365-416 h;
+tuning (120 cells, n_eval = the 432 remaining tuning items, ≈ 450 s of
+scoring per cell) ≈ 35 h; calibration (60 cells) ≈ 19 h; smoke (30
+cells, rough: 30 × the measured 1 483 s; the `p_ctrl_sft` cells will
+be longer) ≈ 12 h; headroom minutes. **Total ≈ 431-482 h, i.e. about
+18-20 days of exclusive Studio time**, dominated by the fixed cost of
+a full-parameter step on 35 B parameters. The PI
+decides whether this fits the budget before filing; N is not reduced.
 
 **Memory (CUDA path, arithmetic, bf16, full-parameter SGD; not the
 registered backend since 2026-10-25).** Weights ≈ 35 B ×
@@ -997,8 +1126,10 @@ snapshot holds another ≈ 70 GB of host RAM, and every cell restores
 2 × 130 items × 4 choices; more if §5.2 raises `n_eval`), + 160 for
 OPR, + U forward/backward updates (U ≈ T_s / mean record
 length; ≈ 100-200 for fact corpora at m = 5, more for the short
-`p_ctrl_sft` texts), + one 70 GB restore. Wall per cell and peak
-memory are unmeasured at 35B. The smoke on the filing hardware
+`p_ctrl_sft` texts), + one restore (a 70 GB host → device copy on
+CUDA; a re-binding of the base arrays on MLX, D9). At 35B, wall and
+peak memory are measured for one MLX cell only (above); the other
+profiles and the full smoke workload remain unmeasured. The smoke on the filing hardware
 (seeds 2000-2002, all 10 profiles = 30 cells, pilot set; on the
 Studio a single cell first) must record per-cell wall, peak memory
 (`mx.get_peak_memory` on MLX, `torch.cuda.max_memory_allocated` per
@@ -1131,7 +1262,11 @@ named section before the lock commit.
 1. ~~CUDA node (§9)~~ — **decided by the PI on 2026-10-25: the
    backend is Apple MLX on the Mac Studio M3 Ultra** (a protocol
    revision before filing, recorded in §9 "Backend" with deviations
-   D1-D10; the CUDA path is kept for the parity check only). **Model revision pinned by the
+   D1-D14; the CUDA path is kept for the parity check only).
+   **Pending (PI, 2026-10-28):** the hardware for the full run — the
+   Mac Studio (≈ 18-20 days of exclusive time, §9 projection) or a
+   rented 2-4 × H200 node — is still open; nothing else in this item
+   changes until the PI decides. **Model revision pinned by the
    PI on 2026-10-25:** `Qwen/Qwen3.6-35B-A3B` at commit
    `995ad96eacd98c81ed38be0c5b274b04031597b0` (last modified
    2026-04-24T02:53:42Z, resolved 2026-10-25). This pin fixes the
@@ -1159,9 +1294,5 @@ named section before the lock commit.
 3. ~~Fact-corpus source~~ — decided by the PI on 2026-10-24: all
    three public sets (§5.1a); the pooled-bank design with `source` as
    a stratum and the `mmlu_cf` cap were confirmed the same day.
-4. **Harness tokenizer (D10, open).** The transformers tokenizer of
-   the pinned files (used by both backends) and the raw
-   `tokenizer.json` (used for the §5.1b step-3 count) differ on 1 of
-   7 850 corpus texts. Either keep the transformers tokenizer for
-   scoring and replay (the default, as in the CUDA design) or switch
-   both backends to the raw `tokenizer.json`.
+4. ~~Harness tokenizer (D10)~~ — decided by the PI on 2026-10-25
+   (S8): the raw pinned `tokenizer.json` through `tokenizers` (§9, D10).

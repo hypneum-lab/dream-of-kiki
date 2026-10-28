@@ -160,28 +160,6 @@ class DiskSnapshot:
             t.copy_(self[k])
 
 
-class RawTokenizer:
-    """The pinned ``tokenizer.json`` through the ``tokenizers`` package, no
-    special tokens: the counter that built the corpus (E1 section 5.1b step 3;
-    E1-small PI decision S8). Called like the transformers tokenizer."""
-
-    kind = "raw"
-
-    def __init__(self, path: str | Path) -> None:
-        from tokenizers import Tokenizer
-
-        got = hn.sha_file(Path(path))
-        if got != hn.src.TOKENIZER_SHA256:
-            raise SystemExit(f"tokenizer.json SHA-256 {got} != pinned {hn.src.TOKENIZER_SHA256}")
-        self.tok = Tokenizer.from_file(str(path))
-
-    def __call__(self, text: str, return_tensors: str = "pt") -> Any:
-        from types import SimpleNamespace
-
-        ids = self.tok.encode(text, add_special_tokens=False).ids
-        return SimpleNamespace(input_ids=torch.tensor([ids], dtype=torch.long))
-
-
 # transformers module globals that select the linear-attention kernels
 # (fla + causal-conv1d when installed, else the torch fallback).
 _LINEAR_ATTN_GLOBALS = ("causal_conv1d_fn", "causal_conv1d_update", "chunk_gated_delta_rule",
@@ -244,19 +222,20 @@ def _load_model(model_id: str, revision: str | None,
                 dtype_override: Any = None) -> tuple[Any, Any]:
     if model_id == MODEL_REPO and revision != MODEL_REVISION:
         raise SystemExit(f"{MODEL_REPO} must be loaded at the pinned revision {MODEL_REVISION}")
-    from transformers import AutoModelForCausalLM, AutoTokenizer
+    from transformers import AutoModelForCausalLM
 
     dev = _device()
     dtype = torch.bfloat16 if dev in ("cuda", "mps") else torch.float32
     if dtype_override is not None:  # diagnostics only (fp32 reference); never a cell
         dtype = dtype_override
     trc = os.environ.get("HL_TRUST_REMOTE_CODE", "0") == "1"
-    if hn.TOKENIZER == "raw":
+    if Path(model_id).is_dir():
+        tok_path = Path(model_id) / "tokenizer.json"
+    else:
         from huggingface_hub import hf_hub_download
 
-        tok: Any = RawTokenizer(hf_hub_download(model_id, "tokenizer.json", revision=revision))
-    else:
-        tok = AutoTokenizer.from_pretrained(model_id, revision=revision, trust_remote_code=trc)
+        tok_path = Path(hf_hub_download(model_id, "tokenizer.json", revision=revision))
+    tok = hn.RawTokenizer(tok_path, hn.TOKENIZER_SHA256 if model_id == MODEL_REPO else None)
     impl = os.environ.get("HL_LINEAR_ATTN", "default")
     if impl not in ("default", "torch"):
         raise SystemExit("HL_LINEAR_ATTN must be 'default' or 'torch'")
@@ -294,6 +273,8 @@ def _input_device(model: Any) -> torch.device:
 
 
 def _ids(tok: Any, text: str) -> torch.Tensor:
+    if isinstance(tok, hn.RawTokenizer):
+        return torch.tensor([tok.encode_ids(text)])
     return tok(text, return_tensors="pt").input_ids  # type: ignore[no-any-return]
 
 
@@ -335,10 +316,14 @@ class _RouterCounter:
 
     def _hook(self, name: str) -> Any:
         def fn(_m: Any, _i: Any, out: Any) -> None:
-            logits = out[0] if isinstance(out, tuple) else out
-            top = torch.topk(logits.reshape(-1, logits.shape[-1]).float(), self.k, dim=-1).indices
+            if isinstance(out, tuple) and len(out) == 3:
+                top = out[2]  # the router's own selected experts (transformers top-k router)
+            else:  # a plain nn.Linear router: top-k of its logits
+                logits = out[0] if isinstance(out, tuple) else out
+                top = torch.topk(logits.reshape(-1, logits.shape[-1]).float(), self.k,
+                                 dim=-1).indices
             for e, c in zip(*torch.unique(top, return_counts=True), strict=True):
-                key = f"{name}:{int(e)}"
+                key = f"expert:{int(e)}"  # section 6: summed over layers
                 self.counts[key] = self.counts.get(key, 0) + int(c)
         return fn
 
@@ -382,14 +367,18 @@ class TorchBackend:
         import tokenizers
         import transformers
 
-        return {"torch": torch.__version__, "transformers": transformers.__version__,
-                "tokenizers": tokenizers.__version__, "device": _device(),
-                "placement": sorted({str(p.device) for p in self.model.parameters()}),
-                "tokenizer": getattr(self.tok, "kind", "transformers"),
-                "linear_attn": linear_attn_impl(self.model),
-                "kernels": {d: _dist_version(d) for d in ("fla-core", "causal-conv1d")},
-                "snapshot": self.snapshot_kind, "sgd": self.sgd_kind,
-                "determinism": determinism_record()}
+        info: dict[str, Any] = {
+            "torch": torch.__version__, "transformers": transformers.__version__,
+            "tokenizers": tokenizers.__version__, "device": _device(),
+            "placement": sorted({str(p.device) for p in self.model.parameters()}),
+            "tokenizer": "transformers",
+            "linear_attn": linear_attn_impl(self.model),
+            "kernels": {d: _dist_version(d) for d in ("fla-core", "causal-conv1d")},
+            "snapshot": self.snapshot_kind, "sgd": self.sgd_kind,
+            "determinism": determinism_record()}
+        if isinstance(self.tok, hn.RawTokenizer):
+            info.update(self.tok.info())
+        return info
 
     def snapshot(self) -> None:
         if self.snapshot_kind == "disk":

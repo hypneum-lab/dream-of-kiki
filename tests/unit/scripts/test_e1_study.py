@@ -39,7 +39,7 @@ DET = {"enabled": True, "use_deterministic_algorithms": True, "warn_only": False
        "cublas_workspace_config": ":4096:8", "cudnn_deterministic": True,
        "cudnn_benchmark": False, "seed_per_cell": 0,
        "cuda_alloc_conf": "expandable_segments:True"}
-REG: dict[str, Any] = {"tokenizer": "raw", "linear_attn": "torch", "snapshot": "ram",
+REG: dict[str, Any] = {"tokenizer": hn.RAW_TOKENIZER, "linear_attn": "torch", "snapshot": "ram",
                        "sgd": "optim", "determinism": DET}
 
 
@@ -94,14 +94,9 @@ def test_small_study_enforces_the_registered_instrument(
             lambda *a: _FakeBackend(backend, device, placement, **over))
 
 
-def test_small_study_tokenizes_raw(small: Any, monkeypatch: pytest.MonkeyPatch) -> None:
-    assert small.TOKENIZER == "raw"
-    assert _reload(monkeypatch, None).TOKENIZER == "transformers"
-
-
 def test_small_study_cells_must_carry_their_study(small: Any) -> None:
     for change in ({"backend": None}, {"study": None}, {"study": "e1"}):
-        with pytest.raises(SystemExit, match="does not come"):
+        with pytest.raises(SystemExit, match="does not come|exactly one backend"):
             small.check_provenance([{**_cell(*SMALL), **change}], "tuning", "c" * 64)
 
 
@@ -155,7 +150,7 @@ def test_unknown_study_is_refused(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 def test_small_study_mps_instrument_is_smoke_only(small: Any) -> None:
-    mps = {"device": "mps", "placement": ["mps:0"], "tokenizer": "raw", "linear_attn": "torch",
+    mps = {"device": "mps", "placement": ["mps:0"], "tokenizer": hn.RAW_TOKENIZER, "linear_attn": "torch",
            "snapshot": "disk", "sgd": "fused"}
     assert small._study_backend_ok("torch-mps", mps, "e1-small", "smoke")
     for mode in ("headroom", "tuning", "calibrate", "confirmatory"):

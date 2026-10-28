@@ -150,7 +150,7 @@ def test_amend_mode(tmp_path: Path) -> None:
             rows_c.append({"kind": "calib_lr", "seed": s, "c": c, "lr": c * 1e-4, "m": 2,
                            "norm_change": c})
         rows_c.append({"kind": "calib_ref", "seed": s, "lr": 1e-4, "m": 2, "norm_change": 1.4})
-    prov = {"model": h.MODEL_REPO, "revision": h.MODEL_REVISION,
+    prov = {"model": h.MODEL_REPO, "revision": h.MODEL_REVISION, "backend": "torch",
             "corpus": {"corpus_sha256": "c" * 64, "partition": "tuning"}}
     for r in rows_t:
         r.update(prov, mode="tuning", run_identity="t1")
@@ -171,6 +171,7 @@ def test_amend_mode(tmp_path: Path) -> None:
 
 def test_check_provenance_refusals() -> None:
     base = {"mode": "tuning", "model": h.MODEL_REPO, "revision": h.MODEL_REVISION,
+            "backend": "torch",
             "corpus": {"corpus_sha256": "c" * 64, "partition": "tuning"}, "run_identity": "r"}
     h.check_provenance([base], "tuning", "c" * 64)
     for change in ({"revision": "main"}, {"mode": "calibrate"}, {"run_identity": None},
@@ -182,3 +183,9 @@ def test_check_provenance_refusals() -> None:
     with pytest.raises(SystemExit):
         h.check_provenance([{**base, "mode": "calibrate", "tuning_cells_sha256": "x"}],
                            "calibrate", "c" * 64, "y")
+    for bad in ({"backend": None}, {"backend": ""}):
+        with pytest.raises(SystemExit, match="backend"):
+            h.check_provenance([{**base, **bad}], "tuning", "c" * 64)
+    with pytest.raises(SystemExit, match="not mlx"):
+        h.check_provenance([base], "tuning", "c" * 64, backend="mlx")
+    assert h.check_provenance([base], "tuning", "c" * 64) == "torch"
