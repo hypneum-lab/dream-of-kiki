@@ -1,0 +1,69 @@
+{
+ "backend": "torch",
+ "c": 5.0,
+ "calib_cells_sha256": "8a1d40f6a8e7cca7228d0583ed6567beb7adcf40bc76cc7cef658de5269dc234",
+ "cap": 1058,
+ "capped": false,
+ "date": "2026-10-29",
+ "h14c_infeasible": false,
+ "lr_matched_computable": true,
+ "manifest_sha256": "093fdf610b2c7304a3d8249d2563af777f6ea35ce4379aa008dbc12de77202ab",
+ "n_eval": 162,
+ "n_eval_basis": "section 5.2 rule on the non-empty OPR seeds",
+ "n_eval_rule": 162,
+ "opr_default_kept": false,
+ "opr_empty_tuning_seeds": [],
+ "p_disc": 0.12685185185185185,
+ "sd_d_proxy": 0.028605633606749396,
+ "sd_d_proxy_exceeds_sd_star": false,
+ "selection_opr": [
+  0.0003,
+  2
+ ],
+ "selection_vanilla": [
+  0.0003,
+  2
+ ],
+ "study": "e1-small",
+ "tuning_cells_sha256": "4291d214071ed63f45236cc871223f1283d9375cf9300984f941e401585835b9",
+ "tuning_seeds": [
+  1000,
+  1001,
+  1002,
+  1003,
+  1004,
+  1005,
+  1006,
+  1007,
+  1008,
+  1009
+ ],
+ "versions": {
+  "determinism": {
+   "cublas_workspace_config": ":4096:8",
+   "cuda_alloc_conf": "expandable_segments:True",
+   "cudnn_benchmark": false,
+   "cudnn_deterministic": true,
+   "enabled": true,
+   "seed_per_cell": 0,
+   "use_deterministic_algorithms": true,
+   "warn_only": false
+  },
+  "device": "cuda",
+  "kernels": {
+   "causal-conv1d": null,
+   "fla-core": null
+  },
+  "linear_attn": "torch",
+  "placement": [
+   "cuda:0"
+  ],
+  "sgd": "optim",
+  "snapshot": "ram",
+  "tokenizer": "tokenizers raw tokenizer.json",
+  "tokenizer_json_sha256": "5f9e4d4901a92b997e463c1f46055088b6cca5ca61a6522d1b9f64c4bb81cb42",
+  "tokenizers": "0.22.2",
+  "torch": "2.11.0+cu130",
+  "transformers": "5.7.0"
+ }
+}
