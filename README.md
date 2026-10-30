@@ -154,6 +154,9 @@ No DualVer bump — this is an FC/pilot result; EC stays **PARTIAL**.
 The GO is reported as *GO pipeline-validated, sub-powered* and must
 not be presented as a nominal-power result, nor as the 35B claim.
 
+**35B run: abandoned 2026-10-30 (PI decision)** — see
+`docs/milestones/e1-35b-go-rule-2026-10-28.md`.
+
 ---
 
 ## What this repo is
