@@ -27,6 +27,9 @@ out of reach of the dev M1 Max (32 GB); the `qwen3p6-35b-bf16-local` pin is now 
 (`KIKI_35B_BF16_PATH`) and ready on the Mac Studio. **Honest caveat** : 20 seeds ≪ 141, so
 the 1.5B pilot is **sub-powered** and cannot yet *support* the null at nominal power.
 
+**35B run: abandoned 2026-10-30 (PI decision)** — see
+`docs/milestones/e1-35b-go-rule-2026-10-28.md`.
+
 ## E2 — Replace §7 synthetic cells with real mega-v2  [HEAVY]
 Run the real-LLM cells, test against the g=0.29 pre-registered floors; the cross-substrate
 replication must NOT share a single mock predictor (current agreement is true by
