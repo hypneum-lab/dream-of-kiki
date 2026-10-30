@@ -23,7 +23,15 @@ Arms (pre-reg §3) :
 - ``A_continuous``      : exploratory ; (a)'s writes, (b)'s clock.
 - ``B_ttt_chunked``     : exploratory ; (b)'s writes, (a)'s clock.
 
-Pre-reg : docs/milestones/2026-10-25-nh03-ttt-vs-episodes.md
+Deferred-evaluation variant (``--mode deferred``, issue #78) : the
+same 10 schedule-ablation arms, then a write-free delay of wake
+training on a 6th task (fixed pixel permutation of task 4) before
+task 0 is evaluated again at several delay levels. Without a delay
+task, :func:`run_cell` is unchanged.
+
+Pre-reg : docs/milestones/2026-10-25-nh03-ttt-vs-episodes.md,
+docs/milestones/2026-10-27-nh03-schedule-ablation.md,
+docs/milestones/2026-10-30-nh03-deferred-eval.md
 """
 from __future__ import annotations
 
@@ -56,6 +64,9 @@ from experiments.nh03_ttt_vs_episodes.ablation_analysis import (  # noqa: E402
     analyse_ablation,
 )
 from experiments.nh03_ttt_vs_episodes.analysis import analyse  # noqa: E402
+from experiments.nh03_ttt_vs_episodes.deferred_analysis import (  # noqa: E402
+    analyse_deferred,
+)
 from experiments.nh03_ttt_vs_episodes.ttt_classifier import (  # noqa: E402
     NH03Classifier,
 )
@@ -88,6 +99,16 @@ ARM_SPEC: dict[str, tuple[str, str]] = {
     **{f"{fam}_{sch}": (fam, sch) for fam in ("slow", "ttt") for sch in SCHEDULES},
 }
 CONFIRMATORY_SEEDS = tuple(range(30))
+# Deferred-evaluation variant (pre-reg 2026-10-30) : new seed sets,
+# disjoint from 0..29, 100..129, 1000..1004 and 2000.
+DEFERRED_SEEDS = tuple(range(200, 230))
+DEFERRED_PILOT_SEEDS = (3000, 3001)
+DELAY_PERM_SEED = 20261030  # fixed pixel permutation of the delay task
+DELAY_SOURCE_TASK = 4  # delay task = permuted copy of task 4
+# Delay levels as fractions of the delay task's wake steps (3 epochs) :
+# 0 (= schedule ablation), 1 epoch, 3 epochs (one full task).
+DELAY_LEVELS = ("d0", "d1", "d3")
+DELAY_FRACTIONS = {"d0": (0, 3), "d1": (1, 3), "d3": (3, 3)}
 PILOT_SEEDS = (1000, 1001, 1002, 1003, 1004)
 TTT_LR_GRID = (0.01, 0.03, 0.1, 0.3, 1.0)
 
@@ -165,12 +186,31 @@ def schedule_positions(n_steps: int, schedule: str) -> list[int]:
     raise ValueError(f"unknown schedule {schedule!r}")
 
 
+def make_delay_task(tasks: list[SplitFMNISTTask]) -> SplitFMNISTTask:
+    """6th task for the write-free delay : task 4 under a fixed pixel
+    permutation (same labels, new input statistics, no task-0 image)."""
+    src = tasks[DELAY_SOURCE_TASK]
+    perm = np.random.default_rng(DELAY_PERM_SEED).permutation(src["x_train"].shape[1])
+    return SplitFMNISTTask(
+        x_train=np.ascontiguousarray(src["x_train"][:, perm]),
+        y_train=src["y_train"].copy(),
+        x_test=np.ascontiguousarray(src["x_test"][:, perm]),
+        y_test=src["y_test"].copy(),
+    )
+
+
+def delay_checkpoints(n_steps: int) -> dict[str, int]:
+    """Delay level -> number of write-free wake steps on the delay task."""
+    return {lv: (n_steps * a) // b for lv, (a, b) in DELAY_FRACTIONS.items()}
+
+
 def run_cell(
     arm: str,
     seed: int,
     tasks: list[SplitFMNISTTask],
     *,
     ttt_lr: float,
+    delay_task: SplitFMNISTTask | None = None,
 ) -> dict[str, Any]:
     if arm not in ARM_SPEC:
         raise ValueError(f"unknown arm {arm!r}")
@@ -297,6 +337,11 @@ def run_cell(
         )
     logged = {e.episode_id for e in runtime.log if e.completed}
     traced = all(e in logged for e in ledger.episode_ids() if not e.startswith("ctrl-"))
+    deferred: dict[str, Any] = {}
+    if delay_task is not None:
+        deferred = _run_delay(clf, tasks[0], delay_task, acc_initial, acc_final)
+        if ledger.total != expected:
+            raise RuntimeError("write during the delay (must be write-free)")
     return {
         "arm": arm,
         "seed": seed,
@@ -314,6 +359,40 @@ def run_cell(
         "dr0_all_writes_traced": bool(traced),
         "fast_weight_fro_norm": float(np.linalg.norm(clf.fast.numpy())),
         "wall_time_s": time.time() - t0,
+        **deferred,
+    }
+
+
+def _run_delay(
+    clf: NH03Classifier,
+    task0: SplitFMNISTTask,
+    delay_task: SplitFMNISTTask,
+    acc_initial: float,
+    acc_final: float,
+) -> dict[str, Any]:
+    """Write-free wake training on the delay task, task-0 eval at each level.
+
+    Plain wake SGD on the slow weights only (``W_f`` is not in the wake
+    optimiser) ; no consolidation write, no beta push.
+    """
+    batches = clf.wake_batches(delay_task, epochs=EPOCHS, batch_size=BATCH_SIZE)
+    marks = delay_checkpoints(len(batches))
+    acc: dict[str, float] = {}
+    for lv, m in marks.items():
+        if m == 0:
+            acc[lv] = float(acc_final)
+    for step, idx in enumerate(batches, start=1):
+        clf.wake_step(delay_task, idx, lr=WAKE_LR)
+        for lv, m in marks.items():
+            if m == step:
+                acc[lv] = clf.eval_accuracy(task0["x_test"], task0["y_test"])
+    denom = max(acc_initial, RETENTION_EPS)
+    return {
+        "delay_steps": marks,
+        "acc_task1_by_delay": acc,
+        "retention_by_delay": {lv: float(a / denom) for lv, a in acc.items()},
+        "acc_delay_task_test": clf.eval_accuracy(
+            delay_task["x_test"], delay_task["y_test"]),
     }
 
 
@@ -337,8 +416,10 @@ def run(
     out_json: Path,
     registry_db: Path | None,
     label: str,
+    deferred: bool = False,
 ) -> dict[str, Any]:
     tasks = load_split_fmnist_5tasks(data_dir)
+    delay_task = make_delay_task(tasks) if deferred else None
     commit = _commit_sha()
     registry = RunRegistry(registry_db) if registry_db else None
     cells: list[dict[str, Any]] = []
@@ -346,7 +427,7 @@ def run(
     out_json.parent.mkdir(parents=True, exist_ok=True)
     for seed in seeds:
         for arm in arms:
-            cell = run_cell(arm, seed, tasks, ttt_lr=ttt_lr)
+            cell = run_cell(arm, seed, tasks, ttt_lr=ttt_lr, delay_task=delay_task)
             if registry is not None:
                 cell["run_id"] = registry.register(
                     c_version=C_VERSION, profile=f"nh03/{arm}/ttt_lr={ttt_lr}",
@@ -380,6 +461,8 @@ def run(
         ),
         "partial": False,
     }
+    if deferred:
+        payload["deferred_analysis"] = analyse_deferred(cells)
     out_json.write_text(json.dumps(payload, indent=1, sort_keys=True))
     return payload
 
@@ -407,6 +490,8 @@ def merge(inputs: list[Path], out_json: Path) -> dict[str, Any]:
         "ablation_analysis": analyse_ablation(cells),
         "partial": False,
     }
+    if any("retention_by_delay" in c for c in cells):
+        payload["deferred_analysis"] = analyse_deferred(cells)
     out_json.write_text(json.dumps(payload, indent=1, sort_keys=True))
     return payload
 
@@ -453,7 +538,8 @@ def calibrate(
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(description="NH-03 driver")
     p.add_argument("--mode", choices=("smoke", "calibrate", "confirmatory", "custom",
-                                      "ablation", "merge"),
+                                      "ablation", "merge", "deferred",
+                                      "deferred_pilot"),
                    default="smoke")
     p.add_argument("--data-dir", type=Path, default=DEFAULT_DATA_DIR)
     p.add_argument("--out-json", type=Path, required=True)
@@ -482,11 +568,30 @@ def main(argv: list[str] | None = None) -> int:
         if not set(seeds) <= set(ABLATION_SEEDS):
             p.error("ablation seeds must be within the declared set 100..129")
         arms = ABLATION_ARMS
+    elif a.mode == "deferred":
+        seeds = tuple(a.seeds) if a.seeds != list(CONFIRMATORY_SEEDS) else DEFERRED_SEEDS
+        if not set(seeds) <= set(DEFERRED_SEEDS):
+            p.error("deferred seeds must be within the declared set 200..229")
+        arms = ABLATION_ARMS
+    elif a.mode == "deferred_pilot":
+        seeds = (tuple(a.seeds) if a.seeds != list(CONFIRMATORY_SEEDS)
+                 else DEFERRED_PILOT_SEEDS)
+        if not set(seeds) <= set(DEFERRED_PILOT_SEEDS):
+            p.error("deferred pilot seeds must be within 3000..3001")
+        arms = (tuple(a.arms) if a.arms != list(ALL_ARMS) else ABLATION_ARMS)
+        if not set(arms) <= set(ABLATION_ARMS):
+            p.error("deferred pilot arms must be schedule-ablation arms")
     else:
         seeds, arms = tuple(a.seeds), tuple(a.arms)
+    deferred = a.mode in ("deferred", "deferred_pilot")
     payload = run(arms=arms, seeds=seeds, ttt_lr=a.ttt_lr, data_dir=a.data_dir,
-                  out_json=a.out_json, registry_db=a.registry_db, label=a.mode)
-    if payload.get("ablation_analysis"):
+                  out_json=a.out_json, registry_db=a.registry_db, label=a.mode,
+                  deferred=deferred)
+    if payload.get("deferred_analysis"):
+        prim = payload["deferred_analysis"]["primary"]
+        print(json.dumps({"verdict": prim.get("verdict"),
+                          "control_d0": prim.get("control_d0")}))
+    if payload.get("ablation_analysis") and not deferred:
         print(json.dumps(payload["ablation_analysis"]["primary"]["verdict"]))
     prim = payload["analysis"]["primary"]
     print(json.dumps(prim, indent=1) if prim else "no primary contrast")
