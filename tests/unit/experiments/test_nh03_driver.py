@@ -170,3 +170,104 @@ def test_ablation_analysis_on_synthetic_cells() -> None:
     res = analyse_ablation(cells)
     assert res["primary"]["verdict"] == "recency"
     assert res["primary"]["recency_R"]["mean"] == pytest.approx(10, abs=1)
+
+
+# ----- deferred evaluation (pre-reg 2026-10-30) -----
+
+
+def test_deferred_seed_sets_are_disjoint() -> None:
+    used = (set(run_nh03.CONFIRMATORY_SEEDS) | set(run_nh03.ABLATION_SEEDS)
+            | set(run_nh03.PILOT_SEEDS) | {2000})
+    new = set(run_nh03.DEFERRED_SEEDS)
+    pilot = set(run_nh03.DEFERRED_PILOT_SEEDS)
+    assert len(new) == 30 and not new & used
+    assert not pilot & used and not pilot & new
+
+
+def test_delay_checkpoints() -> None:
+    assert run_nh03.delay_checkpoints(564) == {"d0": 0, "d1": 188, "d3": 564}
+
+
+def test_delay_task_is_fixed_permutation(tasks: list[SplitFMNISTTask]) -> None:
+    a = run_nh03.make_delay_task(tasks)
+    b = run_nh03.make_delay_task(tasks)
+    src = tasks[run_nh03.DELAY_SOURCE_TASK]
+    assert np.array_equal(a["x_train"], b["x_train"])
+    assert not np.array_equal(a["x_train"], src["x_train"])
+    assert np.array_equal(np.sort(a["x_train"], axis=1), np.sort(src["x_train"], axis=1))
+    assert np.array_equal(a["y_train"], src["y_train"])
+
+
+@pytest.mark.parametrize("arm", run_nh03.ABLATION_ARMS)
+def test_deferred_d0_equals_ablation_cell(
+    arm: str, tasks: list[SplitFMNISTTask]
+) -> None:
+    """R1 : without the delay the cell is unchanged ; d0 = old retention,
+    the delay spends no write."""
+    old = run_nh03.run_cell(arm, 8, tasks, ttt_lr=0.1)
+    new = run_nh03.run_cell(arm, 8, tasks, ttt_lr=0.1,
+                            delay_task=run_nh03.make_delay_task(tasks))
+    assert "retention_by_delay" not in old
+    for k in ("retention", "acc_task1_final", "writes_total", "fast_weight_fro_norm"):
+        assert old[k] == new[k]
+    assert new["retention_by_delay"]["d0"] == old["retention"]
+    assert set(new["retention_by_delay"]) == set(run_nh03.DELAY_LEVELS)
+    assert new["writes_total"] == run_nh03.WRITE_BUDGET
+    assert new["delay_steps"]["d3"] > new["delay_steps"]["d1"] > 0
+
+
+def test_deferred_decision_rules() -> None:
+    from experiments.nh03_ttt_vs_episodes.deferred_analysis import (
+        decide,
+        secondary_labels,
+    )
+
+    def e(m: float, lo: float, hi: float) -> dict[str, object]:
+        return {"mean": m, "ci95": [lo, hi]}
+
+    good = e(18, 17, 19)
+    assert decide(e(2, 1, 3), e(9, 8, 10)) == "invalid_control"
+    assert decide(good, e(5, 2, 8)) == "recency_survives"
+    assert decide(good, e(1, -0.5, 2.5)) == "recency_below_margin"
+    assert decide(good, e(2, 0.5, 3.5)) == "inconclusive"
+    assert decide(good, e(4, -1, 9)) == "inconclusive"
+    lab = secondary_labels(e(-9, -10, -8), e(1, 0.2, 2))
+    assert lab == {"attenuates": True, "spreading_positive": True}
+    lab = secondary_labels(e(-1, -2, 0.5), e(-1, -2, -0.1))
+    assert lab == {"attenuates": False, "spreading_positive": False}
+
+
+def test_deferred_analysis_on_synthetic_cells() -> None:
+    from experiments.nh03_ttt_vs_episodes.deferred_analysis import (
+        analyse_deferred,
+    )
+
+    rng = np.random.default_rng(1)
+    # late advantage 0.10 at d0, 0.05 at d1, 0.01 at d3.
+    late = {"d0": 0.10, "d1": 0.05, "d3": 0.01}
+    cells = []
+    for fam in ("ttt", "slow"):
+        for k in ("early_block", "early_spread", "late_block", "late_spread",
+                  "uniform"):
+            for s in range(12):
+                rbd = {lv: 0.6 + (late[lv] if k.startswith("late") else 0.0)
+                       + 0.002 * rng.standard_normal() for lv in late}
+                cells.append({"arm": f"{fam}_{k}", "seed": s,
+                              "retention": rbd["d0"], "retention_by_delay": rbd,
+                              "excluded_underperforming_baseline": False})
+    res = analyse_deferred(cells)
+    p = res["primary"]
+    assert p["n"] == 12 and p["control_d0"]
+    assert p["levels"]["d0"]["recency_R"]["mean"] == pytest.approx(10, abs=0.5)
+    assert p["verdict"] == "recency_below_margin"
+    assert p["secondary"]["attenuates"]
+    assert "nh03_primary_ttt_uniform_minus_slow_early_block" in res["cross_substrate"]["d3"]
+
+
+def test_deferred_cli_rejects_foreign_seeds() -> None:
+    with pytest.raises(SystemExit):
+        run_nh03.main(["--mode", "deferred", "--ttt-lr", "0.01", "--seeds", "5",
+                       "--out-json", "x.json"])
+    with pytest.raises(SystemExit):
+        run_nh03.main(["--mode", "deferred_pilot", "--ttt-lr", "0.01",
+                       "--seeds", "200", "--out-json", "x.json"])
