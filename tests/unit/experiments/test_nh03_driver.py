@@ -271,3 +271,21 @@ def test_deferred_cli_rejects_foreign_seeds() -> None:
     with pytest.raises(SystemExit):
         run_nh03.main(["--mode", "deferred_pilot", "--ttt-lr", "0.01",
                        "--seeds", "200", "--out-json", "x.json"])
+
+
+def test_deferred_pilot_cli_end_to_end(
+    tasks: list[SplitFMNISTTask], tmp_path: object, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A one-seed pilot (insufficient for the analysis) must not crash."""
+    import json
+    from pathlib import Path
+
+    monkeypatch.setattr(run_nh03, "load_split_fmnist_5tasks", lambda _d: tasks)
+    out = Path(str(tmp_path)) / "pilot.json"
+    rc = run_nh03.main(["--mode", "deferred_pilot", "--ttt-lr", "0.1",
+                        "--seeds", "3000", "--arms", "ttt_late_block",
+                        "ttt_early_block", "--out-json", str(out)])
+    assert rc == 0
+    payload = json.loads(out.read_text())
+    assert payload["deferred_analysis"]["primary"]["insufficient"]
+    assert all("retention_by_delay" in c for c in payload["cells"])

@@ -591,7 +591,7 @@ def main(argv: list[str] | None = None) -> int:
         prim = payload["deferred_analysis"]["primary"]
         print(json.dumps({"verdict": prim.get("verdict"),
                           "control_d0": prim.get("control_d0")}))
-    if payload.get("ablation_analysis"):
+    if payload.get("ablation_analysis") and not deferred:
         print(json.dumps(payload["ablation_analysis"]["primary"]["verdict"]))
     prim = payload["analysis"]["primary"]
     print(json.dumps(prim, indent=1) if prim else "no primary contrast")
