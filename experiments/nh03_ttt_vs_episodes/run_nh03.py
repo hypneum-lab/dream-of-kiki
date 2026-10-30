@@ -52,6 +52,9 @@ from experiments.g4_ter_hp_sweep.dream_wrap_hier import (  # noqa: E402
     BetaBufferHierFIFO,
 )
 from experiments.g4_ter_hp_sweep.hp_grid import representative_combo  # noqa: E402
+from experiments.nh03_ttt_vs_episodes.ablation_analysis import (  # noqa: E402
+    analyse_ablation,
+)
 from experiments.nh03_ttt_vs_episodes.analysis import analyse  # noqa: E402
 from experiments.nh03_ttt_vs_episodes.ttt_classifier import (  # noqa: E402
     NH03Classifier,
@@ -71,6 +74,19 @@ C_VERSION = "C-v0.25.0+PARTIAL"
 ARMS_PRIMARY = ("baseline", "A_discrete", "B_ttt_continuous", "C_sgd_matched")
 ARMS_EXPLORATORY = ("A_continuous", "B_ttt_chunked")
 ALL_ARMS = ARMS_PRIMARY + ARMS_EXPLORATORY
+# Schedule ablation (pre-reg 2026-10-27) : 2 substrates x 5 schedules.
+SCHEDULES = ("early_block", "early_spread", "late_block", "late_spread", "uniform")
+ABLATION_ARMS = tuple(f"{fam}_{sch}" for fam in ("slow", "ttt") for sch in SCHEDULES)
+ABLATION_SEEDS = tuple(range(100, 130))
+ARM_SPEC: dict[str, tuple[str, str]] = {
+    "baseline": ("none", "early_block"),
+    "A_discrete": ("slow", "early_block"),
+    "A_continuous": ("slow", "uniform"),
+    "B_ttt_continuous": ("ttt", "uniform"),
+    "B_ttt_chunked": ("ttt", "early_block"),
+    "C_sgd_matched": ("sgd", "early_block"),
+    **{f"{fam}_{sch}": (fam, sch) for fam in ("slow", "ttt") for sch in SCHEDULES},
+}
 CONFIRMATORY_SEEDS = tuple(range(30))
 PILOT_SEEDS = (1000, 1001, 1002, 1003, 1004)
 TTT_LR_GRID = (0.01, 0.03, 0.1, 0.3, 1.0)
@@ -124,9 +140,29 @@ def _flops_per_write(clf: NH03Classifier, op: str, n: int, in_dim: int) -> float
 
 def _positions(n_steps: int, continuous: bool) -> list[int]:
     """Wake-step index before which write j (0..5) is applied."""
-    if not continuous:
-        return [0] * WRITES_PER_INTERVAL
-    return [(j * n_steps) // WRITES_PER_INTERVAL for j in range(WRITES_PER_INTERVAL)]
+    return schedule_positions(n_steps, "uniform" if continuous else "early_block")
+
+
+def schedule_positions(n_steps: int, schedule: str) -> list[int]:
+    """Wake-step index before which write j (0..5) is applied.
+
+    ``n_steps`` means "after the last wake step of the task" (end of
+    the interval, i.e. just before the next task / final evaluation).
+    Spread windows are the first / last third of the task.
+    """
+    w = WRITES_PER_INTERVAL
+    third = n_steps // 3
+    if schedule == "early_block":
+        return [0] * w
+    if schedule == "late_block":
+        return [n_steps] * w
+    if schedule == "uniform":
+        return [(j * n_steps) // w for j in range(w)]
+    if schedule == "early_spread":
+        return [(j * third) // w for j in range(w)]
+    if schedule == "late_spread":
+        return [n_steps - third + ((j + 1) * third) // w for j in range(w)]
+    raise ValueError(f"unknown schedule {schedule!r}")
 
 
 def run_cell(
@@ -136,8 +172,9 @@ def run_cell(
     *,
     ttt_lr: float,
 ) -> dict[str, Any]:
-    if arm not in ALL_ARMS:
+    if arm not in ARM_SPEC:
         raise ValueError(f"unknown arm {arm!r}")
+    family, schedule = ARM_SPEC[arm]
     t0 = time.time()
     c5 = representative_combo()
     in_dim = int(tasks[0]["x_train"].shape[1])
@@ -165,9 +202,9 @@ def run_cell(
     acc_initial = clf.eval_accuracy(tasks[0]["x_test"], tasks[0]["y_test"])
     push(tasks[0])
 
-    slow_family = arm in ("A_discrete", "A_continuous")
-    ttt_family = arm in ("B_ttt_continuous", "B_ttt_chunked")
-    continuous = arm in ("A_continuous", "B_ttt_continuous")
+    slow_family = family == "slow"
+    ttt_family = family == "ttt"
+    block = schedule in ("early_block", "late_block")
 
     for k in range(1, len(tasks)):
         task = tasks[k]
@@ -198,7 +235,7 @@ def run_cell(
                     factor=c5.downscale_factor, episode_id=eid))
                 flops += _flops_per_write(clf, "decay_ttt", 0, in_dim)
             ops.append(Operation.DOWNSCALE)
-        elif arm == "C_sgd_matched":
+        elif family == "sgd":
             crng = np.random.default_rng(seed + k + 7_000)
             cidx = crng.choice(task["x_train"].shape[0], size=CONTROL_BATCH, replace=False)
             xb, yb = task["x_train"][cidx], task["y_train"][cidx]
@@ -207,12 +244,13 @@ def run_cell(
                     a, b, lr=c5.replay_lr, episode_id=eid))
                 flops += _flops_per_write(clf, "sgd_control", CONTROL_BATCH, in_dim)
 
-        pos = _positions(len(batches), continuous) if writes else []
+        n_steps = len(batches)
+        pos = schedule_positions(n_steps, schedule) if writes else []
         is_de_arm = slow_family or ttt_family
-        if is_de_arm and not continuous:
+
+        def run_block(queue: list[Callable[[str], None]]) -> None:
             # One bounded DE holding all 6 writes (G4 order R x5, D).
             eid = f"nh03-{arm}-s{seed}-k{k}"
-            queue = list(writes)
 
             def h_replay(ep: DreamEpisode) -> None:
                 for _ in range(c5.replay_n_steps):
@@ -224,8 +262,8 @@ def run_cell(
             runtime.register_handler(Operation.REPLAY, h_replay)
             runtime.register_handler(Operation.DOWNSCALE, h_down)
             runtime.execute(_episode(eid, (Operation.REPLAY, Operation.DOWNSCALE)))
-            writes, pos = [], []
-        for step, idx in enumerate(batches):
+
+        def fire_due(step: int) -> None:
             while pos and pos[0] == step:
                 pos.pop(0)
                 w = writes.pop(0)
@@ -236,7 +274,17 @@ def run_cell(
                     runtime.execute(_episode(eid, (op,)))
                 else:
                     w(f"ctrl-{arm}-s{seed}-k{k}")
+
+        if is_de_arm and block and schedule == "early_block":
+            run_block(writes)
+            pos = []
+        for step, idx in enumerate(batches):
+            fire_due(step)
             clf.wake_step(task, idx, lr=WAKE_LR)
+        if is_de_arm and block and schedule == "late_block":
+            run_block(writes)
+            pos = []
+        fire_due(n_steps)
         if writes:
             raise RuntimeError("unscheduled writes left (schedule bug)")
         push(task)
@@ -326,6 +374,37 @@ def run(
         "wall_time_s": time.time() - t0,
         "cells": cells,
         "analysis": analyse(cells),
+        "ablation_analysis": (
+            analyse_ablation(cells)
+            if any(c["arm"] in ABLATION_ARMS for c in cells) else None
+        ),
+        "partial": False,
+    }
+    out_json.write_text(json.dumps(payload, indent=1, sort_keys=True))
+    return payload
+
+
+def merge(inputs: list[Path], out_json: Path) -> dict[str, Any]:
+    """Merge worker JSONs (disjoint seeds) and re-run the analyses."""
+    parts = [json.loads(Path(i).read_text()) for i in inputs]
+    if any(pp.get("partial", True) for pp in parts):
+        raise RuntimeError("refusing to merge a partial worker output")
+    cells = [c for pp in parts for c in pp["cells"]]
+    keys = [(c["arm"], c["seed"]) for c in cells]
+    if len(keys) != len(set(keys)):
+        raise RuntimeError("duplicate (arm, seed) cells across workers")
+    head = parts[0]
+    payload = {
+        **{k: head[k] for k in ("c_version", "commit_sha", "host", "mlx_version",
+                                "mlx_device", "ttt_lr", "write_budget_per_cell")},
+        "label": "merged:" + "+".join(pp["label"] for pp in parts),
+        "workers": [{"seeds": pp["seeds"], "wall_time_s": pp["wall_time_s"],
+                     "host": pp["host"]} for pp in parts],
+        "arms": sorted({c["arm"] for c in cells}),
+        "seeds": sorted({c["seed"] for c in cells}),
+        "cells": cells,
+        "analysis": analyse(cells),
+        "ablation_analysis": analyse_ablation(cells),
         "partial": False,
     }
     out_json.write_text(json.dumps(payload, indent=1, sort_keys=True))
@@ -373,7 +452,8 @@ def calibrate(
 
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(description="NH-03 driver")
-    p.add_argument("--mode", choices=("smoke", "calibrate", "confirmatory", "custom"),
+    p.add_argument("--mode", choices=("smoke", "calibrate", "confirmatory", "custom",
+                                      "ablation", "merge"),
                    default="smoke")
     p.add_argument("--data-dir", type=Path, default=DEFAULT_DATA_DIR)
     p.add_argument("--out-json", type=Path, required=True)
@@ -381,11 +461,15 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--ttt-lr", type=float, default=None)
     p.add_argument("--arms", nargs="+", default=list(ALL_ARMS))
     p.add_argument("--seeds", type=int, nargs="+", default=list(CONFIRMATORY_SEEDS))
+    p.add_argument("--inputs", type=Path, nargs="+", default=[])
     p.add_argument("--lr-grid", type=float, nargs="+", default=list(TTT_LR_GRID))
     a = p.parse_args(argv)
     if a.mode == "calibrate":
         r = calibrate(data_dir=a.data_dir, out_json=a.out_json, grid=tuple(a.lr_grid))
         print(f"selected_ttt_lr={r['selected_ttt_lr']}")
+        return 0
+    if a.mode == "merge":
+        merge(a.inputs, a.out_json)
         return 0
     if a.ttt_lr is None:
         p.error("--ttt-lr is required outside calibrate mode")
@@ -393,10 +477,17 @@ def main(argv: list[str] | None = None) -> int:
         seeds, arms = (1000,), tuple(ALL_ARMS)
     elif a.mode == "confirmatory":
         seeds, arms = CONFIRMATORY_SEEDS, tuple(ALL_ARMS)
+    elif a.mode == "ablation":
+        seeds = tuple(a.seeds) if a.seeds != list(CONFIRMATORY_SEEDS) else ABLATION_SEEDS
+        if not set(seeds) <= set(ABLATION_SEEDS):
+            p.error("ablation seeds must be within the declared set 100..129")
+        arms = ABLATION_ARMS
     else:
         seeds, arms = tuple(a.seeds), tuple(a.arms)
     payload = run(arms=arms, seeds=seeds, ttt_lr=a.ttt_lr, data_dir=a.data_dir,
                   out_json=a.out_json, registry_db=a.registry_db, label=a.mode)
+    if payload.get("ablation_analysis"):
+        print(json.dumps(payload["ablation_analysis"]["primary"]["verdict"]))
     prim = payload["analysis"]["primary"]
     print(json.dumps(prim, indent=1) if prim else "no primary contrast")
     return 0

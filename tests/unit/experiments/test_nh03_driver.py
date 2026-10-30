@@ -98,3 +98,75 @@ def test_contrast_pairs_by_seed_and_excludes() -> None:
     c = contrast(cells, "X", "Y")
     assert c["n"] == 3 and c["seeds"] == [0, 1, 3]
     assert c["mean_points"] == pytest.approx(100 * (0.1 + 0.01 * 4 / 3))
+
+
+# ----- schedule ablation (pre-reg 2026-10-27) -----
+
+
+def test_schedule_positions_windows() -> None:
+    sp = run_nh03.schedule_positions
+    assert sp(600, "early_block") == [0] * 6
+    assert sp(600, "late_block") == [600] * 6
+    assert sp(600, "uniform") == [0, 100, 200, 300, 400, 500]
+    assert sp(600, "early_spread") == [0, 33, 66, 100, 133, 166]
+    assert sp(600, "late_spread") == [433, 466, 500, 533, 566, 600]
+    with pytest.raises(ValueError):
+        sp(600, "bogus")
+
+
+@pytest.mark.parametrize("arm", run_nh03.ABLATION_ARMS)
+def test_ablation_arms_spend_exact_budget(
+    arm: str, tasks: list[SplitFMNISTTask]
+) -> None:
+    cell = run_nh03.run_cell(arm, 4, tasks, ttt_lr=0.1)
+    assert cell["writes_total"] == run_nh03.WRITE_BUDGET
+    assert cell["dr0_all_writes_traced"]
+    block = arm.endswith("_block")
+    expected_des = run_nh03.N_INTERVALS if block else run_nh03.WRITE_BUDGET
+    assert cell["n_episodes_logged"] == expected_des
+
+
+@pytest.mark.parametrize(
+    ("old", "new"),
+    [("A_discrete", "slow_early_block"), ("A_continuous", "slow_uniform"),
+     ("B_ttt_continuous", "ttt_uniform"), ("B_ttt_chunked", "ttt_early_block")],
+)
+def test_legacy_arms_equal_ablation_arms(
+    old: str, new: str, tasks: list[SplitFMNISTTask]
+) -> None:
+    """R1 : the refactor leaves the NH-03 arms bit-identical."""
+    a = run_nh03.run_cell(old, 6, tasks, ttt_lr=0.1)
+    b = run_nh03.run_cell(new, 6, tasks, ttt_lr=0.1)
+    assert a["retention"] == b["retention"]
+    assert a["fast_weight_fro_norm"] == b["fast_weight_fro_norm"]
+
+
+def test_ablation_decision_rules() -> None:
+    from experiments.nh03_ttt_vs_episodes.ablation_analysis import decide
+
+    def e(m: float, lo: float, hi: float) -> dict[str, object]:
+        return {"mean": m, "ci95": [lo, hi]}
+
+    assert decide(e(5, 2, 8), e(0, -1, 1), e(5, 2, 8)) == "recency"
+    assert decide(e(0, -1, 1), e(5, 2, 8), e(-5, -8, -2)) == "spreading"
+    assert decide(e(5, 2, 8), e(5, 2, 8), e(0, -2, 2)) == "both"
+    assert decide(e(2, 1, 3), e(1, 0.5, 2), e(1, -1, 3)) == "inconclusive"
+
+
+def test_ablation_analysis_on_synthetic_cells() -> None:
+    from experiments.nh03_ttt_vs_episodes.ablation_analysis import (
+        analyse_ablation,
+    )
+
+    rng = np.random.default_rng(0)
+    base = {"early_block": 0.60, "early_spread": 0.61, "late_block": 0.70,
+            "late_spread": 0.71, "uniform": 0.66}
+    cells = [
+        {"arm": f"{fam}_{k}", "seed": s,
+         "retention": v + 0.005 * rng.standard_normal(),
+         "excluded_underperforming_baseline": False}
+        for fam in ("ttt", "slow") for k, v in base.items() for s in range(10)
+    ]
+    res = analyse_ablation(cells)
+    assert res["primary"]["verdict"] == "recency"
+    assert res["primary"]["recency_R"]["mean"] == pytest.approx(10, abs=1)
