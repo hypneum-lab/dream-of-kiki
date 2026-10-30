@@ -69,10 +69,20 @@ writes once both are a full task away ; if late writes carry a durable
 benefit (the last item learned is consolidated without being
 overwritten), R should survive.
 
+Disclosed asymmetry : the distance is matched in wake steps, not in
+content. Between an `early_block` write of interval 4 and the `d0`
+evaluation lie 564 steps of task 4 ; between a `late_block` write of
+interval 4 and the `d3` evaluation lie 564 steps of the permuted
+task 4. Same labels, class pair, size and batch order ; only the
+pixel order differs. The interference on task 0 is therefore of the
+same kind but not identical, and the matching is approximate.
+
 Retention at level L = `acc_task0(L) / acc_initial` (same
 `acc_initial`, same exclusion rule : seed dropped iff
 `acc_initial < 0.5`, arm-free). The delay task's own test accuracy is
-recorded (sanity : the delay must actually be learned).
+recorded per cell (sanity : the delay must actually be learned) ;
+the results note reports its mean and minimum over the 300 cells,
+computed from the raw cells (not part of the decision).
 
 ## 3. Seeds and budget
 
