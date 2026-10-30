@@ -9,6 +9,7 @@ import pytest
 from experiments.g4_nono_test.metrics import (
     NonFiniteLogitsError,
     compute_cdpa,
+    compute_doa,
     compute_final_accuracy,
     compute_retention_domain_a,
     compute_two_way_accuracy,
@@ -145,3 +146,42 @@ def test_all_nan_logits_do_not_score_half() -> None:
         compute_cdpa(z, y)
     with pytest.raises(NonFiniteLogitsError):
         compute_two_way_accuracy(z, y, (0, 1))
+
+
+# --- domain-only probe (DOA, section 6, exploratory) ------------------------
+
+
+def test_doa_perfect_and_inverted() -> None:
+    y = _labels()
+    assert compute_doa(_onehot_logits(y), y) == 1.0
+    # every image's max logit sits on a class of the other domain
+    z = np.zeros((len(y), 20), np.float32)
+    for i, c in enumerate(y):
+        other = DOMAIN_B[0] if c in DOMAIN_A else DOMAIN_A[0]
+        z[i, other] = 5.0
+    assert compute_doa(z, y) == 0.0
+
+
+def test_doa_ignores_within_domain_class_errors() -> None:
+    # wrong class but right domain still scores 1 on the domain probe
+    y = _labels()
+    z = np.zeros((len(y), 20), np.float32)
+    for i, c in enumerate(y):
+        dom = DOMAIN_A if c in DOMAIN_A else DOMAIN_B
+        z[i, dom[(dom.index(c) + 1) % len(dom)]] = 5.0
+    assert compute_doa(z, y) == 1.0
+    assert compute_final_accuracy(z, y) == 0.0
+
+
+def test_doa_tie_counts_half() -> None:
+    y = _labels()
+    z = np.zeros((len(y), 20), np.float32)  # max A == max B everywhere
+    assert compute_doa(z, y) == 0.5
+
+
+def test_doa_rejects_non_finite() -> None:
+    y = _labels()
+    z = _onehot_logits(y)
+    z[3, 2] = np.inf
+    with pytest.raises(NonFiniteLogitsError):
+        compute_doa(z, y)

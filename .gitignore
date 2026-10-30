@@ -53,3 +53,4 @@ experiments/g4_sexto_test/data/tiny-imagenet-valid.parquet
 .coverage
 .coverage.*
 .coverage [0-9]*
+experiments/g4_nono_test/data/

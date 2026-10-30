@@ -1,0 +1,147 @@
+{
+  "abort": false,
+  "abort_threshold": 6,
+  "decision": {
+    "abort": false,
+    "all_retained_hashed": true,
+    "alpha": 0.0125,
+    "comparator": null,
+    "confirmatory_seed_set": false,
+    "delta": 0.025,
+    "eligibility_problems": [
+      "seed set is not exactly 100..119"
+    ],
+    "eligible": false,
+    "exploratory": {
+      "comparator": null,
+      "hypotheses": null,
+      "note": "fewer than 2 retained seeds",
+      "residual_criterion": false,
+      "row": 5,
+      "states": null
+    },
+    "global_wording_allowed": false,
+    "hypotheses": null,
+    "n_retained": 1,
+    "row": null,
+    "states": null
+  },
+  "n_excluded": 0,
+  "n_retained": 1,
+  "n_total": 1,
+  "prereg": "docs/osf-prereg-dr3-relational-probe-2026-10-23.md",
+  "protocol": {
+    "calibration": "difference trained - null (paired per seed)",
+    "k": 10,
+    "preprocess": "l2",
+    "statistics": [
+      "S_mKNN",
+      "S_H0",
+      "S_mKNN_tau",
+      "S_H0_tau"
+    ],
+    "tau": 0.1
+  },
+  "provenance": {
+    "confirmatory_eligible": true,
+    "manifest": "/Users/electron/scratch/code/pilots-2026-10-25/dr3-smoke900/export-manifest.json",
+    "manifest_hash_ok": true,
+    "nerve_wml": {
+      "clean": true,
+      "commit": "95ac6b78477c3ce999b31bca775769041e082b46",
+      "head": "95ac6b78477c3ce999b31bca775769041e082b46",
+      "pinned": true,
+      "problems": [],
+      "tag": "v1.9.0"
+    },
+    "seed_hash_mismatch": [],
+    "seeds_not_in_manifest": []
+  },
+  "script": "scripts/dr3_relational_probe.py",
+  "seeds": [
+    {
+      "D": {
+        "S_H0": 0.019550342130987296,
+        "S_H0_tau": -0.006010435519860362,
+        "S_mKNN": 0.0625,
+        "S_mKNN_tau": -0.009644186956694237
+      },
+      "comparator": {
+        "D": {
+          "S_H0_res": 0.0009775171065493646,
+          "S_mKNN_k1": 0.0146484375
+        },
+        "null": {
+          "S_H0_res": 0.0019550342130987292,
+          "S_mKNN_k1": 0.0185546875
+        },
+        "trained": {
+          "S_H0_res": 0.002932551319648094,
+          "S_mKNN_k1": 0.033203125
+        }
+      },
+      "conditional_weight": {
+        "D": {
+          "H0": -0.18659671068038947,
+          "mKNN": -0.12318555525695375
+        },
+        "null": {
+          "H0": 0.1870475064621746,
+          "mKNN": 0.12420785003166111
+        },
+        "trained": {
+          "H0": 0.00045079578178513054,
+          "mKNN": 0.001022294774707365
+        }
+      },
+      "dims": {
+        "a_null": [
+          1024,
+          16
+        ],
+        "a_trained": [
+          1024,
+          16
+        ],
+        "b_null": [
+          1024,
+          16
+        ],
+        "b_trained": [
+          1024,
+          16
+        ]
+      },
+      "gate": {
+        "acc_a_null": 0.1044921875,
+        "acc_a_trained": 0.5185546875,
+        "acc_b_null": 0.0869140625,
+        "acc_b_trained": 0.544921875,
+        "gate_pass": true
+      },
+      "gate_pass_mismatch": false,
+      "gate_recomputed_pass": true,
+      "n": 1024,
+      "null": {
+        "S_H0": 0.03225806451612903,
+        "S_H0_tau": 0.0060337905310378906,
+        "S_mKNN": 0.07880859375000002,
+        "S_mKNN_tau": 0.009788645993706107,
+        "zero_distance_pairs_x": 0,
+        "zero_distance_pairs_y": 0
+      },
+      "pinned": true,
+      "seed": 900,
+      "sha256": "f6e8135adcf2a7c97bc5baaa6be33b5231b03d7ee2a191c72fbbbdbe22f9ff3a",
+      "status": "ok",
+      "trained": {
+        "S_H0": 0.05180840664711633,
+        "S_H0_tau": 2.3355011177528757e-05,
+        "S_mKNN": 0.14130859375000002,
+        "S_mKNN_tau": 0.00014445903701187083,
+        "zero_distance_pairs_x": 0,
+        "zero_distance_pairs_y": 0
+      }
+    }
+  ]
+}
