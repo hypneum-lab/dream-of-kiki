@@ -55,6 +55,43 @@ as exploratory, next to the registered results.
   (`docs/milestones/e1-35b-go-rule-2026-10-28.md`, dated section).
   E1-small is reported as a stand-alone result.
 
+## §2bis Addendum of 2026-10-31: earlier exposure to interim means
+
+*Added 2026-10-31, PI authorisation of 2026-10-31. §2 above is kept
+as written; this section corrects it.*
+
+- **What §2 omits.** On 2026-10-30 at 13:11 CET the PI asked the
+  assistant (Claude, an AI coding agent operating the run) for "first
+  results". At 13:12:25 CET the assistant replied with descriptive
+  per-profile summaries computed on the partial confirmatory cache
+  (`e1-confirmatory-torch-Qwen_Qwen3.5-4B.cells.jsonl`, 266 / 1,410
+  cells):
+  - `p_min`: 141 / 141 cells (seeds 0-140), mean Δ = +0.057;
+  - `p_equ`: 125 / 141 cells (seeds 0-124), mean Δ = +0.064;
+  - mean wall time 177 s per cell, 0 collapse flags, 0 invariant
+    violations, for both profiles.
+  No other profile had any confirmatory cell at that time, so no
+  registered contrast (H14-A, H14-B, H14-C or secondary) could be
+  formed, and no test, interval or state was computed. The reply
+  stated that no conclusion could be drawn before the run completes.
+- **Correction.** The first PI exposure to confirmatory numbers is
+  therefore 13:12 CET, not 14:22 CET, and it was to interim means of
+  two profiles, not only to per-cell log lines. The statements that
+  "no E1-small confirmatory cell had been read by the PI" when the
+  35B study was abandoned (about 15:10 CET), in §2 above and in
+  `docs/milestones/e1-35b-go-rule-2026-10-28.md`, are inaccurate and
+  are corrected by this section.
+- **Bearing.** The written basis of the 35B decision (the re-reading
+  of H14-A, which contains no dream operation) does not use these
+  numbers, and both means are uninformative about any contrast with a
+  control. The exposure is nonetheless declared because it preceded
+  the decision. The commitments of §2 stand: no protocol, code,
+  corpus, tuning or analysis choice for E1-small has been or will be
+  made after it, and the registered analysis runs on the complete
+  cache only (§8). Computing interim per-profile means was itself a
+  departure from the no-interim-analysis rule of §8, made by the
+  assistant without a PI request for them; it is not repeated.
+
 ## §3 Run started before the OSF filing (already declared)
 
 The run started on KXKM-AI before the pre-registration was filed on
@@ -124,5 +161,28 @@ filed, as declared on 2026-10-29 (deviation note, lock commit
 options-only control on the base model, a per-source reading of every
 contrast, and a note on Daily Oracle base accuracy (0.185) below chance
 (0.25). Nothing in the frozen protocol is changed.
+
+---
+
+## §6 Paste into OSF amendment field (addendum of 2026-10-31)
+
+---
+
+**Title:** E1-small: earlier exposure to interim means (addendum)
+
+**Amendment summary:**
+
+Correction to the amendment of 2026-10-30. Before the PI read the live
+log at 14:22 CET, the AI agent operating the run had already reported
+to the PI, at 13:12 CET on 2026-10-30, the interim mean change of the
+two profiles that had confirmatory cells (`p_min`, 141 cells, +0.057;
+`p_equ`, 125 cells, +0.064). No control profile had run, so no
+registered contrast, test or state was computed. This exposure
+preceded the PI decision to abandon the 35B study (about 15:10 CET);
+the earlier statement that no confirmatory cell had been read at that
+point is withdrawn. The decision's written basis does not use these
+numbers. No protocol, code, corpus, tuning or analysis choice has been
+or will be made after the exposure; the registered analysis runs on
+the complete cache only.
 
 ---
