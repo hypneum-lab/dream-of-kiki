@@ -57,40 +57,59 @@ as exploratory, next to the registered results.
 
 ## §2bis Addendum of 2026-10-31: earlier exposure to interim means
 
-*Added 2026-10-31, PI authorisation of 2026-10-31. §2 above is kept
-as written; this section corrects it.*
+*Added 2026-10-31, PI decision of 2026-10-31 (about 23:25 CET). The
+header and §1-§5 are kept as written on 2026-10-30; where they
+conflict with this section (including the header's "DISCLOSURE"
+type), this section prevails.*
 
-- **What §2 omits.** On 2026-10-30 at 13:11 CET the PI asked the
-  assistant (Claude, an AI coding agent operating the run) for "first
-  results". At 13:12:25 CET the assistant replied with descriptive
-  per-profile summaries computed on the partial confirmatory cache
+- **What happened.** On 2026-10-30 at 13:11 CET the PI asked the
+  assistant (Claude, the AI coding agent operating the run) for "first
+  results" ("des premier résultat ?"). The assistant chose to compute
+  per-profile aggregates on the partial confirmatory cache
   (`e1-confirmatory-torch-Qwen_Qwen3.5-4B.cells.jsonl`, 266 / 1,410
-  cells):
+  cells) and, at 13:12:25 CET, reported to the PI:
   - `p_min`: 141 / 141 cells (seeds 0-140), mean Δ = +0.057;
   - `p_equ`: 125 / 141 cells (seeds 0-124), mean Δ = +0.064;
-  - mean wall time 177 s per cell, 0 collapse flags, 0 invariant
-    violations, for both profiles.
-  No other profile had any confirmatory cell at that time, so no
-  registered contrast (H14-A, H14-B, H14-C or secondary) could be
-  formed, and no test, interval or state was computed. The reply
-  stated that no conclusion could be drawn before the run completes.
-- **Correction.** The first PI exposure to confirmatory numbers is
-  therefore 13:12 CET, not 14:22 CET, and it was to interim means of
-  two profiles, not only to per-cell log lines. The statements that
-  "no E1-small confirmatory cell had been read by the PI" when the
-  35B study was abandoned (about 15:10 CET), in §2 above and in
-  `docs/milestones/e1-35b-go-rule-2026-10-28.md`, are inaccurate and
-  are corrected by this section.
-- **Bearing.** The written basis of the 35B decision (the re-reading
-  of H14-A, which contains no dream operation) does not use these
-  numbers, and both means are uninformative about any contrast with a
-  control. The exposure is nonetheless declared because it preceded
-  the decision. The commitments of §2 stand: no protocol, code,
-  corpus, tuning or analysis choice for E1-small has been or will be
-  made after it, and the registered analysis runs on the complete
-  cache only (§8). Computing interim per-profile means was itself a
-  departure from the no-interim-analysis rule of §8, made by the
-  assistant without a PI request for them; it is not repeated.
+  - mean wall time 177 s per cell, 0 collapse flags and 0 invariant
+    violations for both profiles;
+  - the descriptive reading that "both profiles improve the model by
+    about 6 points", with the caveat that no conclusion could be
+    drawn before the run completes.
+  According to the assistant's session record, the computation was
+  limited to these per-profile counts, means and flags; no contrast,
+  interval, test or hypothesis state was computed or reported. No
+  other profile had a confirmatory cell at that time.
+- **What it corrects.** This is the first *documented* PI exposure to
+  confirmatory numbers. It precedes the 14:22 CET log reading of §1,
+  §2 and §5, and the PI decision to abandon the 35B study (about
+  15:10 CET). The statements that no confirmatory cell had been read
+  by the PI at that decision (§2 and
+  `docs/milestones/e1-35b-go-rule-2026-10-28.md`) are withdrawn. The
+  35B launch rule was therefore withdrawn *after* an exposure to
+  E1-small numbers; its written basis (the re-reading of H14-A) does
+  not use them, but independence from them cannot be shown. The §4
+  statement that the post-hoc analyses are announced "before any
+  analysis" of the cache is also withdrawn: they were announced on
+  2026-10-30 at 20:33 CET (PR #80), after this exposure.
+- **What the means bear on.** Each mean is one term of the H14-A
+  (`p_min`) or H14-B / H14-C (`p_equ`) contrasts. Without the control
+  profiles no contrast can be estimated from them, but they are not
+  uninformative.
+- **Classification and consequence (PI decision).** §8 forbids
+  interim tests and the analysis of partial caches for the
+  confirmatory family. The aggregates were not a test; the PI
+  nevertheless classifies their computation and disclosure as a
+  deviation and applies §9.9 in its strictest form: **all E1-small
+  hypotheses (H14-A, H14-B, H14-C) are reported as exploratory.** The
+  registered decision code (`scripts/analyze_e1_cuda.py`) still runs
+  on the complete cache, unchanged, and its states are reported as
+  exploratory readings, with no joint headline (§7). No confirmatory
+  claim is made from E1-small. The run continues to completion as
+  registered.
+- **Commitments.** No change has been or will be made to the frozen
+  protocol, code, corpus, tuning amendment or registered analysis
+  after the exposure. Until the run is complete, the assistant
+  reports progress only (cell counts, incidents), never scores.
 
 ## §3 Run started before the OSF filing (already declared)
 
@@ -168,21 +187,28 @@ contrast, and a note on Daily Oracle base accuracy (0.185) below chance
 
 ---
 
-**Title:** E1-small: earlier exposure to interim means (addendum)
+**Title:** E1-small: earlier exposure to interim means; all
+hypotheses exploratory
 
 **Amendment summary:**
 
-Correction to the amendment of 2026-10-30. Before the PI read the live
-log at 14:22 CET, the AI agent operating the run had already reported
-to the PI, at 13:12 CET on 2026-10-30, the interim mean change of the
-two profiles that had confirmatory cells (`p_min`, 141 cells, +0.057;
-`p_equ`, 125 cells, +0.064). No control profile had run, so no
-registered contrast, test or state was computed. This exposure
-preceded the PI decision to abandon the 35B study (about 15:10 CET);
-the earlier statement that no confirmatory cell had been read at that
-point is withdrawn. The decision's written basis does not use these
-numbers. No protocol, code, corpus, tuning or analysis choice has been
-or will be made after the exposure; the registered analysis runs on
-the complete cache only.
+Correction and deviation, 2026-10-31. On 2026-10-30 at 13:11 CET the
+PI asked the AI agent operating the run for first results. At 13:12
+CET the agent reported interim means computed on the partial
+confirmatory cache (266 / 1,410 cells): `p_min` +0.057 (141 cells),
+`p_equ` +0.064 (125 cells), with the reading that both profiles
+improve the model by about 6 points. No control profile had run; no
+contrast, test or state was computed. This is the first documented
+exposure; it precedes the log reading at 14:22 CET declared earlier,
+the PI decision to abandon the 35B study (about 15:10 CET), which
+withdrew the launch rule tied to E1-small, and the announcement of
+the post-hoc analyses (20:33 CET). Earlier statements that no
+confirmatory cell had been read before the 35B decision, and that
+the post-hoc analyses preceded any analysis, are withdrawn. The PI
+treats the interim computation as a deviation: **all E1-small
+hypotheses (H14-A, H14-B, H14-C) are reported as exploratory**. The
+frozen protocol, code, corpus, tuning amendment and registered
+analysis are unchanged; the run completes as registered and its
+registered readings are reported as exploratory.
 
 ---
