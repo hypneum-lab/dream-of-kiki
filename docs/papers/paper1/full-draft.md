@@ -101,6 +101,13 @@ Hippocampal replay during NREM, synaptic downscaling, predictive
 restructuring of cortical representations, and creative
 recombination during REM together form a multi-stage
 consolidation pipeline [@diekelmann2010memory; @tononi2014sleep].
+The computational reading of this idea predates the
+consolidation work cited above: Crick and Mitchison [@crick1983function]
+and Hopfield, Feinstein and Palmer [@hopfield1983unlearning]
+proposed that sleep removes spurious attractors by reverse
+learning, and Fachechi, Agliari and Barra [@fachechi2019dreaming]
+gave it a closed form, the dreaming kernel, whose capacity gain we
+replicated independently (hypneum-lab/rescience-nh01).
 Yet existing AI work has integrated only fragments of this
 biology, typically focusing on a single mechanism (e.g., replay
 alone) without a principled account of how mechanisms interact.
