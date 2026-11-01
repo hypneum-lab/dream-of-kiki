@@ -197,18 +197,20 @@ PI asked the AI agent operating the run for first results. At 13:12
 CET the agent reported interim means computed on the partial
 confirmatory cache (266 / 1,410 cells): `p_min` +0.057 (141 cells),
 `p_equ` +0.064 (125 cells), with the reading that both profiles
-improve the model by about 6 points. No control profile had run; no
-contrast, test or state was computed. This is the first documented
-exposure; it precedes the log reading at 14:22 CET declared earlier,
-the PI decision to abandon the 35B study (about 15:10 CET), which
-withdrew the launch rule tied to E1-small, and the announcement of
-the post-hoc analyses (20:33 CET). Earlier statements that no
-confirmatory cell had been read before the 35B decision, and that
-the post-hoc analyses preceded any analysis, are withdrawn. The PI
-treats the interim computation as a deviation: **all E1-small
-hypotheses (H14-A, H14-B, H14-C) are reported as exploratory**. The
-frozen protocol, code, corpus, tuning amendment and registered
-analysis are unchanged; the run completes as registered and its
-registered readings are reported as exploratory.
+improve the model by about 6 points. No control profile had run; per
+the agent's session record, no contrast, test or state was computed.
+This is the first documented exposure; it precedes the log reading at
+14:22 CET declared earlier, the PI decision to abandon the 35B study
+(about 15:10 CET), which withdrew the launch rule tied to E1-small,
+and the announcement of the post-hoc analyses (20:33 CET). Earlier
+statements that no confirmatory cell had been read before the 35B
+decision (amendment of 2026-10-30, §2; 35B rule note) and that the
+post-hoc analyses preceded any analysis (§4) are withdrawn. Until the
+run is complete, only progress (cell counts, incidents) is reported,
+never scores. The PI treats the interim computation as a deviation:
+**all E1-small hypotheses (H14-A, H14-B, H14-C) are reported as
+exploratory**. The frozen protocol, code, corpus, tuning amendment and
+registered analysis are unchanged; the run completes as registered and
+its registered readings are reported as exploratory.
 
 ---
