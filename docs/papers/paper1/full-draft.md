@@ -106,8 +106,19 @@ consolidation work cited above: Crick and Mitchison [@crick1983function]
 and Hopfield, Feinstein and Palmer [@hopfield1983unlearning]
 proposed that sleep removes spurious attractors by reverse
 learning, and Fachechi, Agliari and Barra [@fachechi2019dreaming]
-gave it a closed form, the dreaming kernel, whose capacity gain we
-replicated independently (hypneum-lab/rescience-nh01).
+gave it a closed form, the dreaming kernel. Our replication of its
+capacity gain (hypneum-lab/rescience-nh01, submitted to ReScience C)
+is partial. It sets the self-coupling to zero (J_ii = 0), the convention
+of the same group's later sequential-dynamics algorithms (Agliari et
+al., *Neural Networks* 173, 106174, 2024, Alg. 1; Agliari, Alemanno,
+Aquaro and Fachechi, *Neural Networks* 177, 106389, 2024, Alg. 2;
+Aquaro, PhD thesis, Sapienza, 2025, Alg. 4 and 7), and under it the
+dream/Hebb capacity ratio at t = 10 is 3.86 (3.90 on fresh seeds). With
+the diagonal kept in both arms, as in the local field printed in the
+2019 article, a post-freeze preregistered ablation gives 1.90
+[1.85, 1.96], a value under which the replication would be neither
+confirmed nor refuted; both conventions are reported side by side
+(ReScience/submissions#147).
 Yet existing AI work has integrated only fragments of this
 biology, typically focusing on a single mechanism (e.g., replay
 alone) without a principled account of how mechanisms interact.
