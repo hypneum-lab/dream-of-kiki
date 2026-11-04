@@ -94,8 +94,9 @@ proposals** are beginning to close that gap — *Wake-Sleep
 Consolidated Learning* [@alfarano2024wakesleep] is, to our
 knowledge, the closest published NREM/REM dual-phase analog, and
 the contemporaneous *Language Models Need Sleep* proposal couples
-RL-based upward distillation with intentional forgetting
-[@iclr2026lmsleep]. In continual LLM fine-tuning, replaying the
+an upward distillation stage (on-policy distillation combined with
+RL-based imitation learning) with an RL-driven "Dreaming" phase
+that rehearses synthetic data [@iclr2026lmsleep]. In continual LLM fine-tuning, replaying the
 current model's own outputs on past prompts reduces forgetting
 relative to tuned vanilla replay [@chen2026onpolicyreplay], and
 self-distillation has been proposed as a replay proxy

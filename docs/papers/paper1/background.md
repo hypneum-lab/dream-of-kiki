@@ -54,7 +54,8 @@ shrink_f gives factor², not factor) — a property that constrains
 canonical ordering choices.
 A 2026 sleep-inspired replay model shows that a single
 unsupervised sleep phase scheduled after *several* sequential
-tasks restores all of them, with most synapses weakened and a
+tasks partially restores performance on all of them, with most
+synapses weakened and a
 minority strengthened [@bazhenov2026notjustafterone] — a
 computational instance of the replay-plus-downscale coupling
 that Pillars A and B jointly describe.

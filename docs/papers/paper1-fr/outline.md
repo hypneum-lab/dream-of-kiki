@@ -192,7 +192,7 @@ Citations clés à intégrer :
 - Tononi G, Cirelli C (2014). SHY.
 - Friston K (2010). FEP.
 - Hobson JA (2009). Rêve en REM.
-- van de Ven GM, Tuytelaars T, Tolias AS (2020). Replay inspiré du
+- van de Ven GM, Siegelmann HT, Tolias AS (2020). Replay inspiré du
   cerveau.
 - McClelland JL et al (1995). Systèmes d'apprentissage
   complémentaires.

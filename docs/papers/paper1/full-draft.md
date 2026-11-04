@@ -230,7 +230,8 @@ shrink_f gives factor², not factor) — a property that constrains
 canonical ordering choices.
 A 2026 sleep-inspired replay model shows that a single
 unsupervised sleep phase scheduled after *several* sequential
-tasks restores all of them, with most synapses weakened and a
+tasks partially restores performance on all of them, with most
+synapses weakened and a
 minority strengthened [@bazhenov2026notjustafterone] — a
 computational instance of the replay-plus-downscale coupling
 that Pillars A and B jointly describe.
@@ -1064,7 +1065,7 @@ claim empirical parity.
 | @alfarano2024wakesleep (WSCL, Sorrenti et al. 2023) | Complementary Learning System wake/sleep with explicit NREM consolidation and REM dreaming; reports positive REM forward-transfer | We axiomatise the phase operations substrate-agnostically (DR-0..DR-4 + Conformance Criterion + DR-3) rather than committing to a single wake-sleep architecture; empirical ablation deferred to Paper 2 |
 | @robinson2022continual (NREM/REM + synaptic downscaling) | Three mammalian sleep mechanisms — veridical NREM replay, generative REM replay, synaptic downscaling — jointly reduce catastrophic forgetting | Our four typed operations (replay, downscale, restructure, recombine) generalise this triplet as composable primitives under an executable Conformance Criterion; recombine is a semantically independent generator absent from the triplet |
 | @zahn2026discoverydreaming (cross-domain recombination, 2026, arXiv v2) | Reports a capacity-gated cross-domain effect in a LoRA pipeline (Llama-3.1-8B, rank 256 : +5.64 pp, 5 of 5 seeds ; null at rank 128, inconclusive at 70B/72B) and embedding-distance evidence for surfaced bridges in a symbolic engine ; within-domain rehearsal is reported null in a matched rank-128 condition. v2 retracts the earlier judged-accuracy headline and single-seed gains | Preliminary, single-group support for `recombine` as a distinct generator, and a scope marker for its predicted effect : cross-domain transfer rather than within-domain retention (the Paper 2 DR-4 ablation ladder uses single-domain class-incremental streams) |
-| @dey2026sharp (SHARP) ; @bazhenov2026notjustafterone | Offline phases that replay traces at high speed and merge them into higher-level representations ; a single sleep phase after several sequential tasks that restores all of them through mostly-weakening plasticity | Concrete instances of `replay` followed by a hierarchy-modifying `restructure` (the DR-2-admissible order) and of the `replay` + `downscale` coupling, respectively |
+| @dey2026sharp (SHARP) ; @bazhenov2026notjustafterone | Offline phases that replay traces at high speed and merge them into higher-level representations ; a single sleep phase after several sequential tasks that partially restores all of them through mostly-weakening plasticity | Concrete instances of `replay` followed by a hierarchy-modifying `restructure` (the DR-2-admissible order) and of the `replay` + `downscale` coupling, respectively |
 | @zhang2026silentreplay (replay in silent degrees of freedom) | Replay written into synapses that the current input leaves silent ; matches offline rehearsal on split-MNIST with no offline phase | Challenges the assumption that consolidation needs a temporally separate phase ; such a substrate would need dream-episode boundaries that are logical (DR-0 log) rather than temporal — an open conformance question, not addressed here |
 
 Our distinguishing features relative to the above : **(a)** a

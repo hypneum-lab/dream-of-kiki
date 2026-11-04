@@ -33,7 +33,7 @@ méta-analyses de consolidation mnésique liée au sommeil [eLife
   Jonckheere-Terpstra. *Statut cycle 1* : deux groupes
   (P_min ↔ P_equ) uniquement. *Plancher de taille d'effet pour
   le bras P_min* : la méta-analyse sur la restriction de sommeil
-  [Javadi et al. 2024 sleep restriction] rapporte g = 0,29 [0,13 ;
+  [Crowley et al. 2024 sleep restriction] rapporte g = 0,29 [0,13 ;
   0,44] sans biais de publication détecté comme magnitude
   attendue du décrément de substrat dégradé.
 - **H4 — Budget énergétique** : `mean(energy_dream / energy_awake)

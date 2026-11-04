@@ -102,7 +102,7 @@ requiert le câblage réel de P_max (cycle 2).
 | Sorrenti et al. 2023 (WSCL) | Cycle veille/sommeil CLS avec phases NREM/REM explicites; transfert direct REM positif | Nous axiomatisons les opérations de phase de façon agnostique au substrat (DR-0..DR-4 + Conformance Criterion) plutôt que de figer une architecture veille-sommeil; comparaison empirique reportée au Paper 2 |
 | Robinson et al. 2022 | Replay NREM + replay génératif REM + downscaling synaptique réduisent conjointement l'oubli catastrophique | Nos quatre opérations typées généralisent ce triplet en primitives composables sous un Conformance Criterion exécutable; recombine est un générateur sémantiquement indépendant absent de ce triplet |
 | Zahn, Evans & Eagleman 2026 (arXiv v2) [@zahn2026discoverydreaming] | Effet de recombinaison inter-domaines conditionné par la capacité dans un pipeline LoRA de rang 256 (8B) et indices de distance d'embedding dans un moteur symbolique ; répétition intra-domaine rapportée nulle dans une condition appariée de rang 128 ; la v2 rétracte son résultat phare d'exactitude jugée et ses gains à graine unique | Soutien préliminaire, d'un seul groupe, à `recombine` comme générateur distinct ; son effet attendu est le transfert inter-domaines, pas la rétention intra-domaine |
-| Dey et al. 2026 (SHARP) [@dey2026sharp] ; Bazhenov et al. 2026 [@bazhenov2026notjustafterone] | Replay accéléré fusionné en représentations de plus haut niveau ; une phase de sommeil après plusieurs tâches les restaure toutes | Instances de `replay` → `restructure` (ordre admissible sous DR-2) et du couplage `replay` + `downscale` |
+| Dey et al. 2026 (SHARP) [@dey2026sharp] ; Bazhenov et al. 2026 [@bazhenov2026notjustafterone] | Replay accéléré fusionné en représentations de plus haut niveau ; une phase de sommeil après plusieurs tâches les restaure toutes en partie | Instances de `replay` → `restructure` (ordre admissible sous DR-2) et du couplage `replay` + `downscale` |
 | Zhang, Zhang & Xu 2026 [@zhang2026silentreplay] | Replay dans les synapses silencieuses, sans phase hors ligne | Question ouverte : conformité avec des frontières d'épisode de rêve logiques (journal DR-0) plutôt que temporelles |
 
 Nos traits distinctifs : **(a)** framework formel unifié couvrant
@@ -182,7 +182,7 @@ Au niveau mécanistique, seuls ~10–30 % des sharp-wave ripples du
 sommeil portent un contenu de réactivation détectable [Annu.
 Rev. 2025 replay], une sélectivité que DR-2 (downscaling) et le
 récit plus large piloté par la réactivation ne doivent pas
-surclamer. Schreiner et al. [Schreiner et al. 2024 J. Neurosci.]
+surclamer. Siefert et al. [Siefert et al. 2024 J. Neurosci.]
 montrent en outre que la réactivation mnésique ciblée n'agit
 **pas** holistiquement sur la mémoire des objets pendant le
 sommeil, alimentant le débat encore ouvert sur quelles

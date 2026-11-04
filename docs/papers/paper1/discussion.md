@@ -96,7 +96,7 @@ cycle 1. Real H2 evaluation requires P_max real wiring (cycle 2).
 | Sorrenti et al. 2023 (WSCL) | CLS wake/sleep with explicit NREM/REM phases; reports positive REM forward-transfer | We axiomatise the phase operations substrate-agnostically (DR-0..DR-4 + Conformance Criterion) instead of fixing one wake-sleep architecture; empirical comparison deferred to Paper 2 |
 | Robinson et al. 2022 | NREM replay + generative REM replay + synaptic downscaling jointly reduce catastrophic forgetting | Our four typed operations generalise this triplet as composable primitives under an executable Conformance Criterion; recombine is a semantically independent generator absent from it |
 | Zahn, Evans & Eagleman 2026 (arXiv v2) [@zahn2026discoverydreaming] | Capacity-gated cross-domain recombinatory-replay effect in a rank-256 LoRA pipeline (8B) and embedding-distance evidence in a symbolic engine ; within-domain rehearsal reported null in a matched rank-128 condition ; v2 retracts its earlier judged-accuracy headline and single-seed gains | Preliminary, single-group support for `recombine` as a distinct generator ; its predicted effect is cross-domain transfer, not within-domain retention |
-| Dey et al. 2026 (SHARP) [@dey2026sharp] ; Bazhenov et al. 2026 [@bazhenov2026notjustafterone] | Accelerated replay merged into higher-level representations ; one sleep phase after several tasks restores all of them | Instances of `replay` → `restructure` (DR-2-admissible order) and of the `replay` + `downscale` coupling |
+| Dey et al. 2026 (SHARP) [@dey2026sharp] ; Bazhenov et al. 2026 [@bazhenov2026notjustafterone] | Accelerated replay merged into higher-level representations ; one sleep phase after several tasks partially restores all of them | Instances of `replay` → `restructure` (DR-2-admissible order) and of the `replay` + `downscale` coupling |
 | Zhang, Zhang & Xu 2026 [@zhang2026silentreplay] | Replay into silent synapses, no offline phase | Open question : conformance with logical (DR-0 log) rather than temporal dream-episode boundaries |
 
 Our distinguishing features : **(a)** unified formal framework
@@ -170,7 +170,7 @@ framework's finite-budget invariant K1.
 At the mechanism level, only ~10–30 % of sleep sharp-wave ripples
 carry detectable replay content [@annurev2025replay], a
 selectivity that DR-2 (downscaling) and the wider replay-driven
-narrative must not over-claim. Schreiner et al. [@schreiner2024jneurosci]
+narrative must not over-claim. Siefert et al. [@schreiner2024jneurosci]
 further show that targeted memory reactivation does **not** act
 holistically on object memory during sleep, fuelling the still-open
 debate about which memory features are sleep-sensitive. The CLAS

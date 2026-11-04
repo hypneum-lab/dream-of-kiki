@@ -69,7 +69,7 @@ Three pre-registered hypotheses :
   (α/3 = 0.0167) `0.5000` → reject_h0 = `False`.
 
 - **H3** : observed |Hedges' g| of `(retention[P_min] vs
-  retention[baseline])` ≥ Javadi 2024 lower CI 0.13, sign
+  retention[baseline])` ≥ Crowley et al. 2024 lower CI 0.13, sign
   decrement (g ≤ -0.13). Observed `g_h3 = 0.0000` ;
   decrement-side rejection = `False`.
 
@@ -91,7 +91,7 @@ buffer feeding the optimizer) is the first follow-up.
 
 Per N = 5 / arm, this pilot is **exploratory** for absolute g
 magnitudes (minimum detectable g at 80 % power ≈ 1.4). Crossing
-or undershooting the Hu / Javadi lower CI in this pilot is treated
+or undershooting the Hu / Crowley lower CI in this pilot is treated
 per pre-reg §4 as a **scheduling signal** for a confirmatory
 N ≥ 30 follow-up, not as final empirical confirmation /
 falsification.
@@ -236,7 +236,7 @@ commit pinned in milestone) :
 | Hypothesis | Direction | Anchor | Observed | Reject H0 |
 |---|---|---|---|---|
 | H1' P_equ vs baseline | g ≥ 0.21 | Hu 2020 lower CI | g_h1' = 0.0 | False |
-| H3' P_min vs baseline | g ≤ −0.13 | Javadi 2024 lower CI | g_h3' = 0.0 | False |
+| H3' P_min vs baseline | g ≤ −0.13 | Crowley et al. 2024 lower CI | g_h3' = 0.0 | False |
 | H_DR4' Jonckheere | mono(P_min, P_equ, P_max) | DR-4 | True (degenerate, equal means) | False |
 | H_NEW (amended) | any non-zero diff | infrastructure threshold 1e-6 | max\|Δ\| = 0.0 | False (no effect) |
 

@@ -60,7 +60,7 @@ shrink_f donne facteur², pas facteur) — propriété qui contraint
 les choix d'ordonnancement canonique.
 Un modèle de replay inspiré du sommeil publié en 2026 montre
 qu'une unique phase de sommeil non supervisée, programmée après
-*plusieurs* tâches séquentielles, les restaure toutes, la plupart
+*plusieurs* tâches séquentielles, les restaure toutes en partie, la plupart
 des synapses étant affaiblies et une minorité renforcée
 [Bazhenov et al. 2026] — une instance computationnelle du couplage
 replay-plus-downscale que décrivent conjointement les piliers A

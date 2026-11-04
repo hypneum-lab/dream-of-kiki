@@ -75,7 +75,7 @@ Trois hypothèses pré-enregistrées :
 
 - **H3** : |Hedges' g| observé de `(rétention[P_min] vs
   rétention[baseline])` ≥ borne inférieure de l'IC 95 %
-  Javadi 2024 (0,13), signe décrément (g ≤ -0,13). Observé
+  Crowley et al. 2024 (0,13), signe décrément (g ≤ -0,13). Observé
   `g_h3 = 0.0000` ; rejet côté décrément = `False`.
 
 - **H_DR4** : ordre monotone `rétention moyenne[P_max] ≥
@@ -98,7 +98,7 @@ l'optimiseur) constitue le premier suivi.
 À N = 5 / bras, ce pilote est **exploratoire** pour les
 magnitudes absolues de g (g minimal détectable à 80 % de
 puissance ≈ 1,4). Franchir ou rester sous la borne inférieure
-de l'IC Hu / Javadi dans ce pilote est traité, conformément au
+de l'IC Hu / Crowley dans ce pilote est traité, conformément au
 pré-enregistrement §4, comme un **signal d'ordonnancement**
 pour un suivi confirmatoire N ≥ 30, et non comme une
 confirmation / falsification empirique finale.
@@ -257,7 +257,7 @@ commit épinglé dans le jalon) :
 | Hypothèse | Direction | Ancrage | Observé | Rejet H0 |
 |---|---|---|---|---|
 | H1' P_equ vs baseline | g ≥ 0,21 | Hu 2020 borne inf CI | g_h1' = 0,0 | Faux |
-| H3' P_min vs baseline | g ≤ −0,13 | Javadi 2024 borne inf CI | g_h3' = 0,0 | Faux |
+| H3' P_min vs baseline | g ≤ −0,13 | Crowley et al. 2024 borne inf CI | g_h3' = 0,0 | Faux |
 | H_DR4' Jonckheere | mono(P_min, P_equ, P_max) | DR-4 | Vrai (dégénéré, moyennes égales) | Faux |
 | H_NEW (amendé) | toute différence non-nulle | seuil infrastructure 1e-6 | max\|Δ\| = 0,0 | Faux (aucun effet) |
 

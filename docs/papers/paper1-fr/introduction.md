@@ -102,8 +102,10 @@ dans la théorie de la consolidation [Behrouz et al. 2024]. Les
 cet écart — *Wake-Sleep Consolidated Learning* [Alfarano et al.
 2024] est, à notre connaissance, l'analogue dual-phase NREM/REM
 publié le plus proche, et la proposition contemporaine *Language
-Models Need Sleep* couple une distillation ascendante par RL avec
-un oubli intentionnel [Behrouz et al. 2026]. En affinage continu
+Models Need Sleep* couple une étape de distillation ascendante
+(distillation on-policy combinée à un apprentissage par imitation
+par RL) avec une phase de « rêve » pilotée par RL qui répète des
+données synthétiques [Behrouz et al. 2026]. En affinage continu
 de LLM, rejouer les propres sorties du modèle courant sur des
 invites passées réduit l'oubli par rapport à un replay classique
 réglé [Chen et al. 2026], et l'auto-distillation a été proposée
