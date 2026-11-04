@@ -45,6 +45,10 @@ Paper 2 inherits Paper 1 §3's four-pillar mapping :
   the S3 topology guard].
 
 Paper 2 does not re-argue these mappings. It consumes them.
+Paper 1 §2.1 also traces the computational reading of sleep as
+reverse learning, from Crick and Mitchison and Hopfield et al. to
+the dreaming kernel of Fachechi et al. [@crick1983function;
+@hopfield1983unlearning; @fachechi2019dreaming].
 
 ## 3.3 DR-3 Conformance Criterion, briefly
 

@@ -108,6 +108,10 @@ proposed that sleep removes spurious attractors by reverse
 learning, and Fachechi, Agliari and Barra [@fachechi2019dreaming]
 gave it a closed form, the dreaming kernel, whose capacity gain we
 replicated independently (hypneum-lab/rescience-nh01).
+The same group reports that off-line sleeping reduces the dataset
+size needed to generalise [@agliari2024hebbian], and a partially
+annealed Hopfield model reaches the maximal storage α_c = 1
+through pattern decorrelation [@albanese2026partial].
 Yet existing AI work has integrated only fragments of this
 biology, typically focusing on a single mechanism (e.g., replay
 alone) without a principled account of how mechanisms interact.
@@ -228,6 +232,10 @@ operation : multiplicative shrinkage of weights by a factor in
 downscale is **commutative but not idempotent** (shrink_f ∘
 shrink_f gives factor², not factor) — a property that constrains
 canonical ordering choices.
+See also [@agliari2024regularization], who show that in
+Hopfield-like networks the dreaming (reiterated unlearning)
+kernel is the optimum of a regularised loss, its extent being set
+by the regularisation hyperparameter and the training time.
 A 2026 sleep-inspired replay model shows that a single
 unsupervised sleep phase scheduled after *several* sequential
 tasks partially restores performance on all of them, with most
@@ -254,6 +262,9 @@ consistent with distinct operators per stage rather than a single
 `recombine` operation : sample latents from the δ snapshot,
 apply a VAE-light or interpolation kernel, emit new latent
 samples on canal 2.
+See also [@agliari2026networks], where layered Hebbian networks
+perform pattern disentanglement, returning the constituents of a
+mixture presented as input.
 
 ### 3.4 Pillar D — Friston Free Energy Principle
 
@@ -938,7 +949,9 @@ input-level permutations do not stress the representational
 geometry that `restructure` is designed to address. The
 confirmatory H2 decision is re-scoped to Paper 2 and will include
 an EWC-λ sweep (and alternative `restructure` proxies) as a
-sensitivity analysis.
+sensitivity analysis. For the relation between unlearning,
+regularisation and early stopping in Hopfield-like networks, see
+[@agliari2024regularization].
 
 ### 7.6 Summary
 
@@ -1043,7 +1056,7 @@ claim empirical parity.
 | Prior work | Contribution | dreamOfkiki addition |
 |-----------|--------------|----------------------|
 | @vandeven2020brain (brain-inspired replay) | Generative replay for CL | Replay is one of four composed operations, with explicit budget + non-commutativity with downscale, restructure, recombine |
-| @kirkpatrick2017overcoming (EWC) | Fisher-weighted regularization protecting important weights | Complementary rather than subsumed : EWC realises a *weighting scheme* within the `downscale` operation class, not the same primitive as SHY multiplicative downscaling |
+| @kirkpatrick2017overcoming (EWC) ; see also @agliari2024regularization (unlearning as regularisation) | Fisher-weighted regularization protecting important weights | Complementary rather than subsumed : EWC realises a *weighting scheme* within the `downscale` operation class, not the same primitive as SHY multiplicative downscaling |
 | @tononi2014sleep (SHY) | Theoretical synaptic-homeostasis claim | Operationalised as `downscale` operation with empirically verified commutative-but-non-idempotent property (§3.2) |
 | @friston2010free (FEP) | Free Energy Principle | Operationalised as `restructure` operation with S3 topology guard ; tight interface with active-inference accounts (see below) |
 | @hobson2009rem / @solms2021revising | REM creative dreaming | Operationalised as `recombine` with VAE-light / interpolation kernel and I3 drift bound |
@@ -1064,7 +1077,7 @@ claim empirical parity.
 | @liu2024hybrid (Advancing brain-inspired computing with hybrid neural networks, National Science Review 2024) | Survey arguing hybrid ANN/SNN systems are the path to brain-inspired computing | Canonical hybrid-neural-network anchor for our cross-substrate claim : our cycle-1 validation across an MLX dense substrate and a LIF spiking substrate is precisely a hybrid-neural-network configuration, and the executable Conformance Criterion supplies the contract such hybrids currently lack |
 | @alfarano2024wakesleep (WSCL, Sorrenti et al. 2023) | Complementary Learning System wake/sleep with explicit NREM consolidation and REM dreaming; reports positive REM forward-transfer | We axiomatise the phase operations substrate-agnostically (DR-0..DR-4 + Conformance Criterion + DR-3) rather than committing to a single wake-sleep architecture; empirical ablation deferred to Paper 2 |
 | @robinson2022continual (NREM/REM + synaptic downscaling) | Three mammalian sleep mechanisms — veridical NREM replay, generative REM replay, synaptic downscaling — jointly reduce catastrophic forgetting | Our four typed operations (replay, downscale, restructure, recombine) generalise this triplet as composable primitives under an executable Conformance Criterion; recombine is a semantically independent generator absent from the triplet |
-| @zahn2026discoverydreaming (cross-domain recombination, 2026, arXiv v2) | Reports a capacity-gated cross-domain effect in a LoRA pipeline (Llama-3.1-8B, rank 256 : +5.64 pp, 5 of 5 seeds ; null at rank 128, inconclusive at 70B/72B) and embedding-distance evidence for surfaced bridges in a symbolic engine ; within-domain rehearsal is reported null in a matched rank-128 condition. v2 retracts the earlier judged-accuracy headline and single-seed gains | Preliminary, single-group support for `recombine` as a distinct generator, and a scope marker for its predicted effect : cross-domain transfer rather than within-domain retention (the Paper 2 DR-4 ablation ladder uses single-domain class-incremental streams) |
+| @zahn2026discoverydreaming (cross-domain recombination, 2026, arXiv v2) ; see also @agliari2026networks ; @agliari2026denseautohetero (pattern disentanglement of mixtures) | Reports a capacity-gated cross-domain effect in a LoRA pipeline (Llama-3.1-8B, rank 256 : +5.64 pp, 5 of 5 seeds ; null at rank 128, inconclusive at 70B/72B) and embedding-distance evidence for surfaced bridges in a symbolic engine ; within-domain rehearsal is reported null in a matched rank-128 condition. v2 retracts the earlier judged-accuracy headline and single-seed gains | Preliminary, single-group support for `recombine` as a distinct generator, and a scope marker for its predicted effect : cross-domain transfer rather than within-domain retention (the Paper 2 DR-4 ablation ladder uses single-domain class-incremental streams) |
 | @dey2026sharp (SHARP) ; @bazhenov2026notjustafterone | Offline phases that replay traces at high speed and merge them into higher-level representations ; a single sleep phase after several sequential tasks that partially restores all of them through mostly-weakening plasticity | Concrete instances of `replay` followed by a hierarchy-modifying `restructure` (the DR-2-admissible order) and of the `replay` + `downscale` coupling, respectively |
 | @zhang2026silentreplay (replay in silent degrees of freedom) | Replay written into synapses that the current input leaves silent ; matches offline rehearsal on split-MNIST with no offline phase | Challenges the assumption that consolidation needs a temporally separate phase ; such a substrate would need dream-episode boundaries that are logical (DR-0 log) rather than temporal — an open conformance question, not addressed here |
 

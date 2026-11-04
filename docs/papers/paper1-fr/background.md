@@ -58,6 +58,11 @@ dans notre analyse des paires d'opérations (voir
 downscale est **commutative mais non idempotente** (shrink_f ∘
 shrink_f donne facteur², pas facteur) — propriété qui contraint
 les choix d'ordonnancement canonique.
+Voir aussi [@agliari2024regularization], qui montrent que, dans des
+réseaux de type Hopfield, le noyau de rêve (désapprentissage
+réitéré) est l'optimum d'une perte régularisée, son ampleur étant
+fixée par l'hyperparamètre de régularisation et le temps
+d'entraînement.
 Un modèle de replay inspiré du sommeil publié en 2026 montre
 qu'une unique phase de sommeil non supervisée, programmée après
 *plusieurs* tâches séquentielles, les restaure toutes en partie, la plupart
@@ -98,6 +103,9 @@ framework, ceci se projette sur l'opération `recombine` :
 échantillonner les latents du snapshot δ, appliquer un VAE allégé
 ou un noyau d'interpolation, émettre de nouveaux échantillons
 latents sur le canal 2.
+Voir aussi [@agliari2026networks], où des réseaux hebbiens en
+couches réalisent un désenchevêtrement : ils restituent les
+constituants d'un mélange présenté en entrée.
 
 ## 3.4 Pilier D — Principe d'Énergie Libre de Friston
 

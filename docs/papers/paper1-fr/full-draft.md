@@ -225,6 +225,11 @@ dans notre analyse des paires d'opérations (voir
 downscale est **commutative mais non idempotente** (shrink_f ∘
 shrink_f donne facteur², pas facteur) — propriété qui contraint
 les choix d'ordonnancement canonique.
+Voir aussi [@agliari2024regularization], qui montrent que, dans des
+réseaux de type Hopfield, le noyau de rêve (désapprentissage
+réitéré) est l'optimum d'une perte régularisée, son ampleur étant
+fixée par l'hyperparamètre de régularisation et le temps
+d'entraînement.
 Un modèle de replay inspiré du sommeil publié en 2026 montre
 qu'une unique phase de sommeil non supervisée, programmée après
 *plusieurs* tâches séquentielles, les restaure toutes en partie, la plupart
@@ -253,6 +258,9 @@ d'« intégration ». Dans notre framework, ceci se projette sur l'opération
 `recombine` : échantillonner les latents du snapshot δ, appliquer
 un VAE allégé ou un noyau d'interpolation, émettre de nouveaux
 échantillons latents sur le canal 2.
+Voir aussi [@agliari2026networks], où des réseaux hebbiens en
+couches réalisent un désenchevêtrement : ils restituent les
+constituants d'un mélange présenté en entrée.
 
 ### 3.4 Pilier D — Principe d'Énergie Libre de Friston
 
@@ -1004,7 +1012,7 @@ revendiquer de parité empirique.
 | Travail antérieur | Contribution | Apport dreamOfkiki |
 |-----------|--------------|----------------------|
 | @vandeven2020brain (replay inspiré du cerveau) | Replay génératif pour CL | Replay est l'une des quatre opérations composées, avec budget explicite + non-commutativité avec downscale, restructure, recombine |
-| @kirkpatrick2017overcoming (EWC) | Régularisation pondérée par Fisher protégeant les poids importants | Complémentaire plutôt que subsumée : EWC réalise un *schéma de pondération* au sein de la classe d'opérations `downscale`, pas la même primitive que la régulation à la baisse multiplicative SHY |
+| @kirkpatrick2017overcoming (EWC) ; voir aussi @agliari2024regularization (désapprentissage comme régularisation) | Régularisation pondérée par Fisher protégeant les poids importants | Complémentaire plutôt que subsumée : EWC réalise un *schéma de pondération* au sein de la classe d'opérations `downscale`, pas la même primitive que la régulation à la baisse multiplicative SHY |
 | @tononi2014sleep (SHY) | Thèse théorique de l'homéostasie synaptique | Opérationnalisée comme opération `downscale` à propriété empiriquement vérifiée commutative-mais-non-idempotente (§3.2) |
 | @friston2010free (FEP) | Principe d'Énergie Libre | Opérationnalisé comme opération `restructure` avec garde topologique S3 ; interface étroite avec les comptes rendus d'inférence active (voir ci-dessous) |
 | @hobson2009rem / @solms2021revising | Rêve créatif REM | Opérationnalisé comme `recombine` avec noyau VAE-allégé / d'interpolation et borne de dérive I3 |
@@ -1017,7 +1025,7 @@ revendiquer de parité empirique.
 | Famille JEPA [LeCun 2022 « A Path Towards Autonomous Machine Intelligence » ; Assran et al. 2023 I-JEPA ; Bardes et al. 2024 V-JEPA ; AMI Labs 2026] | Entraînement de modèles du monde prédictifs auto-supervisés sur des latents par embeddings joints ; « modèles du monde qui apprennent du réel, pas du langage » | Candidat substrat complémentaire : JEPA réalise la primitive `restructure` (Pilier D / FEP) à grande échelle sur des représentations latentes, sans contrepartie native explicite de `replay` ou `downscale`. Un parcours de conformité sur un substrat de classe JEPA (p. ex. encodeur vidéo V-JEPA avec ajout d'un tampon épisodique β et d'un downscale homéostatique) relève explicitement du cycle 2 ; le motif de portabilité inter-substrats démontré ici sur MLX + E-SNN est destiné à généraliser vers une telle configuration. |
 | @alfarano2024wakesleep (WSCL, Sorrenti et al. 2023) | Système d'apprentissage complémentaire veille/sommeil avec consolidation NREM explicite et rêve REM ; transfert direct REM positif | Nous axiomatisons les opérations de phase de façon agnostique au substrat (DR-0..DR-4 + Conformance Criterion + DR-3) plutôt que de figer une architecture veille-sommeil ; ablation empirique reportée au Paper 2 |
 | @robinson2022continual (NREM/REM + downscaling synaptique) | Trois mécanismes de sommeil mammifère — replay NREM véridique, replay génératif REM, downscaling synaptique — réduisent conjointement l'oubli catastrophique | Nos quatre opérations typées (replay, downscale, restructure, recombine) généralisent ce triplet en primitives composables sous un Conformance Criterion exécutable ; recombine est un générateur sémantiquement indépendant absent du triplet |
-| @zahn2026discoverydreaming (recombinaison inter-domaines, 2026, arXiv v2) | Rapporte un effet inter-domaines conditionné par la capacité dans un pipeline LoRA (Llama-3.1-8B, rang 256 : +5,64 pp, 5 graines sur 5 ; nul au rang 128, non concluant à 70B/72B) et des indices de distance d'embedding pour des ponts mis au jour par un moteur symbolique ; la répétition intra-domaine est rapportée nulle dans une condition appariée de rang 128. La v2 rétracte le résultat phare d'exactitude jugée et les gains à graine unique de la v1 | Soutien préliminaire, d'un seul groupe, à `recombine` comme générateur distinct, et marqueur de portée de son effet attendu : transfert inter-domaines plutôt que rétention intra-domaine (l'échelle d'ablation DR-4 du Paper 2 utilise des flux class-incrémentaux mono-domaine) |
+| @zahn2026discoverydreaming (recombinaison inter-domaines, 2026, arXiv v2) ; voir aussi @agliari2026networks ; @agliari2026denseautohetero (désenchevêtrement de mélanges) | Rapporte un effet inter-domaines conditionné par la capacité dans un pipeline LoRA (Llama-3.1-8B, rang 256 : +5,64 pp, 5 graines sur 5 ; nul au rang 128, non concluant à 70B/72B) et des indices de distance d'embedding pour des ponts mis au jour par un moteur symbolique ; la répétition intra-domaine est rapportée nulle dans une condition appariée de rang 128. La v2 rétracte le résultat phare d'exactitude jugée et les gains à graine unique de la v1 | Soutien préliminaire, d'un seul groupe, à `recombine` comme générateur distinct, et marqueur de portée de son effet attendu : transfert inter-domaines plutôt que rétention intra-domaine (l'échelle d'ablation DR-4 du Paper 2 utilise des flux class-incrémentaux mono-domaine) |
 | @dey2026sharp (SHARP) ; @bazhenov2026notjustafterone | Phases hors ligne rejouant des traces à haute vitesse et les fusionnant en représentations de plus haut niveau ; une unique phase de sommeil après plusieurs tâches séquentielles qui les restaure toutes en partie par une plasticité majoritairement affaiblissante | Instances concrètes de `replay` suivi d'un `restructure` modifiant la hiérarchie (l'ordre admissible sous DR-2) et du couplage `replay` + `downscale`, respectivement |
 | @zhang2026silentreplay (replay dans les degrés de liberté silencieux) | Replay écrit dans les synapses que l'entrée courante laisse silencieuses ; égale la répétition hors ligne sur split-MNIST sans phase hors ligne | Remet en cause l'hypothèse qu'une phase temporellement séparée est nécessaire ; un tel substrat exigerait des frontières d'épisode de rêve logiques (journal DR-0) plutôt que temporelles — question de conformité ouverte, non traitée ici |
 

@@ -50,6 +50,10 @@ L'Article 2 hérite du mapping quatre-piliers de l'Article 1
   la garde topologie S3].
 
 L'Article 2 ne ré-argumente pas ces mappings. Il les consomme.
+L'Article 1 §2.1 retrace aussi la lecture computationnelle du
+sommeil comme désapprentissage, de Crick et Mitchison et Hopfield
+et al. au noyau de rêve de Fachechi et al. [@crick1983function;
+@hopfield1983unlearning; @fachechi2019dreaming].
 
 ## 3.3 Critère de Conformité DR-3, brièvement
 

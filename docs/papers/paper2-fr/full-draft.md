@@ -103,7 +103,11 @@ profils, DR-0..DR-4). L'Article 2 hérite du mapping
 quatre-piliers (Walker-replay [@walker2004sleep;
 @stickgold2005sleep], Tononi-downscale [@tononi2014sleep],
 Hobson-recombine [@hobson2009rem; @solms2021revising],
-Friston-restructure [@friston2010free]).
+Friston-restructure [@friston2010free]). L'Article 1 §2.1
+retrace aussi la lecture computationnelle du sommeil comme
+désapprentissage, de Crick et Mitchison et Hopfield et al. au
+noyau de rêve de Fachechi et al. [@crick1983function;
+@hopfield1983unlearning; @fachechi2019dreaming].
 
 DR-3 spécifie C1 (typage de signature via Protocols typés),
 C2 (tests de propriétés d'axiomes passent), C3 (invariants

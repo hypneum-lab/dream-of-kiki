@@ -52,6 +52,10 @@ operation : multiplicative shrinkage of weights by a factor in
 downscale is **commutative but not idempotent** (shrink_f ∘
 shrink_f gives factor², not factor) — a property that constrains
 canonical ordering choices.
+See also [@agliari2024regularization], who show that in
+Hopfield-like networks the dreaming (reiterated unlearning)
+kernel is the optimum of a regularised loss, its extent being set
+by the regularisation hyperparameter and the training time.
 A 2026 sleep-inspired replay model shows that a single
 unsupervised sleep phase scheduled after *several* sequential
 tasks partially restores performance on all of them, with most
@@ -89,6 +93,9 @@ consistent with distinct operators per stage rather than a single
 `recombine` operation : sample latents from the δ snapshot,
 apply a VAE-light or interpolation kernel, emit new latent
 samples on canal 2.
+See also [@agliari2026networks], where layered Hebbian networks
+perform pattern disentanglement, returning the constituents of a
+mixture presented as input.
 
 ## 3.4 Pillar D — Friston Free Energy Principle
 

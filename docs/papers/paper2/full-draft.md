@@ -147,6 +147,10 @@ as `replay` ; Tononi SHY [@tononi2014sleep] as `downscale`
 dreaming [@hobson2009rem; @solms2021revising] as `recombine` ;
 Friston FEP [@friston2010free] as `restructure` under the S3
 topology guard. Paper 2 does not re-argue these mappings.
+Paper 1 §2.1 also traces the computational reading of sleep as
+reverse learning, from Crick and Mitchison and Hopfield et al. to
+the dreaming kernel of Fachechi et al. [@crick1983function;
+@hopfield1983unlearning; @fachechi2019dreaming].
 
 ### 3.3 DR-3 Conformance Criterion, briefly
 
