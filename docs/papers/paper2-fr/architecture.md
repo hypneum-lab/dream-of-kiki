@@ -214,8 +214,8 @@ inter-substrats partagent un prédicteur. Un qualifieur
 ## 5.8 Ligne de base Wake-Sleep CL (Alfarano 2024)
 
 Le §7 de l'Article 2 inclut une quatrième ligne dans la table
-d'ablation : la **Wake-Sleep Consolidated Learning** d'Alfarano
-et al. 2024 [@alfarano2024wakesleep, IEEE TNNLS, arXiv
+d'ablation : la **Wake-Sleep Consolidated Learning** de Sorrenti
+et al. 2025 [@alfarano2024wakesleep, IEEE TNNLS, arXiv
 2401.08623]. Le §3 de l'Article 1 désigne déjà ce travail comme
 « l'analogue NREM/REM dual-phase publié le plus proche » et le
 comparateur d'ablation naturel pour l'Article 2. La ligne de

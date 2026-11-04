@@ -99,8 +99,8 @@ Research introduisent un module de mémoire neuronale appris au
 moment de l'inférence jusqu'à 2 M tokens, sans ancrage rigoureux
 dans la théorie de la consolidation [Behrouz et al. 2024]. Les
 **propositions académiques concurrentes** commencent à combler
-cet écart — *Wake-Sleep Consolidated Learning* [Alfarano et al.
-2024] est, à notre connaissance, l'analogue dual-phase NREM/REM
+cet écart — *Wake-Sleep Consolidated Learning* [Sorrenti et al.
+2025] est, à notre connaissance, l'analogue dual-phase NREM/REM
 publié le plus proche, et la proposition contemporaine *Language
 Models Need Sleep* couple une étape de distillation ascendante
 (distillation on-policy combinée à un apprentissage par imitation
@@ -124,7 +124,7 @@ le mécanisme, l'IA tient la fonction (réactivation → non-oubli),
 aucune ne tient encore le pont axiomatique. Le Framework C se
 positionne sur ce pont, avec les quatre piliers ci-dessus comme
 ancrages conceptuels, l'analogue empirique le plus proche
-[Alfarano et al. 2024] retenu comme comparateur d'ablation
+[Sorrenti et al. 2025] retenu comme comparateur d'ablation
 primaire du Paper 2, et les propositions concurrentes [Behrouz
 et al. 2026 ; Berkeley 2025 sleep-time compute] lues comme
 corroboration indépendante du besoin sous-jacent plutôt que
