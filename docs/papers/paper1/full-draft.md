@@ -250,9 +250,12 @@ sampling from a latent representation of recent experiences,
 producing novel combinations that probe the boundaries of
 learned structure. Human high-density EEG shows that
 reactivation time-locked to NREM slow-oscillation–spindle
-complexes and reactivation during phasic REM are dissociable,
-the former supporting memory consolidation and the latter
-emotional dissipation [@zhang2026nremremreactivation] —
+complexes and reactivation during phasic REM are dissociable
+in a preprint, but it is the SO–spindle coupling percentage, not
+reactivation strength, that predicts post-sleep temporal memory,
+while phasic-REM reactivation strength correlates with overnight
+reductions in anxiety and negative affect
+[@zhang2026nremremreactivation] —
 consistent with distinct operators per stage rather than a single
 "integration" process. In our framework, this maps to the
 `recombine` operation : sample latents from the δ snapshot,

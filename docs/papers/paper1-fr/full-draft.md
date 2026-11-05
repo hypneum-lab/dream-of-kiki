@@ -250,8 +250,11 @@ combinaisons nouvelles qui sondent les frontières de la structure
 apprise. L'EEG haute densité chez l'humain montre que la
 réactivation verrouillée sur les complexes oscillation lente–
 fuseau en NREM et la réactivation pendant le REM phasique sont
-dissociables, la première soutenant la consolidation mnésique et
-la seconde la dissipation émotionnelle
+dissociables dans une prépublication, mais c'est le pourcentage de
+couplage oscillation lente–fuseau, et non la force de
+réactivation, qui prédit la mémoire temporelle après le sommeil,
+tandis que la force de réactivation en REM phasique est corrélée
+à la baisse nocturne de l'anxiété et de l'affect négatif
 [@zhang2026nremremreactivation] — ce qui va dans le sens
 d'opérateurs distincts par stade plutôt que d'un processus unique
 d'« intégration ». Dans notre framework, ceci se projette sur l'opération

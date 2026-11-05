@@ -19,10 +19,14 @@ sleep is the neural substrate most directly implicated, gated by
 the temporally precise nesting of slow oscillations,
 thalamocortical spindles, and sharp-wave ripples
 [@trends2024coupled]. A Bayesian meta-analysis of 297 effect
-sizes establishes SO-fast-spindle phase coupling as a
-quantitatively grounded predictor of memory benefit
-(coupling = 0.33 [0.27, 0.39], BF > 58 vs. null, no detected
-publication bias on the phase branch) [@elife2025bayesian].
+sizes finds a small association between the preferred
+SO-fast-spindle coupling phase and memory consolidation
+(r_z = 0.07 [0.01, 0.13], BF10 = 58.35, no detected publication
+bias on the phase branch), whose interval includes zero in the
+one-effect-per-study focal analysis ; the mean coupling strength
+of 0.33 [0.27, 0.39] it also reports is descriptive, and coupling
+percentage shows no association with memory (r = −0.03,
+BF10 = 0.38) [@elife2025bayesian].
 Closed-loop optogenetic boosting of large sharp-wave ripples
 during sleep is *sufficient* to convert sub-threshold learning
 into successful next-day recall, moving the field from
@@ -78,16 +82,26 @@ replay training neocortical variational autoencoders, which
 account for episodic recall, imagination, and schema-based
 distortions in a single substrate-agnostic latent space
 [@spens2024generative]. The clean "REM = emotional /
-NREM = declarative" dichotomy is collapsing : NREM TMR cueing
-already enhances emotional-item memory with REM contributing
-complementarily [@commsbio2025emotional], and the 2025
-*Nature Reviews Neuroscience* synthesis supports a **sequential**
-SWS-then-REM model rather than a competitive split
-[@robertson2025nrn]. Human high-density EEG adds stage-specific
-evidence : reactivation time-locked to NREM slow-oscillation–
-spindle complexes and reactivation during phasic REM are
-dissociable, the former supporting memory consolidation and the
-latter emotional dissipation [@zhang2026nremremreactivation] —
+NREM = declarative" dichotomy is under pressure : in a nap TMR
+study, cueing during SWS favoured emotional over neutral items
+only in the between-group comparison (no within-group effect),
+with a benefit that scaled with the product of SWS and REM time,
+whereas cueing during REM impaired memory for emotional items
+[@commsbio2025emotional] ; a 2025 one-page *Nature Reviews
+Neuroscience* retrospective recalls the Stickgold et al. 2000
+finding that SWS early and REM late in the night together
+explained most overnight improvement, which implied a
+**sequential** process [@robertson2025nrn]. Human high-density
+EEG adds stage-specific evidence : in a preprint, reactivation
+time-locked to NREM slow-oscillation–spindle complexes and
+reactivation during phasic REM are dissociable, but it is the
+SO–spindle coupling percentage, not reactivation strength, that
+predicts post-sleep temporal memory, while phasic-REM
+reactivation strength correlates with overnight reductions in
+anxiety and negative affect [@zhang2026nremremreactivation]. The
+coupling-percentage association sits in tension with the
+meta-analytic null for coupling percentage cited above
+[@elife2025bayesian]. Taken together, these results are
 consistent with distinct operators per stage rather than a single
 "integration" process. In our framework, this maps to the
 `recombine` operation : sample latents from the δ snapshot,
