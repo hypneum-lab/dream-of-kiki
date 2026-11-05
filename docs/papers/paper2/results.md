@@ -1325,7 +1325,10 @@ data can let the classifier learn a synthetic-versus-real
 *domain shortcut* rather than the old classes
 [@zhang2026domainshortcut]. Any future retention gain from
 diffusion-generated replay should therefore be reported together
-with a synthetic-versus-real probe on the classifier features.
+with a shortcut diagnostic : that work uses the gap between
+task-aware and task-agnostic accuracy and the confusion matrix,
+and a synthetic-versus-real probe on the classifier features is
+our own proposed extension, not a method of the cited paper.
 No such run exists yet ; this paragraph adds no result.
 
 ---

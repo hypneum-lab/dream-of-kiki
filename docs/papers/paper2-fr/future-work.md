@@ -51,7 +51,7 @@ neuromorphique.
 
 Chemins de fallback, classés par probabilité :
 
-- **SpiNNaker** via Norse / PyNN — substrat spiking compatible
+- **SpiNNaker** via PyNN ou Nengo — substrat spiking compatible
   logiciel, déployable sans partenariat Intel.
 - **Simulation Lava SDK** de Loihi-2 — toujours synthétique
   mais bit-compatible avec le modèle d'exécution réel de la

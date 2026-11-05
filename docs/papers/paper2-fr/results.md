@@ -1422,8 +1422,12 @@ réelles de nouvelles classes peut amener le classifieur à
 apprendre un *raccourci de domaine* synthétique-versus-réel
 plutôt que les anciennes classes [@zhang2026domainshortcut]. Tout
 gain de rétention futur obtenu par replay généré par diffusion
-devra donc être rapporté avec une sonde synthétique-versus-réel
-sur les représentations du classifieur. Aucune exécution de ce
+devra donc être rapporté avec un diagnostic de raccourci : ce
+travail utilise l'écart entre exactitude avec et sans
+connaissance de la tâche et la matrice de confusion, et une sonde
+synthétique-versus-réel sur les représentations du classifieur
+est une extension que nous proposons, non une méthode de
+l'article cité. Aucune exécution de ce
 type n'existe encore ; ce paragraphe n'ajoute aucun résultat.
 
 ---

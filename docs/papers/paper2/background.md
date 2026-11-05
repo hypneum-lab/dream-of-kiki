@@ -67,15 +67,20 @@ Cross-substrate replication of continual-learning mechanisms
 is under-represented in the prior art. [@vandeven2020brain]
 demonstrate brain-inspired replay on artificial neural
 networks but on a single architecture. [@kirkpatrick2017overcoming]
-introduce EWC as a SHY-adjacent regularizer but do not pursue
-substrate-agnosticism. [@rebuffi2017icarl] and
-[@shin2017continual] are architecture-specific. A 2026 survey
+introduce EWC, a regularizer we read as SHY-adjacent, but do not
+pursue substrate-agnosticism. [@rebuffi2017icarl] describe iCaRL
+as largely architecture-agnostic but evaluate it only with CNNs,
+and [@shin2017continual] do not pursue substrate-agnosticism
+either. A 2026 survey
 of continual learning in the LLM and agentic era
 [@hou2026cltransition] organises the field by *how* models are
 updated (off-policy, on-policy, non-gradient), *when*
 (pre-training, post-training, inference) and *where* (parameters
-versus external memory) ; framework C sits in its offline,
-parameter-space cell, as a layer that composes operations. No
+versus external memory) ; framework C would fall in its
+post-training, parameter-space region, as a layer that composes
+operations (the survey has no "offline" category, and it warns
+that an unoccupied region is not evidence that no relevant work
+exists, §3.5). No
 prior work,
 to our knowledge, ships a **reusable conformance test suite**
 binding a formal framework to operational substrates across
