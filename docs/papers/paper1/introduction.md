@@ -98,13 +98,17 @@ an upward distillation stage (on-policy distillation combined with
 RL-based imitation learning) with an RL-driven "Dreaming" phase
 that rehearses synthetic data [@iclr2026lmsleep]. In continual LLM fine-tuning, replaying the
 current model's own outputs on past prompts reduces forgetting
-relative to tuned vanilla replay [@chen2026onpolicyreplay], and
-self-distillation has been proposed as a replay proxy
-[@shenfeld2026selfdistil], although on-policy self-distillation
+relative to vanilla replay run with the same shared
+hyperparameters [@chen2026onpolicyreplay], and on-policy
+self-distillation from demonstrations reduces forgetting relative
+to supervised fine-tuning [@shenfeld2026selfdistil] (a mechanism
+we read as close to generative replay ; the paper does not use
+that term), although on-policy self-distillation
 can also amplify drift and collapse under continual post-training
 [@wang2026denserneqbetter]. Neuromorphic substrates show the same
-convergence: CLP-SNN on Loihi 2 reports 70× speed and 5,600×
-energy efficiency over GPU baselines for offline replay
+convergence: the rehearsal-free CLP-SNN on Loihi 2 reports
+on-chip learning steps with 7.3× lower latency and 341× lower
+energy than a replay baseline on a Jetson Orin Nano (arXiv v3)
 [@hajizada2025clpsnn]. Three communities, one architectural
 shape, and **no published 2024–2026 work formally maps the
 SO–spindle–ripple triad onto a substrate-agnostic computational

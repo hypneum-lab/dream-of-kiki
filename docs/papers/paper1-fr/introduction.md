@@ -108,15 +108,19 @@ par RL) avec une phase de « rêve » pilotée par RL qui répète des
 données synthétiques [Behrouz et al. 2026]. En affinage continu
 de LLM, rejouer les propres sorties du modèle courant sur des
 invites passées réduit l'oubli par rapport à un replay classique
-réglé [Chen et al. 2026], et l'auto-distillation a été proposée
-comme substitut de replay [Shenfeld et al. 2026], bien que
+exécuté avec les mêmes hyperparamètres partagés [Chen et al.
+2026], et l'auto-distillation on-policy à partir de
+démonstrations réduit l'oubli par rapport à l'affinage supervisé
+[Shenfeld et al. 2026] (un mécanisme que nous lisons comme
+proche du replay génératif ; l'article n'emploie pas ce terme),
+bien que
 l'auto-distillation on-policy puisse aussi amplifier la dérive et
 s'effondrer en post-entraînement continu [Wang et al. 2026]. Les
 substrats
-neuromorphiques montrent la même convergence : CLP-SNN sur Loihi 2
-rapporte un facteur 70× de vitesse et 5 600× d'efficacité
-énergétique sur des baselines GPU pour la réactivation hors ligne
-[Hajizada et al. 2025]. Trois communautés, une même forme
+neuromorphiques montrent la même convergence : CLP-SNN, sans
+répétition, rapporte sur Loihi 2 des pas d'apprentissage sur puce
+7,3× plus rapides et 341× moins énergivores qu'une baseline de
+replay sur Jetson Orin Nano (arXiv v3) [Hajizada et al. 2025]. Trois communautés, une même forme
 architecturale, et **aucun travail publié 2024–2026 ne projette
 formellement la triade SO–fuseau–ripple sur un invariant
 computationnel indépendant du substrat** : la neuroscience tient

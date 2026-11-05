@@ -187,20 +187,24 @@ montrent en outre que la réactivation mnésique ciblée n'agit
 **pas** holistiquement sur la mémoire des objets pendant le
 sommeil, alimentant le débat encore ouvert sur quelles
 caractéristiques mnésiques sont sensibles au sommeil. Le paysage
-de réplication CLAS lui-même est hétérogène et atténué par
-l'âge, avec des effets plus faibles sur les tâches procédurales
-[npj Sci. Learn. 2025 CLAS].
+de réplication CLAS lui-même est hétérogène : chez l'adulte
+jeune et d'âge moyen, toutes les études de CLAS des oscillations
+lentes produisent une réponse neurale mais environ 40 % seulement
+rapportent un gain mnésique, et une étude de sieste à cinq bras a
+modulé la physiologie du sommeil sans aucun effet Temps ×
+Condition sur les tâches mnésiques [npj Sci. Learn. 2026 CLAS].
 
 La critique de Cordi & Rasch 2021 [Cordi & Rasch 2021] reste le
 contrepoids portant aux récits enthousiastes — les effets du
 sommeil sur la mémoire sont plus petits, plus dépendants de la
 tâche, moins liés au SWS, moins robustes et moins durables que
 ne le supposait la littérature antérieure. Tout futur travail
-empirique dans ce programme adoptera la check-list méthodologique
-de référence de *Nature Reviews Psychology* 2023 [Nat. Rev.
-Psychol. 2023 méthodologie] (plans sham-contrôlés, rapport
-dose-réponse, attention au confondage plan-séquentiel /
-récupération-vs-restudy). Ces conditions limites resserrent le
+empirique dans ce programme adoptera les recommandations
+méthodologiques de Németh et al. 2024 [Nat. Rev. Psychol. 2024
+méthodologie] (tableau 1 : conditions de contrôle circadien,
+plans complets Sommeil/Éveil × Intervention/Contrôle, tailles
+d'échantillon a priori avec règles d'arrêt bayésiennes, analyses
+de corrélation planifiées et corrigées). Ces conditions limites resserrent le
 périmètre de toute revendication empirique que le framework peut
 porter, ainsi que le type de validation de substrat du cycle 3
 qui compterait comme confirmatif.

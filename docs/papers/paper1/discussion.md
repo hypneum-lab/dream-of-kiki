@@ -170,22 +170,27 @@ framework's finite-budget invariant K1.
 At the mechanism level, only ~10–30 % of sleep sharp-wave ripples
 carry detectable replay content [@annurev2025replay], a
 selectivity that DR-2 (downscaling) and the wider replay-driven
-narrative must not over-claim. Siefert et al. [@schreiner2024jneurosci]
+narrative must not over-claim. Siefert et al. [@siefert2024jneurosci]
 further show that targeted memory reactivation does **not** act
 holistically on object memory during sleep, fuelling the still-open
 debate about which memory features are sleep-sensitive. The CLAS
-replication landscape itself is heterogeneous and age-attenuated,
-with weaker effects on procedural tasks [@npjscilearn2025clas].
+replication landscape itself is heterogeneous : in young and
+middle-aged adults all slow-oscillation CLAS studies elicit a
+neural response but only about 40 % report a memory gain, and a
+five-arm nap study modulated sleep physiology without any
+Time × Condition effect on the memory tasks
+[@npjscilearn2025clas].
 
 Cordi & Rasch's 2021 critique [@cordi2021robust] remains the
 load-bearing counterweight to enthusiastic narratives — sleep
 effects on memory are smaller, more task-dependent, less
 SWS-related, less robust and less long-lasting than previously
 assumed. Any future empirical work in this programme will adopt
-the gold-standard methodology checklist of *Nature Reviews
-Psychology* 2023 [@natrevpsych2023methodology] (sham-controlled
-designs, dose-response reporting, awareness of the
-sequential-design / retrieval-vs-restudy confound). These
+the methodological recommendations of Németh et al. 2024
+[@natrevpsych2023methodology] (Table 1 : circadian control
+conditions, full Sleep/Wake × Intervention/Control designs,
+a priori sample sizes with Bayesian stopping rules, and
+pre-planned, corrected correlation analyses). These
 boundary conditions tighten the scope of every empirical claim
 the framework can support and the kind of cycle-3 substrate
 validation that would count as confirmatory.

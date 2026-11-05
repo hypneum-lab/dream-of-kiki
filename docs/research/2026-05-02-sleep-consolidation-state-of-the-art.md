@@ -416,7 +416,7 @@ gold-standard checklist by 2025 papers,
 flags the recurrent confound between sequential designs and
 retrieval-vs-restudy strength manipulations.
 
-Schreiner et al. *J Neurosci* 2024 (
+Siefert et al. *J Neurosci* 2024 (
 [jneurosci.org/content/44/24/e0022242024](https://www.jneurosci.org/content/44/24/e0022242024)):
 TMR does **not** act holistically on object memory — fuels debate about
 which memory features are sleep-sensitive.
@@ -524,7 +524,7 @@ bridge.
 34. [Going offline to enhance memory — Robertson NRN 2025](https://www.nature.com/articles/s41583-025-00973-8) — sequential SWS-then-REM model.
 35. [How robust are sleep-mediated memory benefits? — Cordi & Rasch EJN 2021](https://pubmed.ncbi.nlm.nih.gov/32711356/) — replication critique.
 36. [Optimizing methodology of human sleep + memory research — Nat Rev Psych 2023](https://www.nature.com/articles/s44159-023-00262-0) — gold-standard checklist.
-37. [Memory reactivation does not act holistically on object memory — Schreiner et al. J Neurosci 2024](https://www.jneurosci.org/content/44/24/e0022242024) — TMR null on holistic objects.
+37. [Memory reactivation does not act holistically on object memory — Siefert et al. J Neurosci 2024](https://www.jneurosci.org/content/44/24/e0022242024) — TMR null on holistic objects.
 38. [Sleep oscillations and consolidation in early-course psychosis — Manoach lab, Schiz Res 2024](https://pubmed.ncbi.nlm.nih.gov/39515257/) — schizophrenia spindle deficit.
 39. [Eszopiclone RCT for spindle augmentation — Wamsley 2020](https://pubmed.ncbi.nlm.nih.gov/32919407/) — pharmacological precedent.
 

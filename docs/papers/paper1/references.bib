@@ -410,8 +410,8 @@
                   evidence in mice.},
 }
 
-% Claim "heterogeneous and age-attenuated" (discussion.md:177-178) not
-% verified beyond the title (01/11 check).
+% Full text read 2026-11-04: "age-attenuated" and "weaker effects on
+% procedural tasks" are not in the paper; discussion.md rewritten.
 @article{npjscilearn2025clas,
   author       = {Jourde, Hugo R. and Sita, Katerina Z. and Eyqvelle,
                   Zseyvfin and Brooks, Mary and Coffey, Emily B. J.},
@@ -595,6 +595,8 @@
   archivePrefix = {arXiv},
   primaryClass = {cs.LG},
   url          = {https://arxiv.org/abs/2601.19897},
+  note         = {The word "replay" does not occur in the paper;
+                  the replay reading is ours.},
 }
 
 % De-anonymised 2026-10-23: OpenReview forum iiZy6xyVVE now lists
@@ -631,10 +633,12 @@
   archivePrefix = {arXiv},
   primaryClass = {cs.LG},
   url          = {https://arxiv.org/abs/2511.01553},
-  note         = {Few-shot CL accuracy on OpenLORIS matches GPU
-                  baseline at 70x throughput and 5,600x energy
-                  efficiency (0.05 mJ vs 281 mJ per inference).
-                  Load-bearing E-SNN substrate citation.},
+  note         = {v3: rehearsal-free; on-chip step 0.33 ms and
+                  0.05 mJ, 7.3x lower latency and 341x lower energy
+                  than Replay on a Jetson Orin Nano (p. 1); 70x is
+                  the energy ratio against CLP on the Orin CPU
+                  (pp. 7-8). The v3 contains neither "5,600x" nor
+                  "281 mJ". Load-bearing E-SNN substrate citation.},
 }
 
 @misc{biorxiv2025thalamocortical,
@@ -886,14 +890,16 @@
   pages   = {123--137},
   year    = {2024},
   doi     = {10.1038/s44159-023-00262-0},
-  note    = {Online December 2023. Gold-standard checklist; flags
-             confound between sequential designs and
-             retrieval-vs-restudy strength manipulations.},
+  note    = {Online December 2023. Table 1 (p. 11): methodological
+             recommendations (circadian controls, full 2 x 2
+             designs, a priori power and Bayes factors, planned
+             corrected correlations). "Sham" and "dose" do not
+             occur in the text.},
 }
 
 % First author corrected 2026-11-04 (Crossref): Siefert et al.; key
-% kept for continuity.
-@article{schreiner2024jneurosci,
+% renamed from schreiner2024jneurosci on 2026-11-05.
+@article{siefert2024jneurosci,
   author  = {Siefert, Elizabeth M. and Uppuluri, Sindhuja and Mu,
              Jianing and Tandoc, Marlie C. and Antony, James W. and
              Schapiro, Anna C.},
@@ -1188,6 +1194,12 @@
   eprint        = {2605.29495},
   archivePrefix = {arXiv},
   url           = {https://arxiv.org/abs/2605.29495},
+  note          = {The abstract calls Vanilla Replay "tuned", but the
+                   same hyperparameters are applied to every method
+                   (p. 6); 3 seeds, means only (p. 5). In Table 1
+                   (p. 6) several Qwen3-8B SFT, Replay and SDFT cells
+                   equal the Qwen2.5 cells plus 0.40; to check with
+                   the authors before relying on the table.},
 }
 
 @misc{wang2026denserneqbetter,
