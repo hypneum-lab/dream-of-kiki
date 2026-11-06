@@ -465,6 +465,74 @@ class TorchBackend:
             if p.is_floating_point():
                 p.mul_(factor)
 
+    _CHUNK = 1 << 25  # elements per float32 temporary (128 MiB): bounded extra memory
+
+    def _chunks(self, p: torch.Tensor) -> Any:
+        flat = p.view(-1)
+        for i in range(0, flat.numel(), self._CHUNK):
+            yield flat[i:i + self._CHUNK]
+
+    @torch.no_grad()
+    def downscale_norm(self, factor: float) -> float:
+        """rho = ||bf16(f * theta) - theta||_F in float32 over ``parameters()``
+        (the step ``downscale`` would apply, computed with the same op, weights
+        untouched). Declaration H14-B of 2026-11-02, section 1.2."""
+        sq = 0.0
+        for p in self.model.parameters():
+            if p.is_floating_point():
+                for c in self._chunks(p):
+                    sq += float(((c.mul(factor).float() - c.float()) ** 2).sum())
+        return float(sq ** 0.5)
+
+    @torch.no_grad()
+    def perturb_same_norm(self, rho: float, variant: str, seed: int) -> dict[str, Any]:
+        """Add xi with ||xi||_F = rho over the same parameters as ``downscale``
+        (declaration H14-B of 2026-11-02, section 1.2). Computed in float32,
+        written back in the parameter dtype; the norm actually applied after
+        that rounding is measured and returned.
+
+        R: xi = rho * g / ||g||, g ~ N(0, I) from a dedicated generator seeded
+           with the cell seed (two passes regenerate the same g in the same
+           chunk order; the global RNG and the replay are not touched).
+        U: xi_i = -(rho / sqrt(N')) * sign(theta_i) on the N' non-zero
+           elements; zero elements stay zero.
+        """
+        params = [p for p in self.model.parameters() if p.is_floating_point()]
+        dev = params[0].device if params else torch.device("cpu")
+
+        def gen() -> torch.Generator:
+            return torch.Generator(device=dev).manual_seed(int(seed))
+
+        n_nz = None
+        if variant == "R":
+            g, sq = gen(), 0.0
+            for p in params:
+                for c in self._chunks(p):
+                    sq += float((torch.randn(c.shape, generator=g, device=dev,
+                                             dtype=torch.float32) ** 2).sum())
+            scale, g = rho / sq ** 0.5, gen()
+        elif variant == "U":
+            n_nz = sum(int(torch.count_nonzero(p)) for p in params)
+            scale = rho / n_nz ** 0.5
+        else:
+            raise ValueError(f"unknown same-norm variant {variant!r}")
+        applied_sq = target_sq = 0.0
+        for p in params:
+            for c in self._chunks(p):
+                x = c.float()
+                if variant == "R":
+                    xi = scale * torch.randn(c.shape, generator=g, device=dev,
+                                             dtype=torch.float32)
+                else:
+                    xi = -scale * torch.sign(x)
+                new = (x + xi).to(c.dtype)
+                target_sq += float((xi ** 2).sum())
+                applied_sq += float(((new.float() - x) ** 2).sum())
+                c.copy_(new)
+        return {"variant": variant, "rho": rho, "xi_norm": float(target_sq ** 0.5),
+                "applied_norm": float(applied_sq ** 0.5), "seed": int(seed),
+                "n_nonzero": n_nz}
+
     def swap_layers(self, i: int) -> None:
         layers = _get_layers(self.model)
         layers[i], layers[i + 1] = layers[i + 1], layers[i]

@@ -55,7 +55,15 @@ REGISTERED = ("p_min", "p_equ", "p_max", "p_ctrl_sft", "p_ctrl_shuffle", "p_nois
               "p_ctrl_template", "p_ctrl_vanilla_replay_tuned", "p_ctrl_onpolicy_replay")
 EXPLORATORY = ("p_ctrl_lr_matched",)
 ALL_PROFILES = REGISTERED + EXPLORATORY
-TUNED = ("p_equ", "p_ctrl_vanilla_replay_tuned", "p_ctrl_onpolicy_replay", "p_ctrl_lr_matched")
+# Controls addendum of 2026-11-06 (docs/osf-addendum-e1-small-controls-2026-11-06.md):
+# the H14-B same-norm arm of the declaration of 2026-11-02, variants R and U,
+# run in mode ``controls`` next to p_equ and p_ctrl_vanilla_replay_tuned re-run
+# at the same seeds under the same commit. Never part of ALL_PROFILES, so the
+# confirmatory mode is unchanged.
+SAMENORM = {"p_ctrl_samenorm_r": "R", "p_ctrl_samenorm_u": "U"}
+CONTROL_PROFILES = ("p_equ", "p_ctrl_vanilla_replay_tuned", *SAMENORM)
+TUNED = ("p_equ", "p_ctrl_vanilla_replay_tuned", "p_ctrl_onpolicy_replay", "p_ctrl_lr_matched",
+         *SAMENORM)
 
 # Neutral filler of the matched-compute SFT control (unchanged from the
 # first CUDA slice): content unrelated to the corpus.
@@ -77,6 +85,7 @@ class ProfileConfig:
     downscale: bool
     restructure: bool
     scoring_charged: bool  # OPR's 160 scoring passes are charged (section 5.4)
+    samenorm: str | None = None  # "R" | "U": same-norm perturbation instead of DOWNSCALE
 
 
 @dataclass(frozen=True)
@@ -113,12 +122,12 @@ class Amendment:
 
 
 def profile_config(profile: str, amendment: Amendment | None) -> ProfileConfig:
-    if profile not in ALL_PROFILES:
+    if profile not in ALL_PROFILES and profile not in SAMENORM:
         raise ValueError(f"unknown profile {profile!r}")
     if profile in TUNED and amendment is None:
         raise ValueError(f"{profile} needs the frozen tuning amendment")
     lr, m = DEFAULT
-    if profile in ("p_equ", "p_ctrl_vanilla_replay_tuned"):
+    if profile in ("p_equ", "p_ctrl_vanilla_replay_tuned", *SAMENORM):
         assert amendment is not None
         lr, m = amendment.selection_vanilla
     elif profile == "p_ctrl_onpolicy_replay":
@@ -138,7 +147,8 @@ def profile_config(profile: str, amendment: Amendment | None) -> ProfileConfig:
     return ProfileConfig(profile, corpus, lr, m,
                          downscale=profile in ("p_equ", "p_max"),
                          restructure=profile == "p_max",
-                         scoring_charged=profile == "p_ctrl_onpolicy_replay")
+                         scoring_charged=profile == "p_ctrl_onpolicy_replay",
+                         samenorm=SAMENORM.get(profile))
 
 
 def fact_text(item: Item) -> str:
