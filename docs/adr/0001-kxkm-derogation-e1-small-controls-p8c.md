@@ -1,13 +1,14 @@
 # ADR-0001: dated derogation to roadmap principles 4 and 6 for the E1-small controls run and its concurrency with P8c on KXKM (2026-11-06)
 
-> Status: **Proposed — awaiting PI signature** (section 9). PI decision
+> Status: **Accepted — PI decision 2026-11-06** (section 9). PI decision
 > 2026-11-06, QCM ~20:50 CET (question Q4, option (a), of the
 > 2026-11-06 hypotheses refresh, hypneum-lab/.github PR #30, report §7
-> Q4, findings N-13 and N-16). Drafted by an agent; not signed.
+> Q4, findings N-13 and N-16). Drafted by an agent; signed by the PI.
 >
 > Model: nerve-wml ADR-0003, "reading-gate exception for P1bis and P8c"
 > (`docs/adr/0003-reading-gate-exception-p1bis-p8c.md`, hypneum-lab/nerve-wml
-> PR #118, head `2d2bf0f`, open and **unsigned** at the time of writing).
+> PR #118, head `2d2bf0f`; signed 2026-11-06 21:13 CET in nerve-wml #118, commit `882b567`
+> (merge pending)).
 >
 > Roadmap cited at hypneum-lab/.github `docs/ROADMAP.md` v2.1, commit
 > `c8967a2`, as `RM:<line>`.
@@ -209,8 +210,11 @@ was read.
 ## 8. Change log
 
 - 2026-11-06: drafted (agent), status Proposed.
+- 2026-11-06 21:14 CET: signed by the PI, status Accepted.
 
 ## 9. PI signature
 
-- [ ] PI signature (Clément Saillant)
-- Date and time (CET):
+- [x] PI signature (Clément Saillant)
+- Date and time (CET): 2026-11-06 21:14 CET
+
+Signed: Clément Saillant (PI), 2026-11-06 21:14 CET
