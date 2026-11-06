@@ -226,7 +226,62 @@ format et contenu de réponse ne sont pas séparés (`:150-156`).
 
 ## 7. Enregistrement du lancement
 
-*(complété après le lancement, §7 de la PR)*
+*Complété après le lancement. Aucune valeur de résultat (`pre`, `post`, `Δ`, score, précision)
+n'a été lue ; seuls des champs de progression et d'intégrité l'ont été.*
+
+**État de KXKM-AI avant le lancement** (lecture seule) :
+
+- 14:03 (relevé de l'orchestrateur) puis 14:07 et 14:17 CET : aucune session tmux ; GPU
+  1 369 Mio utilisés sur 24 564 (seul processus GPU : ComfyUI, PID 712018, 652 Mio ; NVML lit
+  ~43 % d'utilisation à vide) ; 22 681 Mio libres ; RAM disponible 24 Gio sur 62.
+- Job en cours : P1bis/P8c (`/ai/saisail/p1bis-p8c-20261104`, relancé le 2026-11-05,
+  `experiments.hopfield_dream_conf.p8c_nocap --confirmatory`), **sur CPU uniquement** (aucune
+  mémoire GPU), 2 à 4 processus à 100 % d'un cœur. La condition d'arrêt du brief (VRAM des deux
+  jobs > 22 Go) n'est pas atteinte : P8c 0 Go + ce run ≈ 19,4 Go alloués.
+- Tests unitaires E1 (CPU, venv de la campagne, clone frais, `CUDA_VISIBLE_DEVICES` vide) :
+  121 réussis (`test_e1_controls`, `test_e1_diagnostics`, `test_e1_profiles`,
+  `test_pilot_cycle3_cuda`, `test_e1_study`, `test_e1_small_torch`, `test_e1_corpus_io`,
+  `test_analyze_e1_cuda`, `test_e1_budget`) ; `test_e1_schedule.py` non lancé (`hypothesis`
+  absent du venv de la campagne ; module non modifié).
+
+**Lancement :**
+
+- Clone frais `/ai/saisail/e1-small-controls-20261106/dream-of-kiki`, branche
+  `docs/e1-small-controls-addendum-2026-11-06`, commit `8c1d57a` (propre).
+- Environnement de la campagne : venv `/ai/saisail/e1-small/venv`, poids
+  `/ai/saisail/e1-small/models` (10 fichiers vérifiés par le runner), corpus
+  `/ai/saisail/e1-small/corpus/e1-corpus.jsonl` ; `CUDA_HOME` non requis (aucun noyau
+  compilé, fallback torch).
+- Contrôle mémoire : `HL_MIN_FREE_MIB=21000` (valeur du run enregistré ; pic d'une cellule
+  ≈ 20,1 Go). Le seuil générique « 4 Go libres » ne suffit pas à ce harnais.
+- Commande :
+  `cd /ai/saisail/e1-small-controls-20261106 && tmux new-session -d -s e1s-controls "bash
+  /ai/saisail/e1-small-controls-20261106/dream-of-kiki/scripts/run_e1_small_controls.sh"`
+- Départ : 2026-11-06 14:17:45 CET (`out/driver.log`, empreintes amendement `3b76adc6…ac49`,
+  manifeste `093fdf61…02ab`, corpus `f8379b81…c0a2` vérifiées) ; tmux `e1s-controls` ;
+  PID pilote 3394033, harnais 3404927 (étape `controls`).
+- Arrêt propre : `touch /ai/saisail/e1-small-controls-20261106/STOP` (vérifié entre deux
+  étapes et entre deux cellules ; la cellule en cours se termine).
+- Sortie : `/ai/saisail/e1-small-controls-20261106/out/{options-only,controls}/`, journaux
+  `options-only.log`, `controls.log` (sans score), `driver.log`.
+
+**Premiers relevés (intégrité seulement) :**
+
+- `options-only` : terminé 14:25:54 CET, `rc=0`, 1 098 items CONFIRMATORY notés, instrument
+  enregistré (`backend torch`, `linear_attn torch`, déterministe), code `8c1d57a` ;
+  `e1-options-only.json` SHA-256 `061054d425b4a9a5504bc7dc451f3485cabff4abad129fa9aaf62b7fc4f6de4a`.
+- `controls`, graine 0 (4 cellules, 14:47 CET) : budgets atteints (7 605 / 7 605 jetons),
+  aucune violation d'invariant, `kl_ref` défini, pic `max_memory_allocated` 19,43 Go ; porte de
+  conformité : norme appliquée / ρ = 1,012 (R) et 1,022 (U), `N′` = 4 205 751 296 éléments non
+  nuls (tous les paramètres).
+- Durées graine 0 : 312, 248, 404 et 299 s (`p_equ`, vanilla, R, U), contre 177 s en
+  moyenne pour `p_equ` et vanilla dans E1-small ; la contention CPU de P8c (4 cœurs pleins) est
+  la cause probable, non isolée.
+
+**ETA (564 cellules) :** au rythme de la graine 0 (≈ 1 262 s par graine), ≈ 49 h, fin vers
+le 2026-11-08 ~16:00 CET ; au rythme moyen d'E1-small (177 s par cellule, 708 à 908 s par
+graine selon le surcoût des perturbations), ≈ 28 à 36 h, fin entre le 2026-11-07 ~18:30 et le
+2026-11-08 ~02:30 CET. Départ de l'étape `controls` : 14:26 CET.
 
 ## 8. À coller dans le champ d'amendement OSF
 
