@@ -1,7 +1,7 @@
 # ADR-0001: dated derogation to roadmap principles 4 and 6 for the E1-small controls run and its concurrency with P8c on KXKM (2026-11-06)
 
 > Status: **Proposed — awaiting PI signature** (section 9). PI decision
-> 2026-11-06, QCM 21:05-21:10 CET (question Q4, option (a), of the
+> 2026-11-06, QCM ~20:50 CET (question Q4, option (a), of the
 > 2026-11-06 hypotheses refresh, hypneum-lab/.github PR #30, report §7
 > Q4, findings N-13 and N-16). Drafted by an agent; not signed.
 >
@@ -64,7 +64,7 @@ S6 starts on 2026-11-30 (`RM:103`).
 | 2026-11-06 14:26 | `controls` stage starts (564 cells); ETA ≈ 28-49 h, end between 2026-11-07 ~18:30 and 2026-11-08 ~16:00 | same, §7 "ETA" |
 | 2026-11-06 17:12 | PI decision recorded in ADR-0003 for P1bis/P8c; ADR-0003 left unsigned | nerve-wml PR #118 |
 | 2026-11-06 18:57 | Read-only state: KXKM GPU runs `pilot_cycle3_cuda.py` (PR #92, 21.8 / 24.6 GB); KXKM CPU runs 8 `p8c_nocap --confirmatory` workers | refresh inventory, compute status (.github PR #30) |
-| 2026-11-06 21:05-21:10 | PI decision Q4 (a): this ADR | .github PR #30, report §7 Q4 |
+| 2026-11-06 ~20:50 | PI decision Q4 (a): this ADR | .github PR #30, report §7 Q4 |
 
 ### 1.3 Facts
 
