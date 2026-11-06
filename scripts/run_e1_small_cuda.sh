@@ -11,7 +11,9 @@
 # offline; every file of the snapshot is checked against
 # scripts/e1_small_weights.sha256 before the harness starts.
 #
-#   HL_STEP   smoke | headroom | tuning | calibrate | amend | confirmatory
+#   HL_STEP   smoke | headroom | tuning | calibrate | amend | confirmatory |
+#             controls | options-only (exploratory controls, addendum of
+#             2026-11-06: docs/osf-addendum-e1-small-controls-2026-11-06.md)
 #   HL_PY     python of the pinned venv (default: python)
 #   HL_DOK    dream-of-kiki checkout (default: this script's repository)
 #   HL_HF_CACHE  HF hub cache holding the pinned weights
@@ -20,6 +22,7 @@
 #   HL_CALIB_CELLS / HL_SEEDS   as in run_e1_cuda_35b.sh
 #   HL_SMOKE_PROFILES  optional comma list of smoke profiles
 #   HL_MIN_FREE_MIB  free GPU memory required to start (default 22000)
+#   HL_STOP_FILE  optional: the harness stops between cells when it exists
 set -eu
 DOK=${HL_DOK:-$(cd "$(dirname "$0")/.." && pwd)}
 PY=${HL_PY:-python}

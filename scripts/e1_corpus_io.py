@@ -33,10 +33,14 @@ Item = dict[str, Any]
 PARTITIONS = ("confirmatory", "tuning")
 FROZEN = "FROZEN"
 PENDING = "PENDING-HEADROOM"
+# ``controls`` and ``options-only``: the exploratory controls of the addendum of
+# 2026-11-06 (docs/osf-addendum-e1-small-controls-2026-11-06.md), on the
+# CONFIRMATORY partition of the FROZEN corpus, like the confirmatory cells.
 MODE_STATUS = {"confirmatory": FROZEN, "tuning": FROZEN, "calibrate": FROZEN,
-               "headroom": PENDING}
+               "headroom": PENDING, "controls": FROZEN, "options-only": FROZEN}
 MODE_PARTITION = {"confirmatory": "confirmatory", "tuning": "tuning",
-                  "calibrate": "tuning", "headroom": "tuning"}
+                  "calibrate": "tuning", "headroom": "tuning",
+                  "controls": "confirmatory", "options-only": "confirmatory"}
 
 
 class CorpusError(RuntimeError):

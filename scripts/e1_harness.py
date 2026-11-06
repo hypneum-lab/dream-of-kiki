@@ -19,7 +19,16 @@ tuning          1000-1009           TUNING of the FROZEN corpus (120 cells)
 calibrate       1000-1009           TUNING of the FROZEN corpus (60 cells)
 amend           -                   tuning + calibration cells (no model)
 confirmatory    0-140               CONFIRMATORY of the FROZEN corpus
+controls        0-140               CONFIRMATORY of the FROZEN corpus (addendum)
+options-only    none (base model)   CONFIRMATORY of the FROZEN corpus (addendum)
 ==============  ==================  ===========================================
+
+``controls`` and ``options-only`` are the exploratory controls of
+``docs/osf-addendum-e1-small-controls-2026-11-06.md``: the H14-B same-norm
+arm (``p_ctrl_samenorm_r`` / ``_u``, with ``p_equ`` and
+``p_ctrl_vanilla_replay_tuned`` re-run at the same seeds, seed-major order)
+and the options-only scoring of the base model (question removed). Their
+progress lines print no score; ``HL_STOP_FILE`` stops a run between cells.
 """
 from __future__ import annotations
 
@@ -72,7 +81,8 @@ DETERMINISM = {"enabled": True, "use_deterministic_algorithms": True, "warn_only
 STUDY_INSTRUMENTS: dict[str, list[dict[str, Any]]] = {"e1": [], "e1-small": [
     {"backend": "torch", "device": "cuda", "tokenizer": RAW_TOKENIZER,
      "linear_attn": "torch", "snapshot": "ram", "sgd": "optim", "determinism": DETERMINISM,
-     "modes": ("smoke", "headroom", "tuning", "calibrate", "confirmatory")},
+     "modes": ("smoke", "headroom", "tuning", "calibrate", "confirmatory", "controls",
+               "options-only")},
     {"backend": "torch-mps", "device": "mps", "tokenizer": RAW_TOKENIZER, "linear_attn": "torch",
      "snapshot": "disk", "sgd": "fused", "modes": ("smoke",)}]}
 
@@ -117,7 +127,11 @@ def check_manifest_study(man: dict[str, Any]) -> None:
 
 
 SEEDS = {"smoke": tuple(range(2000, 2003)), "tuning": tuple(range(1000, 1010)),
-         "calibrate": tuple(range(1000, 1010)), "confirmatory": tuple(range(141))}
+         "calibrate": tuple(range(1000, 1010)), "confirmatory": tuple(range(141)),
+         "controls": tuple(range(141))}
+# Options-only control (addendum of 2026-11-06): the item prompt with the date
+# prefix and the question removed, i.e. the answer wrapper alone, then each choice.
+OPTIONS_ONLY_PROMPT = "Answer:"
 N_REPLAY = 40
 NOISE_SEED_OFFSET = 9973
 FIX = ROOT / "tests" / "fixtures"
@@ -164,6 +178,8 @@ class Backend(Protocol):
     def replay(self, texts: Sequence[str], lengths: Sequence[int], updates: Sequence[Any],
                lr: float) -> dict[str, Any]: ...
     def downscale(self, factor: float) -> None: ...
+    def downscale_norm(self, factor: float) -> float: ...
+    def perturb_same_norm(self, rho: float, variant: str, seed: int) -> dict[str, Any]: ...
     def restructure(self, seed: int) -> int | None: ...
     def swap_layers(self, i: int) -> None: ...
     def weights_finite(self) -> bool: ...
@@ -211,10 +227,17 @@ def replay(b: Backend, texts: Sequence[str], lr: float, m: int, budget: int) -> 
             "invariant_violation": res["invariant_violation"]}
 
 
-def apply_dream_ops(b: Backend, seed: int, downscale: bool, restructure: bool) -> dict[str, Any]:
+def apply_dream_ops(b: Backend, seed: int, downscale: bool, restructure: bool,
+                    samenorm: str | None = None) -> dict[str, Any]:
     """DOWNSCALE (p_equ, p_max: shrink 0.99), RESTRUCTURE (p_max: swap two
-    adjacent blocks). RECOMBINE is a weight-neutral no-op on this backend."""
+    adjacent blocks). RECOMBINE is a weight-neutral no-op on this backend.
+    ``samenorm`` (controls addendum): instead of DOWNSCALE, a perturbation of
+    the norm rho of the DOWNSCALE step this cell would apply (variant R or U)."""
     ops: dict[str, Any] = {"downscale": None, "restructure_idx": None, "recombine": "no-op"}
+    if samenorm is not None:
+        if downscale:
+            raise ValueError("a same-norm arm replaces DOWNSCALE")
+        ops["samenorm"] = b.perturb_same_norm(b.downscale_norm(pr.SHRINK), samenorm, seed)
     if downscale:
         ops["downscale"] = pr.SHRINK
         b.downscale(pr.SHRINK)
@@ -225,7 +248,8 @@ def apply_dream_ops(b: Backend, seed: int, downscale: bool, restructure: bool) -
 
 def run_cell(b: Backend, benches: Benches, *, seed: int, n_eval: int, corpus_kind: str,
              lr: float | None, m: int | None, downscale: bool, restructure: bool,
-             charge_opr: bool, noise: bool = False, diagnostics: bool = True) -> dict[str, Any]:
+             charge_opr: bool, noise: bool = False, diagnostics: bool = True,
+             samenorm: str | None = None) -> dict[str, Any]:
     """One E1 cell: restore, pre-eval, budgeted replay, ops, post-eval, diagnostics."""
     t0 = time.time()
     b.restore()
@@ -256,7 +280,7 @@ def run_cell(b: Backend, benches: Benches, *, seed: int, n_eval: int, corpus_kin
     else:
         rep = replay(b, texts, lr, m, int(budget["update_tokens"]))
     rec.update(rep)
-    ops = apply_dream_ops(b, seed, downscale, restructure)
+    ops = apply_dream_ops(b, seed, downscale, restructure, samenorm)
     rec["ops"] = ops
     if rec["invariant_violation"] is None and not b.weights_finite():
         rec["invariant_violation"] = "S2"  # BLOCKING: no NaN / Inf (docs/invariants)
@@ -294,7 +318,8 @@ def profile_cell(b: Backend, benches: Benches, profile: str, seed: int,
     cfg = pr.profile_config(profile, amendment)
     rec = run_cell(b, benches, seed=seed, n_eval=n_eval, corpus_kind=cfg.corpus, lr=cfg.lr,
                    m=cfg.m, downscale=cfg.downscale, restructure=cfg.restructure,
-                   charge_opr=cfg.scoring_charged, noise=profile == "p_noise")
+                   charge_opr=cfg.scoring_charged, noise=profile == "p_noise",
+                   samenorm=cfg.samenorm)
     return {"profile": profile, "lr": cfg.lr, "m": cfg.m, **rec}
 
 
@@ -387,7 +412,8 @@ BackendFactory = Callable[[argparse.Namespace, Benches, dict[str, Any]], Backend
 
 def add_args(ap: argparse.ArgumentParser) -> None:
     ap.add_argument("--mode", required=True, choices=("smoke", "headroom", "tuning", "calibrate",
-                                                       "amend", "confirmatory"))
+                                                       "amend", "confirmatory", "controls",
+                                                       "options-only"))
     ap.add_argument("--model", default=os.environ.get("HL_MODEL", MODEL_REPO))
     ap.add_argument("--revision", default=os.environ.get("HL_REVISION", MODEL_REVISION))
     ap.add_argument("--corpus", type=Path)
@@ -469,6 +495,23 @@ def run(args: argparse.Namespace, make_backend: BackendFactory) -> int:  # noqa:
     b.snapshot()
     slug = args.model.replace("/", "_")
 
+    if args.mode == "options-only":  # base model, every CONFIRMATORY item, no question
+        b.restore()
+        opt_items = [{**it, "prompt": OPTIONS_ONLY_PROMPT} for it in items]
+        sc, am_ = b.score_items(opt_items)
+        out = args.out / "e1-options-only.json"
+        if out.exists():
+            raise SystemExit(f"refusing to overwrite {out}")
+        rows = {it["src_hash"]: {"scores": s_, "argmax": a, "answer": int(it["answer"]),
+                                 "source": it["source"], "item_sha256": it["item_sha256"]}
+                for it, s_, a in zip(items, sc, am_, strict=True)}
+        common["code_commit"] = code_commit()
+        out.write_text(json.dumps({"items": rows, "prompt": OPTIONS_ONLY_PROMPT, **common},
+                                  indent=1, sort_keys=True) + "\n")
+        print(f"[e1] options-only: {len(rows)} confirmatory items scored (no score printed)",
+              flush=True)
+        return 0
+
     if args.mode == "headroom":
         b.restore()
         _, am_ = b.score_items(items)
@@ -487,8 +530,8 @@ def run(args: argparse.Namespace, make_backend: BackendFactory) -> int:  # noqa:
     cache = args.out / f"e1-{args.mode}-{b.name}-{slug}.cells.jsonl"
     cached, done = _cache(cache)
     jobs: list[tuple[str, dict[str, Any]]] = []
-    if args.mode in ("smoke", "confirmatory"):
-        if args.mode == "confirmatory":
+    if args.mode in ("smoke", "confirmatory", "controls"):
+        if args.mode in ("confirmatory", "controls"):
             if not args.amendment:
                 raise SystemExit("confirmatory cells need the frozen tuning amendment")
             assert args.manifest is not None
@@ -506,7 +549,8 @@ def run(args: argparse.Namespace, make_backend: BackendFactory) -> int:  # noqa:
             am = pr.validate_amendment(doc, conf_size)
             common["amendment_sha256"] = sha_file(args.amendment)
             n_eval = am.n_eval
-            profiles = list(pr.ALL_PROFILES)
+            profiles = list(pr.ALL_PROFILES if args.mode == "confirmatory"
+                            else pr.CONTROL_PROFILES)
         else:  # smoke: defaults stand in for the not-yet-tuned arms
             am = pr.Amendment(pr.DEFAULT, pr.DEFAULT, 1.0, args.smoke_n_eval)
             common["smoke_placeholder_amendment"] = am.as_dict()
@@ -518,11 +562,12 @@ def run(args: argparse.Namespace, make_backend: BackendFactory) -> int:  # noqa:
         skipped = [p for p in profiles if not am.runs(p)]
         if skipped:  # declared in the amendment, before any confirmatory seed
             print(f"[e1] not run per the tuning amendment: {skipped}", flush=True)
-        for p in profiles:
+        order = ([(p, s) for s in seeds for p in profiles] if args.mode == "controls"
+                 else [(p, s) for p in profiles for s in seeds])  # controls: seed-major
+        for p, s in order:
             if p in skipped:
                 continue
-            for s in seeds:
-                jobs.append((f"{p}|{s}", {"profile": p, "seed": s, "am": am, "n_eval": n_eval}))
+            jobs.append((f"{p}|{s}", {"profile": p, "seed": s, "am": am, "n_eval": n_eval}))
     elif args.mode == "tuning":
         for s in seeds:
             for lr, m in pr.GRID:
@@ -546,9 +591,14 @@ def run(args: argparse.Namespace, make_backend: BackendFactory) -> int:  # noqa:
     stale = sorted({c.get("run_identity") for c in cached} - {run_id}, key=str)
     if stale:
         raise SystemExit(f"{cache} holds cells of another run identity; use a fresh --out")
+    stop = os.environ.get("HL_STOP_FILE")
+    quiet = args.mode == "controls"  # addendum: progress only, never a score
     for key, job in jobs:
         if key in done:
             continue
+        if stop and Path(stop).exists():
+            print(f"[e1] {args.mode}: stop file {stop} found, stopping before {key}", flush=True)
+            return 3
         s = int(job["seed"])
         if "profile" in job:
             cell = profile_cell(b, benches, job["profile"], s, job["am"], job["n_eval"])
@@ -563,7 +613,11 @@ def run(args: argparse.Namespace, make_backend: BackendFactory) -> int:  # noqa:
         cell["key"] = key
         cell["run_identity"] = run_id
         _append(cache, cell)
-        print(f"[e1] {args.mode} {key} pre={cell['pre']:.3f} post={cell['post']:.3f} "
-              f"tokens={cell['achieved_loss_tokens']}/{cell['planned_loss_tokens']} "
-              f"wall={cell['wall_s']}s", flush=True)
+        if quiet:
+            print(f"[e1] {args.mode} {key} tokens={cell['achieved_loss_tokens']}/"
+                  f"{cell['planned_loss_tokens']} wall={cell['wall_s']}s", flush=True)
+        else:
+            print(f"[e1] {args.mode} {key} pre={cell['pre']:.3f} post={cell['post']:.3f} "
+                  f"tokens={cell['achieved_loss_tokens']}/{cell['planned_loss_tokens']} "
+                  f"wall={cell['wall_s']}s", flush=True)
     return 0
