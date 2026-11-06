@@ -49,7 +49,7 @@ neuromorphic hardware execution.
 
 Fallback paths, ranked by likelihood :
 
-- **SpiNNaker** via Norse / PyNN — software-compatible
+- **SpiNNaker** via PyNN or Nengo — software-compatible
   spiking substrate, deployable without Intel partnership.
 - **Lava SDK simulation** of Loihi-2 — still synthetic but
   bit-compatible with the real chip's execution model.

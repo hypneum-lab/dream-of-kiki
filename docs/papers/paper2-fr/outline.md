@@ -52,7 +52,7 @@ cycle 1 (amendement 2026-04-23 couvrant l'extension multi-échelle).
 - Citer SHY (Tononi 2014), FEP (Friston 2010), CLS (McClelland
   1995), brain-inspired replay (van de Ven 2020).
 - **Paragraphe « travaux concurrents »** (§3.x) : RecursiveMAS
-  (Yang et al., arXiv:2604.25917, 2026-04-28) — dérivation
+  (Zou et al., arXiv:2604.25917, 2026-04-28) — dérivation
   indépendante d'une architecture à état latent partagé pour
   systèmes multi-composants hétérogènes. Citer comme évidence
   convergente ; différencier par substrat / gating /

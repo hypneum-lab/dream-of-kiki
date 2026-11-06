@@ -147,6 +147,10 @@ as `replay` ; Tononi SHY [@tononi2014sleep] as `downscale`
 dreaming [@hobson2009rem; @solms2021revising] as `recombine` ;
 Friston FEP [@friston2010free] as `restructure` under the S3
 topology guard. Paper 2 does not re-argue these mappings.
+Paper 1 §2.1 also traces the computational reading of sleep as
+reverse learning, from Crick and Mitchison and Hopfield et al. to
+the dreaming kernel of Fachechi et al. [@crick1983function;
+@hopfield1983unlearning; @fachechi2019dreaming].
 
 ### 3.3 DR-3 Conformance Criterion, briefly
 
@@ -163,14 +167,19 @@ Cross-substrate replication of continual-learning mechanisms is
 under-represented in prior art. [@vandeven2020brain] demonstrate
 brain-inspired replay but on a single architecture.
 [@kirkpatrick2017overcoming] introduce EWC but do not pursue
-substrate-agnosticism. [@rebuffi2017icarl] and
-[@shin2017continual] are architecture-specific. A 2026 survey
+substrate-agnosticism. [@rebuffi2017icarl] describe iCaRL as
+largely architecture-agnostic but evaluate it only with CNNs, and
+[@shin2017continual] do not pursue substrate-agnosticism either.
+A 2026 survey
 of continual learning in the LLM and agentic era
 [@hou2026cltransition] organises the field by *how* models are
 updated (off-policy, on-policy, non-gradient), *when*
 (pre-training, post-training, inference) and *where* (parameters
-versus external memory) ; framework C sits in its offline,
-parameter-space cell, as a layer that composes operations. No
+versus external memory) ; framework C would fall in its
+post-training, parameter-space region, as a layer that composes
+operations (the survey has no "offline" category, and it warns
+that an unoccupied region is not evidence that no relevant work
+exists, §3.5). No
 prior work,
 to our knowledge, ships a reusable conformance test suite
 binding a formal framework to operational substrates across
@@ -239,7 +248,8 @@ depend on MLX internals.
 
 The row is explicitly marked `N/A` and must not be read as
 passing or failing. Candidate cycle-3 substrates :
-transformer-based, SpiNNaker [@furber2014spinnaker] / Norse, or
+transformer-based, SpiNNaker [@furber2014spinnaker] (programmed
+through PyNN or Nengo), or
 real Loihi-2 [@davies2018loihi].
 
 ### 4.5 The matrix as a reusable artifact
@@ -520,8 +530,8 @@ informative cross-substrate verdicts. Enables
 ### 9.2 Real Loihi-2 hardware mapping
 
 If Intel NRC partnership materialises [@davies2018loihi], port
-numpy LIF skeleton to Loihi-2. Fallbacks : SpiNNaker via Norse
-[@furber2014spinnaker], Lava SDK simulation, or status-quo
+numpy LIF skeleton to Loihi-2. Fallbacks : SpiNNaker via PyNN or
+Nengo [@furber2014spinnaker], Lava SDK simulation, or status-quo
 numpy skeleton.
 
 ### 9.3 Real fMRI cohort (T-Col pivot)

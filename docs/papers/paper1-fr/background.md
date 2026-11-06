@@ -20,11 +20,15 @@ est le substrat neural le plus directement impliqué, conditionnée
 par l'imbrication temporellement précise des oscillations lentes,
 des fuseaux thalamocorticaux et des sharp-wave ripples [Trends
 2024 coupled]. Une méta-analyse bayésienne portant sur 297 tailles
-d'effet établit le couplage de phase oscillation lente / fuseau
-rapide comme prédicteur quantitativement étayé du bénéfice
-mnésique (couplage = 0,33 [0,27 ; 0,39] ; BF > 58 vs nul ; aucun
-biais de publication détecté sur la branche phase) [eLife 2025
-bayesian]. Le boosting optogénétique en boucle fermée des grands
+d'effet trouve une association faible entre la phase préférée du
+couplage oscillation lente / fuseau rapide et la consolidation
+mnésique (r_z = 0,07 [0,01 ; 0,13] ; BF10 = 58,35 ; aucun biais
+de publication détecté sur la branche phase), dont l'intervalle
+inclut zéro dans l'analyse focale à une taille d'effet par
+étude ; la force moyenne de couplage de 0,33 [0,27 ; 0,39]
+qu'elle rapporte aussi est descriptive, et le pourcentage de
+couplage n'est pas associé à la mémoire (r = −0,03 ;
+BF10 = 0,38) [eLife 2025 bayesian]. Le boosting optogénétique en boucle fermée des grands
 sharp-wave ripples pendant le sommeil est *suffisant* pour
 convertir un apprentissage sous-seuil en rappel réussi le
 lendemain, faisant passer le champ d'une preuve corrélationnelle
@@ -58,9 +62,14 @@ dans notre analyse des paires d'opérations (voir
 downscale est **commutative mais non idempotente** (shrink_f ∘
 shrink_f donne facteur², pas facteur) — propriété qui contraint
 les choix d'ordonnancement canonique.
+Voir aussi [@agliari2024regularization], qui montrent que, dans des
+réseaux de type Hopfield, le noyau de rêve (désapprentissage
+réitéré) est l'optimum d'une perte régularisée, son ampleur étant
+fixée par l'hyperparamètre de régularisation et le temps
+d'entraînement.
 Un modèle de replay inspiré du sommeil publié en 2026 montre
 qu'une unique phase de sommeil non supervisée, programmée après
-*plusieurs* tâches séquentielles, les restaure toutes, la plupart
+*plusieurs* tâches séquentielles, les restaure toutes en partie, la plupart
 des synapses étant affaiblies et une minorité renforcée
 [Bazhenov et al. 2026] — une instance computationnelle du couplage
 replay-plus-downscale que décrivent conjointement les piliers A
@@ -81,23 +90,37 @@ qui entraîne des autoencodeurs variationnels néocorticaux,
 rendant compte du rappel épisodique, de l'imagination et des
 distorsions de schéma dans un seul espace latent indépendant du
 substrat [Spens & Burgess 2024]. La dichotomie nette « REM =
-émotionnel / NREM = déclaratif » s'effondre : le cueing TMR en
-NREM renforce déjà la mémoire des items émotionnels, le REM
-contribuant de manière complémentaire [CommsBio 2025
-emotional], et la synthèse 2025 de *Nature Reviews Neuroscience*
-soutient un modèle **séquentiel** SWS-puis-REM plutôt qu'une
-partition compétitive [Robertson 2025 NRN]. L'EEG haute densité
-chez l'humain apporte une preuve propre à chaque stade : la
-réactivation verrouillée sur les complexes oscillation lente–
-fuseau en NREM et la réactivation pendant le REM phasique sont
-dissociables, la première soutenant la consolidation mnésique et
-la seconde la dissipation émotionnelle [Zhang et al. 2026] — ce
-qui va dans le sens d'opérateurs distincts par stade plutôt que
-d'un processus unique d'« intégration ». Dans notre
+émotionnel / NREM = déclaratif » est mise en question : dans une
+étude de TMR pendant la sieste, le cueing en SWS ne favorise les
+items émotionnels sur les neutres que dans la comparaison entre
+groupes (aucun effet intra-groupe), avec un bénéfice qui croît
+avec le produit des durées de SWS et de REM, tandis que le cueing
+en REM dégrade la mémoire des items émotionnels [CommsBio 2025
+emotional] ; un texte rétrospectif d'une page de *Nature Reviews
+Neuroscience* (2025) rappelle le résultat de Stickgold et al.
+2000, où le SWS de début de nuit et le REM de fin de nuit
+expliquaient ensemble l'essentiel de l'amélioration nocturne, ce
+qui impliquait un processus **séquentiel** [Robertson 2025 NRN].
+L'EEG haute densité chez l'humain apporte une preuve propre à
+chaque stade : dans une prépublication, la réactivation
+verrouillée sur les complexes oscillation lente–fuseau en NREM et
+la réactivation pendant le REM phasique sont dissociables, mais
+c'est le pourcentage de couplage oscillation lente–fuseau, et non
+la force de réactivation, qui prédit la mémoire temporelle après
+le sommeil, tandis que la force de réactivation en REM phasique
+est corrélée à la baisse nocturne de l'anxiété et de l'affect
+négatif [Zhang et al. 2026]. Cette association du pourcentage de
+couplage est en tension avec le nul méta-analytique sur ce même
+pourcentage cité plus haut [eLife 2025 bayesian]. Pris ensemble,
+ces résultats vont dans le sens d'opérateurs distincts par stade
+plutôt que d'un processus unique d'« intégration ». Dans notre
 framework, ceci se projette sur l'opération `recombine` :
 échantillonner les latents du snapshot δ, appliquer un VAE allégé
 ou un noyau d'interpolation, émettre de nouveaux échantillons
 latents sur le canal 2.
+Voir aussi [@agliari2026networks], où des réseaux hebbiens en
+couches réalisent un désenchevêtrement : ils restituent les
+constituants d'un mélange présenté en entrée.
 
 ## 3.4 Pilier D — Principe d'Énergie Libre de Friston
 

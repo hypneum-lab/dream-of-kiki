@@ -101,8 +101,8 @@ requiert le câblage réel de P_max (cycle 2).
 | @liu2024hybrid (Advancing brain-inspired computing with hybrid neural networks, National Science Review 2024) | Revue soutenant que les systèmes hybrides ANN/SNN sont la voie vers l'informatique bio-inspirée | Ancre canonique réseau-neuronal-hybride pour notre revendication cross-substrat : notre validation cycle-1 sur un substrat MLX dense et un substrat LIF spiking est précisément une configuration de réseau neuronal hybride, et le Critère de Conformité exécutable fournit le contrat dont de tels hybrides manquent actuellement |
 | Sorrenti et al. 2023 (WSCL) | Cycle veille/sommeil CLS avec phases NREM/REM explicites; transfert direct REM positif | Nous axiomatisons les opérations de phase de façon agnostique au substrat (DR-0..DR-4 + Conformance Criterion) plutôt que de figer une architecture veille-sommeil; comparaison empirique reportée au Paper 2 |
 | Robinson et al. 2022 | Replay NREM + replay génératif REM + downscaling synaptique réduisent conjointement l'oubli catastrophique | Nos quatre opérations typées généralisent ce triplet en primitives composables sous un Conformance Criterion exécutable; recombine est un générateur sémantiquement indépendant absent de ce triplet |
-| Zahn, Evans & Eagleman 2026 (arXiv v2) [@zahn2026discoverydreaming] | Effet de recombinaison inter-domaines conditionné par la capacité dans un pipeline LoRA de rang 256 (8B) et indices de distance d'embedding dans un moteur symbolique ; répétition intra-domaine rapportée nulle dans une condition appariée de rang 128 ; la v2 rétracte son résultat phare d'exactitude jugée et ses gains à graine unique | Soutien préliminaire, d'un seul groupe, à `recombine` comme générateur distinct ; son effet attendu est le transfert inter-domaines, pas la rétention intra-domaine |
-| Dey et al. 2026 (SHARP) [@dey2026sharp] ; Bazhenov et al. 2026 [@bazhenov2026notjustafterone] | Replay accéléré fusionné en représentations de plus haut niveau ; une phase de sommeil après plusieurs tâches les restaure toutes | Instances de `replay` → `restructure` (ordre admissible sous DR-2) et du couplage `replay` + `downscale` |
+| Zahn, Evans & Eagleman 2026 (arXiv v2) [@zahn2026discoverydreaming] ; voir aussi Agliari et al. 2026 [@agliari2026networks; @agliari2026denseautohetero] | Effet de recombinaison inter-domaines conditionné par la capacité dans un pipeline LoRA de rang 256 (8B) et indices de distance d'embedding dans un moteur symbolique ; répétition intra-domaine rapportée nulle dans une condition appariée de rang 128 ; la v2 rétracte son résultat phare d'exactitude jugée et ses gains à graine unique ; une partie du résultat phare est un artefact de dégénérescence, l'effet ne tient qu'à un seul point de contrôle et il est négatif sur Mistral-7B | Soutien préliminaire, d'un seul groupe, à `recombine` comme générateur distinct ; son effet attendu est le transfert inter-domaines, pas la rétention intra-domaine |
+| Dey et al. 2026 (SHARP) [@dey2026sharp] ; Bazhenov et al. 2026 [@bazhenov2026notjustafterone] | Replay accéléré fusionné en représentations de plus haut niveau ; une phase de sommeil après plusieurs tâches les restaure toutes en partie | Instances de `replay` → `restructure` (ordre admissible sous DR-2) et du couplage `replay` + `downscale` |
 | Zhang, Zhang & Xu 2026 [@zhang2026silentreplay] | Replay dans les synapses silencieuses, sans phase hors ligne | Question ouverte : conformité avec des frontières d'épisode de rêve logiques (journal DR-0) plutôt que temporelles |
 
 Nos traits distinctifs : **(a)** framework formel unifié couvrant
@@ -182,25 +182,29 @@ Au niveau mécanistique, seuls ~10–30 % des sharp-wave ripples du
 sommeil portent un contenu de réactivation détectable [Annu.
 Rev. 2025 replay], une sélectivité que DR-2 (downscaling) et le
 récit plus large piloté par la réactivation ne doivent pas
-surclamer. Schreiner et al. [Schreiner et al. 2024 J. Neurosci.]
+surclamer. Siefert et al. [Siefert et al. 2024 J. Neurosci.]
 montrent en outre que la réactivation mnésique ciblée n'agit
 **pas** holistiquement sur la mémoire des objets pendant le
 sommeil, alimentant le débat encore ouvert sur quelles
 caractéristiques mnésiques sont sensibles au sommeil. Le paysage
-de réplication CLAS lui-même est hétérogène et atténué par
-l'âge, avec des effets plus faibles sur les tâches procédurales
-[npj Sci. Learn. 2025 CLAS].
+de réplication CLAS lui-même est hétérogène : chez l'adulte
+jeune et d'âge moyen, toutes les études de CLAS des oscillations
+lentes produisent une réponse neurale mais environ 40 % seulement
+rapportent un gain mnésique, et une étude de sieste à cinq bras a
+modulé la physiologie du sommeil sans aucun effet Temps ×
+Condition sur les tâches mnésiques [npj Sci. Learn. 2026 CLAS].
 
 La critique de Cordi & Rasch 2021 [Cordi & Rasch 2021] reste le
 contrepoids portant aux récits enthousiastes — les effets du
 sommeil sur la mémoire sont plus petits, plus dépendants de la
 tâche, moins liés au SWS, moins robustes et moins durables que
 ne le supposait la littérature antérieure. Tout futur travail
-empirique dans ce programme adoptera la check-list méthodologique
-de référence de *Nature Reviews Psychology* 2023 [Nat. Rev.
-Psychol. 2023 méthodologie] (plans sham-contrôlés, rapport
-dose-réponse, attention au confondage plan-séquentiel /
-récupération-vs-restudy). Ces conditions limites resserrent le
+empirique dans ce programme adoptera les recommandations
+méthodologiques de Németh et al. 2024 [Nat. Rev. Psychol. 2024
+méthodologie] (tableau 1 : conditions de contrôle circadien,
+plans complets Sommeil/Éveil × Intervention/Contrôle, tailles
+d'échantillon a priori avec règles d'arrêt bayésiennes, analyses
+de corrélation planifiées et corrigées). Ces conditions limites resserrent le
 périmètre de toute revendication empirique que le framework peut
 porter, ainsi que le type de validation de substrat du cycle 3
 qui compterait comme confirmatif.

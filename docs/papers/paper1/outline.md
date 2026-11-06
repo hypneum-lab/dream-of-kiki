@@ -182,7 +182,7 @@ Key citations to populate :
 - Tononi G, Cirelli C (2014). SHY.
 - Friston K (2010). FEP.
 - Hobson JA (2009). REM dreaming.
-- van de Ven GM, Tuytelaars T, Tolias AS (2020). Brain-inspired
+- van de Ven GM, Siegelmann HT, Tolias AS (2020). Brain-inspired
   replay.
 - McClelland JL et al (1995). Complementary learning systems.
 

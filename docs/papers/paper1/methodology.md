@@ -20,8 +20,11 @@ sister project `bouba_sens` (DOI 10.17605/OSF.IO/Q6JYN).
   mean(forgetting_baseline)`. Test : Welch's t-test, one-sided.
   *Effect-size floor* : the targeted memory reactivation
   meta-analysis [@hu2020tmr] reports overall Hedges' g = 0.29
-  (NREM2 g = 0.32, SWS g = 0.27) as the canonical empirical
-  floor for `P_equ`-style consolidation gains.
+  (NREM2 g = 0.32, SWS g = 0.27), used here as the reference
+  magnitude for `P_equ`-style consolidation gains. It is not a
+  floor : the same paper's bias-adjusted estimates are smaller
+  (trim-and-fill g = 0.18, three-parameter selection model
+  g = 0.13, g = −0.05 under severe one-tailed selection).
 - **H2 — P_max equivalence** : `|mean(acc_P_max) -
   mean(acc_P_equ)| < 0.05`. Test : two one-sided tests (TOST).
   *Cycle 1 status* : self-equivalence smoke only (P_max skeleton).
@@ -30,8 +33,11 @@ sister project `bouba_sens` (DOI 10.17605/OSF.IO/Q6JYN).
   Jonckheere-Terpstra. *Cycle 1 status* : two-group (P_min ↔
   P_equ) only. *Effect-size floor for the P_min arm* : the sleep
   restriction meta-analysis [@javadi2024sleeprestriction] reports
-  g = 0.29 [0.13, 0.44] with no detected publication bias as the
-  expected magnitude of the degraded-substrate decrement.
+  g = 0.29 [0.13, 0.44] as the expected magnitude of the
+  degraded-substrate decrement ; its funnel plot is significantly
+  asymmetric (Egger z = 3.90) although a three-parameter selection
+  model detects no publication bias, and its 95 % prediction
+  interval runs from −0.73 to 1.30.
 - **H4 — Energy budget** : `mean(energy_dream / energy_awake)
   < 2.0`. Test : one-sample t-test against threshold.
 
@@ -125,9 +131,10 @@ The calibration is realised in code as a
 `so_trough_amplitude_factor` field on the profile dataclass
 (`kiki_oniric/profiles/p_min.py`), with the unit-arbitrary ratio
 `0.45` for `P_min` (aMCI midpoint placeholder) and `1.0` for the
-healthy anchors `P_equ` / `P_max`. Sharon 2025 reports the
-gradient qualitatively (no absolute SO-trough amplitude in µV);
-the placeholder ratio will be refined to an empirical value at
+healthy anchors `P_equ` / `P_max`. Sharon 2025 does report
+absolute slow-wave trough amplitudes in µV (group medians
+−60.18 healthy, −56.95 aMCI, −52.61 AD) ; the 0.45 ratio is not
+derived from them and will be refined to an empirical value at
 the G2 P_min pilot (`scripts/pilot_g2.py`).
 `P_equ` (canonical substrate) is calibrated to reproduce the
 NREM2/SWS effect-size band reported in [@hu2020tmr]. The DR-2'

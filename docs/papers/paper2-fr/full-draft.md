@@ -103,7 +103,11 @@ profils, DR-0..DR-4). L'Article 2 hérite du mapping
 quatre-piliers (Walker-replay [@walker2004sleep;
 @stickgold2005sleep], Tononi-downscale [@tononi2014sleep],
 Hobson-recombine [@hobson2009rem; @solms2021revising],
-Friston-restructure [@friston2010free]).
+Friston-restructure [@friston2010free]). L'Article 1 §2.1
+retrace aussi la lecture computationnelle du sommeil comme
+désapprentissage, de Crick et Mitchison et Hopfield et al. au
+noyau de rêve de Fachechi et al. [@crick1983function;
+@hopfield1983unlearning; @fachechi2019dreaming].
 
 DR-3 spécifie C1 (typage de signature via Protocols typés),
 C2 (tests de propriétés d'axiomes passent), C3 (invariants
@@ -114,8 +118,11 @@ substrat.
 La réplication inter-substrats en apprentissage continu est
 sous-représentée dans l'art antérieur : [@vandeven2020brain]
 sur une seule architecture, [@kirkpatrick2017overcoming]
-comme régularisateur adjacent SHY, [@rebuffi2017icarl] et
-[@shin2017continual] spécifiques à l'architecture. Aucun
+comme régularisateur que nous lisons comme adjacent SHY,
+[@rebuffi2017icarl] évalué avec les seuls CNN bien que décrit par
+ses auteurs comme largement indépendant de l'architecture,
+[@shin2017continual] sans visée d'indépendance du substrat.
+Aucun
 travail antérieur ne livre une suite de tests de conformité
 réutilisable sur des modèles de matériel qualitativement
 distincts (MLX dense vs LIF spiking).
@@ -163,7 +170,7 @@ Fichier : `tests/conformance/axioms/test_dr3_esnn_substrate.py`.
 | C3 | N/A | pas encore implémenté |
 
 Candidats cycle-3 : basés sur transformers, SpiNNaker
-[@furber2014spinnaker] / Norse, ou Loihi-2 réel
+[@furber2014spinnaker] (programmé via PyNN ou Nengo), ou Loihi-2 réel
 [@davies2018loihi].
 
 ### 4.5 La matrice comme artefact réutilisable
@@ -406,7 +413,7 @@ substrat. Débloque `C-v0.7.0+STABLE`.
 ### 9.2 Mapping matériel Loihi-2 réel
 
 Si partenariat Intel NRC se matérialise
-[@davies2018loihi]. Fallbacks : SpiNNaker via Norse
+[@davies2018loihi]. Fallbacks : SpiNNaker via PyNN ou Nengo
 [@furber2014spinnaker], simulation Lava SDK, ou statu quo.
 
 ### 9.3 Cohorte IRMf réelle (pivot T-Col)

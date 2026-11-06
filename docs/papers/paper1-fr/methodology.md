@@ -21,9 +21,13 @@ méta-analyses de consolidation mnésique liée au sommeil [eLife
   mean(forgetting_baseline)`. Test : t de Welch, unilatéral.
   *Plancher de taille d'effet* : la méta-analyse de la
   réactivation mnésique ciblée [Hu et al. 2020 TMR] rapporte un
-  Hedges' g global de 0,29 (NREM2 g = 0,32 ; SWS g = 0,27) comme
-  plancher empirique canonique pour les gains de consolidation
-  de type `P_equ`.
+  Hedges' g global de 0,29 (NREM2 g = 0,32 ; SWS g = 0,27), pris
+  ici comme magnitude de référence pour les gains de
+  consolidation de type `P_equ`. Ce n'est pas un plancher : les
+  estimations corrigées du biais du même article sont plus
+  faibles (trim-and-fill g = 0,18 ; modèle de sélection à trois
+  paramètres g = 0,13 ; g = −0,05 sous sélection unilatérale
+  sévère).
 - **H2 — Équivalence P_max** : `|mean(acc_P_max) -
   mean(acc_P_equ)| < 0.05`. Test : deux tests unilatéraux (TOST).
   *Statut cycle 1* : test de fumée d'auto-équivalence uniquement
@@ -33,9 +37,12 @@ méta-analyses de consolidation mnésique liée au sommeil [eLife
   Jonckheere-Terpstra. *Statut cycle 1* : deux groupes
   (P_min ↔ P_equ) uniquement. *Plancher de taille d'effet pour
   le bras P_min* : la méta-analyse sur la restriction de sommeil
-  [Javadi et al. 2024 sleep restriction] rapporte g = 0,29 [0,13 ;
-  0,44] sans biais de publication détecté comme magnitude
-  attendue du décrément de substrat dégradé.
+  [Crowley et al. 2024 sleep restriction] rapporte g = 0,29 [0,13 ;
+  0,44] comme magnitude attendue du décrément de substrat
+  dégradé ; son graphique en entonnoir est significativement
+  asymétrique (Egger z = 3,90), bien qu'un modèle de sélection à
+  trois paramètres ne détecte pas de biais de publication, et
+  son intervalle de prédiction à 95 % va de −0,73 à 1,30.
 - **H4 — Budget énergétique** : `mean(energy_dream / energy_awake)
   < 2.0`. Test : t à un échantillon contre seuil.
 
@@ -137,8 +144,9 @@ implémentée comme un champ `so_trough_amplitude_factor` sur la
 dataclass de profil (`kiki_oniric/profiles/p_min.py`), avec la
 valeur ratio sans-unité `0,45` pour `P_min` (placeholder médian
 aMCI) et `1,0` pour les ancres saines `P_equ` / `P_max`. Sharon
-2025 rapporte le gradient qualitativement (pas d'amplitude
-SO-trough absolue en µV) ; la valeur placeholder sera affinée
+2025 rapporte bien des amplitudes absolues du creux de l'onde
+lente en µV (médianes de groupe −60,18 sains, −56,95 aMCI,
+−52,61 MA) ; le ratio 0,45 n'en est pas dérivé et sera affiné
 empiriquement lors du pilote G2 P_min
 (`scripts/pilot_g2.py`). `P_equ` (substrat
 canonique) est calibré pour reproduire la bande de tailles

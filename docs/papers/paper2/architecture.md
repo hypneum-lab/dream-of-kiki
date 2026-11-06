@@ -194,8 +194,8 @@ real-predictor evidence.
 ## 5.8 Wake-Sleep CL baseline row (Alfarano 2024)
 
 Paper 2 §7 includes a fourth row in the ablation table : the
-**Wake-Sleep Consolidated Learning** baseline of Alfarano et al.
-2024 [@alfarano2024wakesleep, IEEE TNNLS, arXiv 2401.08623].
+**Wake-Sleep Consolidated Learning** baseline of Sorrenti et al.
+2025 [@alfarano2024wakesleep, IEEE TNNLS, arXiv 2401.08623].
 Paper 1 §3 already names this work as the "closest published
 NREM/REM dual-phase analog" and the natural Paper 2 ablation
 comparator. The baseline is registered in the substrates

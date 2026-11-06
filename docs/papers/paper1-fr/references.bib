@@ -130,15 +130,21 @@
 }
 
 @article{sharon2025alzdementia,
-  author  = {Sharon, Omer and others},
-  title   = {Slow-wave synchrony in prodromal {Alzheimer's} disease},
-  journal = {Alzheimer's and Dementia},
+  author  = {Sharon, Omer and Zhelezniakov, Vladislav and Gat, Yael
+             and Falach, Rotem and Narbayev, Darya and Shiner, Tamara
+             and Walker, Matthew P. and Tauman, Riva and Bregman, Noa
+             and Nir, Yuval},
+  title   = {Slow wave synchrony during {NREM} sleep tracks cognitive
+             impairment in prodromal {Alzheimer's} disease},
+  journal = {Alzheimer's \& Dementia},
+  volume  = {21},
+  number  = {5},
+  pages   = {e70247},
   year    = {2025},
+  doi     = {10.1002/alz.70247},
   note    = {hd-EEG; N=55 (21 healthy older / 28 aMCI / 6 AD);
              cognitive performance decreases with slow-wave trough
-             amplitude and frontocentral synchronization. DOI:
-             10.1002/alz.70247. URL:
-             \url{https://alz-journals.onlinelibrary.wiley.com/doi/10.1002/alz.70247}.},
+             amplitude and frontocentral synchronization.},
 }
 
 @article{stickgold2005sleep,
@@ -165,17 +171,18 @@
   publisher = {Elsevier},
 }
 
+% Co-author corrected 2026-11-04 (Crossref): Siegelmann, not Tuytelaars.
 @article{vandeven2020brain,
-  author  = {van de Ven, Gido M. and Tuytelaars, Tinne and
+  author  = {van de Ven, Gido M. and Siegelmann, Hava T. and
              Tolias, Andreas S.},
   title   = {Brain-inspired replay for continual learning with
              artificial neural networks},
   journal = {Nature Communications},
   volume  = {11},
   number  = {1},
-  pages   = {1--14},
+  pages   = {4069},
   year    = {2020},
-  publisher = {Nature Publishing Group},
+  doi     = {10.1038/s41467-020-17866-2},
 }
 
 @article{walker2004sleep,
@@ -224,20 +231,26 @@
                modality.},
 }
 
+% Corrigé 2026-11-04 (DataCite) : le DOI concept se résout vers
+% v1.10.0 ; Zenodo n'a pas d'enregistrement v1.9.0, les chiffres
+% v1.9.0 renvoient donc au tag git.
 @misc{saillant2026nervewml,
   author    = {Saillant, Cl{\'e}ment},
-  title     = {nerve-wml: Working Memory Layer for predictive
-               cognitive architectures},
+  title     = {nerve-wml: Substrate-Agnostic Nerve Protocol},
   year      = {2026},
   publisher = {Zenodo},
   doi       = {10.5281/zenodo.19656342},
   url       = {https://doi.org/10.5281/zenodo.19656342},
-  note      = {DOI concept ; se résout à la dernière version
-               publiée. v1.9.0 apporte le pont axiomatique
+  note      = {DOI concept (toutes versions) ; se résout à la dernière
+               version publiée (v1.10.0 au 2026-11-04). Zenodo n'a pas
+               d'enregistrement v1.9.0 ; les chiffres v1.9.0 rapportés
+               ici renvoient au tag git v1.9.0,
+               \url{https://github.com/hypneum-lab/nerve-wml/tree/v1.9.0}.
+               v1.9.0 apporte le pont axiomatique
                dreamOfkiki de contractuel à fonctionnel, la
                surface empirique GammaThetaMultiplexer utilisée
                dans la validation PRH rapportée ici, l'information
-               mutuelle bias-corrigée (Panzeri–Treves + null de
+               mutuelle bias-corrigée (Panzeri--Treves + null de
                permutation), et la correction de l'artefact de
                tête de lecture du gap inter-substrats.},
 }
@@ -345,7 +358,8 @@
   archivePrefix = {arXiv},
   primaryClass = {cs.LG},
   url          = {https://arxiv.org/abs/2401.08623},
-  note         = {IEEE TNNLS January 2024. Closest published explicit
+  note         = {Published in IEEE TNNLS 36(7):12668--12679 (July
+                  2025), doi:10.1109/TNNLS.2024.3458440 (Crossref). Closest published explicit
                   NREM/REM split in a deep network; natural Paper 2
                   ablation comparator.},
 }
@@ -358,7 +372,7 @@
   archivePrefix = {arXiv},
   primaryClass = {cs.NE},
   url          = {https://arxiv.org/abs/2209.05245},
-  note         = {Four-operation NREM/REM plus synaptic-downscaling consolidation, near-isomorphic to our operation set; prior art for the phase split.},
+  note         = {Tripartite consolidation (NREM veridical replay, REM generative replay, synaptic downscaling), near-isomorphic to our operation set; prior art for the phase split.},
 }
 
 %% --- Added 2026-10-23 (related-work update, window 2026-04-23 to
@@ -470,4 +484,48 @@
   howpublished  = {bioRxiv preprint},
   doi           = {10.64898/2026.08.04.742295},
   url           = {https://www.biorxiv.org/content/10.64898/2026.08.04.742295v1},
+}
+
+%% --- Added 2026-11-04 (Rome group, placements from the 2026-11-01
+%% review; metadata from Crossref / arXiv API). ---
+
+@article{agliari2024regularization,
+  author  = {Agliari, Elena and Alemanno, Francesco and Aquaro, Miriam
+             and Fachechi, Alberto},
+  title   = {Regularization, early-stopping and dreaming: A
+             {Hopfield}-like setup to address generalization and
+             overfitting},
+  journal = {Neural Networks},
+  volume  = {177},
+  pages   = {106389},
+  year    = {2024},
+  doi     = {10.1016/j.neunet.2024.106389},
+  eprint  = {2308.01421},
+  archivePrefix = {arXiv},
+}
+
+@article{agliari2026networks,
+  author  = {Agliari, Elena and Alessandrelli, Andrea and Barra, Adriano
+             and Centonze, Martino Salomone and Ricci-Tersenghi,
+             Federico},
+  title   = {Networks of {Hebbian} networks: more is different},
+  journal = {Neural Networks},
+  volume  = {194},
+  pages   = {108181},
+  year    = {2026},
+  doi     = {10.1016/j.neunet.2025.108181},
+  eprint  = {2501.16789},
+  archivePrefix = {arXiv},
+}
+
+@misc{agliari2026denseautohetero,
+  author       = {Agliari, Elena and Alessandrelli, Andrea and Barra,
+                  Adriano and Fachechi, Alberto},
+  title        = {Dense auto-hetero associative memories applied to
+                  noisy communication channels},
+  year         = {2026},
+  eprint       = {2609.32605},
+  archivePrefix = {arXiv},
+  primaryClass = {cond-mat.dis-nn},
+  url          = {https://arxiv.org/abs/2609.32605},
 }

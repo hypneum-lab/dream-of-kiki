@@ -95,8 +95,8 @@ cycle 1. Real H2 evaluation requires P_max real wiring (cycle 2).
 | @liu2024hybrid (Advancing brain-inspired computing with hybrid neural networks, National Science Review 2024) | Survey arguing hybrid ANN/SNN systems are the path to brain-inspired computing | Canonical hybrid-neural-network anchor for our cross-substrate claim : our cycle-1 validation across an MLX dense substrate and a LIF spiking substrate is precisely a hybrid-neural-network configuration, and the executable Conformance Criterion supplies the contract such hybrids currently lack |
 | Sorrenti et al. 2023 (WSCL) | CLS wake/sleep with explicit NREM/REM phases; reports positive REM forward-transfer | We axiomatise the phase operations substrate-agnostically (DR-0..DR-4 + Conformance Criterion) instead of fixing one wake-sleep architecture; empirical comparison deferred to Paper 2 |
 | Robinson et al. 2022 | NREM replay + generative REM replay + synaptic downscaling jointly reduce catastrophic forgetting | Our four typed operations generalise this triplet as composable primitives under an executable Conformance Criterion; recombine is a semantically independent generator absent from it |
-| Zahn, Evans & Eagleman 2026 (arXiv v2) [@zahn2026discoverydreaming] | Capacity-gated cross-domain recombinatory-replay effect in a rank-256 LoRA pipeline (8B) and embedding-distance evidence in a symbolic engine ; within-domain rehearsal reported null in a matched rank-128 condition ; v2 retracts its earlier judged-accuracy headline and single-seed gains | Preliminary, single-group support for `recombine` as a distinct generator ; its predicted effect is cross-domain transfer, not within-domain retention |
-| Dey et al. 2026 (SHARP) [@dey2026sharp] ; Bazhenov et al. 2026 [@bazhenov2026notjustafterone] | Accelerated replay merged into higher-level representations ; one sleep phase after several tasks restores all of them | Instances of `replay` → `restructure` (DR-2-admissible order) and of the `replay` + `downscale` coupling |
+| Zahn, Evans & Eagleman 2026 (arXiv v2) [@zahn2026discoverydreaming] ; see also Agliari et al. 2026 [@agliari2026networks; @agliari2026denseautohetero] | Capacity-gated cross-domain recombinatory-replay effect in a rank-256 LoRA pipeline (8B) and embedding-distance evidence in a symbolic engine ; within-domain rehearsal reported null in a matched rank-128 condition ; v2 retracts its earlier judged-accuracy headline and single-seed gains ; part of the headline is a degeneration artefact, the effect holds at a single checkpoint and is negative on Mistral-7B | Preliminary, single-group support for `recombine` as a distinct generator ; its predicted effect is cross-domain transfer, not within-domain retention |
+| Dey et al. 2026 (SHARP) [@dey2026sharp] ; Bazhenov et al. 2026 [@bazhenov2026notjustafterone] | Accelerated replay merged into higher-level representations ; one sleep phase after several tasks partially restores all of them | Instances of `replay` → `restructure` (DR-2-admissible order) and of the `replay` + `downscale` coupling |
 | Zhang, Zhang & Xu 2026 [@zhang2026silentreplay] | Replay into silent synapses, no offline phase | Open question : conformance with logical (DR-0 log) rather than temporal dream-episode boundaries |
 
 Our distinguishing features : **(a)** unified formal framework
@@ -170,22 +170,27 @@ framework's finite-budget invariant K1.
 At the mechanism level, only ~10–30 % of sleep sharp-wave ripples
 carry detectable replay content [@annurev2025replay], a
 selectivity that DR-2 (downscaling) and the wider replay-driven
-narrative must not over-claim. Schreiner et al. [@schreiner2024jneurosci]
+narrative must not over-claim. Siefert et al. [@siefert2024jneurosci]
 further show that targeted memory reactivation does **not** act
 holistically on object memory during sleep, fuelling the still-open
 debate about which memory features are sleep-sensitive. The CLAS
-replication landscape itself is heterogeneous and age-attenuated,
-with weaker effects on procedural tasks [@npjscilearn2025clas].
+replication landscape itself is heterogeneous : in young and
+middle-aged adults all slow-oscillation CLAS studies elicit a
+neural response but only about 40 % report a memory gain, and a
+five-arm nap study modulated sleep physiology without any
+Time × Condition effect on the memory tasks
+[@npjscilearn2025clas].
 
 Cordi & Rasch's 2021 critique [@cordi2021robust] remains the
 load-bearing counterweight to enthusiastic narratives — sleep
 effects on memory are smaller, more task-dependent, less
 SWS-related, less robust and less long-lasting than previously
 assumed. Any future empirical work in this programme will adopt
-the gold-standard methodology checklist of *Nature Reviews
-Psychology* 2023 [@natrevpsych2023methodology] (sham-controlled
-designs, dose-response reporting, awareness of the
-sequential-design / retrieval-vs-restudy confound). These
+the methodological recommendations of Németh et al. 2024
+[@natrevpsych2023methodology] (Table 1 : circadian control
+conditions, full Sleep/Wake × Intervention/Control designs,
+a priori sample sizes with Bayesian stopping rules, and
+pre-planned, corrected correlation analyses). These
 boundary conditions tighten the scope of every empirical claim
 the framework can support and the kind of cycle-3 substrate
 validation that would count as confirmatory.

@@ -3,7 +3,7 @@
 **Status:** Internal pre-baked rebuttal material. Not part of submitted manuscript.
 **Created:** 2026-05-10
 **Trigger:** Use if a reviewer raises priority, novelty, or attribution concerns
-relative to RecursiveMAS (Yang et al., arXiv:2604.25917, 2026-04-28).
+relative to RecursiveMAS (Zou et al., arXiv:2604.25917, 2026-04-28).
 **Owner:** C. Saillant (Hypneum Lab).
 
 ---
@@ -125,7 +125,7 @@ sized for the released checkpoints.
 Use this paragraph verbatim in the response document if R1 or R2 is raised.
 
 > We thank the reviewer for raising the relationship to RecursiveMAS
-> (Yang et al., 2026), which we discuss in §Related Work as concurrent
+> (Zou et al., 2026), which we discuss in §Related Work as concurrent
 > work. Both efforts converge on the high-level intuition that shared
 > latent state outperforms token-level exchange between heterogeneous
 > components, yet they differ fundamentally in (i) substrate —

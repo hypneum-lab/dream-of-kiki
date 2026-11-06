@@ -185,17 +185,18 @@
   publisher = {Elsevier},
 }
 
+% Co-author corrected 2026-11-04 (Crossref): Siegelmann, not Tuytelaars.
 @article{vandeven2020brain,
-  author  = {van de Ven, Gido M. and Tuytelaars, Tinne and
+  author  = {van de Ven, Gido M. and Siegelmann, Hava T. and
              Tolias, Andreas S.},
   title   = {Brain-inspired replay for continual learning with
              artificial neural networks},
   journal = {Nature Communications},
   volume  = {11},
   number  = {1},
-  pages   = {1--14},
+  pages   = {4069},
   year    = {2020},
-  publisher = {Nature Publishing Group},
+  doi     = {10.1038/s41467-020-17866-2},
 }
 
 @article{walker2004sleep,
@@ -249,15 +250,18 @@
   publisher = {Nature Publishing Group},
 }
 
+% Corrected 2026-11-04 (Crossref): the DOI is Lutz, Harkotte & Born,
+% Physiol. Rev. 106 (2026), not Rasch & Born 105 (2025). Key kept
+% for continuity.
 @article{rasch2025sleep,
-  author  = {Rasch, Bj{\"o}rn and Born, Jan},
+  author  = {Lutz, Nicolas D. and Harkotte, Maximilian and Born, Jan},
   title   = {Sleep's contribution to memory formation},
   journal = {Physiological Reviews},
-  volume  = {105},
-  number  = {2},
-  pages   = {521--576},
-  year    = {2025},
-  publisher = {American Physiological Society},
+  volume  = {106},
+  number  = {1},
+  pages   = {363--483},
+  year    = {2026},
+  doi     = {10.1152/physrev.00054.2024},
 }
 
 @phdthesis{gavranovic2024fundamental,
@@ -308,14 +312,27 @@
   note      = {Argues that representations from sufficiently capable models converge to a shared statistical structure, independent of architecture and modality.},
 }
 
+% Corrected 2026-11-04 (DataCite): the concept DOI resolves to
+% v1.10.0; Zenodo holds no v1.9.0 version record, so the v1.9.0
+% figures are pinned to the git tag instead.
 @misc{saillant2026nervewml,
   author    = {Saillant, Cl{\'e}ment},
-  title     = {nerve-wml: Working Memory Layer for predictive cognitive architectures},
+  title     = {nerve-wml: Substrate-Agnostic Nerve Protocol},
   year      = {2026},
   publisher = {Zenodo},
   doi       = {10.5281/zenodo.19656342},
   url       = {https://doi.org/10.5281/zenodo.19656342},
-  note      = {Concept DOI; resolves to the latest released version. v1.9.0 brings the dreamOfkiki axiom bridge from contractual to functional, the GammaThetaMultiplexer empirical surface used in the PRH validation reported here, the bias-corrected MI (Panzeri–Treves + permutation null), and the decoder-readout-artefact correction of the cross-substrate gap.},
+  note      = {Concept DOI (all versions); it resolves to the latest
+               release (v1.10.0 on 2026-11-04). Zenodo has no v1.9.0
+               version record; the v1.9.0 figures reported here refer
+               to git tag v1.9.0,
+               \url{https://github.com/hypneum-lab/nerve-wml/tree/v1.9.0}.
+               v1.9.0 brings the dreamOfkiki axiom bridge from
+               contractual to functional, the GammaThetaMultiplexer
+               empirical surface used in the PRH validation reported
+               here, the bias-corrected MI (Panzeri--Treves +
+               permutation null), and the decoder-readout-artefact
+               correction of the cross-substrate gap.},
 }
 
 %% --- Added 2026-05-02 (sleep-consolidation state-of-the-art research report) ---
@@ -328,92 +345,133 @@
 
 %% --- SQ1: Neurobiological mechanisms ---
 
+% Author, title and venue resolved 2026-11-04 (NCBI idconv PMC12576410
+% -> Crossref).
 @article{pmc2025systems,
-  author       = {{Anonymous}},
+  author       = {Kim, Jaekyung and Park, Minjeong},
   title        = {Systems memory consolidation during sleep:
-                  an integrative review},
-  journal      = {PubMed Central (integrative review)},
+                  oscillations, neuromodulators, and synaptic
+                  remodeling},
+  journal      = {BMB Reports},
+  volume       = {58},
+  number       = {10},
+  pages        = {425--436},
   year         = {2025},
-  note         = {PMC12576410. URL:
-                  \url{https://pmc.ncbi.nlm.nih.gov/articles/PMC12576410/}.
-                  Anchor for active-systems consolidation embedded in
-                  global synaptic downscaling.},
+  doi          = {10.5483/BMBRep.2025-0033},
+  note         = {PMC12576410. Anchor for active-systems consolidation
+                  embedded in global synaptic downscaling.},
 }
 
 @article{trends2024coupled,
-  author       = {{Anonymous}},
+  author       = {Staresina, Bernhard P.},
   title        = {Coupled sleep rhythms for memory consolidation},
   journal      = {Trends in Cognitive Sciences},
+  volume       = {28},
+  number       = {4},
+  pages        = {339--351},
   year         = {2024},
-  note         = {Canonical SO-spindle-ripple statement.
-                  URL:
-                  \url{https://www.sciencedirect.com/science/article/pii/S1364661324000299}.},
+  doi          = {10.1016/j.tics.2024.02.002},
+  note         = {Canonical SO-spindle-ripple statement.},
 }
 
 @article{elife2025bayesian,
-  author       = {{Anonymous}},
-  title        = {Bayesian meta-analysis of slow-oscillation-spindle
-                  coupling and memory consolidation},
+  author       = {Ng, Thea and Noh, Eunsol and Spencer, Rebecca M. C.},
+  title        = {Bayesian meta-analysis reveals the mechanistic role of
+                  slow oscillation-spindle coupling in sleep-dependent
+                  memory consolidation},
   journal      = {eLife},
+  volume       = {13},
+  pages        = {RP101992},
   year         = {2025},
-  note         = {23 studies, 297 effect sizes; coupling strength
-                  0.33 [0.27, 0.39]; Bayes factor > 58 vs.\ null;
-                  Egger phase-branch p = 0.59. URL:
-                  \url{https://elifesciences.org/articles/101992}.},
+  doi          = {10.7554/eLife.101992},
+  note         = {23 studies, 297 effect sizes. Phase-memory
+                  association r_z = 0.07 [0.01, 0.13], BF10 = 58.35,
+                  Egger p = 0.59 (p. 8); focal analysis 0.07
+                  [-0.06, 0.19]. Mean SO-fast spindle coupling
+                  strength 0.33 [0.27, 0.39] is descriptive (p. 15).
+                  Coupling percentage r = -0.03, BF10 = 0.38
+                  (p. 20). Checked against the VOR on 2026-11-05.},
 }
 
 @article{neuron2025largeswr,
-  author       = {{Anonymous}},
-  title        = {Large sharp-wave ripples promote memory reactivation
-                  during sleep},
+  author       = {Robinson, Heath Larsson and Todorova, Ralitsa and
+                  Nagy, Gergo Attila and Gruzdeva, Anna and Paudel,
+                  Praveen and Oliva, Azahara and Fernandez-Ruiz,
+                  Antonio},
+  title        = {Large sharp-wave ripples promote hippocampo-cortical
+                  memory reactivation and consolidation during sleep},
   journal      = {Neuron},
-  year         = {2025},
-  note         = {Closed-loop optogenetic sufficiency-grade evidence in
-                  mice. URL:
-                  \url{https://www.cell.com/neuron/abstract/S0896-6273(25)00756-1}.},
+  volume       = {114},
+  number       = {2},
+  pages        = {226--236.e6},
+  year         = {2026},
+  doi          = {10.1016/j.neuron.2025.10.003},
+  note         = {Online 2025. Closed-loop optogenetic sufficiency-grade
+                  evidence in mice.},
 }
 
+% Full text read 2026-11-04: "age-attenuated" and "weaker effects on
+% procedural tasks" are not in the paper; discussion.md rewritten.
 @article{npjscilearn2025clas,
-  author       = {{Anonymous}},
-  title        = {Modulating sleep with slow-oscillation and spindle
-                  stimulation: heterogeneity and age-attenuation},
+  author       = {Jourde, Hugo R. and Sita, Katerina Z. and Eyqvelle,
+                  Zseyvfin and Brooks, Mary and Coffey, Emily B. J.},
+  title        = {Modulating sleep: slow oscillation and spindle
+                  stimulation effects on physiology and memory},
   journal      = {npj Science of Learning},
-  year         = {2025},
-  note         = {URL:
-                  \url{https://www.nature.com/articles/s41539-025-00383-6}.},
+  volume       = {11},
+  number       = {1},
+  pages        = {14},
+  year         = {2026},
+  doi          = {10.1038/s41539-025-00383-6},
 }
 
 @article{commsbio2025emotional,
-  author       = {{Anonymous}},
-  title        = {{SWS} and {REM} contributions to emotional memory
-                  consolidation through targeted memory reactivation},
+  author       = {Yuksel, Cagri and Denis, Dan and Coleman, James and
+                  Ren, Boyu and Oh, Angela and Cox, Roy and Morgan,
+                  Alexandra and Sato, Erina and Stickgold, Robert},
+  title        = {Both slow wave and rapid eye movement sleep contribute
+                  to emotional memory consolidation},
   journal      = {Communications Biology},
+  volume       = {8},
+  number       = {1},
+  pages        = {485},
   year         = {2025},
-  note         = {TMR cueing in NREM enhances emotional-item memory.
-                  URL:
-                  \url{https://www.nature.com/articles/s42003-025-07868-5}.},
+  doi          = {10.1038/s42003-025-07868-5},
+  note         = {Nap TMR. REM cueing impaired emotional-item memory
+                  (E-REM, t(24) = 2.13, p = 0.04); SWS cueing had no
+                  within-group effect (p = 0.81) and favoured
+                  emotional over neutral items between groups
+                  (p = 0.002); benefit correlated with SWS x REM
+                  (pp. 2-3 of the White Rose copy).},
 }
 
+% The "10--30 percent" figure is not in the abstract; unverified.
 @article{annurev2025replay,
-  author       = {{Anonymous}},
-  title        = {Replay and ripples in humans},
+  author       = {Zhang, Jinbo and Ou, Jianxin and Liu, Yunzhe},
+  title        = {Replay and Ripples in Humans},
   journal      = {Annual Review of Neuroscience},
+  volume       = {48},
+  number       = {1},
+  pages        = {65--84},
   year         = {2025},
+  doi          = {10.1146/annurev-neuro-112723-024516},
   note         = {Selectivity / fraction problem: only 10--30 percent
-                  of sleep SWRs carry detectable replay. DOI:
-                  10.1146/annurev-neuro-112723-024516. URL:
-                  \url{https://www.annualreviews.org/content/journals/10.1146/annurev-neuro-112723-024516}.},
+                  of sleep SWRs carry detectable replay.},
 }
 
-% UNVERIFIED PRIMARY --- verify against full PDF before submission
-@misc{biorxiv2025rempfc,
-  author       = {{Anonymous}},
-  title        = {{REM}-state prefrontal-cortex ripple chains with
-                  reactivation profiles distinct from {NREM} {SWRs}},
-  year         = {2025},
-  howpublished = {bioRxiv preprint},
-  note         = {Preprint; September 2025. URL:
-                  \url{https://www.biorxiv.org/content/10.1101/2025.09.15.676366v1.full}.},
+@article{biorxiv2025rempfc,
+  author       = {Shin, Justin D. and Satchell, Michael and Miller, Paul
+                  and Jadhav, Shantanu P.},
+  title        = {{REM} sleep prefrontal high-frequency oscillation
+                  chains mediate distinct cortical--hippocampal
+                  reactivation patterns compared to {NREM} sleep},
+  journal      = {eLife},
+  volume       = {15},
+  pages        = {RP110795},
+  year         = {2026},
+  doi          = {10.7554/eLife.110795},
+  note         = {Preprint: bioRxiv 2025,
+                  \url{https://doi.org/10.1101/2025.09.15.676366}.},
 }
 
 %% --- SQ2: Theoretical frameworks ---
@@ -443,18 +501,39 @@
              \url{https://www.nature.com/articles/s41562-023-01799-z}.},
 }
 
+% Resolved 2026-11-04: the DOI already given in the old note
+% (10.1073/pnas.2123432119) is Singh, Norman & Schapiro 2022.
 @article{pnas2022dualstage,
-  author       = {{Anonymous}},
-  title        = {Hippocampus-cortex autonomous interaction:
-                  alternation of {NREM} and {REM} as a dual-stage
-                  consolidation substrate},
+  author       = {Singh, Dhairyya and Norman, Kenneth A. and Schapiro,
+                  Anna C.},
+  title        = {A model of autonomous interactions between hippocampus
+                  and neocortex driving sleep-dependent memory
+                  consolidation},
   journal      = {Proceedings of the National Academy of Sciences},
+  volume       = {119},
+  number       = {44},
+  pages        = {e2123432119},
   year         = {2022},
-  note         = {DOI: 10.1073/pnas.2123432119. URL:
-                  \url{https://www.pnas.org/doi/10.1073/pnas.2123432119}.},
+  doi          = {10.1073/pnas.2123432119},
 }
 
 %% --- SQ3: AI dreaming, generative replay, sleep-inspired learning ---
+
+@article{vandeven2022three,
+  author  = {van de Ven, Gido M. and Tuytelaars, Tinne and Tolias,
+             Andreas S.},
+  title   = {Three types of incremental learning},
+  journal = {Nature Machine Intelligence},
+  volume  = {4},
+  number  = {12},
+  pages   = {1185--1197},
+  year    = {2022},
+  doi     = {10.1038/s42256-022-00568-3},
+  note    = {Replay is the only strategy among the top performers in
+             all three scenarios (p. 1190); Split MNIST
+             class-incremental: EWC 20.64 vs ER 88.79 (Table 2,
+             p. 1189).},
+}
 
 @misc{vandeven2024clmonograph,
   author       = {van de Ven, Gido M. and Soures, Nicholas and
@@ -470,13 +549,15 @@
 }
 
 @misc{berkeley2025sleeptimecompute,
-  author       = {{Anonymous}},
-  title        = {Sleep-time compute: pre-computing context-conditioned
-                  reasoning during idle},
+  author       = {Lin, Kevin and Snell, Charlie and Wang, Yu and Packer,
+                  Charles and Wooders, Sarah and Stoica, Ion and
+                  Gonzalez, Joseph E.},
+  title        = {Sleep-time Compute: Beyond Inference Scaling at
+                  Test-time},
   year         = {2025},
   eprint       = {2504.13171},
   archivePrefix = {arXiv},
-  primaryClass = {cs.LG},
+  primaryClass = {cs.AI},
   url          = {https://arxiv.org/abs/2504.13171},
   note         = {Berkeley / Letta. +13 percent GSM-Symbolic, +18
                   percent AIME, 5x test-time compute reduction,
@@ -491,7 +572,8 @@
   archivePrefix = {arXiv},
   primaryClass = {cs.LG},
   url          = {https://arxiv.org/abs/2401.08623},
-  note         = {IEEE TNNLS January 2024. Closest published explicit
+  note         = {Published in IEEE TNNLS 36(7):12668--12679 (July
+                  2025), doi:10.1109/TNNLS.2024.3458440 (Crossref). Closest published explicit
                   NREM/REM split in a deep network; natural Paper 2
                   ablation comparator.},
 }
@@ -504,19 +586,19 @@
   archivePrefix = {arXiv},
   primaryClass = {cs.NE},
   url          = {https://arxiv.org/abs/2209.05245},
-  note         = {Four-operation NREM/REM plus synaptic-downscaling consolidation, near-isomorphic to our operation set; prior art for the phase split.},
+  note         = {Tripartite consolidation (NREM veridical replay, REM generative replay, synaptic downscaling), near-isomorphic to our operation set; prior art for the phase split.},
 }
 
-% UNVERIFIED PRIMARY --- verify against full PDF before submission
 @misc{arxiv2025statefulreplay,
-  author       = {{Anonymous}},
-  title        = {Stateful replay for streaming generative learning},
+  author       = {Du, Wenzhang},
+  title        = {Mitigating Catastrophic Forgetting in Streaming
+                  Generative and Predictive Learning via Stateful
+                  Replay},
   year         = {2025},
   eprint       = {2511.17936},
   archivePrefix = {arXiv},
   primaryClass = {cs.LG},
   url          = {https://arxiv.org/abs/2511.17936},
-  note         = {Preprint; verify before final cite.},
 }
 
 % arXiv identifier and metadata verified 2026-10-23 (v1 2026-01-27).
@@ -529,6 +611,8 @@
   archivePrefix = {arXiv},
   primaryClass = {cs.LG},
   url          = {https://arxiv.org/abs/2601.19897},
+  note         = {The word "replay" does not occur in the paper;
+                  the replay reading is ours.},
 }
 
 % De-anonymised 2026-10-23: OpenReview forum iiZy6xyVVE now lists
@@ -536,6 +620,8 @@
 % version (comment: "A version of this work has been publicly
 % available from September 2025 on OpenReview") adds Javanmard.
 % Key kept for continuity.
+% ICLR status unverified on 2026-11-04 (OpenReview API returned
+% HTTP 403); arXiv metadata re-checked.
 @misc{iclr2026lmsleep,
   author       = {Behrouz, Ali and Hashemi, Farnoosh and Javanmard, Adel
                   and Mirrokni, Vahab},
@@ -552,41 +638,50 @@
 %% --- SQ4: Artificial substrates for consolidation ---
 
 @misc{hajizada2025clpsnn,
-  author       = {Hajizada, Eldar and others},
-  title        = {{CLP-SNN}: continual learning with plasticity in
-                  spiking neural networks on {Intel Loihi 2}},
+  author       = {Hajizada, Elvin and Rager, Danielle and Shea, Timothy
+                  and Campos-Macias, Leobardo and Wild, Andreas and
+                  H{\"u}llermeier, Eyke and Sandamirskaya, Yulia and
+                  Davies, Mike},
+  title        = {Online Continual Learning on {Intel Loihi 2} via a
+                  Co-designed Spiking Neural Network},
   year         = {2025},
   eprint       = {2511.01553},
   archivePrefix = {arXiv},
-  primaryClass = {cs.NE},
+  primaryClass = {cs.LG},
   url          = {https://arxiv.org/abs/2511.01553},
-  note         = {Few-shot CL accuracy on OpenLORIS matches GPU
-                  baseline at 70x throughput and 5,600x energy
-                  efficiency (0.05 mJ vs 281 mJ per inference).
-                  Load-bearing E-SNN substrate citation.},
+  note         = {v3: rehearsal-free; on-chip step 0.33 ms and
+                  0.05 mJ, 7.3x lower latency and 341x lower energy
+                  than Replay on a Jetson Orin Nano (p. 1); 70x is
+                  the energy ratio against CLP on the Orin CPU
+                  (pp. 7-8). The v3 contains neither "5,600x" nor
+                  "281 mJ". Load-bearing E-SNN substrate citation.},
 }
 
 @misc{biorxiv2025thalamocortical,
-  author       = {{Anonymous}},
-  title        = {Interleaved replay of cortical and hippocampal
-                  memory traces during slow-wave-sleep up states},
+  author       = {Golden, Ryan and Saxena, Rajat and Gonz{\'a}lez, Oscar
+                  C. and Delanois, J. Erik and Kilianski, Scott and
+                  McNaughton, Bruce L. and Bazhenov, Maxim},
+  title        = {Interleaved Replay of Novel and Familiar Memory Traces
+                  During Slow-Wave Sleep Prevents Catastrophic
+                  Forgetting},
   year         = {2025},
   howpublished = {bioRxiv preprint},
-  note         = {June 2025; PMID 40667278. URL:
-                  \url{https://www.biorxiv.org/content/10.1101/2025.06.25.661579v1}.
-                  Anchors biological grounding of DR-2'.},
+  doi          = {10.1101/2025.06.25.661579},
+  note         = {June 2025; PMID 40667278. Anchors biological
+                  grounding of DR-2'.},
 }
 
 @misc{seslr2025snnreplay,
-  author       = {{Anonymous}},
-  title        = {{SESLR}: sleep-enhanced latent replay in spiking
-                  neural networks},
+  author       = {Lin, Erliang and Luo, Wenbin and Jia, Wei and Chen, Yu
+                  and Yang, Shaofu},
+  title        = {Online Continual Learning via Spiking Neural Networks
+                  with Sleep Enhanced Latent Replay},
   year         = {2025},
   eprint       = {2507.02901},
   archivePrefix = {arXiv},
   primaryClass = {cs.NE},
   url          = {https://arxiv.org/abs/2507.02901},
-  note         = {July 2025. Paper 2 ablation baseline candidate.},
+  note         = {Paper 2 ablation baseline candidate.},
 }
 
 @misc{behrouz2024titans,
@@ -603,13 +698,13 @@
 }
 
 @misc{mlxsnn2026,
-  author       = {{Anonymous}},
-  title        = {{mlx-snn}: a native {MLX} spiking-neural-network
-                  library for {Apple Silicon}},
+  author       = {Qin, Jiahao},
+  title        = {{mlx-snn}: Spiking Neural Networks on {Apple Silicon}
+                  via {MLX}},
   year         = {2026},
   eprint       = {2603.03529},
   archivePrefix = {arXiv},
-  primaryClass = {cs.NE},
+  primaryClass = {cs.LG},
   url          = {https://arxiv.org/abs/2603.03529},
   note         = {6 neuron models, BPTT pipeline, 97.28 percent MNIST,
                   2.0--2.5x faster training and 3--10x lower GPU memory
@@ -617,27 +712,31 @@
 }
 
 @misc{braintransformers2024,
-  author       = {{Anonymous}},
-  title        = {{BrainTransformers}: spiking-equivalent feed-forward
-                  and attention modules for {LLM}-scale {SNNs}},
+  author       = {Tang, Zhengzheng and Zhu, Eva},
+  title        = {{BrainTransformers}: {SNN-LLM}},
   year         = {2024},
   eprint       = {2410.14687},
   archivePrefix = {arXiv},
   primaryClass = {cs.NE},
-  url          = {https://arxiv.org/html/2410.14687v2},
+  url          = {https://arxiv.org/abs/2410.14687},
   note         = {SNN+Transformer hybrid; demonstrates LLM-scale
                   SNNs are viable.},
 }
 
 @misc{spinnaker2024,
-  author       = {{Anonymous}},
-  title        = {{SpiNNaker 2}: a hybrid {SNN}/{DNN} neuromorphic
-                  platform},
+  author       = {Gonzalez, Hector A. and Huang, Jiaxin and Kelber,
+                  Florian and Nazeer, Khaleelulla Khan and Langer, Tim
+                  and Liu, Chen and Lohrmann, Matthias and Rostami,
+                  Amirhossein and Sch{\"o}ne, Mark and Vogginger,
+                  Bernhard and Wunderlich, Timo C. and Yan, Yexin and
+                  Akl, Mahmoud and Mayr, Christian},
+  title        = {{SpiNNaker2}: A Large-Scale Neuromorphic System for
+                  Event-Based and Asynchronous Machine Learning},
   year         = {2024},
   eprint       = {2401.04491},
   archivePrefix = {arXiv},
-  primaryClass = {cs.NE},
-  url          = {https://arxiv.org/html/2401.04491v1},
+  primaryClass = {cs.ET},
+  url          = {https://arxiv.org/abs/2401.04491},
   note         = {TU Dresden. Substrate complement to Loihi 2.},
 }
 
@@ -649,152 +748,241 @@
   title   = {Promoting memory consolidation during sleep: a
              meta-analysis of targeted memory reactivation},
   journal = {Psychological Bulletin},
+  volume  = {146},
+  number  = {3},
+  pages   = {218--244},
   year    = {2020},
+  doi     = {10.1037/bul0000223},
   note    = {k=91, 212 effect sizes, N=2,004; overall Hedges' g =
              0.29 [0.21, 0.38]; NREM2 g = 0.32; SWS g = 0.27;
-             REM null; wake null. PMC7144680. URL:
+             REM null; wake null. Bias-adjusted: trim-and-fill
+             0.18, 3PSM 0.13, severe one-tailed selection -0.05.
+             PMC7144680. URL:
              \url{https://pmc.ncbi.nlm.nih.gov/articles/PMC7144680/}.},
 }
 
 @article{npjscilearn2024tmrupdate,
-  author  = {{Anonymous}},
-  title   = {Targeted memory reactivation: an updated review},
+  author  = {Carbone, Julia and Diekelmann, Susanne},
+  title   = {An update on recent advances in targeted memory
+             reactivation during sleep},
   journal = {npj Science of Learning},
+  volume  = {9},
+  number  = {1},
+  pages   = {31},
   year    = {2024},
+  doi     = {10.1038/s41539-024-00244-8},
   note    = {TMR works conditionally; awake TMR increasingly
-             documented as null-or-disruptive. URL:
-             \url{https://www.nature.com/articles/s41539-024-00244-8}.},
+             documented as null-or-disruptive.},
 }
 
 @misc{medrxiv2025clasinsomnia,
-  author       = {{Anonymous}},
-  title        = {Closed-loop auditory stimulation in chronic
-                  insomnia: a sham-controlled crossover trial},
+  author       = {Perrault, Aurore A. and Ong, Ju Lynn and Phillips,
+                  Emma-Maria and Cross, Nathan E. and Teo, Teck Boon
+                  and Dicom, Andrew R. and Chee, Nicholas I. Y. N. and
+                  Patanaik, Amiya and Chee, Michael W. L. and Dang-Vu,
+                  Thien Thanh},
+  title        = {Closed-loop auditory stimulation ({CLAS}) does not
+                  improve sleep or declarative memory in chronic
+                  insomnia},
   year         = {2025},
   howpublished = {medRxiv preprint},
+  doi          = {10.1101/2025.03.04.25321710},
   note         = {March 2025; N=27; null on memory and sleep
-                  outcomes despite acute SO-amplitude gain. URL:
-                  \url{https://www.medrxiv.org/content/10.1101/2025.03.04.25321710v1}.},
+                  outcomes despite acute SO-amplitude gain.},
 }
 
 @article{sharon2025alzdementia,
-  author  = {Sharon, Omer and others},
-  title   = {Slow-wave synchrony in prodromal {Alzheimer's} disease},
-  journal = {Alzheimer's and Dementia},
+  author  = {Sharon, Omer and Zhelezniakov, Vladislav and Gat, Yael
+             and Falach, Rotem and Narbayev, Darya and Shiner, Tamara
+             and Walker, Matthew P. and Tauman, Riva and Bregman, Noa
+             and Nir, Yuval},
+  title   = {Slow wave synchrony during {NREM} sleep tracks cognitive
+             impairment in prodromal {Alzheimer's} disease},
+  journal = {Alzheimer's \& Dementia},
+  volume  = {21},
+  number  = {5},
+  pages   = {e70247},
   year    = {2025},
+  doi     = {10.1002/alz.70247},
   note    = {hd-EEG; N=55 (21 healthy older / 28 aMCI / 6 AD);
              cognitive performance decreases with slow-wave trough
-             amplitude and frontocentral synchronization. DOI:
-             10.1002/alz.70247. URL:
-             \url{https://alz-journals.onlinelibrary.wiley.com/doi/10.1002/alz.70247}.},
+             amplitude and frontocentral synchronization. Median
+             SW trough -60.18 / -56.95 / -52.61 microvolts
+             (Results).},
 }
 
+% Resolved 2026-11-04: the PII in the old URL (S1064-7481(24)00384-1)
+% is Van den Bulcke et al., Am. J. Geriatr. Psychiatry 33 (2025).
+% The dose-response claim (discussion.md:163-167) is not verified
+% against the full text.
 @article{ajgp2024clashome,
-  author  = {{Anonymous}},
-  title   = {Closed-loop auditory stimulation at home in
-             {Alzheimer's} disease},
-  journal = {American Journal of Geriatric Psychiatry},
-  year    = {2024},
-  note    = {Damaging dose-response artifact: patients with lower
-             baseline SWS receive fewer stimulations. URL:
-             \url{https://www.ajgponline.org/article/S1064-7481(24)00384-1/abstract}.},
+  author  = {Van den Bulcke, Laura and Davidoff, Hannah and Heremans,
+             Elisabeth and Potts, Yasmin and Vansteelandt, Kristof and
+             De Vos, Maarten and Christiaens, Daan and Emsell, Louise
+             and Jacobson, Laura H. and Hoyer, Dani{\"e}l and Buyse,
+             Bertien and Vandenbulcke, Mathieu and Testelmans, Dries
+             and Van Den Bossche, Maarten},
+  title   = {Acoustic Stimulation to Improve Slow-Wave Sleep in
+             {Alzheimer's} Disease: A Multiple Night At-Home
+             Intervention},
+  journal = {The American Journal of Geriatric Psychiatry},
+  volume  = {33},
+  number  = {1},
+  pages   = {73--84},
+  year    = {2025},
+  doi     = {10.1016/j.jagp.2024.07.002},
+  note    = {Online 2024. Damaging dose-response artifact: patients
+             with lower baseline SWS receive fewer stimulations.},
 }
 
+% First author corrected 2026-11-04 (Crossref): Crowley et al.; key
+% kept for continuity.
 @article{javadi2024sleeprestriction,
-  author  = {Javadi, Amir-Homayoun and others},
-  title   = {Effects of sleep restriction on memory: a meta-analysis},
+  author  = {Crowley, Rebecca and Alderman, Eleanor and Javadi,
+             Amir-Homayoun and Tamminen, Jakke},
+  title   = {A systematic and meta-analytic review of the impact of
+             sleep restriction on memory formation},
   journal = {Neuroscience and Biobehavioral Reviews},
+  volume  = {167},
+  pages   = {105929},
   year    = {2024},
+  doi     = {10.1016/j.neubiorev.2024.105929},
   note    = {39 reports, 125 effect sizes, N=1,234; g = 0.29 [0.13,
-             0.44]; no detected publication bias; partial sleep loss
-             impairs memory comparably to total deprivation. URL:
-             \url{https://www.sciencedirect.com/science/article/pii/S0149763424003981}.},
+             0.44]; Egger z = 3.90 (asymmetric funnel), no bias
+             under 3PSM; 95 percent prediction interval -0.73 to
+             1.30 (pp. 13-14); partial sleep loss
+             impairs memory comparably to total deprivation.},
 }
 
 %% --- Cross-cutting bridges and replication critique ---
 
+% Title corrected 2026-11-04 (Crossref). One-page retrospective on
+% Stickgold et al. 2000, not a review.
 @article{robertson2025nrn,
   author  = {Robertson, Edwin M.},
-  title   = {Going offline to enhance memory: an active sleep state
-             with diverse memory functions},
+  title   = {Going offline to enhance memory during sleep},
   journal = {Nature Reviews Neuroscience},
+  volume  = {26},
+  number  = {11},
+  pages   = {660},
   year    = {2025},
-  note    = {Sequential SWS-then-REM model; Stickgold's 20 percent
-             visual-memory boost replicated. URL:
-             \url{https://www.nature.com/articles/s41583-025-00973-8}.},
+  doi     = {10.1038/s41583-025-00973-8},
+  note    = {Recalls that early-night SWS and late-night REM together
+             explained most overnight improvement in Stickgold et
+             al. 2000, implying a sequential process; the 2000
+             criteria are "still being used and satisfied". No
+             replication of the effect size is claimed.},
 }
 
+% Venue corrected 2026-11-04 (Crossref).
 @article{cordi2021robust,
-  author  = {Cordi, Maren J. and Rasch, Bj{\"o}rn},
+  author  = {Cordi, Maren Jasmin and Rasch, Bj{\"o}rn},
   title   = {How robust are sleep-mediated memory benefits?},
-  journal = {European Journal of Neuroscience},
+  journal = {Current Opinion in Neurobiology},
+  volume  = {67},
+  pages   = {1--7},
   year    = {2021},
+  doi     = {10.1016/j.conb.2020.06.002},
   note    = {Load-bearing replication critique: effects are smaller,
              more task-dependent, less SWS-related, less robust and
              less long-lasting than previously assumed. PMID
-             32711356. URL:
-             \url{https://pubmed.ncbi.nlm.nih.gov/32711356/}.},
+             32711356.},
 }
 
 @article{natrevpsych2023methodology,
-  author  = {{Anonymous}},
+  author  = {N{\'e}meth, Dezs{\H o} and Gerbier, Emilie and Born, Jan
+             and Rickard, Timothy and Diekelmann, Susanne and Fogel,
+             Stuart and Genzel, Lisa and Prehn-Kristensen, Alexander
+             and Payne, Jessica and Dresler, Martin and Simor, Peter
+             and Mazza, Stephanie and Hoedlmoser, Kerstin and Ruby,
+             Perrine and Spencer, Rebecca M. C. and Albouy, Genevieve
+             and V{\'e}kony, Teod{\'o}ra and Schabus, Manuel and
+             Janacsek, Karolina},
   title   = {Optimizing the methodology of human sleep and memory
              research},
   journal = {Nature Reviews Psychology},
-  year    = {2023},
-  note    = {Gold-standard checklist; flags confound between
-             sequential designs and retrieval-vs-restudy strength
-             manipulations. URL:
-             \url{https://www.nature.com/articles/s44159-023-00262-0}.},
+  volume  = {3},
+  number  = {2},
+  pages   = {123--137},
+  year    = {2024},
+  doi     = {10.1038/s44159-023-00262-0},
+  note    = {Online December 2023. Table 1 (p. 11): methodological
+             recommendations (circadian controls, full 2 x 2
+             designs, a priori power and Bayes factors, planned
+             corrected correlations). "Sham" and "dose" do not
+             occur in the text.},
 }
 
-@article{schreiner2024jneurosci,
-  author  = {Schreiner, Thomas and others},
-  title   = {Memory reactivation does not act holistically on object
-             memory during sleep},
+% First author corrected 2026-11-04 (Crossref): Siefert et al.; key
+% renamed from schreiner2024jneurosci on 2026-11-05.
+@article{siefert2024jneurosci,
+  author  = {Siefert, Elizabeth M. and Uppuluri, Sindhuja and Mu,
+             Jianing and Tandoc, Marlie C. and Antony, James W. and
+             Schapiro, Anna C.},
+  title   = {Memory Reactivation during Sleep Does Not Act
+             Holistically on Object Memory},
   journal = {Journal of Neuroscience},
   year    = {2024},
   volume  = {44},
   number  = {24},
   pages   = {e0022242024},
-  note    = {URL:
-             \url{https://www.jneurosci.org/content/44/24/e0022242024}.},
+  doi     = {10.1523/JNEUROSCI.0022-24.2024},
 }
 
 @article{manoach2024schizophrenia,
-  author  = {{Manoach lab}},
-  title   = {Sleep oscillations and memory consolidation in
-             early-course minimally-medicated psychosis},
+  author  = {Denis, Dan and Baran, Bengi and Mylonas, Dimitrios and
+             Spitzer, Courtney and Raymond, Nicolas and Talbot,
+             Christine and Kohnke, Erin and Larson, Olivia and
+             Stickgold, Robert and Keshavan, Matcheri and Manoach,
+             Dara S.},
+  title   = {Sleep oscillations and their relations with
+             sleep-dependent memory consolidation in early course
+             psychosis and first-degree relatives},
   journal = {Schizophrenia Research},
+  volume  = {274},
+  pages   = {473--485},
   year    = {2024},
+  doi     = {10.1016/j.schres.2024.10.026},
   note    = {Spindle deficits and procedural memory consolidation
              deficits in patients but not first-degree relatives.
-             PMID 39515257. URL:
-             \url{https://pubmed.ncbi.nlm.nih.gov/39515257/}.},
+             PMID 39515257.},
 }
 
+% Corrected 2026-11-04: PMID 32919407 is Mylonas et al. 2020
+% (Neuropsychopharmacology), not "Wamsley et al. 2020". Key kept.
 @article{wamsley2020eszopiclone,
-  author  = {Wamsley, Erin J. and others},
-  title   = {Pharmacological augmentation of sleep spindles with
-             eszopiclone: a randomised controlled trial},
-  journal = {(see PMID 32919407)},
+  author  = {Mylonas, Dimitrios and Baran, Bengi and Demanuele,
+             Charmaine and Cox, Roy and Vuper, Tessa C. and Seicol,
+             Benjamin J. and Fowler, Rachel A. and Correll, David and
+             Parr, Elaine and Callahan, Cameron E. and Morgan,
+             Alexandra and Henderson, David and Vangel, Mark and
+             Stickgold, Robert and Manoach, Dara S.},
+  title   = {The effects of eszopiclone on sleep spindles and memory
+             consolidation in schizophrenia: a randomized clinical
+             trial},
+  journal = {Neuropsychopharmacology},
+  volume  = {45},
+  number  = {13},
+  pages   = {2189--2197},
   year    = {2020},
+  doi     = {10.1038/s41386-020-00833-2},
   note    = {Pharmacological precedent for spindle augmentation.
-             URL:
-             \url{https://pubmed.ncbi.nlm.nih.gov/32919407/}.},
+             PMID 32919407.},
 }
 
-% UNVERIFIED PRIMARY --- verify against full PDF before submission
 @misc{aimeetsbrain2025,
-  author       = {{Anonymous}},
-  title        = {{AI Meets Brain}: a survey of memory-augmented
-                  transformers and neuroscientific consolidation},
+  author       = {Liang, Jiafeng and Li, Hao and Li, Chang and Zhou,
+                  Jiaqi and Jiang, Shixin and Wang, Zekun and Ji,
+                  Changkai and Zhu, Zhihao and Liu, Runxuan and Ren,
+                  Tao and Fu, Jinlan and Ng, See-Kiong and Liang, Xia
+                  and Liu, Ming and Qin, Bing},
+  title        = {{AI Meets Brain}: Memory Systems from Cognitive
+                  Neuroscience to Autonomous Agents},
   year         = {2025},
   eprint       = {2512.23343},
   archivePrefix = {arXiv},
-  primaryClass = {cs.AI},
+  primaryClass = {cs.CL},
   url          = {https://arxiv.org/abs/2512.23343},
-  note         = {Forward-dated arXiv ID; verify before final cite.},
 }
 
 
@@ -915,7 +1103,10 @@
                    surviving neural evidence is the matched-condition
                    rank-256 result on Llama-3.1-8B ; the arXiv
                    listing abstract predates the revision. Cite the
-                   v2 full text.},
+                   v2 full text. Caveats in v2: about 2.2 pp of the
+                   +5.64 pp headline is a degeneration artefact
+                   (p. 14); effect only at iter = 141 (p. 22);
+                   Mistral-7B 0/9 cells (p. 9).},
 }
 
 @misc{bazhenov2026notjustafterone,
@@ -1006,6 +1197,11 @@
   howpublished  = {bioRxiv preprint},
   doi           = {10.64898/2026.08.04.742295},
   url           = {https://www.biorxiv.org/content/10.64898/2026.08.04.742295v1},
+  note          = {Reactivation strength does not predict temporal
+                   memory; SO-spindle coupling percentage does,
+                   F(1, 40.28) = 4.66, p = .037 (p. 17). Phasic-REM
+                   reactivation correlates with reduced state anxiety
+                   (r = -.46, p. 18).},
 }
 
 @misc{chen2026onpolicyreplay,
@@ -1017,6 +1213,12 @@
   eprint        = {2605.29495},
   archivePrefix = {arXiv},
   url           = {https://arxiv.org/abs/2605.29495},
+  note          = {The abstract calls Vanilla Replay "tuned", but the
+                   same hyperparameters are applied to every method
+                   (p. 6); 3 seeds, means only (p. 5). In Table 1
+                   (p. 6) several Qwen3-8B SFT, Replay and SDFT cells
+                   equal the Qwen2.5 cells plus 0.40; to check with
+                   the authors before relying on the table.},
 }
 
 @misc{wang2026denserneqbetter,
@@ -1030,4 +1232,72 @@
   eprint        = {2607.01763},
   archivePrefix = {arXiv},
   url           = {https://arxiv.org/abs/2607.01763},
+}
+
+%% --- Added 2026-11-04 (Rome group, placements from the 2026-11-01
+%% review; metadata from Crossref / arXiv API). ---
+
+@article{agliari2024regularization,
+  author  = {Agliari, Elena and Alemanno, Francesco and Aquaro, Miriam
+             and Fachechi, Alberto},
+  title   = {Regularization, early-stopping and dreaming: A
+             {Hopfield}-like setup to address generalization and
+             overfitting},
+  journal = {Neural Networks},
+  volume  = {177},
+  pages   = {106389},
+  year    = {2024},
+  doi     = {10.1016/j.neunet.2024.106389},
+  eprint  = {2308.01421},
+  archivePrefix = {arXiv},
+}
+
+@article{agliari2024hebbian,
+  author  = {Agliari, Elena and Alemanno, Francesco and Aquaro, Miriam
+             and Barra, Adriano and Durante, Fabrizio and Kanter, Ido},
+  title   = {Hebbian dreaming for small datasets},
+  journal = {Neural Networks},
+  volume  = {173},
+  pages   = {106174},
+  year    = {2024},
+  doi     = {10.1016/j.neunet.2024.106174},
+}
+
+@article{agliari2026networks,
+  author  = {Agliari, Elena and Alessandrelli, Andrea and Barra, Adriano
+             and Centonze, Martino Salomone and Ricci-Tersenghi,
+             Federico},
+  title   = {Networks of {Hebbian} networks: more is different},
+  journal = {Neural Networks},
+  volume  = {194},
+  pages   = {108181},
+  year    = {2026},
+  doi     = {10.1016/j.neunet.2025.108181},
+  eprint  = {2501.16789},
+  archivePrefix = {arXiv},
+}
+
+@misc{albanese2026partial,
+  author       = {Albanese, Linda and Alessandrelli, Andrea and Barra,
+                  Adriano and Franz, Silvio and Ricci-Tersenghi,
+                  Federico},
+  title        = {Partial annealing and pattern decorrelation in
+                  associative neural networks},
+  year         = {2026},
+  eprint       = {2605.10304},
+  archivePrefix = {arXiv},
+  primaryClass = {cond-mat.dis-nn},
+  url          = {https://arxiv.org/abs/2605.10304},
+}
+
+@misc{agliari2026denseautohetero,
+  author       = {Agliari, Elena and Alessandrelli, Andrea and Barra,
+                  Adriano and Fachechi, Alberto},
+  title        = {Dense auto-hetero associative memories applied to
+                  noisy communication channels},
+  year         = {2026},
+  eprint       = {2609.32605},
+  archivePrefix = {arXiv},
+  primaryClass = {cond-mat.dis-nn},
+  url          = {https://arxiv.org/abs/2609.32605},
 }

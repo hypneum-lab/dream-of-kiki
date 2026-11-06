@@ -99,22 +99,28 @@ Research introduisent un module de mémoire neuronale appris au
 moment de l'inférence jusqu'à 2 M tokens, sans ancrage rigoureux
 dans la théorie de la consolidation [Behrouz et al. 2024]. Les
 **propositions académiques concurrentes** commencent à combler
-cet écart — *Wake-Sleep Consolidated Learning* [Alfarano et al.
-2024] est, à notre connaissance, l'analogue dual-phase NREM/REM
+cet écart — *Wake-Sleep Consolidated Learning* [Sorrenti et al.
+2025] est, à notre connaissance, l'analogue dual-phase NREM/REM
 publié le plus proche, et la proposition contemporaine *Language
-Models Need Sleep* couple une distillation ascendante par RL avec
-un oubli intentionnel [Behrouz et al. 2026]. En affinage continu
+Models Need Sleep* couple une étape de distillation ascendante
+(distillation on-policy combinée à un apprentissage par imitation
+par RL) avec une phase de « rêve » pilotée par RL qui répète des
+données synthétiques [Behrouz et al. 2026]. En affinage continu
 de LLM, rejouer les propres sorties du modèle courant sur des
 invites passées réduit l'oubli par rapport à un replay classique
-réglé [Chen et al. 2026], et l'auto-distillation a été proposée
-comme substitut de replay [Shenfeld et al. 2026], bien que
+exécuté avec les mêmes hyperparamètres partagés [Chen et al.
+2026], et l'auto-distillation on-policy à partir de
+démonstrations réduit l'oubli par rapport à l'affinage supervisé
+[Shenfeld et al. 2026] (un mécanisme que nous lisons comme
+proche du replay génératif ; l'article n'emploie pas ce terme),
+bien que
 l'auto-distillation on-policy puisse aussi amplifier la dérive et
 s'effondrer en post-entraînement continu [Wang et al. 2026]. Les
 substrats
-neuromorphiques montrent la même convergence : CLP-SNN sur Loihi 2
-rapporte un facteur 70× de vitesse et 5 600× d'efficacité
-énergétique sur des baselines GPU pour la réactivation hors ligne
-[Hajizada et al. 2025]. Trois communautés, une même forme
+neuromorphiques montrent la même convergence : CLP-SNN, sans
+répétition, rapporte sur Loihi 2 des pas d'apprentissage sur puce
+7,3× plus rapides et 341× moins énergivores qu'une baseline de
+replay sur Jetson Orin Nano (arXiv v3) [Hajizada et al. 2025]. Trois communautés, une même forme
 architecturale, et **aucun travail publié 2024–2026 ne projette
 formellement la triade SO–fuseau–ripple sur un invariant
 computationnel indépendant du substrat** : la neuroscience tient
@@ -122,7 +128,7 @@ le mécanisme, l'IA tient la fonction (réactivation → non-oubli),
 aucune ne tient encore le pont axiomatique. Le Framework C se
 positionne sur ce pont, avec les quatre piliers ci-dessus comme
 ancrages conceptuels, l'analogue empirique le plus proche
-[Alfarano et al. 2024] retenu comme comparateur d'ablation
+[Sorrenti et al. 2025] retenu comme comparateur d'ablation
 primaire du Paper 2, et les propositions concurrentes [Behrouz
 et al. 2026 ; Berkeley 2025 sleep-time compute] lues comme
 corroboration indépendante du besoin sous-jacent plutôt que

@@ -49,7 +49,7 @@ truth supervision uses the OSF pre-registered protocol from cycle 1
 - Cite SHY (Tononi 2014), FEP (Friston 2010), CLS (McClelland 1995),
   brain-inspired replay (van de Ven 2020).
 - **Concurrent work paragraph** (§3.x) : RecursiveMAS
-  (Yang et al., arXiv:2604.25917, 2026-04-28) — independent
+  (Zou et al., arXiv:2604.25917, 2026-04-28) — independent
   derivation of latent-shared-state architecture for heterogeneous
   multi-component systems. Cite as convergent evidence ;
   differentiate by substrate / gating / falsifiability scope.

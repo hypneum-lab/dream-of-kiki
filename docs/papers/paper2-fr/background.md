@@ -50,6 +50,10 @@ L'Article 2 hérite du mapping quatre-piliers de l'Article 1
   la garde topologie S3].
 
 L'Article 2 ne ré-argumente pas ces mappings. Il les consomme.
+L'Article 1 §2.1 retrace aussi la lecture computationnelle du
+sommeil comme désapprentissage, de Crick et Mitchison et Hopfield
+et al. au noyau de rêve de Fachechi et al. [@crick1983function;
+@hopfield1983unlearning; @fachechi2019dreaming].
 
 ## 3.3 Critère de Conformité DR-3, brièvement
 
@@ -68,17 +72,22 @@ La réplication inter-substrats des mécanismes d'apprentissage
 continu est sous-représentée dans l'art antérieur.
 [@vandeven2020brain] démontrent le replay inspiré du cerveau
 sur des réseaux neuronaux artificiels mais sur une seule
-architecture. [@kirkpatrick2017overcoming] introduisent EWC
-comme régularisateur adjacent SHY mais ne poursuivent pas
-l'indépendance du substrat. [@rebuffi2017icarl] et
-[@shin2017continual] sont spécifiques à l'architecture. Une
+architecture. [@kirkpatrick2017overcoming] introduisent EWC,
+un régularisateur que nous lisons comme adjacent SHY, mais ne
+poursuivent pas l'indépendance du substrat. [@rebuffi2017icarl]
+décrivent iCaRL comme largement indépendant de l'architecture
+mais ne l'évaluent qu'avec des CNN, et [@shin2017continual] ne
+poursuivent pas non plus l'indépendance du substrat. Une
 revue de 2026 sur l'apprentissage continu à l'ère des LLM et de
 l'IA agentique [@hou2026cltransition] organise le domaine selon
 *comment* les modèles sont mis à jour (off-policy, on-policy,
 sans gradient), *quand* (pré-entraînement, post-entraînement,
 inférence) et *où* (paramètres versus mémoire externe) ; le
-framework C se situe dans sa case hors ligne, dans l'espace des
-paramètres, comme couche qui compose des opérations. Aucun
+framework C relèverait de sa région post-entraînement, dans
+l'espace des paramètres, comme couche qui compose des opérations
+(la revue n'a pas de catégorie « hors ligne », et elle prévient
+qu'une région vide n'atteste pas l'absence de travaux, §3.5).
+Aucun
 travail antérieur, à notre connaissance, n'expédie une
 **suite de tests de conformité réutilisable** liant un
 framework formel à des substrats opérationnels à travers des
