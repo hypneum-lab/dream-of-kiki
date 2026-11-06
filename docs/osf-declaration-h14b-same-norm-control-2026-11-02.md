@@ -203,5 +203,5 @@ d'E1-small depuis les expositions déclarées dans
 `docs/osf-amendment-e1-small-2026-10-30.md` (§2, §2bis), et que cette déclaration précède
 la lecture enregistrée.
 
-- [ ] Signature PI : ______________________
-- Date et heure (CET) : ______________________
+- [X] Signature PI : SAILLANT Clément
+- Date et heure (CET) : 06/11/2026 à 13h17
