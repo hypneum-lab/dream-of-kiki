@@ -13,6 +13,8 @@ the standard planning approximation for them (as the locked text
 itself states for quinto / sexto) and is exact only under equal
 variances.
 
+**L2 deposit (annotation added 2026-11-08):** restricted Zenodo record [10.5281/zenodo.24053984](https://doi.org/10.5281/zenodo.24053984) (Hypneum Lab lot of 2026-11-08, file `prereg-g4-nono-20261028.zip`, SHA-256 `37933211de89bd0e0289c9af040f08c7de04df74aa34331e8a9ee406c171ba0a`) gives the freeze tag `prereg-g4-nono-20261028` (commit `14c3d5f864430649ea860e3b49d10528065af798`, `swh:1:rev:14c3d5f864430649ea860e3b49d10528065af798`) a verifiable deposit date, level L2 of PROJECT-MANAGEMENT section 4. The deposit holds this file as it was at the tag; anything dated after the tag in this live file is not in the deposit.
+
 ## What is wrong
 
 | Locked file (line) | Locked sentence | Correct value |

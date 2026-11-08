@@ -50,6 +50,8 @@ headroom (S2, §9.3). The fixtures `tests/fixtures/mmlu_real.jsonl`
 **Lock commit:** *(filled by introducing commit hash at filing)*
 **Lock timestamp:** *(filled at filing, pre-run)*
 
+**L2 deposit (annotation added 2026-11-08):** restricted Zenodo record [10.5281/zenodo.24053984](https://doi.org/10.5281/zenodo.24053984) (Hypneum Lab lot of 2026-11-08, file `prereg-e1-small-20261028.zip`, SHA-256 `90a206075f86767eb34aa9b194a45690389003586ef4097d86bcb3618dea6d46`) gives the freeze tag `prereg-e1-small-20261028` (commit `963bb245db6bf1d5437527675eb9a64e66c9f7aa`, `swh:1:rev:963bb245db6bf1d5437527675eb9a64e66c9f7aa`) a verifiable deposit date, level L2 of PROJECT-MANAGEMENT section 4. The deposit holds this file as it was at the tag; anything dated after the tag in this live file is not in the deposit.
+
 ## §0 Scientific role and scope
 
 E1-small is a clean re-test, at small scale, of the evidence that the
