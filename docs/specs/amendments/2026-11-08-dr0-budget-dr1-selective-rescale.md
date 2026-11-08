@@ -102,9 +102,15 @@ ops(DE) = select(budget(DE), state)           # the budget chooses the operator 
 ```
 
 - `B_bits`: bits logically erased by the episode, a substrate-agnostic
-  lower bound (Landauer); `B_traffic`: writes or bytes moved, times
-  activity; `T`: duration. Joules are **measured and reported on a
-  separate axis**, not part of the statement (R9:10).
+  lower bound (Landauer); `B_traffic`: number of write operations to
+  the state array during the episode (the WriteLedger count in
+  ttt_fast_weights.py, generalised to any substrate as one write per
+  parameter-block update), i.e. not bytes and not activity-weighted;
+  `T`: duration. Joules are **measured and reported on a separate
+  axis**, not part of the statement (R9:10). The ambiguity between
+  bytes-moved and write-count definitions was raised in review on
+  2026-11-08; the write-count definition is adopted as the L0 draft
+  and is a PI decision before L1.
 - A DE is bounded by its budget, **not by a clock**: a continuous
   fast-weight update (TTT) is a DE whose budget accrues over wake time;
   a nested DE is a DE whose budget is spent in sub-episodes.
@@ -120,7 +126,7 @@ Not implied by the old statement: today's `BudgetCap` has no
 the code or by `tests/conformance/axioms/test_dr0_accountability.py`
 (follow-up code PR; the old form keeps passing).
 
-### 3.2 DR-1 (spec §6.2, line 436; `DR1`)
+### 3.2 DR-1 (spec §6.2, line 439; `DR1`)
 
 Old (verbatim):
 
@@ -142,6 +148,9 @@ purge(e) is optional; raw retention of e is permitted
   preregistration before use (decision D6); the amendment does not
   choose them.
 - With `weight ≡ 1` and `θ < 1` the old statement is recovered.
+- With θ above the maximum weight of the profile the guarantee is
+  vacuous; a preregistered θ must lie below the maximum observed
+  weight of the profile for DR-1' to be falsifiable.
 - Consequence for invariants: I1 ("episodic conservation until
   consolidation", BLOCKING, `docs/invariants/registry.md:8`) and its
   "β purge gate" must be restated (e.g. "episodic primacy": no
@@ -153,9 +162,10 @@ purge(e) is optional; raw retention of e is permitted
 Old (spec line 265): "apply homeostatic regularizer (SHY-style),
 shrink weights toward prior, reduce noise"; handlers reject
 `shrink_factor` outside (0, 1]
-(`kiki_oniric/dream/operations/downscale.py:42-45`,
-`downscale_real.py:87-90,162-166`,
-`kiki_oniric/substrates/ttt_fast_weights.py:246`).
+(`kiki_oniric/dream/operations/downscale.py:43-46`,
+`kiki_oniric/dream/operations/downscale_snn.py:66`,
+`downscale_real.py:88-90,164-167`,
+`kiki_oniric/substrates/ttt_fast_weights.py:244-247`).
 
 New (proposed): `rescale(f)` multiplies the targeted weights (or rates)
 by f, where the sign of the homeostatic change is **not fixed**: the
@@ -246,8 +256,8 @@ bits/traffic form of DR-0, or for selective DR-1.
 | Family | Evidence (file:line) |
 |---|---|
 | E1-small (tag `prereg-e1-small-20261028`) incl. H14-B DOWNSCALE ablation | `docs/osf-prereg-e1-small-2026-10-25.md:219-222,704,874-876`; `docs/osf-amendment-e1-small-2026-10-30.md:151-154` (SHRINK = 0.99); same-norm control `docs/osf-declaration-h14b-same-norm-control-2026-11-02.md`; controls addendum `docs/osf-addendum-e1-small-controls-2026-11-06.md`; run records `docs/milestones/e1-small/` |
-| NH-03 (tags `prereg-nh03-20261025`, `prereg-nh03-sched-20261027`, `prereg-nh03-deferred-20261030`) | arm (a) = replay + downscale, one bounded DE (`docs/milestones/2026-10-25-nh03-ttt-vs-episodes.md:81`); TTT forgetting gate rejects f > 1 (`experiments/nh03_ttt_vs_episodes/ttt_classifier.py:149`, `kiki_oniric/substrates/ttt_fast_weights.py:246`); results `docs/results/2026-10-25-nh03-ttt.md`, `2026-10-27-nh03-schedule-ablation.md`, `2026-10-30-nh03-deferred-eval.md` |
-| G2/G4/G5/G6 pilots and cycle-3 pilots (G4-ter replay + downscale g = +2.77, etc.) | `docs/milestones/g2-*`, `g4-*`, `g5-*`, `g6-*`, `pilot-cycle3-*`; G4-ter C5 factor 0.95 (`docs/milestones/2026-10-25-nh03-ttt-vs-episodes.md:68`) |
+| NH-03 (tags `prereg-nh03-20261025`, `prereg-nh03-sched-20261027`, `prereg-nh03-deferred-20261030`) | arm (a) = replay + downscale, one bounded DE (`docs/milestones/2026-10-25-nh03-ttt-vs-episodes.md:81`); TTT forgetting gate rejects f > 1 (`experiments/nh03_ttt_vs_episodes/ttt_classifier.py:148`, `kiki_oniric/substrates/ttt_fast_weights.py:244`); results `docs/results/2026-10-25-nh03-ttt.md`, `2026-10-27-nh03-schedule-ablation.md`, `2026-10-30-nh03-deferred-eval.md` |
+| G2/G4/G4-nono (tag `prereg-g4-nono-20261028`, `downscale 0.95`)/G5/G6 pilots and cycle-3 pilots (G4-ter replay + downscale g = +2.77, etc.) | `docs/milestones/g2-*`, `g4-*`, `g5-*`, `g6-*`, `pilot-cycle3-*`; G4-ter C5 factor 0.95 (`docs/milestones/2026-10-25-nh03-ttt-vs-episodes.md:68`); the préreg DR-3 (`prereg-dr3-20261028`) is covered by the "Conformance matrix" entry below |
 | Conformance matrix and DR-0/DR-1 property tests (old form) | `docs/milestones/conformance-matrix.md`, `tests/conformance/axioms/test_dr0_accountability.py`, `test_dr1_episodic_conservation.py` (fake β buffer, `docs/proofs/dr-1.md`) |
 
 Not individually audited: I did not open each G-series runner to check
@@ -587,3 +597,7 @@ no tag is created at merge.
   taken from the review files above, not re-read here.
 - Whether `docs/proofs/dr-0.md` / `dr-1.md` need a dated note or a
   rewrite (follow-up docs PR).
+- `docs/proofs/dr-1.md` exists; amendment pointer and need for a
+  dated note added (see minimal pointer line in the file itself).
+- I1 → episodic primacy: no sketch of the restated invariant yet;
+  required with the L1 version.
