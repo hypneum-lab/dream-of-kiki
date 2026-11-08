@@ -1,5 +1,7 @@
 # GENIAL axioms (DR-0 to DR-4)
 
+> **Amended by** `docs/specs/amendments/2026-11-08-dr0-budget-dr1-selective-rescale.md` (L0 draft, not frozen): DR-0 as a budget, selective DR-1, `downscale` to `rescale`, "axiom" to "framework hypothesis". The text below is unchanged.
+
 Canonical reference. Source of truth:
 `docs/specs/2026-04-17-dreamofkiki-framework-C-design.md` §5 (invariants)
 and §6 (axioms).
