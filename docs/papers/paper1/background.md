@@ -60,6 +60,43 @@ See also [@agliari2024regularization], who show that in
 Hopfield-like networks the dreaming (reiterated unlearning)
 kernel is the optimum of a regularised loss, its extent being set
 by the regularisation hyperparameter and the training time.
+
+**Prior art: dreaming and unlearning Hopfield networks.** The closest
+formal precedent for the `downscale`/`replay` pairing is the
+Hopfield-network dreaming lineage. Hopfield, Feinstein and Palmer
+[@hopfield1983unlearning] proposed unlearning the spurious states
+reached from random initial conditions, and Crick and Mitchison
+[@crick1983function] read this reverse learning as a function of REM
+sleep. Fachechi, Agliari and Barra [@fachechi2019dreaming] turned it
+into an explicit wake/sleep prescription with a closed-form kernel and
+a capacity that reaches the symmetric-network bound alpha = 1 in their
+replica-symmetric analysis. Two 2026 preprints extend it: Marinari,
+Rossi and Zamponi [@marinari2026dreaming] show that alternating
+learning and dreaming phases (random patterns unlearned, following
+Hopfield et al.) improves the memorisation capacity of a Hopfield model
+with bounded synaptic strength; Barra, Durante, Ladiana and Marra
+Solazzo [@barra2026dreaming] derive a replica-symmetric theory of
+dreaming in multi-layer heteroassociative memories, where dreaming
+attenuates the high-eigenvalue interference modes of the correlation
+matrix. (The related dense auto-hetero memories of
+[@agliari2026denseautohetero] treat pattern disentanglement, not
+dreaming, and are cited only for that.) This lineage is analytic and
+concerns a single operation on a single substrate, a Hopfield coupling
+matrix. We make no claim to its kernel or its capacity theory. Our
+contribution is of a different kind: an operator-level framework
+(`replay`, `downscale`, `restructure`, `recombine`) with axioms on
+their composition, plus pre-registered tests of when its readings hold.
+The only empirical contact so far is NH-01 (nerve-wml,
+`HopfieldDreamWML`), which tests on Hopfield networks whether dreaming
+differs from a uniform downscale. At N = 1000 with 10 seeds it
+reproduced the capacity gain of the dreaming kernel (ratio 3.86
+[3.79, 3.93] at t = 10, T = 0) and a finite interior optimum
+(t\* = 7), and a Frobenius-matched uniform shrink did not reproduce
+the gain at T = 0.2 (ratio 0.975 [0.967, 0.982]); the cause of the
+interior optimum is not isolated (diagonal ablation inconclusive).
+These results hold for Hebbian Hopfield networks only and do not
+transfer to the operator composition or to the language-model
+substrates studied here.
 A 2026 sleep-inspired replay model shows that a single
 unsupervised sleep phase scheduled after *several* sequential
 tasks partially restores performance on all of them, with most
