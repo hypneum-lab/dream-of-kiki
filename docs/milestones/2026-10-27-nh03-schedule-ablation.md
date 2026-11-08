@@ -10,6 +10,8 @@
 **Date drafted** : 2026-10-27
 **c_version** : `C-v0.25.0+PARTIAL`
 
+**L2 deposit (annotation added 2026-11-08):** restricted Zenodo record [10.5281/zenodo.24053984](https://doi.org/10.5281/zenodo.24053984) (Hypneum Lab lot of 2026-11-08, file `prereg-nh03-sched-20261027.zip`, SHA-256 `02a9127704a41fb0f8c85ffaf64153a4bc157d0215676f8f730564dfc31184b3`) gives the freeze tag `prereg-nh03-sched-20261027` (commit `6364719b14ec303fc57760e22221d0d43439484e`, `swh:1:rev:6364719b14ec303fc57760e22221d0d43439484e`) a verifiable deposit date, level L2 of PROJECT-MANAGEMENT section 4. The deposit holds this file as it was at the tag; anything dated after the tag in this live file is not in the deposit.
+
 ## 1. Question
 
 NH-03 found that TTT continuous consolidation beats discrete episodes

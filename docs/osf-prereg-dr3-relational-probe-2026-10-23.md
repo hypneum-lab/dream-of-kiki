@@ -33,6 +33,8 @@ Minutes per seed (800 training steps per substrate, d = 16).
 **Lock commit:** *(filled by introducing commit hash at filing)*
 **Lock timestamp:** *(filled at filing, pre-probe-run)*
 
+**L2 deposit (annotation added 2026-11-08):** restricted Zenodo record [10.5281/zenodo.24053984](https://doi.org/10.5281/zenodo.24053984) (Hypneum Lab lot of 2026-11-08, file `prereg-dr3-20261028.zip`, SHA-256 `8da99859dfc1af58d4ac81adc4ee5717c54d9101046fe5077b1c6f1021805d09`) gives the freeze tag `prereg-dr3-20261028` (commit `14c3d5f864430649ea860e3b49d10528065af798`, `swh:1:rev:14c3d5f864430649ea860e3b49d10528065af798`) a verifiable deposit date, level L2 of PROJECT-MANAGEMENT section 4. The deposit holds this file as it was at the tag; anything dated after the tag in this live file is not in the deposit.
+
 ## §1 Background
 
 Paper 1 folds the 2026 PRH critiques into DR-3 by anchoring

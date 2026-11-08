@@ -15,6 +15,8 @@
 **Date drafted** : 2026-10-30
 **c_version** : `C-v0.25.0+PARTIAL`
 
+**L2 deposit (annotation added 2026-11-08):** restricted Zenodo record [10.5281/zenodo.24053984](https://doi.org/10.5281/zenodo.24053984) (Hypneum Lab lot of 2026-11-08, file `prereg-nh03-deferred-20261030.zip`, SHA-256 `459786903e1dade47c59a2cb2bac2ed11aece636dbbe26730a35ae4ae6738555`) gives the freeze tag `prereg-nh03-deferred-20261030` (commit `aa80d1f6f2a982463d4380646f664a8a3dc4e1c2`, `swh:1:rev:aa80d1f6f2a982463d4380646f664a8a3dc4e1c2`) a verifiable deposit date, level L2 of PROJECT-MANAGEMENT section 4. The deposit holds this file as it was at the tag; anything dated after the tag in this live file is not in the deposit.
+
 ## 1. Question
 
 The schedule ablation (#70) found that moving the same 24 writes to
