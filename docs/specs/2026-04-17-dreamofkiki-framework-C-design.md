@@ -422,6 +422,8 @@ Let:
 
 ### 6.2 Axioms
 
+> **Amended by** `docs/specs/amendments/2026-11-08-dr0-budget-dr1-selective-rescale.md` (L0 draft, not frozen): DR-0 as a budget, selective DR-1, `downscale` to `rescale`. The text below is unchanged.
+
 #### DR-0 (Accountability)
 
 ```

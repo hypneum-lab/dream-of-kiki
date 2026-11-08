@@ -3,8 +3,9 @@
 **Version** : v0.1-draft (2026-05-02)
 **Supersedes** : none (initial issue ; closes the symmetry gap with
 DR-2 / DR-3 / DR-4 evidence files)
-**Amendment pointer** : none (DR-1 statement unchanged since
-framework-C v0.7.0 ; this is documentation only, no FC bump)
+**Amendment pointer** : `docs/specs/amendments/2026-11-08-dr0-budget-dr1-selective-rescale.md`
+(L0 draft, not frozen): selective DR-1 (DR-1') added; the original
+DR-1 statement is unchanged and is the special case weight ≡ 1, θ < 1.
 **Target venue** : PLOS Computational Biology (Paper 1 v0.2)
 **Executable counterpart** :
 `tests/conformance/axioms/test_dr1_episodic_conservation.py` (full

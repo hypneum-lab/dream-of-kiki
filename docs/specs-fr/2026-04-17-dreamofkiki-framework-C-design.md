@@ -431,6 +431,8 @@ Soit :
 
 ### 6.2 Axiomes
 
+> **Amendé par** `docs/specs/amendments/2026-11-08-dr0-budget-dr1-selective-rescale.md` (brouillon L0, non gelé) : DR-0 en budget, DR-1 sélective, `downscale` vers `rescale`, « axiome » vers « hypothèse de cadre ». Le texte ci-dessous est inchangé.
+
 #### DR-0 (Redevabilité)
 
 ```
