@@ -64,15 +64,29 @@ def _softmax(xs: Sequence[float]) -> list[float]:
     return [v / z for v in e]
 
 
+def _log_softmax_at(xs: Sequence[float], i: int) -> float:
+    """log softmax(xs)[i] by log-sum-exp (finite when softmax(xs)[i] underflows to 0)."""
+    mx = max(xs)
+    return xs[i] - mx - math.log(sum(math.exp(x - mx) for x in xs))
+
+
 def choice_kl(ref_scores: Sequence[Sequence[float]], post_scores: Sequence[Sequence[float]]) -> float:
-    """Mean over items of KL(softmax(ref) || softmax(post)) over the choices."""
+    """Mean over items of KL(softmax(ref) || softmax(post)) over the choices.
+
+    Numerical guard (controls addendum of 2026-11-06): when a post
+    probability underflows to exactly 0 in float64 (a choice score more
+    than ~745 below the best one), ``log(b)`` is taken in log-space by
+    log-sum-exp instead of raising ``math domain error``. The quantity is
+    unchanged; every term with ``b > 0`` is computed as before, so every
+    previously computed value is reproduced bit for bit.
+    """
     if len(ref_scores) != len(post_scores) or not ref_scores:
         raise ValueError("need the same non-empty probe items for both checkpoints")
     total = 0.0
     for r, p in zip(ref_scores, post_scores, strict=True):
         pr, pp = _softmax(r), _softmax(p)
-        total += sum(a * (math.log(a) - math.log(b)) for a, b in zip(pr, pp, strict=True)
-                     if a > 0)
+        total += sum(a * (math.log(a) - (math.log(b) if b > 0 else _log_softmax_at(p, i)))
+                     for i, (a, b) in enumerate(zip(pr, pp, strict=True)) if a > 0)
     return total / len(ref_scores)
 
 

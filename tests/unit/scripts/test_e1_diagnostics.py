@@ -41,6 +41,23 @@ def test_choice_kl() -> None:
         dg.choice_kl([], [])
 
 
+def test_choice_kl_underflow_guard() -> None:
+    # Post score of choice 3 is 1000 below the others: softmax underflows to 0
+    # (the p_ctrl_lr_matched|2 stop of 2026-11-01); the guard keeps it finite.
+    ref = [[0.0, 0.0, 0.0, 0.0]]
+    post = [[0.0, 0.0, 0.0, -1000.0]]
+    lse = math.log(3.0)  # log-sum-exp of the post scores, exp(-1000) negligible
+    exp = 0.75 * (math.log(0.25) - (0.0 - lse)) + 0.25 * (math.log(0.25) - (-1000.0 - lse))
+    got = dg.choice_kl(ref, post)
+    assert math.isfinite(got) and got == pytest.approx(exp)
+    # terms with b > 0 are computed exactly as before the guard
+    p = [[0.0, -1.0, -2.0, -3.0]]
+    q = [[-0.5, -1.5, -2.0, -0.1]]
+    pr_, pp_ = dg._softmax(p[0]), dg._softmax(q[0])
+    old = sum(a * (math.log(a) - math.log(b)) for a, b in zip(pr_, pp_) if a > 0)
+    assert dg.choice_kl(p, q) == old
+
+
 def test_lost_correct() -> None:
     assert dg.lost_correct([True, True, False, True], [True, False, True, False]) == 2 / 3
     assert dg.lost_correct([False], [True]) is None
