@@ -320,4 +320,4 @@ Research-first discipline:
 
 - Axioms / invariants are load-bearing — cite the ID (`DR-1`, `S2`, `I4`) in every guard, test, and commit message that enforces one.
 - DualVer bumps require either a proof (formal axis) or a gate result (empirical axis). Both axes are recorded in `CHANGELOG.md`.
-- No AI co-authorship trailer. Authorship byline: *dreamOfkiki project contributors*.
+- No AI co-authorship trailer. Authorship byline: *Clément Saillant* (single author, as in `CITATION.cff`).
