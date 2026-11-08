@@ -15,7 +15,14 @@ Research program producing two complementary papers, both released as arXiv prep
 
 ## Preliminary observation (Paper 2 backlog, 2026-04-20 ; framing reviewed 2026-04-21)
 
-**A directional trend consistent with substrate-size scaling is observed on the `p_max` profile between 1.5B and 7B substrates, pending a 3rd scale point.** Phase-B pilot over three profiles (`p_min`, `p_equ`, `p_max`) × three benchmarks (MMLU, HellaSwag, mega_v2), 30 seeds × 3 profiles = 90 cells. 7B result : H1 p_min rejects H₀ at p = 1.4 × 10⁻²⁴, H1 p_equ at p = 6.2 × 10⁻²⁷ ; H1 p_max (**p = 0.055**) **did not reject** at any pre-registered α (0.05, 0.0125, 0.00833, 0.00625). We report the observed effect-size shift on `p_max` as a *descriptive* trend, not a confirmatory scaling-law claim.
+*Erratum 2026-06-19 / catalogue v3 (DOK-H7): this scaling-law observation is
+retracted — both scale points (1.5B and 7B) are contaminated by the `mega_v2`
+fixture leak (20 rows cycled over 100 samples, train = eval); the apparent
+`p_max` collapse is an artefact of that contamination and of a degenerate
+`hellaswag` fixture (pre≈1.0) in the 7B run (DOK-PB7, below). The paragraph
+is kept for historical context only. See STATUS.md CORRECTION banner.*
+
+**A directional trend consistent with substrate-size scaling is observed on the `p_max` profile between 1.5B and 7B substrates, pending a 3rd scale point.** Phase-B pilot over three profiles (`p_min`, `p_equ`, `p_max`) × three benchmarks (MMLU, HellaSwag, mega_v2), 30 seeds × 3 profiles = 90 cells. 7B result : H1 p_min rejects H₀ at p = 1.4 × 10⁻²⁴, H1 p_equ at p = 6.2 × 10⁻²⁷ ; H1 p_max (**p = 0.055**) **did not reject** at any pre-registered α (0.05, 0.0125, 0.00833, 0.00625). We report the observed effect-size shift on `p_max` as a *descriptive* trend, not a confirmatory scaling-law claim. *Erratum 2026-06-19 / catalogue v3 (DOK-PB7): 7B pilot retracted — degenerate `hellaswag` fixture (pre≈1.0) and `mega_v2` fixture leak contaminate both profiles, see STATUS.md.*
 
 **Why we are *not* claiming a "15-order-of-magnitude collapse".** (a) Two data points do not identify a power-law ; Clauset, Shalizi & Newman 2009 recommend ≥ 50 points with explicit goodness-of-fit ; neural-scaling-law baselines (Kaplan et al. 2020) typically span 7–9 scales. (b) p = 0.055 sits above every pre-registered α and does not support a confirmatory rejection ; describing the observation as a "collapse" would overstate what the evidence carries (cf. Stumpf & Porter 2012 on power-law overclaiming). (c) The reported magnitude may include floating-point underflow near machine precision ; a numerical-precision audit is required before any quantitative statement.
 
@@ -135,6 +142,15 @@ follows M5.
 ---
 
 ## 2026-06-04 update — real 1.5B pilot GO (sub-powered) + E1 TOST harness + turnkey 35B pin
+
+*Erratum 2026-06-19 / catalogue v3 (DOK-PB15): the GO figures below are
+retracted — the positive composite delta (p_min p≈2.4e-20, p_equ p≈1.1e-19,
+p_max p≈1.5e-19, n=20) is entirely carried by `mega_v2` via a fixture leak
+(missing `tests/fixtures/mega_v2_sanity.jsonl` → 20-row fallback cycled at
+n_samples=100, train content = eval content). Leak-free re-run shrinks the
+signal ~3×; a small replay-specific signal survives but is a candidate only.
+See STATUS.md CORRECTION banner and
+`docs/milestones/pilot-cycle3-real-1p5b-CORRECTION-2026-06-19.md`.*
 
 The cycle-3 real-weight pilot on `qwen3p5-1p5b-fp16` was extended from
 5 to **20 seeds** (`docs/milestones/pilot-cycle3-real-1p5b.{json,md}`,

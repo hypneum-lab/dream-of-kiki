@@ -1,5 +1,13 @@
 # Scaling-law analysis cycle-3 Phase B (2026-04-20)
 
+> **Erratum** (2026-06-19, confirmed catalogue v3 2026-11-06): the
+> scaling-law finding (H7 / DOK-H7) and 7B pilot figures (DOK-PB7) below
+> are retracted — both scale points are contaminated by the `mega_v2`
+> fixture leak (20-row fallback cycled at n_samples=100, train=eval) and
+> the 7B run additionally used a degenerate `hellaswag` fixture (pre≈1.0).
+> The 1.5B figures (DOK-PB15) are also retracted for the same fixture
+> leak. See STATUS.md CORRECTION banner.
+
 **Status** : 2 of 3 scales complete (1.5B done, 7B done, 35B pending relaunch after crash)
 
 Both completed scales ran the real Qwen2.5-Instruct bf16 pipeline against real
