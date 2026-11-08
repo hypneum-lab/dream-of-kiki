@@ -1,5 +1,11 @@
 # Phase B 7B launch — C3.8 goal (d) scale law
 
+> **Erratum** (2026-06-19, confirmed catalogue v3 2026-11-06): the 1.5B
+> reference figures in §Reference comparison below (DOK-PB15) and the 7B
+> run this document launched (DOK-PB7) are both retracted — `mega_v2`
+> fixture leak (20-row fallback, train=eval) and degenerate `hellaswag`
+> fixture (pre≈1.0) in the 7B run. See STATUS.md CORRECTION banner.
+
 **Status** : launched fire-and-forget 2026-04-20 02:43 CEST on Studio.
 **Gate** : G10 cycle-3 Gate D real pilot — scale-axis extension.
 **Goal** : measure the catastrophic-forgetting tradeoff at

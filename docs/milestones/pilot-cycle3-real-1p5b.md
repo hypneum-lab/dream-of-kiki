@@ -1,5 +1,11 @@
 # Pilot cycle-3 — real 1.5B (20 seeds)
 
+> **Erratum** (2026-06-19, confirmed catalogue v3 2026-11-06): the GO
+> figures below (p_min p≈2.4e-20, p_equ p≈1.1e-19, p_max p≈1.5e-19,
+> n=20) are retracted (DOK-PB15) — gain carried entirely by `mega_v2`
+> via a fixture leak (missing `tests/fixtures/mega_v2_sanity.jsonl`,
+> 20-row fallback cycled at n_samples=100, train=eval). See STATUS.md.
+
 **Artifact** : `docs/milestones/pilot-cycle3-real-1p5b.json`
 **Substrate** : `qwen3p5-1p5b-fp16` (real bf16/fp16 weights, not a mock)
 **Harness** : `C-v0.7.0+PARTIAL`

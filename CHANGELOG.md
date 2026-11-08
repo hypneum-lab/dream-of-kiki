@@ -12,6 +12,34 @@ see `docs/specs/2026-04-17-dreamofkiki-framework-C-design.md` §12).
 
 ## [Unreleased]
 
+### Errata (fixture leaks confirmed 2026-06-19, catalogue v3 2026-11-06)
+
+- **DOK-PB15 — 1.5B pilot GO (cycle-3 Phase B, 2026-06-04) retracted.**
+  Claim: H1 rejects H0 3/3 (`p_min` p≈2.4e-20, `p_equ` p≈1.1e-19,
+  `p_max` p≈1.5e-19, n=20). Truth: gain carried entirely by `mega_v2`;
+  `tests/fixtures/mega_v2_sanity.jsonl` absent → 20-row fallback cycled
+  at n_samples=100, train content = eval content. Root cause: fixture
+  leak in `harness/real_benchmarks/mega_v2_eval.py` fallback path.
+  Where corrected: `STATUS.md` CORRECTION banner;
+  `docs/milestones/pilot-cycle3-real-1p5b-CORRECTION-2026-06-19.md`.
+  [Erratum 2026-06-19: superseded, see STATUS.md]
+- **DOK-PB7 — 7B pilot GO (cycle-3 Phase B, 2026-04-20) retracted.**
+  Claim: H1 `p_min` p≈1.4e-24, `p_equ` p≈6.2e-27, `p_max` p=0.055
+  (GO 2/3). Truth: `hellaswag` fixture degenerate (8 items, pre≈1.0);
+  same `mega_v2` fixture leak as DOK-PB15 contaminates `p_min`/`p_equ`.
+  Root cause: missing real `hellaswag` fixture + same fallback cycling
+  as DOK-PB15. Where corrected: `STATUS.md` CORRECTION banner;
+  `docs/milestones/pilot-cycle3-real-7b.json` verdict invalid.
+  [Erratum 2026-06-19: superseded, see STATUS.md]
+- **DOK-H7 — H7 scaling-law observation (2026-04-20) retracted.**
+  Claim: `p_max` collapses 15 orders of magnitude from 1.5B to 7B;
+  candidate H7 "restructure catastrophic beyond ~1.5B". Truth: both
+  scale points are contaminated (DOK-PB15 + DOK-PB7); apparent collapse
+  is an artefact of the fixture leaks. Root cause: same as DOK-PB15.
+  Where corrected: `STATUS.md` CORRECTION banner; erratum header in
+  `docs/milestones/scaling-law-analysis-2026-04-20.md`.
+  [Erratum 2026-06-19: superseded, see STATUS.md]
+
 ### Docs (prior art, for the v0.2 papers, 2026-11-08)
 
 - **Hopfield dreaming / unlearning lineage added to Paper 1 §3.2 and
@@ -132,6 +160,7 @@ see `docs/specs/2026-04-17-dreamofkiki-framework-C-design.md` §12).
   (`p_min` p ≈ 2.4e-20, `p_equ` p ≈ 1.1e-19, `p_max` p ≈ 1.5e-19,
   n = 20), GO rule 3/3 at α = 0.0125. New companion
   `docs/milestones/pilot-cycle3-real-1p5b.md`.
+  [Erratum 2026-06-19: superseded by DOK-PB15 retraction, see STATUS.md]
 - **GO is qualified : pipeline-validated, sub-powered, 1.5B pilot — NOT
   the 35B claim.** The E1 power analysis requires **≈ 141 pairs** for
   80 % power at the pre-registered SESOI; 20 seeds is far below that
