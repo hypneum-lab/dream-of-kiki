@@ -306,3 +306,26 @@ added to a descriptive diagnostic (`choice_kl`) that stopped the run on 2026-11-
 reproduces every earlier value bit for bit and changes no method.
 
 ---
+
+## 9. End record (2026-11-08)
+
+Data record only. No analysis, no verdict and no interpretation is made in this section; the
+reading rules of section 8 apply to the analysis, which is the PI's.
+
+- Host: kxkm-ai (RTX 4090).
+- Start: 2026-11-06 14:17:45 CET. End: 2026-11-08 05:34:03 CET (`out/driver.log`, final line
+  `done`; `options-only rc=0`, `controls rc=0 cells=564`).
+- Code commit `8c1d57a43248a2e6ebe722cd21f2021123881d49`; amendment sha256 `3b76adc6…`;
+  manifest sha256 `093fdf61…`; corpus sha256 `f8379b81…` (full hashes in the first line of
+  `driver.log`).
+- Cells: 564 = 4 profiles x 141 seeds (0-140). Profiles: `p_equ`,
+  `p_ctrl_vanilla_replay_tuned`, `p_ctrl_samenorm_r`, `p_ctrl_samenorm_u` (141 cells each).
+  All 564 cells carry `budget.status = matched` and `invariant_violation = null`.
+- Options-only control: `options-only/e1-options-only.json` (written 2026-11-06 14:25 CET).
+- Files in this repository: `docs/milestones/e1-small/controls-2026-11-06/` (cells, options-only
+  result, three logs, `SHA256SUMS`). sha256 of the cells file:
+  `7b3ec589b358f8676f5c18177f1751ded806cf0b28257d0ee352cfb4b8a06247`
+  (`e1-controls-torch-Qwen_Qwen3.5-4B.cells.jsonl`, 564 lines); of the options-only result:
+  `061054d425b4a9a5504bc7dc451f3485cabff4abad129fa9aaf62b7fc4f6de4a`.
+- Archive on electron-server (verified by sha256 against kxkm-ai on 2026-11-08):
+  `~/hypneum-archives/e1-small-controls-20261106-20261108/out/`.
