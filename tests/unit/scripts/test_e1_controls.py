@@ -14,6 +14,7 @@ import pytest
 
 torch = pytest.importorskip("torch")
 
+from scripts import e1_corpus_io as cio
 from scripts import e1_harness as hn
 from scripts import e1_profiles as pr
 from scripts import pilot_cycle3_cuda as h
@@ -111,7 +112,7 @@ def _mode_setup(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> tuple[Path, 
                                "c": 2.0, "n_eval": 20, "p_disc": 0.0, "backend": "torch",
                                "manifest_sha256": hn.sha_file(man)}))
     prov = {"corpus_sha256": "c" * 64, "status": "FROZEN", "partition": "confirmatory"}
-    monkeypatch.setattr(hn.cio, "load_corpus", lambda c, m, mode: (items, prov))
+    monkeypatch.setattr(cio, "load_corpus", lambda c, m, mode: (items, prov))
     return man, amd
 
 
