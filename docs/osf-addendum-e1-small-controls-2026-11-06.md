@@ -329,3 +329,153 @@ reading rules of section 8 apply to the analysis, which is the PI's.
   `061054d425b4a9a5504bc7dc451f3485cabff4abad129fa9aaf62b7fc4f6de4a`.
 - Archive on electron-server (verified by sha256 against kxkm-ai on 2026-11-08):
   `~/hypneum-archives/e1-small-controls-20261106-20261108/out/`.
+
+---
+
+## 10. Results (2026-11-08)
+
+Written on 2026-11-08 on the PI's decision to record the numbers, the paired null, the
+section 4.2 consistency check and the pre-registered reading rules applied to them. Every
+number below is read from `controls_analysis.json` and `sec42.json` (section 10.8). Rules are
+cited by line of this file (`l.N`) and translated from the French text of sections 4.1-4.3;
+labels in French are the addendum's own. Nothing here goes beyond what those rules assign.
+All quantities are exploratory and informed (section 1), at nominal alpha = 0.05
+(one-sided bounds at 0.95), outside any family (`l.128-130`).
+
+**Procedure notes.** The repository holds no analysis script for the controls cells. The
+script `e1/analyse_controls.py` was written on 2026-11-08 on macM1 for this purpose; it
+implements sections 4.1-4.3 and reuses `bounds`, `signflip` and the bootstrap of
+`scripts/e1_small_null_supplement.py`. It was not pre-registered and is not part of the
+commit `8c1d57a` that produced the cells. Paired sign-flip null as in `l.131-134`: 10,000
+draws, seed `20261106`, `p = (k+1)/(N+1)`, smallest attainable `p` = 9.999e-05 (reported
+below as 1.0e-04). Bootstrap intervals are descriptive. `L` and `U` are the paired one-sided
+95% lower and upper bounds. `g_z` is the mean divided by the standard deviation of the paired
+differences. "Discordance" is the mean over seeds of the share of the 162 evaluation items
+whose post-replay correctness differs between the two arms.
+
+### 10.1 Integrity and validity
+
+Rule (`l.137-139`): "invariant violation or non-finite score -> cell excluded; more than 7
+seeds lost for a contrast -> UNINTERPRETABLE; collapse rate > 20% of an arm ->
+UNINTERPRETABLE."
+
+- Cells: 564 = 4 profiles x 141 seeds (`p_ctrl_samenorm_r` 141, `p_ctrl_samenorm_u` 141, `p_ctrl_vanilla_replay_tuned` 141, `p_equ` 141); missing: 0.
+- Invariant violations: 0; non-finite scores: 0; `budget.status`: matched for all cells.
+- Collapse rate: `p_ctrl_samenorm_r` 0%, `p_ctrl_samenorm_u` 0%, `p_ctrl_vanilla_replay_tuned` 0%, `p_equ` 0%.
+- `n_eval` = 162 items for every cell; `pre_correct` identical across the four arms within each seed: true. Single code commit `8c1d57a`, single amendment sha256 `3b76adc6...`.
+- No cell is excluded, no seed is lost, no arm exceeds the collapse threshold: the validity rule excludes nothing and does not trigger UNINTERPRETABLE.
+
+### 10.2 Consistency check (section 4.2)
+
+Rule (`l.164-167`): "under the deterministic mode, the re-run cells of `p_equ` and
+`p_ctrl_vanilla_replay_tuned` must be identical to the E1-small cells (`pre_correct`,
+`post_correct`, scores, `norm_change`), compared by fingerprint. A discrepancy is reported as
+an instrument incident; the pairing remains that of the new commit."
+
+- `p_equ`: 141/141 seeds identical to the main-run cell on all non-metadata fields (`pre_correct`, `post_correct`, scores, `norm_change`, `delta`, `mean_replay_loss`, `drift`, `kl_ref`, `lost_correct`; max absolute difference 0 on each); items whose post-replay correctness differs: 0.
+- `p_ctrl_vanilla_replay_tuned`: 141/141, same fields, same result; items differing: 0.
+- `eval_sources` fingerprint `a7da36fa60af` on both sides; learning rate, `m` and replay count identical (3e-4, 2, 40); DOWNSCALE `f` = 0.99 for `p_equ`, none for vanilla, on both sides.
+- Only `code_commit` differs: main run `e93ea81`, controls run `8c1d57a`. Library versions, corpus and model are equal (`versions_diff` empty).
+- No discrepancy is found; no instrument incident is to be reported under the rule.
+- The H14-B difference recomputed from the main-run cells gives mean -1.97e-18, sd 0.010053, 100 seeds with a non-zero paired difference and 128 seeds with differing `post_correct`; the same quantity from the controls cells is identical in mean (-1.97e-18) and its sd is 0.010089 in section 10.4 (ratio 1.00357 = sqrt(141/140): the two sd differ by the degrees-of-freedom convention of the two scripts, as checked numerically on these values, not in code).
+- Context, not part of the rule: the main run stopped with `rc=1` at 1271 of 1410 cells (`p_ctrl_lr_matched` 2 of 141 seeds; section 5). The cells compared here are the 282 complete cells of the two re-run arms. The main-run output is archived on electron-server at `~/hypneum-archives/e1-small-main-run-20261029-20261101/`.
+
+### 10.3 Learning gate
+
+Rule (`l.153-155`): "for each of the four arms, delta > 0 with sign-flip p < 0.05. An arm that
+does not pass the gate makes the contrasts that use it non-informative."
+
+| arm | pre | post | mean Δ | L (95%) | sign-flip p | seeds with Δ > 0 | gate |
+|---|---|---|---|---|---|---|---|
+| `p_equ` | 0.3357 | 0.3991 | +0.0634 | +0.0586 | 1.0e-04 | 136/141 | passed |
+| `p_ctrl_vanilla_replay_tuned` | 0.3357 | 0.3991 | +0.0634 | +0.0585 | 1.0e-04 | 136/141 | passed |
+| `p_ctrl_samenorm_r` | 0.3357 | 0.3988 | +0.0631 | +0.0583 | 1.0e-04 | 136/141 | passed |
+| `p_ctrl_samenorm_u` | 0.3357 | 0.4000 | +0.0643 | +0.0596 | 1.0e-04 | 137/141 | passed |
+
+All four arms: Δ > 0 with sign-flip p = 1.0e-04 (the smallest attainable). Learning gate: passed
+for the four arms; no contrast is made non-informative by this rule. `pre` is the same for
+the four arms (same base, same 162 items per seed).
+
+### 10.4 Contrasts D_R, D_U and descriptives
+
+Contrasts (`l.145-148`): `D_R(s) = Δ_s(p_equ) − Δ_s(p_ctrl_samenorm_r)`, `D_U(s) = Δ_s(p_equ) − Δ_s(p_ctrl_samenorm_u)`;
+descriptives: each variant minus vanilla, and H14-B recomputed in this commit. n = 141 seeds each.
+
+| contrast | mean | sd | L | U | bootstrap 95% CI | sign-flip p | g_z | discordance | seeds with identical post | null P99 of mean |
+|---|---|---|---|---|---|---|---|---|---|---|
+| D_R = Δ(p_equ) − Δ(samenorm_r) | +0.00031 | 0.01127 | −0.00127 | +0.00188 | [−0.00153; +0.00210] | 0.391 | +0.027 | 0.0201 | 6 | 0.00223 |
+| D_U = Δ(p_equ) − Δ(samenorm_u) | −0.00088 | 0.01202 | −0.00255 | +0.00080 | [−0.00285; +0.00101] | 0.815 | −0.072 | 0.0194 | 4 | 0.00228 |
+| desc: Δ(samenorm_r) − Δ(vanilla) | −0.00031 | 0.00974 | −0.00166 | +0.00105 | [−0.00188; +0.00131] | 0.631 | −0.031 | 0.0164 | 9 | 0.00197 |
+| desc: Δ(samenorm_u) − Δ(vanilla) | +0.00088 | 0.01147 | −0.00072 | +0.00247 | [−0.00105; +0.00271] | 0.185 | +0.076 | 0.0197 | 8 | 0.00228 |
+| desc: H14-B recomputed, Δ(p_equ) − Δ(vanilla) | 0.00000 | 0.01009 | −0.00141 | +0.00141 | [−0.00166; +0.00162] | 0.523 | 0.000 | 0.0158 | 13 | 0.00201 |
+
+Seeds with paired difference below / equal to / above 0: D_R 53 / 34 / 54; D_U 54 / 39 / 48. The observed means of D_R (+0.00031) and D_U (−0.00088) are below the 99th percentile of the sign-flip null of the mean (0.00223 and 0.00228). The H14-B recomputation reproduces, in this commit, the mean difference of the main run (-1.97e-18) with 13 seeds of identical post answers.
+
+### 10.5 Reading under the pre-registered rules
+
+**Restriction rule** (`l.149-152`): "if the lower bound `L` of `D_R` or `D_U` is not strictly
+positive, no reading of H14-B is attributed to the content of DOWNSCALE rather than to a
+perturbation of the same norm." Observed: L(D_R) = −0.00127 and L(D_U) = −0.00255; neither is strictly greater than 0.
+The restriction rule applies (to both contrasts).
+
+**Compliance gate** (`l.156-158`): "ratio applied norm / rho(s) outside [0.5; 2] on more than 7
+seeds -> variant non-compliant, contrasts non-informative." Observed: median ratio 1.0121 for R (min and max equal to the median at 4 decimals) and 1.0220 for U (idem); seeds outside [0.5; 2]:
+0 (R) and 0 (U). Both variants are within the gate. The target norm rho(s) is 7.677 (median; min and max equal at 3 decimals). A ratio near 1 follows from the construction of the same-norm controls (the perturbation is built to have the DOWNSCALE norm; the residual 1.2% and 2.2% come from the bfloat16 rounding of section 2.1), so the gate is informative about the implementation only, not about the contrasts.
+
+**Sensitivity rule** (`l.159-163`): "post answers identical between the two arms on more than 70
+of 141 seeds -> non-informative; otherwise mean post discordance < 0.05 -> `contrôle à faible
+pouvoir de falsification` (low falsification power control); otherwise informative."
+Observed: identical-post seeds 6 (D_R) and 4 (D_U), both at most 70; mean discordance 0.0201 (D_R) and 0.0194 (D_U), both below 0.05 (maximum per-seed discordance 0.0494 and 0.0494).
+The first branch is not met and the second is: the label assigned by the rule to D_R and D_U is
+`contrôle à faible pouvoir de falsification`. (The label "non informatif" belongs to the first branch and is not assigned.)
+
+Combined with the restriction rule, the addendum assigns no attribution of the H14-B
+difference to the content of DOWNSCALE, from controls whose power to differ is rated low by
+its own sensitivity rule. The descriptive H14-B recomputation (mean -1.97e-18, L −0.00141, U +0.00141, discordance 0.0158, 13 seeds with identical post answers) is reported without reading.
+
+### 10.6 Options-only control
+
+Procedure and rule: `l.171-187`. Base model, no replay, question removed, 1,098 CONFIRMATORY
+items scored once each (corpus `f8379b81...`, partition sha256 `546f44c6...`, status FROZEN); the
+`eval_sources` of the cells match: 141/141 seeds. Overall: 300/1098 = 0.2732, Clopper-Pearson 95% [0.2470; 0.3006].
+Per-seed mean over the 162 evaluation items: O = 0.2728, Q = 0.3357.
+
+| source | k/n (items) | options-only accuracy | Clopper-Pearson 95% | O, seed-pooled | Q, seed-pooled |
+|---|---|---|---|---|---|
+| `daily_oracle` | 62/338 | 0.1834 | [0.1436; 0.2289] | 0.1809 | 0.1789 |
+| `mmlu_cf` | 132/380 | 0.3474 | [0.2995; 0.3976] | 0.3461 | 0.4938 |
+| `realtimeqa` | 106/380 | 0.2789 | [0.2344; 0.3270] | 0.2808 | 0.3157 |
+
+Paired contrasts over 141 seeds (`l.174-176`):
+
+| contrast | mean | sd | L | U | bootstrap 95% CI | sign-flip p | g_z | null P99 of mean |
+|---|---|---|---|---|---|---|---|---|
+| Q − O | +0.06282 | 0.03479 | +0.05797 | +0.06767 | [+0.05713; +0.06843] | 1.0e-04 | +1.796 | 0.01458 |
+| O − 0.25 | +0.02283 | 0.03018 | +0.01862 | +0.02704 | [+0.01780; +0.02782] | 1.0e-04 | +0.752 | 0.00729 |
+
+Reading rule (`l.179-184`), applied term by term:
+
+- `L(Q − O) > 0`: L = +0.05797; the condition is met. The addendum's phrasing for this branch is "goes in the direction of 'the question brings accuracy beyond the options alone'".
+- `L(O − 0.25) > 0`: L = +0.01862; the condition is met. Phrasing: "goes in the direction of 'part of the base accuracy is reachable without the question'".
+- `U(O − 0.25) < δ` with δ = 0.01: U = +0.02704, which is not below 0.01; the condition is not met, so the "options alone at most δ above chance" phrasing is not assigned.
+- Descriptive share `(O − 0.25)/(Q − 0.25)` of the means: 0.267.
+- By source (descriptive): `daily_oracle` options-only accuracy 0.1834 with Clopper-Pearson upper bound 0.2289, below 0.25.
+
+Caveat (`l.185-187`): the seeds share items (162 items drawn among 1,058 per seed), so the `O_s` are not independent; inference is conditional on the frozen corpus (prereg section 5.2). The sign-flip p and the bounds above should be read with this reserve.
+
+### 10.7 Not done / limits
+
+- The per-profile part of the options-only control (declared not launched, section 3.1) was not run.
+- `p_ctrl_lr_matched` remains at 2 of 141 seeds in the main run (section 5 and 10.2); this addendum does not re-run it.
+- The analysis script was written on 2026-11-08, after the data existed; it was not pre-registered. Its statistical routines are those of `scripts/e1_small_null_supplement.py`.
+- Environment of the analysis (macM1): Python 3.14.4, numpy 2.5.4, scipy 1.18.1, torch 2.11.0 (CPU; used only for `randperm` in `_cell_split`), run with `nice -n 10` and `python -I`.
+- The thresholds of the compliance and sensitivity rules were chosen after reading #91 (section 1); the options-only and same-norm results are exploratory.
+- Within-seed `pre` is identical across arms by construction, so the contrasts measure post-replay differences only.
+
+### 10.8 Reproducibility pointers
+
+- Analysis host macM1, directory `~/hypneum-analysis-20261108/e1/` (script `analyse_controls.py`, output `out/controls_analysis.json`; §4.2 check in `sec42/`). Command: `nice -n 10 .venv/bin/python -I analyse_controls.py $PWD` with 10,000 draws and seed `20261106`; code under analysis `8c1d57a` (PR head `9333898` not used).
+- Input sha256: cells `7b3ec589b358f8676f5c18177f1751ded806cf0b28257d0ee352cfb4b8a06247`; options-only result `061054d425b4a9a5504bc7dc451f3485cabff4abad129fa9aaf62b7fc4f6de4a`; corpus `f8379b810353d25e3c85e4e94b9a8d02553ea8c18abdef631a0289339497c0a2`.
+- Controls output archive: electron-server `~/hypneum-archives/e1-small-controls-20261106-20261108/out/`; T7 on macM1 `/Volumes/T7/hypneum-archives/e1-small-controls-20261106-20261108/`.
+- Main-run archive (for section 10.2): electron-server `~/hypneum-archives/e1-small-main-run-20261029-20261101/`; T7 `/Volumes/T7/hypneum-archives/e1-small-main-run-20261029-20261101/`.
+- In this repository: `docs/milestones/e1-small/controls-2026-11-06/` (cells, options-only result, logs, `SHA256SUMS`; section 9).
