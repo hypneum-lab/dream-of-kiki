@@ -1,8 +1,8 @@
 # ADR-0002: amend DR-0 (budget), DR-1 (selective) and pillar B (`downscale` to `rescale`), and call the axioms framework hypotheses
 
-> Status: **Proposed** (2026-11-08). Not accepted, not frozen: the L1
-> tag, SWHID and PI decisions D1-D8 are pending (see the amendment,
-> section 9). Drafted by an agent from process records and the
+> Status: **Proposed** (2026-11-08). PI decisions D1-D8 closed on
+> 2026-11-08 13:50 CET (listed in section 6); not frozen: the L1 tag
+> and SWHID are gated by the roadmap reading lock (principle 6). Drafted by an agent from process records and the
 > 2026-10-24 hypotheses review; no new run was made.
 >
 > Issue: hypneum-lab/dream-of-kiki#48 (milestone M1). Amendment:
@@ -82,3 +82,16 @@ TTT-specific advantage.
 | Date | Event |
 |---|---|
 | 2026-11-08 | Proposed with the L0 draft amendment (draft PR) |
+| 2026-11-08 | PI decisions D1-D8 recorded; status stays Proposed |
+
+## 6. PI decisions (2026-11-08)
+
+- D1: merge as L0 now; L1 tag only after the reading lock; #48 moved
+  to M3 by the PI.
+- D2: the tag freezes hypothesis text and predictions only.
+- D3: budget vector (B_bits, B_traffic, T); joules outside the statement.
+- D4: f in (0, inf) with a per-profile cap.
+- D5: `rescale` primary; `downscale` / `Operation.DOWNSCALE` aliases.
+- D6: `weight(e)` and `theta` per profile, preregistered; I1 restated.
+- D7: prose "framework hypothesis"; identifiers unchanged.
+- D8: formal-axis MINOR (C-v0.26.0) via the follow-up spec PR.

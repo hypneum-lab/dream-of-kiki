@@ -1,7 +1,10 @@
 # Amendment: DR-0 as a budget, selective DR-1, `downscale` to `rescale`, "axiom" to "framework hypothesis"
 
 - **Date**: 2026-11-08
-- **Status**: **L0 DRAFT** (not frozen, no tag, no SWHID; see section 7)
+- **Status**: L0 draft, decisions closed 2026-11-08, NOT frozen; L1 tag
+  gated by the roadmap reading lock (principle 6); every run launched
+  before the tag is a pilot for the amended hypotheses (no tag, no
+  SWHID; see section 7)
 - **Target**: `docs/specs/2026-04-17-dreamofkiki-framework-C-design.md`
   §6.1 (Op), §6.2 (DR-0, DR-1), §4 pillar B (`downscale`, line 265);
   `docs/axioms/AXIOMS.md`; `kiki_oniric/axioms/__init__.py`
@@ -9,8 +12,8 @@
 - **Baseline**: `main` at `ef1c399`, `C-v0.25.0+PARTIAL`
 - **Proposed bump**: formal axis only, decided by the PI (decision D8);
   no bump is applied by this document
-- **Author**: agent draft; every normative choice below is a proposal
-  until the PI closes the decisions of section 9
+- **Author**: agent draft; the normative choices below were closed by
+  the PI on 2026-11-08 (section 9); the wording stays L0 until the tag
 
 This amendment is **additive**. It does not edit the frozen spec text,
 the registered preregistrations, or any dated result. Where it says
@@ -550,65 +553,31 @@ Counts in 8.1: 94 files (pre-registrations and filing copies, dated
 milestones and results, superpowers plans/specs, CHANGELOG). Never
 edited; the amendment re-labels through section 6.
 
-## 9. Decisions left to the PI
+## 9. PI decisions (2026-11-08)
 
-Recommended option first. Each decision is closed with date and value
-before the freeze.
+Closed by the PI by multiple-choice vote on 2026-11-08 13:50 CET.
+Section 3 "new text" blocks are therefore the retained wording.
 
-**D1. Timing against the reading lock and the roadmap.**
-(a) Merge as L0 draft now; tag L1 only after the reading lock items are
-cleared, aligned with `ROADMAP.md:130,163` (Paper 1 reformulation, Q2).
-Issue #48 stays open past M1. (b) Tag by 2026-11-29 under an explicit
-dated derogation to principle 6 (ADR on the model of ADR-0001).
-(c) Tag at merge without derogation (violates principle 6; not
-recommended).
+| # | Decision | Retained |
+|---|---|---|
+| D1 | Timing against the reading lock | Merge as L0 draft now; the L1 tag only after the reading-lock items are cleared (`ROADMAP.md:130,163`). Issue #48 is moved to M3 by the PI. |
+| D2 | What the L1 tag freezes | The text of the reformulated hypotheses and their stated predictions only; no data, no new protocol. |
+| D3 | DR-0 budget components | Vector (B_bits, B_traffic, T); joules measured outside the statement; `select` a declared policy parameter. |
+| D4 | Rescale domain | f in (0, inf), "sign" = sign of log f; per-profile cap [f_min, f_max] keeps S2 / `I-Wmag` enforceable. |
+| D5 | Naming and compatibility | `rescale` primary; `downscale` and `Operation.DOWNSCALE` permanent aliases for f <= 1; serialised op-name string unchanged. |
+| D6 | DR-1 weight and threshold | `weight(e)` and `theta` declared per profile and preregistered; purge optional; I1 restated as "episodic primacy". |
+| D7 | Vocabulary scope | Prose and docs say "framework hypothesis"; identifiers unchanged; optional alias `FrameworkHypothesis`. |
+| D8 | DualVer bump | Formal axis MINOR (C-v0.26.0), applied by the follow-up spec PR. |
 
-**D2. What the L1 tag freezes.**
-(a) The text of the reformulated hypotheses and their stated
-predictions only; no data, no new protocol. (b) Also the protocols of
-the tests that would check them (R9 H1 bits instrumentation, H10
-traffic, NH-05 sign cross-over), as separate preregistrations tagged
-together. (c) Vocabulary and renames only (no new content).
+Consequence of D1: step 2 of section 7 (reading lock) is a hard gate;
+no tag is created at merge.
 
-**D3. DR-0 budget components and the selection clause.**
-(a) Vector (B_bits, B_traffic, T); joules measured, outside the
-statement; `select` a declared policy parameter. (b) Write count only
-(the existing `WriteLedger`), simplest and matching the NH-03 evidence.
-(c) Bits only (Landauer): contradicted by R9 H10. (d) Include joules:
-breaks substrate-agnosticism (R9:10).
+## Change log
 
-**D4. Domain of the rescale factor and the magnitude guard.**
-(a) f in (0, ∞), "sign" meaning the sign of log f; a per-profile cap
-[f_min, f_max] keeps S2 / `I-Wmag` enforceable. (b) Keep (0, 1] as the
-default profile value and allow f > 1 only through an explicit flag in
-a preregistered run. (c) f in ℝ (negative factors): no source in the
-review supports it.
-
-**D5. Naming and compatibility.**
-(a) `rescale` primary; `downscale` and `Operation.DOWNSCALE` kept as
-permanent aliases for f ≤ 1, serialised op-name string unchanged.
-(b) Hard rename with a deprecation window: breaks frozen scripts and
-log hashes. (c) Keep `downscale` and add `rescale` as a fifth
-operation: changes the monoid, DR-2 and DR-4 op sets; not recommended.
-
-**D6. DR-1 weight and threshold.**
-(a) `weight(e)` and `θ` declared per profile and preregistered; purge
-optional; I1 restated as "episodic primacy". (b) Selective DR-1 but I1
-and its purge gate unchanged for non-selected episodes. (c) Keep DR-1
-as is and add DR-1' as a separate hypothesis.
-
-**D7. Scope of the vocabulary change.**
-(a) Prose and docs say "framework hypothesis"; identifiers (`Axiom`,
-`kiki_oniric.axioms`, DR-n) unchanged, optional alias
-`FrameworkHypothesis`. (b) Full rename including module and test
-directory paths. (c) Documentation only, no alias.
-
-**D8. DualVer bump.**
-(a) Formal axis MINOR (C-v0.26.0), applied by the follow-up spec PR:
-statements generalise, old ones are special cases. (b) Formal axis
-MAJOR: DR-0 and DR-1 change meaning. (c) PATCH, as for the DR-2
-weakening (C-v0.7.1): not recommended since a statement is rewritten
-rather than weakened.
+| Date | Change |
+|---|---|
+| 2026-11-08 | L0 draft with eight open decisions (PR #96) |
+| 2026-11-08 | PI decisions D1-D8 recorded (section 9); status block updated |
 
 ## 10. Not verified
 
