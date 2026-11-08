@@ -152,6 +152,13 @@ reverse learning, from Crick and Mitchison and Hopfield et al. to
 the dreaming kernel of Fachechi et al. [@crick1983function;
 @hopfield1983unlearning; @fachechi2019dreaming].
 
+Paper 1 also positions the framework against the Hopfield-network
+dreaming lineage, whose analytic results (including the 2026 preprints
+[@marinari2026dreaming; @barra2026dreaming]) concern one operation on
+one substrate; Paper 2 does not extend them, and its Conformance
+Criterion makes no statement about the capacity of any unlearning
+kernel.
+
 ### 3.3 DR-3 Conformance Criterion, briefly
 
 DR-3 specifies three conditions (C1 signature typing via typed

@@ -12,6 +12,17 @@ see `docs/specs/2026-04-17-dreamofkiki-framework-C-design.md` §12).
 
 ## [Unreleased]
 
+### Docs (prior art, for the v0.2 papers, 2026-11-08)
+
+- **Hopfield dreaming / unlearning lineage added to Paper 1 §3.2 and
+  Paper 2 §3.2** (issue #53). The 1983 Hopfield-Feinstein-Palmer,
+  Crick-Mitchison and 2019 Fachechi-Agliari-Barra references were
+  already cited (introduction); the two 2026 preprints
+  (arXiv:2603.09384, arXiv:2605.13721) are new, with an explicit
+  statement of what the lab does and does not add (NH-01 tests
+  "dream is not a uniform downscale" on Hopfield networks only).
+  Not an erratum: omission corrected before the v0.2 deposit.
+
 ### Docs (phase 0 "truth" corrections — M0, 2026-10-25)
 
 - **DR-2 amendment permutation count harmonised** (issue #54).
