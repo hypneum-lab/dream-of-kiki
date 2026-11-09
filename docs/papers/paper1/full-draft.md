@@ -106,8 +106,22 @@ consolidation work cited above: Crick and Mitchison [@crick1983function]
 and Hopfield, Feinstein and Palmer [@hopfield1983unlearning]
 proposed that sleep removes spurious attractors by reverse
 learning, and Fachechi, Agliari and Barra [@fachechi2019dreaming]
-gave it a closed form, the dreaming kernel, whose capacity gain we
-replicated independently (hypneum-lab/rescience-nh01).
+gave it a closed form, the dreaming kernel. Our replication of it
+(hypneum-lab/rescience-nh01, submitted to ReScience C) is partial: an
+independent NumPy implementation reproduces its qualitative claims
+numerically at finite size (N up to 1 000), not the replica-symmetric
+capacity curve. It sets the self-coupling to zero (J_ii = 0), the
+convention of the same group's later sequential-dynamics algorithms
+[@agliari2024hebbian, Alg. 1; @agliari2024regularization, Alg. 2]
+and of Aquaro's PhD thesis (Sapienza, 2025, Algs. 4 and 7); under it
+the dream/Hebb capacity ratio at t = 10 is 3.86 [3.79, 3.93] (3.90 on
+seeds 200-209). With the diagonal kept in both arms, as in the field
+printed in the 2019 article, a post-freeze pre-registered ablation
+gives 1.90 [1.86, 1.95], neither confirmed nor refuted under the
+registered rule; a mixed ratio (kept-diagonal dream over zero-diagonal
+Hebb), which corresponds to no published protocol, is 3.05
+[3.00, 3.09]. Both conventions are reported side by side
+(ReScience/submissions#147).
 Yet existing AI work has integrated only fragments of this
 biology, typically focusing on a single mechanism (e.g., replay
 alone) without a principled account of how mechanisms interact.
@@ -261,11 +275,16 @@ their composition, plus pre-registered tests of when its readings hold.
 The only empirical contact so far is NH-01 (nerve-wml,
 `HopfieldDreamWML`), which tests on Hopfield networks whether dreaming
 differs from a uniform downscale. At N = 1000 with 10 seeds it
-reproduced the capacity gain of the dreaming kernel (ratio 3.86
-[3.79, 3.93] at t = 10, T = 0) and a finite interior optimum
+partially reproduced the capacity gain of the dreaming kernel (ratio
+3.86 [3.79, 3.93] at t = 10, T = 0, with J_ii = 0; 1.90 with the
+diagonal kept, Section 2.1) and a finite interior optimum
 (t\* = 7), and a Frobenius-matched uniform shrink did not reproduce
 the gain at T = 0.2 (ratio 0.975 [0.967, 0.982]); the cause of the
-interior optimum is not isolated (diagonal ablation inconclusive).
+interior optimum is not isolated: in the registered ablation, removing
+the self-coupling contributes to the drop between t = 7 and t = 100
+(C6, positive on 10/10 seeds) but is not shown to cause the optimum
+(C5 inconclusive), and with the diagonal kept the curve peaks at t = 1
+instead.
 These results hold for Hebbian Hopfield networks only and do not
 transfer to the operator composition or to the language-model
 substrates studied here.
