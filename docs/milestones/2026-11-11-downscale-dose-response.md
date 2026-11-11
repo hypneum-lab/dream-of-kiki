@@ -90,13 +90,42 @@ inferences, to check against the model configuration and not to assume) :
   against 1 / f^2 at every dose ; a T that tracks 1 / f^2 means the head
   dominates, a T that departs from it means the attention or the MLP
   blocks contribute.
-- The attention logits scale as f^2 if the model normalises queries and
-  keys per head (Qwen3 does ; to confirm on the Qwen3.5-4B
-  `config.json`), as f^4 otherwise : attention flattens with the dose,
-  which is not a temperature on the output and is the first candidate
-  for a C2 refutation at large doses. The MLP output scales as f^3
-  against an embedding scaled by f, so the residual stream re-weights
-  blocks against the embedding by f^2 ; both effects grow with eps.
+- **What the snapshot actually is** (read on 2026-11-11 from
+  `config.json` and the safetensors headers of snapshot `851bf6e8`,
+  kxkm-ai) : `Qwen3_5ForConditionalGeneration`, a **hybrid** text
+  model of 32 layers, 24 of them `linear_attention` (Gated DeltaNet :
+  `in_proj_qkv`, `in_proj_z`, gate projections `in_proj_a`, `in_proj_b`,
+  a depthwise `conv1d` kernel of width 4, decay parameters `A_log`
+  (float32, 32 per layer) and `dt_bias` (32 per layer), an RMS `norm`
+  in float32) and 8 `full_attention` with per-head `q_norm` and
+  `k_norm` and no bias ; tied embeddings (248 320 x 2 560) ; 4.21 G
+  parameters in the language model, plus a **visual tower of 0.33 G**
+  (`model.visual.*`, with biases) and a multi-token-prediction head
+  (`mtp.*`, 0.13 G) in the checkpoint. 738 tensors, 690 in bf16 and 48
+  in float32.
+- Consequences for the symmetry argument. In the 8 full-attention
+  layers the logits scale as f^2 (gain of `q_norm` times gain of
+  `k_norm`), so attention flattens with the dose : not a temperature on
+  the output, first candidate for a C2 refutation at large doses. In
+  the 24 linear-attention layers the rescaling is **not a scale at
+  all** for three groups of parameters : the decays (`A_log` enters as
+  -exp(A_log), so f changes every time constant by the factor
+  exp((f - 1) A_log) ; `dt_bias` shifts a softplus), the gates
+  (`in_proj_a`, `in_proj_b` feed sigmoids and softplus, whose sharpness
+  changes with f) and the convolution followed by SiLU. The MLP output
+  scales as f^3 against an embedding scaled by f. Every one of these
+  effects grows with eps ; none is a symmetry. This is the mechanism by
+  which C1 can be refuted : it is written here so that a refutation is
+  readable, not a surprise.
+- The registered backend applies `downscale` and the noise to every
+  floating-point tensor of `model.parameters()`. **To check before a
+  freeze** : whether the loaded model carries the visual tower and the
+  MTP head ; if it does, they receive the operation without any effect
+  on the text scores, and the global noise arm `Rg` spends part of its
+  norm budget on them. The per-tensor arm `Rt` is immune by
+  construction ; the norm report of section 3 is split by tensor group
+  (language matrices, gains, decays and gates, embedding, visual, MTP)
+  so that the share is visible.
 - Hence DOWNSCALE is not expected to be harmless at every dose ; the
   claim of C1 is only that it is tolerated at much larger doses than a
   perturbation of equal norm and random direction, and section 4 reads
@@ -410,16 +439,23 @@ relaxed.
   al. 2024 ; its two remaining references (van Laarhoven 2017, Arora, Li,
   Lyu 2018) resolved and read ; the attention and head factors of
   section 2 checked against `config.json` of the snapshot.
-- bf16 rounding : PI decision of 2026-11-11 (evening) is to decide after
-  a one-hour test. The test measures, on the real Qwen3.5-4B snapshot
-  and on CPU, without any scoring, the Frobenius norm of the rounding
-  ||bf16(f theta) - f theta|| against the nominal step ||f theta - theta||
-  at every grid dose, in total and by tensor group (gains, embeddings and
-  head, matrices), and the same for one seed of the per-tensor noise
-  arm. Launched 2026-11-11 on kxkm-ai (CPU, nice 19) ; result and the
-  rule it decides (keep bf16 and report the rounding share per dose,
-  drop a dose, or lift to float32) to be written here before any freeze.
-  Exploratory, no item scored.
+- bf16 rounding, **decided by the PI on 2026-11-11 (evening) after a
+  one-hour test** : bf16 is kept (instrument of E1-small unchanged) ;
+  the table of section 3 reports, per dose and per arm, the rounding
+  norm ||bf16(f theta) - f theta|| as a share of the nominal step, and
+  **every dose whose share exceeds 10 % is flagged** in the report (it
+  stays in the grid and in the gate). Measured on the real snapshot
+  (`scripts/bf16_rounding_probe.py`, CPU of kxkm-ai, nice 19, 281 s,
+  738 tensors, no forward pass, result in
+  `docs/results/2026-11-11-bf16-rounding-probe-qwen35-4b.json`) :
+  share of rounding in the step of `D` = 18.3 % at eps = 0.01, 7.6 % at
+  0.02, 3.0 % at 0.05, 1.5 % at 0.1, 0.7 % at 0.2, 0 at 0.5 (times 0.5
+  is exact in binary) ; for one seed of `Rt` : 16.1 %, 8.1 %, 3.2 %,
+  1.6 %, 0.8 %, 0.4 %, with 16.7 % of the elements left unchanged at
+  0.01 and 8.5 % at 0.02. The applied norm equals the nominal one
+  within 1.2 % at every dose, in every tensor group. **Only the dose
+  0.01 is flagged**, for both arms. Exploratory measurement, no item
+  scored, not part of the confirmatory set.
 
 ## 8. Critique of revision 1 and what changed
 

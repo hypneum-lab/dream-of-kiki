@@ -1,0 +1,627 @@
+{
+ "snapshot": "/ai/saisail/decision-bench/hf/hub/models--Qwen--Qwen3.5-4B/snapshots/851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a",
+ "config": {
+  "architectures": [
+   "Qwen3_5ForConditionalGeneration"
+  ],
+  "model_type": "qwen3_5",
+  "torch_dtype": null,
+  "dtype": null,
+  "tie_word_embeddings": true,
+  "attention_bias": null,
+  "use_qk_norm": null,
+  "qk_norm": null,
+  "num_hidden_layers": null,
+  "hidden_size": null,
+  "rms_norm_eps": null
+ },
+ "files": [
+  "model.safetensors-00001-of-00002.safetensors",
+  "model.safetensors-00002-of-00002.safetensors"
+ ],
+ "tensors": 738,
+ "dtypes": {
+  "torch.bfloat16": 690,
+  "torch.float32": 48
+ },
+ "seed": 0,
+ "doses": [
+  0.01,
+  0.02,
+  0.05,
+  0.1,
+  0.2,
+  0.5
+ ],
+ "seconds": 281.4,
+ "cells": {
+  "D:0.01": {
+   "total": {
+    "theta_norm": 1422.2136344053654,
+    "nominal_norm": 14.222123668231703,
+    "applied_norm": 14.328038440486923,
+    "rounding_norm": 2.607081946007276,
+    "rounding_over_nominal": 0.1833117196013966,
+    "applied_over_nominal": 1.0074471840300336,
+    "frac_unchanged": 3.004378825484142e-08
+   },
+   "groups": {
+    "embed_head": {
+     "theta_norm": 390.2104274961724,
+     "nominal_norm": 3.9021008402071775,
+     "applied_norm": 3.911736343551644,
+     "rounding_norm": 0.7543717068202314,
+     "rounding_over_nominal": 0.19332450331554704,
+     "applied_over_nominal": 1.0024693117218249,
+     "frac_unchanged": 1.563391758659139e-09
+    },
+    "matrix": {
+     "theta_norm": 728.5968212516988,
+     "nominal_norm": 7.285961879508571,
+     "applied_norm": 7.305090441668903,
+     "rounding_norm": 1.4118493345132843,
+     "rounding_over_nominal": 0.1937766567903745,
+     "applied_over_nominal": 1.0026253997037962,
+     "frac_unchanged": 3.457955653592507e-08
+    },
+    "norm_gain": {
+     "theta_norm": 970.6229183037143,
+     "nominal_norm": 9.706220255916879,
+     "applied_norm": 10.046893179440763,
+     "rounding_norm": 1.6297161984129833,
+     "rounding_over_nominal": 0.16790430831399214,
+     "applied_over_nominal": 1.0350984126201146,
+     "frac_unchanged": 0.0
+    },
+    "bias_1d": {
+     "theta_norm": 630.4484647354406,
+     "nominal_norm": 6.304479241087851,
+     "applied_norm": 5.973825860414111,
+     "rounding_norm": 1.2563861549742368,
+     "rounding_over_nominal": 0.1992846842584646,
+     "applied_over_nominal": 0.9475526259934699,
+     "frac_unchanged": 0.0
+    }
+   }
+  },
+  "D:0.02": {
+   "total": {
+    "theta_norm": 1422.2136344053654,
+    "nominal_norm": 28.444245804467588,
+    "applied_norm": 28.752509490004826,
+    "rounding_norm": 2.160220940177835,
+    "rounding_over_nominal": 0.07594579779079748,
+    "applied_over_nominal": 1.0108374708774601,
+    "frac_unchanged": 3.004378825484142e-08
+   },
+   "groups": {
+    "embed_head": {
+     "theta_norm": 390.2104274961724,
+     "nominal_norm": 7.804201191375221,
+     "applied_norm": 7.894353620143701,
+     "rounding_norm": 0.5869201434315504,
+     "rounding_over_nominal": 0.07520566538958307,
+     "applied_over_nominal": 1.0115517817336783,
+     "frac_unchanged": 1.563391758659139e-09
+    },
+    "matrix": {
+     "theta_norm": 728.5968212516988,
+     "nominal_norm": 14.571922681786269,
+     "applied_norm": 14.739417595301513,
+     "rounding_norm": 1.095140981269707,
+     "rounding_over_nominal": 0.07515418556526827,
+     "applied_over_nominal": 1.0114943591983643,
+     "frac_unchanged": 3.457955653592507e-08
+    },
+    "norm_gain": {
+     "theta_norm": 970.6229183037143,
+     "nominal_norm": 19.412440010399266,
+     "applied_norm": 19.523051183514337,
+     "rounding_norm": 1.5079792062696136,
+     "rounding_over_nominal": 0.07768107489124434,
+     "applied_over_nominal": 1.0056979531195365,
+     "frac_unchanged": 0.0
+    },
+    "bias_1d": {
+     "theta_norm": 630.4484647354406,
+     "nominal_norm": 12.608957345799935,
+     "applied_norm": 12.88355635413364,
+     "rounding_norm": 0.921273140940941,
+     "rounding_over_nominal": 0.07306497402402735,
+     "applied_over_nominal": 1.0217780900357456,
+     "frac_unchanged": 0.0
+    }
+   }
+  },
+  "D:0.05": {
+   "total": {
+    "theta_norm": 1422.2136344053654,
+    "nominal_norm": 71.11070563013783,
+    "applied_norm": 71.12694543526388,
+    "rounding_norm": 2.163743344363505,
+    "rounding_over_nominal": 0.03042781428182702,
+    "applied_over_nominal": 1.0002283735617885,
+    "frac_unchanged": 3.004378825484142e-08
+   },
+   "groups": {
+    "embed_head": {
+     "theta_norm": 390.2104274961724,
+     "nominal_norm": 19.510527518473957,
+     "applied_norm": 19.514563643103244,
+     "rounding_norm": 0.5937618902723224,
+     "rounding_over_nominal": 0.03043289781427521,
+     "applied_over_nominal": 1.0002068690672492,
+     "frac_unchanged": 1.563391758659139e-09
+    },
+    "matrix": {
+     "theta_norm": 728.5968212516988,
+     "nominal_norm": 36.42985330269264,
+     "applied_norm": 36.43741241554662,
+     "rounding_norm": 1.1061201943337846,
+     "rounding_over_nominal": 0.03036301533094639,
+     "applied_over_nominal": 1.00020749775716,
+     "frac_unchanged": 3.457955653592507e-08
+    },
+    "norm_gain": {
+     "theta_norm": 970.6229183037143,
+     "nominal_norm": 48.53116260133898,
+     "applied_norm": 48.563004091201314,
+     "rounding_norm": 1.5088298999455307,
+     "rounding_over_nominal": 0.03108991870522183,
+     "applied_over_nominal": 1.0006561039990718,
+     "frac_unchanged": 0.0
+    },
+    "bias_1d": {
+     "theta_norm": 630.4484647354406,
+     "nominal_norm": 31.522433536668398,
+     "applied_norm": 31.498790181015085,
+     "rounding_norm": 0.9105836187055829,
+     "rounding_over_nominal": 0.028886843956585667,
+     "applied_over_nominal": 0.9992499514472507,
+     "frac_unchanged": 0.0
+    }
+   }
+  },
+  "D:0.1": {
+   "total": {
+    "theta_norm": 1422.2136344053654,
+    "nominal_norm": 142.2213979460354,
+    "applied_norm": 142.21889970222702,
+    "rounding_norm": 2.1749991294247355,
+    "rounding_over_nominal": 0.015293051262581589,
+    "applied_over_nominal": 0.9999824341214159,
+    "frac_unchanged": 3.004378825484142e-08
+   },
+   "groups": {
+    "embed_head": {
+     "theta_norm": 390.2104274961724,
+     "nominal_norm": 39.02105111432882,
+     "applied_norm": 39.01936727228327,
+     "rounding_norm": 0.5971458647528023,
+     "rounding_over_nominal": 0.015303172203209203,
+     "applied_over_nominal": 0.9999568478552611,
+     "frac_unchanged": 1.563391758659139e-09
+    },
+    "matrix": {
+     "theta_norm": 728.5968212516988,
+     "nominal_norm": 72.85969933505743,
+     "applied_norm": 72.86023417654874,
+     "rounding_norm": 1.113871416083754,
+     "rounding_over_nominal": 0.015287894765547018,
+     "applied_over_nominal": 1.0000073407040682,
+     "frac_unchanged": 3.457955653592507e-08
+    },
+    "norm_gain": {
+     "theta_norm": 970.6229183037143,
+     "nominal_norm": 97.06231579829114,
+     "applied_norm": 97.05551066840619,
+     "rounding_norm": 1.4931294701310929,
+     "rounding_over_nominal": 0.015383204674757829,
+     "applied_over_nominal": 0.9999298890632375,
+     "frac_unchanged": 0.0
+    },
+    "bias_1d": {
+     "theta_norm": 630.4484647354406,
+     "nominal_norm": 63.04486234686644,
+     "applied_norm": 63.05012715939715,
+     "rounding_norm": 0.9507328137098245,
+     "rounding_over_nominal": 0.015080258379802449,
+     "applied_over_nominal": 1.0000835089860574,
+     "frac_unchanged": 0.0
+    }
+   }
+  },
+  "D:0.2": {
+   "total": {
+    "theta_norm": 1422.2136344053654,
+    "nominal_norm": 284.44270965978234,
+    "applied_norm": 284.4362261312109,
+    "rounding_norm": 1.8852277310486307,
+    "rounding_over_nominal": 0.006627794163905707,
+    "applied_over_nominal": 0.9999772062058501,
+    "frac_unchanged": 3.004378825484142e-08
+   },
+   "groups": {
+    "embed_head": {
+     "theta_norm": 390.2104274961724,
+     "nominal_norm": 78.04208021585602,
+     "applied_norm": 78.04679967592135,
+     "rounding_norm": 0.5081862626882262,
+     "rounding_over_nominal": 0.0065116955017426184,
+     "applied_over_nominal": 1.0000604732735503,
+     "frac_unchanged": 1.563391758659139e-09
+    },
+    "matrix": {
+     "theta_norm": 728.5968212516988,
+     "nominal_norm": 145.7193548142719,
+     "applied_norm": 145.72305899312465,
+     "rounding_norm": 0.9465357257091226,
+     "rounding_over_nominal": 0.006495607442920259,
+     "applied_over_nominal": 1.0000254199509562,
+     "frac_unchanged": 3.457955653592507e-08
+    },
+    "norm_gain": {
+     "theta_norm": 970.6229183037143,
+     "nominal_norm": 194.12457198175957,
+     "applied_norm": 194.12038397927432,
+     "rounding_norm": 1.3336437107023933,
+     "rounding_over_nominal": 0.006870040701636194,
+     "applied_over_nominal": 0.9999784262113627,
+     "frac_unchanged": 0.0
+    },
+    "bias_1d": {
+     "theta_norm": 630.4484647354406,
+     "nominal_norm": 126.08968625384115,
+     "applied_norm": 126.07430506466157,
+     "rounding_norm": 0.7882226165176925,
+     "rounding_over_nominal": 0.006251285413866913,
+     "applied_over_nominal": 0.9998780138991812,
+     "frac_unchanged": 0.0
+    }
+   }
+  },
+  "D:0.5": {
+   "total": {
+    "theta_norm": 1422.2136344053654,
+    "nominal_norm": 711.1068172026827,
+    "applied_norm": 711.1068172026827,
+    "rounding_norm": 0.0,
+    "rounding_over_nominal": 0.0,
+    "applied_over_nominal": 1.0,
+    "frac_unchanged": 3.004378825484142e-08
+   },
+   "groups": {
+    "embed_head": {
+     "theta_norm": 390.2104274961724,
+     "nominal_norm": 195.1052137480862,
+     "applied_norm": 195.1052137480862,
+     "rounding_norm": 0.0,
+     "rounding_over_nominal": 0.0,
+     "applied_over_nominal": 1.0,
+     "frac_unchanged": 1.563391758659139e-09
+    },
+    "matrix": {
+     "theta_norm": 728.5968212516988,
+     "nominal_norm": 364.2984106258494,
+     "applied_norm": 364.2984106258494,
+     "rounding_norm": 0.0,
+     "rounding_over_nominal": 0.0,
+     "applied_over_nominal": 1.0,
+     "frac_unchanged": 3.457955653592507e-08
+    },
+    "norm_gain": {
+     "theta_norm": 970.6229183037143,
+     "nominal_norm": 485.31145915185715,
+     "applied_norm": 485.31145915185715,
+     "rounding_norm": 0.0,
+     "rounding_over_nominal": 0.0,
+     "applied_over_nominal": 1.0,
+     "frac_unchanged": 0.0
+    },
+    "bias_1d": {
+     "theta_norm": 630.4484647354406,
+     "nominal_norm": 315.2242323677203,
+     "applied_norm": 315.2242323677203,
+     "rounding_norm": 0.0,
+     "rounding_over_nominal": 0.0,
+     "applied_over_nominal": 1.0,
+     "frac_unchanged": 0.0
+    }
+   }
+  },
+  "Rt:0.01": {
+   "total": {
+    "theta_norm": 1422.2136344053654,
+    "nominal_norm": 14.321191410372686,
+    "applied_norm": 14.494457819432926,
+    "rounding_norm": 2.312542294362529,
+    "rounding_over_nominal": 0.161476948956047,
+    "applied_over_nominal": 1.0120986029789913,
+    "frac_unchanged": 0.1671877168732315
+   },
+   "groups": {
+    "embed_head": {
+     "theta_norm": 390.2104274961724,
+     "nominal_norm": 4.237764776751209,
+     "applied_norm": 4.27562189979689,
+     "rounding_norm": 0.610075538400542,
+     "rounding_over_nominal": 0.14396163320519248,
+     "applied_over_nominal": 1.0089332761585466,
+     "frac_unchanged": 0.15289397634910953
+    },
+    "matrix": {
+     "theta_norm": 728.5968212516988,
+     "nominal_norm": 7.292493231687657,
+     "applied_norm": 7.388595223127691,
+     "rounding_norm": 1.2034290757255914,
+     "rounding_over_nominal": 0.165022995221497,
+     "applied_over_nominal": 1.0131782078346603,
+     "frac_unchanged": 0.1694622681631295
+    },
+    "norm_gain": {
+     "theta_norm": 970.6229183037143,
+     "nominal_norm": 9.706229327996818,
+     "applied_norm": 9.826506899384935,
+     "rounding_norm": 1.5674028224238536,
+     "rounding_over_nominal": 0.1614842148745455,
+     "applied_over_nominal": 1.0123917916343874,
+     "frac_unchanged": 0.1804638320593525
+    },
+    "bias_1d": {
+     "theta_norm": 630.4484647354406,
+     "nominal_norm": 6.3044847376755015,
+     "applied_norm": 6.376267531590285,
+     "rounding_norm": 1.0347301834859102,
+     "rounding_over_nominal": 0.16412605098436972,
+     "applied_over_nominal": 1.0113859890064942,
+     "frac_unchanged": 0.14951433454241073
+    }
+   }
+  },
+  "Rt:0.02": {
+   "total": {
+    "theta_norm": 1422.2136344053654,
+    "nominal_norm": 28.64238282074537,
+    "applied_norm": 28.727916588765392,
+    "rounding_norm": 2.3258601412047044,
+    "rounding_over_nominal": 0.08120344441175853,
+    "applied_over_nominal": 1.002986265792037,
+    "frac_unchanged": 0.08545029190338654
+   },
+   "groups": {
+    "embed_head": {
+     "theta_norm": 390.2104274961724,
+     "nominal_norm": 8.475529553502419,
+     "applied_norm": 8.497509641724989,
+     "rounding_norm": 0.6336304726978034,
+     "rounding_over_nominal": 0.07475998622834872,
+     "applied_over_nominal": 1.0025933586903117,
+     "frac_unchanged": 0.07784590330324417
+    },
+    "matrix": {
+     "theta_norm": 728.5968212516988,
+     "nominal_norm": 14.584986463375314,
+     "applied_norm": 14.6347557368303,
+     "rounding_norm": 1.207832555295773,
+     "rounding_over_nominal": 0.08281341627081988,
+     "applied_over_nominal": 1.0034123633628296,
+     "frac_unchanged": 0.08666034483048228
+    },
+    "norm_gain": {
+     "theta_norm": 970.6229183037143,
+     "nominal_norm": 19.412458655993635,
+     "applied_norm": 19.46470035384227,
+     "rounding_norm": 1.5612413257688769,
+     "rounding_over_nominal": 0.08042470835021408,
+     "applied_over_nominal": 1.002691142774566,
+     "frac_unchanged": 0.0920427720323741
+    },
+    "bias_1d": {
+     "theta_norm": 630.4484647354406,
+     "nominal_norm": 12.608969475351003,
+     "applied_norm": 12.65048955883913,
+     "rounding_norm": 1.0544211025926256,
+     "rounding_over_nominal": 0.08362468516193097,
+     "applied_over_nominal": 1.0032929006267557,
+     "frac_unchanged": 0.07710920061383929
+    }
+   }
+  },
+  "Rt:0.05": {
+   "total": {
+    "theta_norm": 1422.2136344053654,
+    "nominal_norm": 71.60595592198474,
+    "applied_norm": 71.64974031384209,
+    "rounding_norm": 2.3271659090607897,
+    "rounding_over_nominal": 0.03249961374157557,
+    "applied_over_nominal": 1.0006114629892666,
+    "frac_unchanged": 0.0344071379690553
+   },
+   "groups": {
+    "embed_head": {
+     "theta_norm": 390.2104274961724,
+     "nominal_norm": 21.188823728929908,
+     "applied_norm": 21.1984897050252,
+     "rounding_norm": 0.6454537793043472,
+     "rounding_over_nominal": 0.0304619920181357,
+     "applied_over_nominal": 1.0004561827602585,
+     "frac_unchanged": 0.03130947454928291
+    },
+    "matrix": {
+     "theta_norm": 728.5968212516988,
+     "nominal_norm": 36.462466019765436,
+     "applied_norm": 36.4824158817954,
+     "rounding_norm": 1.209922773505177,
+     "rounding_over_nominal": 0.03318269183574437,
+     "applied_over_nominal": 1.0005471341960017,
+     "frac_unchanged": 0.03490005852393412
+    },
+    "norm_gain": {
+     "theta_norm": 970.6229183037143,
+     "nominal_norm": 48.531145273662574,
+     "applied_norm": 48.56701817894436,
+     "rounding_norm": 1.558336811656958,
+     "rounding_over_nominal": 0.03211003578979319,
+     "applied_over_nominal": 1.0007391728565131,
+     "frac_unchanged": 0.036733503821942445
+    },
+    "bias_1d": {
+     "theta_norm": 630.4484647354406,
+     "nominal_norm": 31.522423489790064,
+     "applied_norm": 31.53707973006948,
+     "rounding_norm": 1.052028445748894,
+     "rounding_over_nominal": 0.033373970947685544,
+     "applied_over_nominal": 1.0004649464938558,
+     "frac_unchanged": 0.031402587890625
+    }
+   }
+  },
+  "Rt:0.1": {
+   "total": {
+    "theta_norm": 1422.2136344053654,
+    "nominal_norm": 143.2119118439695,
+    "applied_norm": 143.24105564741058,
+    "rounding_norm": 2.3395987701763366,
+    "rounding_over_nominal": 0.016336621305114256,
+    "applied_over_nominal": 1.0002035012525552,
+    "frac_unchanged": 0.017221536350195726
+   },
+   "groups": {
+    "embed_head": {
+     "theta_norm": 390.2104274961724,
+     "nominal_norm": 42.377647457859815,
+     "applied_norm": 42.38275956040693,
+     "rounding_norm": 0.650375244425756,
+     "rounding_over_nominal": 0.015347129523234788,
+     "applied_over_nominal": 1.0001206320514182,
+     "frac_unchanged": 0.01566840757217917
+    },
+    "matrix": {
+     "theta_norm": 728.5968212516988,
+     "nominal_norm": 72.92493203953087,
+     "applied_norm": 72.93489559234105,
+     "rounding_norm": 1.2146850551793928,
+     "rounding_over_nominal": 0.016656649806967815,
+     "applied_over_nominal": 1.000136627522735,
+     "frac_unchanged": 0.01746868294252789
+    },
+    "norm_gain": {
+     "theta_norm": 970.6229183037143,
+     "nominal_norm": 97.06229054732515,
+     "applied_norm": 97.09250537483126,
+     "rounding_norm": 1.5656250018274882,
+     "rounding_over_nominal": 0.01613010565688359,
+     "applied_over_nominal": 1.0003112931637583,
+     "frac_unchanged": 0.018305277652877698
+    },
+    "bias_1d": {
+     "theta_norm": 630.4484647354406,
+     "nominal_norm": 63.04484697958013,
+     "applied_norm": 63.0495687534973,
+     "rounding_norm": 1.0602325297901765,
+     "rounding_over_nominal": 0.016817116395469716,
+     "applied_over_nominal": 1.0000748954774796,
+     "frac_unchanged": 0.015773228236607144
+    }
+   }
+  },
+  "Rt:0.2": {
+   "total": {
+    "theta_norm": 1422.2136344053654,
+    "nominal_norm": 286.423823687939,
+    "applied_norm": 286.4413070805212,
+    "rounding_norm": 2.388463977727161,
+    "rounding_over_nominal": 0.008338915202561541,
+    "applied_over_nominal": 1.0000610402876309,
+    "frac_unchanged": 0.008612774670956311
+   },
+   "groups": {
+    "embed_head": {
+     "theta_norm": 390.2104274961724,
+     "nominal_norm": 84.75529491571963,
+     "applied_norm": 84.75749189323402,
+     "rounding_norm": 0.6639672699307599,
+     "rounding_over_nominal": 0.007833932624398354,
+     "applied_over_nominal": 1.0000259214190284,
+     "frac_unchanged": 0.007840667629315762
+    },
+    "matrix": {
+     "theta_norm": 728.5968212516988,
+     "nominal_norm": 145.84986407906175,
+     "applied_norm": 145.85463451329898,
+     "rounding_norm": 1.2326483662662806,
+     "rounding_over_nominal": 0.008451487932810765,
+     "applied_over_nominal": 1.000032707841501,
+     "frac_unchanged": 0.008735645792234577
+    },
+    "norm_gain": {
+     "theta_norm": 970.6229183037143,
+     "nominal_norm": 194.1245810946503,
+     "applied_norm": 194.14599639438896,
+     "rounding_norm": 1.6059086446333333,
+     "rounding_over_nominal": 0.00827256721213648,
+     "applied_over_nominal": 1.0001103173004569,
+     "frac_unchanged": 0.009115754271582734
+    },
+    "bias_1d": {
+     "theta_norm": 630.4484647354406,
+     "nominal_norm": 126.08969395916026,
+     "applied_norm": 126.08944303544092,
+     "rounding_norm": 1.079603199140288,
+     "rounding_over_nominal": 0.008562184308972669,
+     "applied_over_nominal": 0.9999980099585346,
+     "frac_unchanged": 0.0078125
+    }
+   }
+  },
+  "Rt:0.5": {
+   "total": {
+    "theta_norm": 1422.2136344053654,
+    "nominal_norm": 716.0595644058152,
+    "applied_norm": 716.0622064811145,
+    "rounding_norm": 2.654776220866501,
+    "rounding_over_nominal": 0.0037074795908486036,
+    "applied_over_nominal": 1.000003689742349,
+    "frac_unchanged": 0.003444714535048788
+   },
+   "groups": {
+    "embed_head": {
+     "theta_norm": 390.2104274961724,
+     "nominal_norm": 211.8882268957421,
+     "applied_norm": 211.88882353482202,
+     "rounding_norm": 0.7369636724378553,
+     "rounding_over_nominal": 0.003478077490357557,
+     "applied_over_nominal": 1.000002815819872,
+     "frac_unchanged": 0.0031329026326616704
+    },
+    "matrix": {
+     "theta_norm": 728.5968212516988,
+     "nominal_norm": 364.6246612708762,
+     "applied_norm": 364.62617969125944,
+     "rounding_norm": 1.351684125813601,
+     "rounding_over_nominal": 0.0037070562399767245,
+     "applied_over_nominal": 1.0000041643381388,
+     "frac_unchanged": 0.0034943378249964845
+    },
+    "norm_gain": {
+     "theta_norm": 970.6229183037143,
+     "nominal_norm": 485.311463980051,
+     "applied_norm": 485.31840908287484,
+     "rounding_norm": 1.8218075288277917,
+     "rounding_over_nominal": 0.003753893456146913,
+     "applied_over_nominal": 1.0000143106094526,
+     "frac_unchanged": 0.0035971223021582736
+    },
+    "bias_1d": {
+     "theta_norm": 630.4484647354406,
+     "nominal_norm": 315.224235113138,
+     "applied_norm": 315.21738673597304,
+     "rounding_norm": 1.1656280197022661,
+     "rounding_over_nominal": 0.0036977741235026153,
+     "applied_over_nominal": 0.9999782745855106,
+     "frac_unchanged": 0.003143310546875
+    }
+   }
+  }
+ }
+}
