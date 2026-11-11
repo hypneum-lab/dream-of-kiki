@@ -158,7 +158,9 @@ run.
 
 ## 6 bis. Hopfield arm (S5) : a control where the answer is known
 
-Added on 2026-11-11 by decision of the PI. Not implemented.
+Added on 2026-11-11 by decision of the PI. Implemented and run the same
+day ; see 6 ter for the outcome, which contradicts expectations 2 and 4
+below. The text of this section is left as first written.
 
 **Why.** On the language model, C1 and C2 are open questions. In a
 Hopfield network they are textbook identities : the stationary law of
@@ -218,6 +220,63 @@ model. The mapping from "option distribution" to "overlap" for the C2
 analogue is a choice of this draft. Cost : CPU, minutes to an hour
 [to measure].
 
+## 6 ter. Control run of 2026-11-11 : two expectations of 6 bis failed
+
+`scripts/hopfield_scale_control.py` was written and run once on
+2026-11-11 (defaults of 6 bis, about 4 minutes of CPU, deterministic
+seeds ; output sha256 `c8bc9a466a59`, not committed, reproducible by
+`python -m scripts.hopfield_scale_control`). Read in full. Nine cells
+(three loads, three temperatures).
+
+| expectation of 6 bis | outcome |
+|---|---|
+| 1. `D(eps)` and `Tq(eps)` identical with common random numbers | **holds** : maximum absolute difference 0 in the nine cells |
+| 2. at T = 0 the rule returns C1 supported | **fails** : `non_test` in the nine cells |
+| 3. the C2 analogue returns supported at T > 0 | **mixed** : supported in 3 cells, refuted in 3 |
+| 4. relabelled noise returns C1 refuted | **fails** : `non_test` (same gate) |
+
+**Why 2 and 4 fail.** The gate of section 4 needs the noise arm to
+break the model inside the dose grid. It never does : with Gaussian
+noise of relative norm 0.5 on the couplings, retrieval at T = 0 stays
+at 1.000, 1.000 and 0.989 for loads 0.02, 0.05 and 0.10. A mean-field
+estimate made after the run says why : such noise acts like a load
+multiplied by (1 + eps^2), far from capacity on this grid. The
+expectation was wrong, not the identity : at T = 0, `D` is exactly
+equal to `base` at every dose. With a grid capped at 0.5 and a noise
+arm this weak, the rule cannot return "supported" on this model
+whatever the truth.
+
+**Why 3 is mixed.** The three refuted cells (load 0.05 at T = 0.4,
+load 0.10 at T = 0.2 and 0.4) sit at or beyond the retrieval boundary,
+where two independent random streams give overlaps that differ by
+more than the +/- 0.03 margin although the two models are the same.
+The cell at load 0.10 and T = 0.4 does not retrieve at baseline
+(overlap 0.22) and should not have been in the grid.
+
+**An observation not anticipated in 6 bis.** At T > 0 the rescaling
+is tolerated **less** than noise of the same norm : tolerance rank of
+`D` 4 or 5 against 5 or 6 for `Rt`, and `D` is broken at dose 0.5 in
+four of the six cells (overlap 0.14, 0.09, 0.22, 0.08). In this model
+a uniform reduction is a heating, and heating is what destroys
+retrieval ; unstructured noise is averaged out. The direction is the
+opposite of statement C1.
+
+**Consequences, for the PI to decide.** Nothing is changed in
+sections 3 and 4 by this note.
+
+- The Hopfield arm validates the temperature identity only. It is not
+  a positive control for the C1 rule.
+- Options for a positive control of C1 : (a) a small network that is
+  scale-invariant by construction (normalisation before every
+  non-linearity, no bias) and that noise does break inside the grid ;
+  (b) a Hopfield noise arm on a wider dose grid ; (c) no positive
+  control, stated as a limit.
+- The gate itself held : it refused to give a verdict where the noise
+  arm did not bracket the sensitivity of the model. On the language
+  model the same gate decides whether C1 is testable at all.
+- If the C2 analogue is kept, it should use the common-random-number
+  comparison or cells inside the retrieval phase only.
+
 ## 7. Not done, required before a freeze
 
 - Written on 2026-11-11, tested on the tiny CPU model only, never run
@@ -231,9 +290,9 @@ analogue is a choice of this draft. Cost : CPU, minutes to an hour
 - The outside item set accepted by the PI on 2026-11-11 in addition to
   the 760 items : not chosen, not pinned, not implemented. Until it
   is, the run covers the E1 corpus only.
-- The Hopfield arm of section 6 bis : script, its tests, and the
-  adapter that feeds overlaps to `scripts/e1_dose_response.py` ; to
-  run and read **before** the language-model run.
+- A decision of the PI on the positive control of the C1 rule
+  (section 6 ter) ; until then the rule is not calibrated on a known
+  symmetry.
 - Section 2 to rewrite from the reading note of Lyle et al. 2024
   (library, `references/notes/arxiv-2407.01800.md`) : the paper shows
   scale invariance for layers feeding a normalisation in an
