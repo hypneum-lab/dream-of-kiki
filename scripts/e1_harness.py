@@ -21,6 +21,7 @@ amend           -                   tuning + calibration cells (no model)
 confirmatory    0-140               CONFIRMATORY of the FROZEN corpus
 controls        0-140               CONFIRMATORY of the FROZEN corpus (addendum)
 options-only    none (base model)   CONFIRMATORY of the FROZEN corpus (addendum)
+dose-response   none (base model)   CONFIRMATORY of the FROZEN corpus (L0 draft, 2026-11-11)
 ==============  ==================  ===========================================
 
 ``controls`` and ``options-only`` are the exploratory controls of
@@ -49,6 +50,7 @@ if str(ROOT) not in sys.path:
 
 from scripts import e1_corpus_io as cio
 from scripts import e1_diagnostics as dg
+from scripts import e1_dose_response as dr
 from scripts import e1_profiles as pr
 from scripts import e1_sources as src
 from scripts.e1_budget import budget_status, scoring_pass_tokens
@@ -82,7 +84,7 @@ STUDY_INSTRUMENTS: dict[str, list[dict[str, Any]]] = {"e1": [], "e1-small": [
     {"backend": "torch", "device": "cuda", "tokenizer": RAW_TOKENIZER,
      "linear_attn": "torch", "snapshot": "ram", "sgd": "optim", "determinism": DETERMINISM,
      "modes": ("smoke", "headroom", "tuning", "calibrate", "confirmatory", "controls",
-               "options-only")},
+               "options-only", "dose-response")},
     {"backend": "torch-mps", "device": "mps", "tokenizer": RAW_TOKENIZER, "linear_attn": "torch",
      "snapshot": "disk", "sgd": "fused", "modes": ("smoke",)}]}
 
@@ -180,6 +182,7 @@ class Backend(Protocol):
     def downscale(self, factor: float) -> None: ...
     def downscale_norm(self, factor: float) -> float: ...
     def perturb_same_norm(self, rho: float, variant: str, seed: int) -> dict[str, Any]: ...
+    def perturb_per_tensor(self, eps: float, seed: int) -> dict[str, Any]: ...
     def restructure(self, seed: int) -> int | None: ...
     def swap_layers(self, i: int) -> None: ...
     def weights_finite(self) -> bool: ...
@@ -413,7 +416,7 @@ BackendFactory = Callable[[argparse.Namespace, Benches, dict[str, Any]], Backend
 def add_args(ap: argparse.ArgumentParser) -> None:
     ap.add_argument("--mode", required=True, choices=("smoke", "headroom", "tuning", "calibrate",
                                                        "amend", "confirmatory", "controls",
-                                                       "options-only"))
+                                                       "options-only", "dose-response"))
     ap.add_argument("--model", default=os.environ.get("HL_MODEL", MODEL_REPO))
     ap.add_argument("--revision", default=os.environ.get("HL_REVISION", MODEL_REVISION))
     ap.add_argument("--corpus", type=Path)
@@ -510,6 +513,43 @@ def run(args: argparse.Namespace, make_backend: BackendFactory) -> int:  # noqa:
                                   indent=1, sort_keys=True) + "\n")
         print(f"[e1] options-only: {len(rows)} confirmatory items scored (no score printed)",
               flush=True)
+        return 0
+
+    if args.mode == "dose-response":  # base model, no replay (L0 draft of 2026-11-11)
+        out = args.out / "e1-dose-response.passes.jsonl"
+        if out.exists():
+            raise SystemExit(f"refusing to overwrite {out}")
+        common["code_commit"] = code_commit()
+        head = {"kind": "header", **common,
+                "items": {it["src_hash"]: {"answer": int(it["answer"]), "source": it["source"],
+                                           "item_sha256": it["item_sha256"]} for it in items}}
+        probe, ref = items[:dr.RESTORE_CHECK_ITEMS], None
+        with out.open("x") as fh:
+            fh.write(json.dumps(head, sort_keys=True) + "\n")
+            for arm, eps, seed in dr.plan():
+                b.restore()
+                chk, _ = b.score_items(probe)
+                if ref is None:
+                    ref = chk
+                elif chk != ref:
+                    raise SystemExit(f"restore check failed before {arm} eps={eps} seed={seed}")
+                applied: dict[str, Any] = {}
+                if arm == "D" and eps is not None:
+                    applied = {"rho": b.downscale_norm(1 - eps)}
+                    b.downscale(1 - eps)
+                elif arm == "Rt" and eps is not None and seed is not None:
+                    applied = b.perturb_per_tensor(eps, seed)
+                elif arm == "Rg" and eps is not None and seed is not None:
+                    applied = b.perturb_same_norm(b.downscale_norm(1 - eps), "R", seed)
+                sc, _ = b.score_items(items)
+                fh.write(json.dumps({"kind": "pass", "arm": arm, "eps": eps, "seed": seed,
+                                     "applied": applied,
+                                     "scores": {it["src_hash"]: s_
+                                                for it, s_ in zip(items, sc, strict=True)}},
+                                    sort_keys=True) + "\n")
+                fh.flush()
+                print(f"[e1] dose-response: pass {arm} eps={eps} seed={seed} done "
+                      "(no score printed)", flush=True)
         return 0
 
     if args.mode == "headroom":

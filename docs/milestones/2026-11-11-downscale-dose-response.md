@@ -158,15 +158,21 @@ run.
 
 ## 7. Not done, required before a freeze
 
-- A `dose-response` mode in `scripts/e1_harness.py` (restore, perturb,
-  score, record per-item option scores), the per-tensor noise variant,
-  and their tests ; none of it exists at this commit.
-- The analysis script that prints the verdict of section 4, tested on
-  constructed tables (pure symmetry, pure noise, pure temperature).
+- Written on 2026-11-11, tested on the tiny CPU model only, never run
+  on the 4B model : the `dose-response` mode of `scripts/e1_harness.py`
+  (28 passes, restore check on 50 items before each, one JSON line per
+  pass, no score printed) ; `TorchBackend.perturb_per_tensor` ;
+  `scripts/e1_dose_response.py`, which refuses an incomplete run and
+  prints the verdict of section 4, tested on constructed tables (pure
+  symmetry, same tolerance, one step apart, gate, temperature,
+  non-temperature).
+- The outside item set accepted by the PI on 2026-11-11 in addition to
+  the 760 items : not chosen, not pinned, not implemented. Until it
+  is, the run covers the E1 corpus only.
 - The two references of section 2, resolved and read.
-- PI decisions still open : the primary item set (760 items, or
-  `mmlu_cf` alone, or an outside set with more headroom, see 8.5) ;
-  bf16 rounding kept as is or lifted to float32.
+- PI decisions still open : which outside set (it must not expose
+  rows of the Zuse-2 confirmatory sample) ; bf16 rounding kept as is
+  or lifted to float32.
 
 ## 8. Critique of revision 1 and what changed
 
