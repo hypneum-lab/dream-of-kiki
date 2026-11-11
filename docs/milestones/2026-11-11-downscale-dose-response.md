@@ -139,11 +139,45 @@ literature for this model. C2 « supported » is expected for the head
 alone ; the informative outcome is whether one scalar explains the
 whole change of the option distribution (section 4, 80 % of the KL).
 
-The reading gate does not apply to this test (PI, 2026-11-11). Still to
-resolve and read before a freeze : van Laarhoven 2017 (arXiv:1706.05350,
-received 2026-11-11, not read) and Arora, Li, Lyu 2018 (absent from the
-library), the two references the previous version of this section cited
-without reading them.
+The reading gate does not apply to this test (PI, 2026-11-11). The two
+references the previous version of this section cited without reading
+them were **read in full on 2026-11-11 (evening)**, notes in the library :
+
+- van Laarhoven 2017 (arXiv:1706.05350 v1, `references/notes/arxiv-1706.05350.md`).
+  Fact : the invariance y(X ; a w, gamma, beta) = y(X ; w, gamma, beta) is
+  stated for batch, weight and layer normalisation, for the incoming
+  weights w of a unit whose output is normalised, gains and offsets held
+  fixed (p. 2) ; it is read off the formulas, not proved as a theorem.
+  Fact : effective learning rate eta / ||w||^2 for SGD and momentum
+  (pp. 3-4), eta / ||w|| for RMSProp and Adam (p. 5, table 1). Nothing
+  on rescaling a trained network ; gains, offsets, biases, head and
+  embeddings not treated (gains said inert under ReLU except in the
+  last layer, p. 8). Confirms the sentence « the invariance holds for the
+  weights that feed a normalisation », with that scope only.
+- Arora, Li, Lyu 2018 (arXiv:1812.03981 v1, ICLR 2019,
+  `references/notes/arxiv-1812.03981.md`). Fact : invariance is defined
+  **parameter by parameter, the others held fixed** (def. 2.1, p. 3) ;
+  the rows of a matrix feeding a batch normalisation are invariant
+  (p. 4) ; gains and biases are scale-variant for a general activation
+  (p. 4, p. 20) ; the network analysed has no parameter after its last
+  normalisation. Fact : eta / ||w||^2 is proved for GD and SGD
+  (lemma 2.4, thm 2.5, p. 6) and the norm of an invariant parameter grows
+  monotonically, ||w_{t+1}||^2 = ||w_t||^2 + eta^2 ||grad||^2, without
+  momentum or weight decay. Fact : theorems 3.1 and 4.2 give convergence
+  at the best asymptotic rate for **any** fixed rate of the invariant
+  parameters once the rate of the non-invariant ones is tuned ; a change
+  of norm only changes constants. No rescaling of a trained model
+  anywhere (closest : projected SGD, appendix D, p. 20). Reader's
+  inference : in the sense of this text a uniform rescaling of **all**
+  parameters is not a symmetry, which is what section 2 above says of
+  Qwen3.5-4B ; and for A1 the theory predicts a transient effect of a
+  norm reduction, not a lasting gain.
+
+**Tautology check, revised after these readings.** Neither text predicts
+C1 or C2 on a trained pre-LN hybrid model ; both make the head factor
+f^2 and the per-head attention factor f^2 (q_norm times k_norm)
+expected, and both leave the linear-attention decays and gates outside
+any invariance. The C2 expectation T = 1 / f^2 stands as written.
 
 ## 3. Design
 
@@ -437,8 +471,10 @@ relaxed.
   says so. Not pinned (revision, SHA-256), not implemented.
 - Section 2 rewritten on 2026-11-11 from the reading note of Lyle et
   al. 2024 ; its two remaining references (van Laarhoven 2017, Arora, Li,
-  Lyu 2018) resolved and read ; the attention and head factors of
-  section 2 checked against `config.json` of the snapshot.
+  Lyu 2018) **resolved and read the same evening** (section 2) ; the
+  attention and head factors of section 2 checked against `config.json`
+  of the snapshot (done, section 2 : q_norm and k_norm present, tied
+  embeddings, 24 linear-attention layers).
 - bf16 rounding, **decided by the PI on 2026-11-11 (evening) after a
   one-hour test** : bf16 is kept (instrument of E1-small unchanged) ;
   the table of section 3 reports, per dose and per arm, the rounding
