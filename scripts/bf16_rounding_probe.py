@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """One-hour test (PI decision of 2026-11-11): how much of a DOWNSCALE or
 per-tensor noise step survives the bf16 rounding of the stored weights,
 dose by dose, on the real Qwen3.5-4B checkpoint. CPU only, no scoring,
@@ -14,8 +13,15 @@ Reports Frobenius norms summed over tensors, in total and by tensor group
 (norm gains / biases / embeddings+head / matrices), plus the fraction of
 elements of D(eps) left unchanged by the rounding.
 """
-import argparse, glob, json, os, sys, time
-import torch, struct
+import argparse
+import glob
+import json
+import os
+import struct
+import sys
+import time
+
+import torch
 
 _DT = {"BF16": torch.bfloat16, "F16": torch.float16, "F32": torch.float32, "F64": torch.float64,
        "I64": torch.int64, "I32": torch.int32, "I16": torch.int16, "I8": torch.int8, "U8": torch.uint8, "BOOL": torch.bool}
@@ -25,20 +31,26 @@ class _SafeFile:
     """Minimal safetensors reader (no dependency): 8-byte little-endian header
     length, JSON header, then raw little-endian buffers."""
     def __init__(self, path):
-        self.f = open(path, "rb")
+        self.f = open(path, "rb")  # noqa: SIM115  (closed in __exit__)
         n = struct.unpack("<Q", self.f.read(8))[0]
-        import json as _j
-        self.h = _j.loads(self.f.read(n)); self.h.pop("__metadata__", None); self.base = 8 + n
+        self.h = json.loads(self.f.read(n))
+        self.h.pop("__metadata__", None)
+        self.base = 8 + n
     def keys(self):
         return sorted(self.h)
     def get_tensor(self, k):
-        m = self.h[k]; a, b = m["data_offsets"]; self.f.seek(self.base + a)
+        m = self.h[k]
+        a, b = m["data_offsets"]
+        self.f.seek(self.base + a)
         buf = bytearray(self.f.read(b - a))
         if b == a:
             return torch.empty(m["shape"], dtype=_DT[m["dtype"]])
         return torch.frombuffer(buf, dtype=_DT[m["dtype"]]).reshape(m["shape"]).clone()
-    def __enter__(self): return self
-    def __exit__(self, *a): self.f.close()
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *a):
+        self.f.close()
 
 
 def safe_open(path, framework="pt", device="cpu"):
@@ -80,7 +92,7 @@ def main() -> None:
     g = torch.Generator().manual_seed(a.seed)
     for f in files:
         with safe_open(f, framework="pt", device="cpu") as sf:
-            for name in sf.keys():
+            for name in sf.keys():  # noqa: SIM118  (safetensors handle, not a dict)
                 t = sf.get_tensor(name)
                 dtypes[str(t.dtype)] = dtypes.get(str(t.dtype), 0) + 1
                 if not t.is_floating_point():
@@ -119,7 +131,10 @@ def main() -> None:
         if a.limit and n_t >= a.limit:
             break
     cfg_path = os.path.join(a.snapshot, "config.json")
-    cfg = json.load(open(cfg_path)) if os.path.exists(cfg_path) else {}
+    cfg = {}
+    if os.path.exists(cfg_path):
+        with open(cfg_path) as fh:
+            cfg = json.load(fh)
     cfg_keys = {k: cfg.get(k) for k in ("architectures", "model_type", "torch_dtype", "dtype", "tie_word_embeddings",
                 "attention_bias", "use_qk_norm", "qk_norm", "num_hidden_layers", "hidden_size", "rms_norm_eps")}
     out = {"snapshot": a.snapshot, "config": cfg_keys, "files": [os.path.basename(x) for x in files],
