@@ -156,6 +156,68 @@ for its duration only]. No number is read before the 28 passes are
 complete ; the verdict is computed by a script committed before the
 run.
 
+## 6 bis. Hopfield arm (S5) : a control where the answer is known
+
+Added on 2026-11-11 by decision of the PI. Not implemented.
+
+**Why.** On the language model, C1 and C2 are open questions. In a
+Hopfield network they are textbook identities : the stationary law of
+Glauber dynamics depends on the couplings J and the inverse
+temperature beta only through the product beta * J. Multiplying J by
+(1 - eps) at temperature T is therefore the same model as leaving J
+alone at temperature T / (1 - eps) ; at T = 0 the update
+`sign(J s)` does not see the scale at all. The arm does not test a
+hypothesis about the lab's models. It tests **the decision rule of
+section 4** on a system where the right verdict is known in advance.
+
+**Model.** N = 1 000 binary units, Hebbian couplings
+J = (1/N) * sum_mu xi_mu xi_mu^T with zero diagonal, random patterns,
+loads alpha in {0.02, 0.05, 0.10}. Asynchronous Glauber dynamics,
+P(s_i = +1) = sigmoid(2 * h_i / T), 50 sweeps from a cue at overlap
+0.8 ; T in {0, 0.2, 0.4}. Measure : final overlap with the cued
+pattern, 200 cues per cell. A self-contained numpy script in this
+repository, independent of the NH-01 kernel of nerve-wml.
+
+**Arms**, on the dose grid of section 3 :
+
+- `D(eps)` : J multiplied by (1 - eps), T unchanged ;
+- `Tq(eps)` : J unchanged, T divided by (1 - eps), same random stream
+  as `D` ;
+- `Rt(eps, s)` : J plus a symmetric Gaussian matrix of Frobenius norm
+  eps * ||J||, zero diagonal, seeds 0, 1, 2 ;
+- `base`.
+
+**Expected, stated before any run.**
+
+1. Identity check : with common random numbers, `D(eps)` and
+   `Tq(eps)` give the same trajectories at every dose, up to
+   floating-point tolerance. A failure is a bug, not a result.
+2. At T = 0, `D` is equivalent to `base` at every dose of the grid
+   and `Rt` is broken at some dose : the rule of section 4, with
+   overlap in place of accuracy and the same +/- 0.03 margin, must
+   return **C1 supported**.
+3. At T = 0.2 and T = 0.4, the overlap under `D(eps)` must follow the
+   base network read at T / (1 - eps) : the C2 analogue must return
+   **supported**. Where T / (1 - eps) crosses the retrieval boundary
+   of the load, `D` must be reported as broken, not as equivalent :
+   in this model DOWNSCALE is harmless only while the rescaled
+   temperature stays inside the retrieval phase.
+4. Negative control : the `Rt` data relabelled as `D` must return
+   **C1 refuted**.
+
+**What each outcome changes.** If 2, 3 and 4 come out as stated, the
+decision rule is shown to detect an exact symmetry and to reject a
+non-symmetry at this grid and margin ; the language-model verdict can
+then be read with that calibration. If the rule fails on 2, 3 or 4,
+section 4 is amended **before** the language-model run, and the
+amendment says so.
+
+**Limits.** The arm says nothing about whether a transformer behaves
+like this ; a known identity cannot support C1 or C2 on the language
+model. The mapping from "option distribution" to "overlap" for the C2
+analogue is a choice of this draft. Cost : CPU, minutes to an hour
+[to measure].
+
 ## 7. Not done, required before a freeze
 
 - Written on 2026-11-11, tested on the tiny CPU model only, never run
@@ -169,6 +231,14 @@ run.
 - The outside item set accepted by the PI on 2026-11-11 in addition to
   the 760 items : not chosen, not pinned, not implemented. Until it
   is, the run covers the E1 corpus only.
+- The Hopfield arm of section 6 bis : script, its tests, and the
+  adapter that feeds overlaps to `scripts/e1_dose_response.py` ; to
+  run and read **before** the language-model run.
+- Section 2 to rewrite from the reading note of Lyle et al. 2024
+  (library, `references/notes/arxiv-2407.01800.md`) : the paper shows
+  scale invariance for layers feeding a normalisation in an
+  architecture built for it, not for a standard pre-LN language
+  model ; it does not predict the result of this test.
 - The two references of section 2, resolved and read.
 - PI decisions still open : which outside set (it must not expose
   rows of the Zuse-2 confirmatory sample) ; bf16 rounding kept as is
