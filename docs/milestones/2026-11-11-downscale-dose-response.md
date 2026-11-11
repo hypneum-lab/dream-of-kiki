@@ -9,6 +9,9 @@
   before C1 has shown at which dose DOWNSCALE acts
 **Level** : **L0** : local draft, not frozen, not deposited. No tag.
   Nothing below has been run.
+**Revision** : 2 (2026-11-11), after the critique of revision 1 asked
+  by the PI (section 8). PI ruling of 2026-11-11 11:09 : the reading
+  gate does not apply to this one-run inference test.
 **Date drafted** : 2026-11-11
 **Catalogue** : C1 and C2 are to be entered from NH-114 (not done yet)
 
@@ -27,16 +30,16 @@ the model, whatever its direction ; (b) a uniform rescaling is close
 to a symmetry of a normalised network, at any dose. Reading (b) would
 make a replay of H14 on a larger model uninformative by construction.
 
-**Statement C1 (EN, to lock)** : On the base Qwen3.5-4B model, with
-no replay and no training, multiplying all floating-point parameters
-by f = 0.8 leaves multiple-choice accuracy within 0.02 of the
-unperturbed model, while a random perturbation of the same Frobenius
-norm lowers it by at least 0.10.
+**Statement C1 (EN, to lock, revision 2)** : On the base Qwen3.5-4B
+model, with no replay and no training, the largest relative dose of
+DOWNSCALE that leaves multiple-choice accuracy equivalent to the
+unperturbed model is at least two grid steps (a factor 4 to 5) above
+the largest tolerated dose of a random perturbation that has the same
+norm in every tensor.
 
-**Statement C2 (EN, to lock)** : At the same dose, DOWNSCALE lowers
-the mean confidence of the model (maximum of the softmax over the
-option scores) by at least 0.02 while accuracy stays within 0.02 :
-it acts as a temperature, not as a change of what the model knows.
+**Statement C2 (EN, to lock, revision 2)** : At its largest tolerated
+dose, the effect of DOWNSCALE on the option distribution is that of a
+single temperature T > 1 applied to the unperturbed scores.
 
 ## 2. What is already known (reading note, to complete before any freeze)
 
@@ -50,67 +53,86 @@ by f, so a uniform rescaling of *all* parameters is not an exact
 symmetry. The test measures how far from a symmetry it is, against a
 perturbation of equal norm and random direction.
 
-Open before a freeze: one watch round on scale invariance in
-transformers and on synaptic downscaling in LLMs ; the blind
-contradictor if the PI rules that this one-hour inference test falls
-under the reading gate (roadmap, principle 6 names any GPU campaign).
+Expected from the architecture, to be checked and not assumed: with
+every matrix multiplied by f, attention logits shrink roughly as a
+power of f (queries and keys are both rescaled), so attention flattens
+as the dose grows. DOWNSCALE is therefore not expected to be harmless
+at every dose ; the claim is that it is tolerated at much larger doses
+than noise.
+
+The reading gate does not apply (PI, 2026-11-11). The two references
+above are still to resolve and read before a freeze.
 
 ## 3. Design
 
 - **Model** : `Qwen/Qwen3.5-4B`, the snapshot and the instrument of
   E1-small (`scripts/e1_harness.py`, registered torch backend,
-  determinism settings unchanged). Base weights, reloaded before each
-  arm. No replay, no optimiser step.
+  determinism settings unchanged). Base weights restored from the RAM
+  snapshot before each arm ; the restore is checked by re-scoring 50
+  items. No replay, no optimiser step.
 - **Items** : the CONFIRMATORY items of the FROZEN E1 corpus, 1 098
   items : `mmlu_cf` 380, `realtimeqa` 380, `daily_oracle` 338.
   **Primary set : `mmlu_cf` + `realtimeqa`, 760 items.**
-  `daily_oracle` is reported apart. This exclusion is a choice made
-  after seeing data (base accuracy 0.179 with the question, under the
-  0.25 chance level, addendum section 10.6) ; it is declared here as
-  such, and the 1 098-item result is reported next to the primary.
-- **Doses** : f in {0.99, 0.9, 0.8, 0.5}.
+  `daily_oracle` is reported apart (base accuracy 0.179 with the
+  question, under the 0.25 chance level, addendum section 10.6) : an
+  exclusion made after seeing data, declared as such ; the 1 098-item
+  table is reported next to the primary.
+- **Doses** : relative norm eps = 1 - f on a log grid
+  {0.01, 0.02, 0.05, 0.1, 0.2, 0.5}.
 - **Arms at each dose** :
-  - `D(f)` : `Backend.downscale(f)`, deterministic, one pass ;
-  - `R(f, s)` : `Backend.perturb_same_norm(rho(f), "R", s)` with
-    `rho(f) = Backend.downscale_norm(f)`, seeds s = 0, 1, 2 ;
+  - `D(eps)` : `Backend.downscale(1 - eps)`, deterministic, one pass ;
+  - `Rt(eps, s)` : **per-tensor** random perturbation, each
+    floating-point tensor t receives Gaussian noise of norm
+    `eps * ||theta_t||`, seeds s = 0, 1, 2 (new variant, to write) ;
+  - `Rg(eps)` : the global variant `perturb_same_norm(rho, "R", 0)` of
+    the E1 controls, at eps = 0.01, 0.05, 0.2 only, one seed, for
+    continuity ; descriptive ;
   - `base` : unperturbed model, one pass.
-  17 scoring passes in total. The `U` variant (shrink of constant
-  magnitude along the sign of each weight) is not run : it is a
-  rescaling direction itself and would blur the contrast.
-- **Measures per pass** : accuracy (argmax of the option scores) ;
-  mean confidence (maximum of the softmax over the option scores) ;
-  `gap = mean confidence - accuracy` ; `choice_kl` to the base
-  pass ; the norm actually applied.
+  28 scoring passes in total.
+- **Measures per pass** : per-item option scores (kept) ; accuracy ;
+  mean confidence ; `gap = mean confidence - accuracy` ; `choice_kl`
+  to the base pass ; the norm actually applied, in total and per
+  tensor group.
 - **Seeds** : noise seeds 0, 1, 2 ; item bootstrap RNG 20261111,
-  10 000 draws, items resampled, the same indices for both arms.
+  10 000 draws, items resampled, the same indices for every arm. For
+  `Rt`, per-item correctness is averaged over the three seeds before
+  the bootstrap ; per-seed curves are reported.
 
 ## 4. Decision rule (to fix before any run)
 
-Let `acc(X)` be accuracy on the primary set and `acc(R(f))` the mean
-over the three seeds.
+`acc(X)` is accuracy on the primary set. Two definitions :
 
-0. **Measurability gate** : `acc(base) - acc(R(0.5)) >= 0.10`. If the
-   random perturbation at the largest dose does not hurt, the doses
-   are too small to test anything : verdict `non_test`, and no dose is
-   added without an amendment written before the new run.
-1. **C1 supported** iff, at f = 0.8 : `acc(base) - acc(D) <= 0.02`
-   and `acc(base) - acc(R) >= 0.10` and the 99 % paired bootstrap
-   interval of `acc(D) - acc(R)` is entirely above 0.
-2. **C1 refuted** iff the 99 % interval of `acc(D) - acc(R)` contains
-   0 at every dose where either arm is more than 0.02 from the base,
-   or `acc(base) - acc(D(0.8)) >= 0.10`.
-3. Otherwise `inconclusive`, reported with the four dose points.
-4. **C2 supported** iff C1's first condition holds at f = 0.8 and
-   `conf(base) - conf(D(0.8)) >= 0.02` with a 99 % paired bootstrap
-   interval entirely above 0. **Refuted** iff that interval contains
-   0 or lies below it. If accuracy moves by more than 0.02, C2 is
-   `not_applicable` at this dose and is read at the largest tested
-   dose where it does not.
+- **Equivalent** at a dose : the 99 % paired bootstrap interval of
+  `acc(arm) - acc(base)` lies inside [-0.03, +0.03].
+- **Tolerance dose** of an arm : the largest grid dose such that the
+  arm is equivalent at this dose and at every smaller one ; rank 0 if
+  it is not equivalent at 0.01.
+- **Broken** at a dose : `acc(base) - acc(arm)` is at least half of
+  `acc(base) - 0.25` (the arm lost half of what the model has above
+  chance), interval entirely above 0.
 
-The thresholds 0.02, 0.10 and the dose 0.8 are proposals of the
-drafting agent, not derived from any run ; the PI fixes them before
-the freeze. The whole dose-response table is reported whatever the
-verdict.
+0. **Measurability gate** : `Rt` is broken at some grid dose and
+   equivalent at 0.01. If `Rt` is never broken, or already not
+   equivalent at 0.01, the grid does not bracket the sensitivity of
+   the model : verdict `non_test` ; a new grid needs an amendment
+   written before the new run.
+1. **C1 supported** iff the tolerance dose of `D` is at least two grid
+   steps above the tolerance dose of `Rt`.
+2. **C1 refuted** iff the tolerance dose of `D` is equal to or below
+   that of `Rt`.
+3. One grid step apart : `inconclusive`.
+4. **C2**, read at the tolerance dose of `D` (not applicable if its
+   rank is 0 or if `choice_kl(base, D) < 0.005`, nothing to explain) :
+   fit one temperature T on a log grid of 61 points in [0.25, 4] that
+   minimises the mean KL between the option distribution of `D` and
+   `softmax(scores_base / T)`. **Supported** iff the 99 % bootstrap
+   interval of T is above 1 and the temperature removes at least 80 %
+   of the KL (lower 99 % bound at least 60 %). **Refuted** iff the
+   interval of T contains 1 or the share removed is under 50 %.
+   Otherwise `inconclusive`. Mean confidence and `gap` are reported,
+   not decided on.
+
+The whole dose-response table is reported whatever the verdict.
 
 ## 5. What each verdict changes
 
@@ -128,20 +150,67 @@ verdict.
 
 ## 6. Cost, host, reading
 
-Inference only : 17 passes over 1 098 four-option items on the 4B
-model, kxkm-ai (RTX 4090), estimated under one hour [to verify with a
-timing of the base pass, read for its duration only]. No number is
-read before the 17 passes are complete ; the verdict is computed by a
-script committed before the run.
+Inference only : 28 passes over 1 098 four-option items on the 4B
+model, kxkm-ai (RTX 4090) [duration to measure on the base pass, read
+for its duration only]. No number is read before the 28 passes are
+complete ; the verdict is computed by a script committed before the
+run.
 
 ## 7. Not done, required before a freeze
 
-- A `dose-response` mode in `scripts/e1_harness.py` (reload, perturb,
-  score, record per-item option scores) and its tests ; none of it
-  exists at this commit.
-- The analysis script that prints the verdict of section 4.
-- The reading note of section 2 and the PI's ruling on the reading
-  gate.
-- PI decisions : thresholds and dose of section 4 ; primary item set ;
-  bf16 rounding (at f = 0.99 the step is applied in bf16, as in
-  `downscale_norm`) kept as is or lifted to float32.
+- A `dose-response` mode in `scripts/e1_harness.py` (restore, perturb,
+  score, record per-item option scores), the per-tensor noise variant,
+  and their tests ; none of it exists at this commit.
+- The analysis script that prints the verdict of section 4, tested on
+  constructed tables (pure symmetry, pure noise, pure temperature).
+- The two references of section 2, resolved and read.
+- PI decisions still open : the primary item set (760 items, or
+  `mmlu_cf` alone, or an outside set with more headroom, see 8.5) ;
+  bf16 rounding kept as is or lifted to float32.
+
+## 8. Critique of revision 1 and what changed
+
+1. **The tolerance of 0.02 could not be established.** With 760 items
+   and a base accuracy near 0.40, the standard error of an accuracy is
+   about 0.018 ; a point estimate "within 0.02" is one standard error
+   and would pass or fail by chance. Revision 2 uses an equivalence
+   interval (99 % paired interval inside +/- 0.03), reachable only if
+   fewer than about 10 % of items change side, which is the regime the
+   claim is about. An arm that reshuffles many items without changing
+   the mean is counted as not tolerated : conservative.
+2. **The drop of 0.10 ignored the headroom.** The model has about 0.15
+   above chance on the primary set, so 0.10 was two thirds of it, a
+   fixed number unrelated to the instrument. "Broken" is now half of
+   the measured margin above chance.
+3. **The single dose f = 0.8 was arbitrary and probably too strong.**
+   A uniform rescaling is not an exact symmetry of a transformer
+   (section 2) ; at 0.8 DOWNSCALE may degrade the model and C1 would
+   have been refuted although DOWNSCALE is far better tolerated than
+   noise. The claim is now a ratio of tolerance doses on a log grid.
+   The old grid also had no point between 0.01 and 0.1, where the
+   transition of the noise arm is most likely.
+4. **The control was not matched.** Global noise of a given norm
+   spreads the same absolute noise over every tensor, so it hits
+   small tensors (normalisation gains, biases) far harder than a
+   rescaling does. A difference between DOWNSCALE and that noise could
+   be an allocation effect, not a direction effect. The primary
+   control is now per-tensor noise of matched norm ; the global
+   variant is kept at three doses for continuity with the E1 controls.
+5. **The instrument has little headroom.** The E1 corpus was built to
+   be learned, so the base model is low on it by design (0.49 on
+   `mmlu_cf`, 0.32 on `realtimeqa`). It is kept because the instrument
+   is registered and the comparison with E1-small is direct ; an
+   outside set where the base model is well above chance would
+   separate the arms better. Left to the PI.
+6. **The gate could not fail.** "Noise at f = 0.5 hurts" is certain.
+   The gate now requires the noise arm to be harmless at the smallest
+   dose and broken at some dose, so that the grid brackets the
+   sensitivity threshold.
+7. **C2 tested a direction, not a temperature.** "Confidence falls by
+   0.02" is passed by any perturbation that blurs the output. The
+   claim is now that one scalar temperature accounts for the change of
+   the option distribution.
+8. **What the critique does not fix.** The thresholds that remain
+   (0.03, half the margin, two grid steps, 80 %) are reasoned but not
+   derived from a power simulation ; three noise seeds are few if the
+   per-seed curves differ ; one model, one corpus.
