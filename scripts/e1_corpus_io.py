@@ -37,10 +37,12 @@ PENDING = "PENDING-HEADROOM"
 # 2026-11-06 (docs/osf-addendum-e1-small-controls-2026-11-06.md), on the
 # CONFIRMATORY partition of the FROZEN corpus, like the confirmatory cells.
 MODE_STATUS = {"confirmatory": FROZEN, "tuning": FROZEN, "calibrate": FROZEN,
-               "headroom": PENDING, "controls": FROZEN, "options-only": FROZEN}
+               "headroom": PENDING, "controls": FROZEN, "options-only": FROZEN,
+               "dose-response": FROZEN}
 MODE_PARTITION = {"confirmatory": "confirmatory", "tuning": "tuning",
                   "calibrate": "tuning", "headroom": "tuning",
-                  "controls": "confirmatory", "options-only": "confirmatory"}
+                  "controls": "confirmatory", "options-only": "confirmatory",
+                  "dose-response": "confirmatory"}
 
 
 class CorpusError(RuntimeError):

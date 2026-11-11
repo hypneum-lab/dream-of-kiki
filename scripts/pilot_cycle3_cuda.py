@@ -533,6 +533,41 @@ class TorchBackend:
                 "applied_norm": float(applied_sq ** 0.5), "seed": int(seed),
                 "n_nonzero": n_nz}
 
+    @torch.no_grad()
+    def perturb_per_tensor(self, eps: float, seed: int) -> dict[str, Any]:
+        """Add to every floating-point tensor t a Gaussian xi_t with
+        ||xi_t||_F = eps * ||theta_t||_F (dose-response draft of 2026-11-11,
+        arm Rt): the relative step of ``downscale(1 - eps)`` in each tensor, in a
+        random direction. Computed in float32, written back in the parameter
+        dtype; the norm actually applied after that rounding is returned.
+        """
+        params = [p for p in self.model.parameters() if p.is_floating_point()]
+        dev = params[0].device if params else torch.device("cpu")
+        applied_sq = target_sq = theta_sq = 0.0
+        for i, p in enumerate(params):
+            def gen(i: int = i) -> torch.Generator:
+                return torch.Generator(device=dev).manual_seed(int(seed) * 1_000_003 + i)
+
+            g, gsq, tsq = gen(), 0.0, 0.0
+            for c in self._chunks(p):
+                gsq += float((torch.randn(c.shape, generator=g, device=dev,
+                                          dtype=torch.float32) ** 2).sum())
+                tsq += float((c.float() ** 2).sum())
+            theta_sq += tsq
+            if gsq == 0.0 or tsq == 0.0:
+                continue
+            scale, g = eps * (tsq / gsq) ** 0.5, gen()
+            for c in self._chunks(p):
+                x = c.float()
+                xi = scale * torch.randn(c.shape, generator=g, device=dev, dtype=torch.float32)
+                new = (x + xi).to(c.dtype)
+                target_sq += float((xi ** 2).sum())
+                applied_sq += float(((new.float() - x) ** 2).sum())
+                c.copy_(new)
+        return {"variant": "Rt", "eps": float(eps), "seed": int(seed),
+                "xi_norm": float(target_sq ** 0.5), "applied_norm": float(applied_sq ** 0.5),
+                "theta_norm": float(theta_sq ** 0.5), "n_tensors": len(params)}
+
     def swap_layers(self, i: int) -> None:
         layers = _get_layers(self.model)
         layers[i], layers[i + 1] = layers[i + 1], layers[i]
