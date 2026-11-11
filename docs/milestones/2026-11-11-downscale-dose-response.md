@@ -41,27 +41,80 @@ norm in every tensor.
 dose, the effect of DOWNSCALE on the option distribution is that of a
 single temperature T > 1 applied to the unperturbed scores.
 
-## 2. What is already known (reading note, to complete before any freeze)
+## 2. What is already known (reading note of 2026-11-11, to complete before any freeze)
 
-Scale invariance of the weights that feed a normalisation layer is
-established for batch and weight normalisation (van Laarhoven 2017 ;
-Arora, Li, Lyu 2019) [identifiers to resolve by API, sources to read
-in full]. What is not settled by that literature, and is the only
-open question here: a pre-norm transformer has learned normalisation
-gains, embeddings, biases and an output head that are also multiplied
-by f, so a uniform rescaling of *all* parameters is not an exact
-symmetry. The test measures how far from a symmetry it is, against a
-perturbation of equal norm and random direction.
+Read in full on 2026-11-11 (library, `references/notes/arxiv-2407.01800.md`,
+depth stated in the note) : Lyle, Zheng, Khetarpal, Martens, van Hasselt,
+Pascanu, Dabney 2024, « Normalization and effective learning rates in
+reinforcement learning », arXiv:2407.01800 v1. What that text establishes,
+with its pages :
 
-Expected from the architecture, to be checked and not assumed: with
-every matrix multiplied by f, attention logits shrink roughly as a
-power of f (queries and keys are both rescaled), so attention flattens
-as the dose grows. DOWNSCALE is therefore not expected to be harmless
-at every dose ; the claim is that it is tolerated at much larger doses
-than noise.
+- A normalisation layer makes the sub-network that feeds it invariant to
+  the scale of its weights : f(c theta, x) = f(theta, x) for every c > 0,
+  hence grad f(c theta) = grad f(theta) / c (section 2.2, p. 3). Rescaling
+  those weights to their initial norm, direction unchanged, « does not
+  affect the output » of the scale-invariant model (p. 5) ; the per-layer
+  statement is proved for a network that ends with a normalisation
+  (eq. 19, p. 18).
+- The architecture for which this holds is built for it : a normalisation
+  before every non-linearity, bias terms removed (p. 6), scale and offset
+  parameters handled apart (pp. 5-6 ; A.8 ; D, p. 25) ; for attention the
+  authors add an RMS normalisation on the query and key projections
+  (eq. 13, p. 17). For non-homogeneous activations the joint
+  scale-offset projection « will not hold » (p. 25).
+- The quantity a rescaling does change is the effective learning rate of
+  the training that follows : eta / ||theta||^2 for gradient descent,
+  eta / ||theta|| for fixed-norm steps (definition 1, p. 3). That is the
+  variable of candidate A1, not of this test.
+- All experiments train from scratch with the projection on (synthetic
+  non-stationarity ; Atari ; a 400 M transformer on C4, table 3, p. 25).
+  No rescaling of an already trained model is tested. The paper therefore
+  does not predict the result of this test ; the sentence of the watch of
+  2026-11-11, « the null of E1-small on DOWNSCALE was predictable from
+  published scale invariance », was too strong and is withdrawn here.
 
-The reading gate does not apply (PI, 2026-11-11). The two references
-above are still to resolve and read before a freeze.
+What follows for Qwen3.5-4B, a pre-LN transformer with RMSNorm (reader's
+inferences, to check against the model configuration and not to assume) :
+
+- A uniform rescaling of **all** parameters by f = 1 - eps is not an exact
+  symmetry. Each RMSNorm removes the scale of its input, so what survives
+  are the factors carried by the parameters that sit after a
+  normalisation : the normalisation gains, the linear maps and the output
+  head. With a gain followed by a linear map, each block input is
+  multiplied by f^2 ; the output logits by f^2 as well (final gain times
+  head). If f^2 on the logits were the only effect, the option
+  distribution of D(eps) would be exactly the base distribution at
+  temperature T = 1 / f^2 : 1.02 at eps = 0.01, 1.11 at 0.05, 1.23 at
+  0.1, 1.56 at 0.2, 4 at 0.5. **C2 therefore has a quantitative
+  expectation**, written here before the run : the fitted T is reported
+  against 1 / f^2 at every dose ; a T that tracks 1 / f^2 means the head
+  dominates, a T that departs from it means the attention or the MLP
+  blocks contribute.
+- The attention logits scale as f^2 if the model normalises queries and
+  keys per head (Qwen3 does ; to confirm on the Qwen3.5-4B
+  `config.json`), as f^4 otherwise : attention flattens with the dose,
+  which is not a temperature on the output and is the first candidate
+  for a C2 refutation at large doses. The MLP output scales as f^3
+  against an embedding scaled by f, so the residual stream re-weights
+  blocks against the embedding by f^2 ; both effects grow with eps.
+- Hence DOWNSCALE is not expected to be harmless at every dose ; the
+  claim of C1 is only that it is tolerated at much larger doses than a
+  perturbation of equal norm and random direction, and section 4 reads
+  it as a ratio of tolerance doses.
+
+**Tautology check.** C1 is a control of the instrument, not a discovery
+(PI, 2026-11-10) : what it establishes is the dose at which the
+registered harness stops seeing DOWNSCALE as inert, against the dose at
+which it stops seeing noise as inert ; neither dose is in the
+literature for this model. C2 « supported » is expected for the head
+alone ; the informative outcome is whether one scalar explains the
+whole change of the option distribution (section 4, 80 % of the KL).
+
+The reading gate does not apply to this test (PI, 2026-11-11). Still to
+resolve and read before a freeze : van Laarhoven 2017 (arXiv:1706.05350,
+received 2026-11-11, not read) and Arora, Li, Lyu 2018 (absent from the
+library), the two references the previous version of this section cited
+without reading them.
 
 ## 3. Design
 
@@ -344,18 +397,29 @@ relaxed.
   prints the verdict of section 4, tested on constructed tables (pure
   symmetry, same tolerance, one step apart, gate, temperature,
   non-temperature).
-- The outside item set accepted by the PI on 2026-11-11 in addition to
-  the 760 items : not chosen, not pinned, not implemented. Until it
-  is, the run covers the E1 corpus only.
-- Section 2 to rewrite from the reading note of Lyle et al. 2024
-  (library, `references/notes/arxiv-2407.01800.md`) : the paper shows
-  scale invariance for layers feeding a normalisation in an
-  architecture built for it, not for a standard pre-LN language
-  model ; it does not predict the result of this test.
-- The two references of section 2, resolved and read.
-- PI decisions still open : which outside set (it must not expose
-  rows of the Zuse-2 confirmatory sample) ; bf16 rounding kept as is
-  or lifted to float32.
+- Outside item sets, decided by the PI on 2026-11-11 (evening), all
+  three rejected by the Zuse-2 dataset review and therefore outside its
+  confirmatory sample : SciQ test (1 000 items, 4 options, CC-BY-NC-3.0),
+  OpenBookQA test (500 items, 4 options, licence `unknown` on the Hub),
+  CommonsenseQA validation (1 221 items, **5 options**, MIT ; chance level
+  0.20, the harness and the « broken » rule of section 4 must take the
+  number of options from the set). Each set is reported apart from the
+  primary E1 set and is not part of the C1 verdict unless an amendment
+  says so. Not pinned (revision, SHA-256), not implemented.
+- Section 2 rewritten on 2026-11-11 from the reading note of Lyle et
+  al. 2024 ; its two remaining references (van Laarhoven 2017, Arora, Li,
+  Lyu 2018) resolved and read ; the attention and head factors of
+  section 2 checked against `config.json` of the snapshot.
+- bf16 rounding : PI decision of 2026-11-11 (evening) is to decide after
+  a one-hour test. The test measures, on the real Qwen3.5-4B snapshot
+  and on CPU, without any scoring, the Frobenius norm of the rounding
+  ||bf16(f theta) - f theta|| against the nominal step ||f theta - theta||
+  at every grid dose, in total and by tensor group (gains, embeddings and
+  head, matrices), and the same for one seed of the per-tensor noise
+  arm. Launched 2026-11-11 on kxkm-ai (CPU, nice 19) ; result and the
+  rule it decides (keep bf16 and report the rounding share per dose,
+  drop a dose, or lift to float32) to be written here before any freeze.
+  Exploratory, no item scored.
 
 ## 8. Critique of revision 1 and what changed
 
