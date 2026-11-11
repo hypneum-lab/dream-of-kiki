@@ -277,6 +277,63 @@ sections 3 and 4 by this note.
 - If the C2 analogue is kept, it should use the common-random-number
   comparison or cells inside the retrieval phase only.
 
+## 6 quater. Positive control on a small network, and a wider Hopfield noise arm
+
+Decided by the PI on 2026-11-11 after 6 ter : both controls. Written
+and run the same day, read in full.
+
+**Small scale-invariant network** (`scripts/scale_invariant_control.py`,
+numpy, no training loop : six random hidden layers, each followed by
+an RMS normalisation and without bias, and a ridge readout ; 4
+classes, 760 test items ; base accuracy 0.786). The verdict is
+computed by the unmodified `analyse` of `scripts/e1_dose_response.py`.
+
+| variant | what DOWNSCALE is, by construction | C1 | C2 | noise relabelled as D |
+|---|---|---|---|---|
+| no other parameter | exact no-op | **supported** (ranks 6 against 3) | not applicable (KL = 0) | C1 **refuted** |
+| one scalar output gain | exact temperature 1 / (1 - eps) | **supported** (ranks 6 against 3) | **supported**, T = 2.0 at dose 0.5, all of the KL removed | C1 **refuted** |
+
+The rule of section 4 therefore returns the right verdict on a known
+symmetry, on a known temperature, and on a known non-symmetry, at this
+grid and margin. Output sha256 `1f80f4687ddb`, reproducible by
+`python -m scripts.scale_invariant_control`.
+
+Two things were set by hand and are not outcomes. (i) The depth : at
+depth 2 the per-tensor noise never breaks the network inside the grid
+(accuracy 0.74 at dose 0.5) and the gate returns `non_test` ; depth 6
+was kept after looking at five configurations, because the control
+needs a noise arm that breaks the model. (ii) The gain variant is a
+temperature because the gain is the only parameter outside a
+normalisation ; a real language model has many such parameters.
+
+**What this does and does not show.** It calibrates the rule. It says
+nothing about the language model. It does show, twice now, that the
+gate depends on depth and architecture : whether per-tensor noise
+breaks Qwen3.5-4B inside the grid is an empirical question that the
+first passes of the run will answer.
+
+**Wider Hopfield noise arm** (`WIDE_NOISE_DOSES` = 1, 2, 4 in
+`scripts/hopfield_scale_control.py`, noise arm only since DOWNSCALE is
+undefined at eps >= 1 ; descriptive, output sha256 `23b3f22efc77`).
+At T = 0, retrieval under noise of relative norm 1, 2 and 4 is 1.000,
+0.999, 0.853 at load 0.02 ; 0.998, 0.896, 0.502 at load 0.05 ; 0.845,
+0.502, 0.351 at load 0.10, where it is broken at dose 4 only. DOWNSCALE
+at T = 0 leaves retrieval unchanged at every dose. So at T = 0 the
+direction of C1 holds in the Hopfield model, but the noise must be two
+to four times larger than the couplings themselves to break retrieval,
+outside any grid shared with DOWNSCALE : the rank rule of section 4
+cannot be applied to this model. At T > 0 the result of 6 ter stands :
+the rescaling breaks retrieval at dose 0.5 while noise of the same
+norm does not.
+
+**A weakness of the rule made visible by these controls** (not
+changed here). The tolerance of DOWNSCALE is censored at the top of
+the grid (0.5, and 1 at most). If the noise arm is tolerated up to
+the top of the grid as well, the two ranks are equal and the rule
+would return "refuted" for an exact symmetry, were it not for the
+gate. The gate is what prevents that false verdict ; it must not be
+relaxed.
+
 ## 7. Not done, required before a freeze
 
 - Written on 2026-11-11, tested on the tiny CPU model only, never run
@@ -290,9 +347,6 @@ sections 3 and 4 by this note.
 - The outside item set accepted by the PI on 2026-11-11 in addition to
   the 760 items : not chosen, not pinned, not implemented. Until it
   is, the run covers the E1 corpus only.
-- A decision of the PI on the positive control of the C1 rule
-  (section 6 ter) ; until then the rule is not calibrated on a known
-  symmetry.
 - Section 2 to rewrite from the reading note of Lyle et al. 2024
   (library, `references/notes/arxiv-2407.01800.md`) : the paper shows
   scale invariance for layers feeding a normalisation in an

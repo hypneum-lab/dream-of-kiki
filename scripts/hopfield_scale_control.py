@@ -41,6 +41,7 @@ PATTERN_SEED = 20261111
 DYNAMICS_SEED = 1
 INDEPENDENT_SEED = 2
 IDENTITY_TOL = 1e-9
+WIDE_NOISE_DOSES: tuple[float, ...] = (1.0, 2.0, 4.0)  # noise arm only, descriptive
 
 
 def patterns(n: int, load: float, seed: int = PATTERN_SEED) -> np.ndarray:
@@ -157,6 +158,12 @@ def cell(load: float, temp: float, n: int = N_UNITS, n_cues: int = N_CUES,
             eq_tq.append(equivalent(d, ind, idx))
             row |= {"m_Tq_independent": float(ind.mean()), "equiv_D_Tq": eq_tq[-1]}
         table.append(row)
+    wide = []
+    for eps in WIDE_NOISE_DOSES:  # beyond the grid: D is undefined at eps >= 1
+        rt = np.mean([run(noisy(j, eps, k), temp, s0, target, sweeps, DYNAMICS_SEED)
+                      for k in RT_SEEDS], axis=0)
+        wide.append({"eps": eps, "m_Rt": float(rt.mean()), "equiv_Rt": equivalent(rt, base, idx),
+                     "broken_Rt": broken(rt, base, idx)})
     verdict, rank_d, rank_rt = c1(eq_d, eq_rt, br_rt)
     eq_fake = [equivalent(x, base, idx) for x in rt0]  # Rt seed 0 relabelled as D
     negative, _, _ = c1(eq_fake, eq_rt, br_rt)
@@ -166,7 +173,7 @@ def cell(load: float, temp: float, n: int = N_UNITS, n_cues: int = N_CUES,
             "C1": verdict, "C1_negative_control": negative,
             "C2_analogue": ("not_applicable" if temp == 0
                             else "supported" if all(eq_tq) else "refuted"),
-            "table": table}
+            "table": table, "wide_noise": wide}
 
 
 def main() -> int:

@@ -8,6 +8,7 @@ from __future__ import annotations
 import numpy as np
 
 from scripts import hopfield_scale_control as hc
+from scripts.e1_dose_response import DOSES
 
 N, CUES, SWEEPS = 200, 40, 8
 
@@ -66,7 +67,7 @@ def test_c1_rule_on_constructed_ranks() -> None:
 
 def test_cell_reports_identity_and_shapes() -> None:
     out = hc.cell(0.05, 0.2, n=N, n_cues=CUES, sweeps=SWEEPS, n_boot=200)
-    assert out["identity_ok"] and len(out["table"]) == len(hc.DOSES)
+    assert out["identity_ok"] and len(out["table"]) == len(DOSES)
     assert out["C2_analogue"] in ("supported", "refuted")
     assert hc.cell(0.05, 0.0, n=N, n_cues=CUES, sweeps=SWEEPS, n_boot=200)["C2_analogue"] == (
         "not_applicable")
