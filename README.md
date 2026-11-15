@@ -307,7 +307,7 @@ co-author of a publication or as a co-author of a commit.
 
 Machine-readable metadata : `CITATION.cff` (single author, version
 `0.25.0`). Paper 1 draft v0.2 is frozen at tag
-[`paper-1-v0.2-arxiv`](https://github.com/hypneum-lab/dream-of-kiki/releases/tag/paper-1-v0.2-arxiv) (no arXiv deposit yet ; this tag is not archived on Zenodo — the Zenodo software archive is concept DOI [10.5281/zenodo.19701355](https://doi.org/10.5281/zenodo.19701355), resolves to the latest archived version, currently `v0.9.2` of 2026-04-23, MIT) :
+[`paper-1-v0.2-arxiv`](https://github.com/hypneum-lab/dream-of-kiki/releases/tag/paper-1-v0.2-arxiv) (no arXiv deposit yet ; as of 2026-11-15 this tag is not archived on Zenodo — the Zenodo software archive is concept DOI [10.5281/zenodo.19701355](https://doi.org/10.5281/zenodo.19701355), resolves to the latest archived version, currently `v0.9.2` of 2026-04-23, MIT) :
 
 ```bibtex
 @unpublished{dreamofkiki-2026,

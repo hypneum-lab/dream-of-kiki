@@ -73,7 +73,8 @@ see `docs/specs/2026-04-17-dreamofkiki-framework-C-design.md` §12).
   documented in README → *Versioning* : the latest released CHANGELOG
   heading drives `pyproject.toml` / `CITATION.cff` / `STATUS.md`. Bare
   test counts removed from the README status line (CI is the measure).
-  No `.zenodo.json` created : no Zenodo deposit exists yet.
+  No `.zenodo.json` created ; software releases are archived on Zenodo
+  under concept DOI 10.5281/zenodo.19701355 (correction of 2026-11-15).
 - **Q2 / Q2+ wording in README** : "25 / 25 substrates rejected" →
   "25 / 25 adversarial substrates produce false positives at the
   structural layer (22 deterministic, 3 statistical) — structural layer
