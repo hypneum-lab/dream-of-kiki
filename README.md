@@ -188,7 +188,7 @@ not be presented as a nominal-power result, nor as the 35B claim.
 
 - The framework version is the DualVer string `C-vX.Y.Z+{STABLE,PARTIAL,…}` (spec §12). Its **single source of truth is the most recent released heading of `CHANGELOG.md`** ; `STATUS.md` → *Version* mirrors it.
 - `pyproject.toml` `version` and `CITATION.cff` `version` carry the FC triple `X.Y.Z` of that DualVer (the SemVer alias) ; `CITATION.cff` `date-released` is the date of that CHANGELOG heading. Substrate-internal versions (e.g. `MLX_LATENT_DIFFUSION_SUBSTRATE_VERSION`) never drive `pyproject.toml`.
-- A DualVer bump is one commit that touches `CHANGELOG.md`, `STATUS.md`, `pyproject.toml`, `uv.lock` and `CITATION.cff` together (and `.zenodo.json` once a Zenodo deposit exists — there is none yet).
+- A DualVer bump is one commit that touches `CHANGELOG.md`, `STATUS.md`, `pyproject.toml`, `uv.lock` and `CITATION.cff` together (and `.zenodo.json` once one is added — there is none yet ; a Zenodo deposit exists, archived from the GitHub release `v0.9.2` : concept DOI [10.5281/zenodo.19701355](https://doi.org/10.5281/zenodo.19701355)).
 - Git tags `v0.9.0`–`v0.9.2` (April 2026) predate this rule ; the last GitHub release is `v0.9.2`. New tags follow `vX.Y.Z` = the FC triple.
 - Test counts and coverage are never hand-written here : cite the CI run or a dated `STATUS.md` snapshot.
 
@@ -307,7 +307,7 @@ co-author of a publication or as a co-author of a commit.
 
 Machine-readable metadata : `CITATION.cff` (single author, version
 `0.25.0`). Paper 1 draft v0.2 is frozen at tag
-[`paper-1-v0.2-arxiv`](https://github.com/hypneum-lab/dream-of-kiki/releases/tag/paper-1-v0.2-arxiv) (no arXiv or Zenodo deposit yet) :
+[`paper-1-v0.2-arxiv`](https://github.com/hypneum-lab/dream-of-kiki/releases/tag/paper-1-v0.2-arxiv) (no arXiv deposit yet ; this tag is not archived on Zenodo — the Zenodo software archive is concept DOI [10.5281/zenodo.19701355](https://doi.org/10.5281/zenodo.19701355), last version `v0.9.2`, 2026-04-23, MIT) :
 
 ```bibtex
 @unpublished{dreamofkiki-2026,
