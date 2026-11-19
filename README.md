@@ -204,7 +204,7 @@ Alignment applied 2026-10-25 (issue #55) : `C-v0.25.0+PARTIAL` ↔ `0.25.0` (pre
 | `docs/glossary.md` | Canonical terminology — don't invent synonyms |
 | `kiki_oniric/` | Substrate — 8 primitives, 4 channels, 3 profiles |
 | `harness/` | Shared eval harness, stratified matrix, bit-exact run registry |
-| `papers/` | Paper 1 (formal) + Paper 2 (ablation) drafts |
+| `docs/papers/` | Paper 1 (formal) + Paper 2 (ablation) drafts |
 | `tests/` | Unit + conformance (axioms, invariants) — coverage ≥ 90 % |
 | `scripts/` | Milestone drivers, one per G-gate |
 | `ops/` | Outreach, reviewer recruitment, mail drafts |
@@ -272,11 +272,11 @@ uv run python scripts/conformance_matrix.py   # C1–C3 conformance matrix
 uv run pytest tests/conformance/ -v --no-cov
 ```
 
-Other drivers : `scripts/pilot_cycle3_*.py`, `scripts/ablation_cycle3*.py`,
-`scripts/run_q2_conformance_audit.py`. A figure-rendering script
-(`scripts/render_figures.py`) is not yet in the repository.
+The G4 ablation, G2 pilot and conformance-matrix drivers write their reports
+under `docs/milestones/`.
 
-Outputs land in `harness/registry/runs/` (gitignored). Figures go to `papers/figures/`.
+Other drivers : `scripts/pilot_cycle3_*.py`, `scripts/ablation_cycle3*.py`,
+`scripts/run_q2_conformance_audit.py`.
 
 ## Public resources (planned)
 
