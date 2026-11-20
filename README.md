@@ -258,17 +258,20 @@ The CI suite `uv run pytest --cov-fail-under=30` gives `536 passed, 22 skipped`,
 `tests/reproducibility/REBASELINE_NOTE.md`, `docs/milestones/conformance-matrix.md` (C1–C3 matrix)
 and `docs/milestones/q2-conformance-negative-2026-05-10.md`.
 
-## Reproduce the paper
+## Validate the pipeline (synthetic)
 
-The draft release includes full experimental data. To re-run :
+The drivers below run **pipeline validation on synthetic data** —
+they are not a reproduction of empirical paper results. For the
+empirical numbers, see the milestone files committed under
+`docs/milestones/` and the R1 nightly run history.
 
 ```bash
-# Gate / ablation drivers — argument-free, seeds 42 / 123 / 7 are fixed in the script
-uv run python scripts/ablation_g4.py          # G4 ablation (baseline vs P_min vs P_equ)
-uv run python scripts/pilot_g2.py             # G2 pilot (MLX required)
-uv run python scripts/conformance_matrix.py   # C1–C3 conformance matrix
+# Pipeline-validation drivers — seeds 42 / 123 / 7 fixed in script
+uv run python scripts/ablation_g4.py   # G4 synthetic ablation (C1–C3 pipeline)
+uv run python scripts/pilot_g2.py      # G2 synthetic pilot (MLX required)
+uv run python scripts/conformance_matrix.py  # C1–C3 conformance matrix
 
-# Run the conformance test suite (axioms + invariants) — `--no-cov` bypasses the coverage gate
+# Conformance test suite (axioms + invariants) — no-cov bypasses coverage gate
 uv run pytest tests/conformance/ -v --no-cov
 ```
 
