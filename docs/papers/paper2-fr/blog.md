@@ -93,7 +93,7 @@ trois tests :
 
 C'est un critère **exécutable**. Pas une checklist narrative,
 pas une prose de revue par les pairs. On lance la commande
-`dream-harness conformance --substrate <S>` et on obtient un
+`uv run pytest tests/conformance/ --no-cov` et on obtient un
 verdict binaire. Les substrats MLX et E-SNN passent chacun ce
 criblage dans l'article. D'autres substrats (transformer standard,
 RWKV, state-space) sont laissés aux cycles 3+.

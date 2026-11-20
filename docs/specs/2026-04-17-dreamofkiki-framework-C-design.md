@@ -513,7 +513,7 @@ implication ; the formal epistemic status of each axiom is unchanged by
 
 1. **Signature typing** — S implements the typed Protocol signatures of primitives α, β, γ, δ, 1, 2, 3, 4 as defined in §2.1 (Python Protocol types, TypeScript interfaces, or equivalent in target language).
 
-2. **Axiom property tests** — the property test suite for DR-0, DR-1, and DR-2 (or DR-2') passes on S with ≥100% coverage on BLOCKING cases. Test suite is versioned in T-Ops under `tests/conformance/axioms/` and executed via `dream-harness conformance --substrate <S>`.
+2. **Axiom property tests** — the property test suite for DR-0, DR-1, and DR-2 (or DR-2') passes on S with ≥100% coverage on BLOCKING cases. Test suite is versioned in T-Ops under `tests/conformance/axioms/` and executed via `uv run pytest tests/conformance/ --no-cov`.
 
 3. **BLOCKING invariants enforceable** — invariants S1 (retained non-regression), S2 (no NaN/Inf), S3 (hierarchy valid), and I1 (episodic conservation) are implemented as runtime checks on S with automated enforcement (abort-on-violation + logging to `aborted-swaps/` or equivalent).
 

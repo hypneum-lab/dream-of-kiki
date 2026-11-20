@@ -510,7 +510,7 @@ alors DR-0, DR-1, DR-2 (ou DR-2') sont vérifiés sur S.
 
 1. **Typage de signature** — S implémente les signatures Protocol typées des primitives α, β, γ, δ, 1, 2, 3, 4 telles que définies au §2.1 (Python Protocol types, interfaces TypeScript, ou équivalent dans le langage cible).
 
-2. **Tests de propriétés d'axiomes** — la suite de tests de propriétés pour DR-0, DR-1 et DR-2 (ou DR-2') passe sur S avec ≥100 % de couverture sur les cas BLOCKING. La suite de tests est versionnée dans T-Ops sous `tests/conformance/axioms/` et exécutée via `dream-harness conformance --substrate <S>`.
+2. **Tests de propriétés d'axiomes** — la suite de tests de propriétés pour DR-0, DR-1 et DR-2 (ou DR-2') passe sur S avec ≥100 % de couverture sur les cas BLOCKING. La suite de tests est versionnée dans T-Ops sous `tests/conformance/axioms/` et exécutée via `uv run pytest tests/conformance/ --no-cov`.
 
 3. **Invariants BLOCKING applicables** — les invariants S1 (non-régression retenue), S2 (pas de NaN/Inf), S3 (hiérarchie valide) et I1 (conservation épisodique) sont implémentés comme des vérifications runtime sur S avec application automatisée (abort-on-violation + log vers `aborted-swaps/` ou équivalent).
 
