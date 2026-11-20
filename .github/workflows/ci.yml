@@ -14,7 +14,7 @@ jobs:
 
       - name: Install uv
         # setup-uv@v3 is pinned by tag only; SHA pin requires HITL
-        # review — tracked under issue #67, left to the PI.
+        # review — tracked under issue #107 (HITL).
         uses: astral-sh/setup-uv@v3
 
       - name: Set up Python
