@@ -11,9 +11,11 @@ jobs:
     # macos-14 = Apple Silicon (M1) — required for MLX / Metal backend.
     runs-on: macos-14
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4.4.0
 
       - name: Install uv
+        # setup-uv@v3 is pinned by tag only; SHA pin requires HITL
+        # review — tracked under issue #107 (HITL).
         uses: astral-sh/setup-uv@v3
 
       - name: Set up Python

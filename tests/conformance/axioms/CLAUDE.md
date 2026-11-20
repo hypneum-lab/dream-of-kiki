@@ -15,12 +15,20 @@ level up under `../`.
 | File | Axiom | Substrate |
 |------|-------|-----------|
 | `test_dr0_accountability.py` | DR-0 every DE logged + finite budget | hypothesis property |
+| `test_dr0_diffusion_de_budget.py` | DR-0 diffusion budget accountability | MLX diffusion substrate |
 | `test_dr1_episodic_conservation.py` | DR-1 β record eventually consumed | hypothesis property (S5.3 fake buffer; real β lands S7+) |
+| `test_dr1_diffusion_finite.py` | DR-1 diffusion finite episodic conservation | MLX diffusion substrate |
 | `test_dr2_compositionality_empirical.py` | DR-2 (weakened, 2026-04-21) closure / additivity / effect-chaining under precondition | MLX kiki-oniric, 24 permutations, 12 PASS / 12 xfail |
 | `test_dr2_prime_canonical_order.py` | DR-2' fallback (strict canonical order) | MLX, byte-identical determinism |
 | `test_dr3_substrate.py` | DR-3 condition (1) — 8 typed Protocols | structural |
-| `test_dr3_micro_kiki_substrate.py` | DR-3 conditions (1)-(3) on MLX | MLX kiki-oniric |
+| `test_dr3_diffusion_profile.py` | DR-3 diffusion profile conformance | MLX diffusion substrate |
+| `test_dr3_diffusion_substrate.py` | DR-3 diffusion substrate conditions (1)-(3) | MLX diffusion substrate |
 | `test_dr3_esnn_substrate.py` | DR-3 conditions (1)-(3) on E-SNN | numpy LIF skeleton (synthetic substitute) |
+| `test_dr3_esnn_norse_substrate.py` | DR-3 conditions (1)-(3) on Norse SNN | numpy-fallback path (no torch/norse required) |
+| `test_dr3_g4_deeper_substrate.py` | DR-3 G4 deeper substrate conditions (1)-(3) | MLX deeper G4 substrate |
+| `test_dr3_g4_hierarchical_substrate.py` | DR-3 G4 hierarchical substrate conditions (1)-(3) | MLX hierarchical G4 substrate |
+| `test_dr3_micro_kiki_substrate.py` | DR-3 conditions (1)-(3) on MLX | MLX kiki-oniric |
+| `test_dr3_ttt_substrate.py` | DR-3 TTT substrate conditions (1)-(3) | MLX TTT substrate |
 | `test_dr4_profile_inclusion.py` | DR-4 ops/channels chain inclusion | P_min ⊆ P_equ ⊆ P_max metadata |
 | `_dsl.py` | shared DSL — `seeded_runtime`, `make_episode`, `assert_states_equal`, `registered_ops`, `profile_channels` | helpers (not a test) |
 

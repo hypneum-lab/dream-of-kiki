@@ -74,8 +74,9 @@ uv run pytest -k "dr2 and not slow"                 # keyword selection
 uv run ruff check .
 uv run mypy harness tests          # strict mode (pyproject.toml)
 
-# Harness CLI (entry point defined in pyproject.toml)
-uv run dream-harness --help
+# Conformance suite (replaces the removed dream-harness CLI)
+uv run pytest tests/conformance/ --no-cov
+uv run python scripts/conformance_matrix.py    # writes docs/milestones/
 
 # Pilot / gate drivers — one per G-gate ; seeds are fixed inside each script (no --seed flag)
 uv run python scripts/pilot_g2.py
@@ -87,11 +88,17 @@ uv run python scripts/conformance_matrix.py
 ```
 
 CI runs on push/PR : `ci.yml` (ubuntu-latest, ruff + mypy + pytest)
-and `r1-nightly.yml` (macos-14 Apple Silicon, nightly `tests/reproducibility/`
-with `golden_hashes.json` as failure artifact). A change that breaks
-R1 bit-exactness will only surface on the nightly macOS runner —
-run `tests/reproducibility/` locally on Apple Silicon before pushing
-harness changes.
+and `r1-nightly.yml` (macos-14 Apple Silicon, nightly
+`tests/reproducibility/` with `golden_hashes.json` as failure
+artifact). A change that breaks R1 bit-exactness will only surface
+on the nightly macOS runner — run `tests/reproducibility/` locally
+on Apple Silicon before pushing harness changes.
+
+The nightly gate status is authoritative only from the Actions run
+history (GitHub disables scheduled workflows after 60 days of
+inactivity; `r1-keepalive.yml` re-enables it monthly). Check
+`.github/workflows/r1-nightly.yml` → "Recent workflow runs" before
+claiming the gate is green.
 
 ## Working rules (research discipline)
 

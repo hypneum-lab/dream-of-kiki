@@ -65,10 +65,13 @@ section files.
   without a registered `run_id` — the harness rule applies even
   inside the paper tree (parent `papers/CLAUDE.md` rule, restated
   here because section authors edit here, not in `harness/`).
-- Removing or regenerating a figure without re-running its
-  registered `scripts/render_figures.py --gate G<N>` invocation
-  and updating the milestone dump — breaks R1 reproducibility on
-  the figure.
+- Removing or regenerating a figure without updating the
+  milestone dump and committing a dated `run_id` reference —
+  breaks R1 reproducibility on the figure. Note: the figure
+  regeneration script (`scripts/render_figures.py`) is not yet
+  in the repository (same note as `CLAUDE.md` l. 85–86). Once
+  written, figures will live under
+  `docs/papers/<paper>/figures/`.
 - Fleshing out `paper3/outline.md` before cycle-3 kickoff — the
   PROVISIONAL banner is load-bearing : Phase 3+4 of cycle 2 must
   land first.

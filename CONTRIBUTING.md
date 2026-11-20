@@ -83,7 +83,11 @@ rules :
   API publique, ou touchent plusieurs modules — Note: commits must
   be in English; the French translation is provided for reference
   only)
-- NO AI attribution
+- NO AI attribution: LLMs are tools, never authors or credited.
+  AI assistance is noted in the PR description, not in commit
+  trailers. See `CONTRIBUTORS.md` §"AI assistance" for the full
+  policy (single-author byline: Clément Saillant; contributors
+  credited in Acknowledgments).
 - NO `--no-verify`
 
 Scope conventions for FR artifacts :

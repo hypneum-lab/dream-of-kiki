@@ -19,6 +19,10 @@ Two flavours, treated differently :
   finite.
 - `conformance/invariants/test_s3_topology.py` — S3 topology valid
   after `HierarchyChangeChannel.apply_diff`.
+- `conformance/invariants/test_s4_attention.py` — S4 attention
+  budget does not exceed K1 compute cap.
+- `conformance/invariants/test_k2_coupling.py` — K2 coupling
+  coefficient in invariant band [0.27, 0.39].
 
 Each conformance test's docstring must cite the axiom / invariant
 ID and reference the relevant spec section.

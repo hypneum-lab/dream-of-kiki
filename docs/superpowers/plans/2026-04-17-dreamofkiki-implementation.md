@@ -199,7 +199,7 @@ teacher = [
 ]
 
 [project.scripts]
-dream-harness = "harness.cli.dream_harness:cli"
+# dream-harness CLI removed (see #65); use: uv run pytest tests/conformance/ --no-cov
 
 [build-system]
 requires = ["hatchling"]

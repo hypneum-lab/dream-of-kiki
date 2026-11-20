@@ -184,7 +184,7 @@ conditions, all required:
 2. **Axiom property tests** — the property test suite for DR-0,
    DR-1, and DR-2 (or DR-2') passes on S with ≥100% coverage on
    BLOCKING cases (`tests/conformance/axioms/`, executed via
-   `dream-harness conformance --substrate <S>`).
+   `uv run pytest tests/conformance/ --no-cov`).
 3. **BLOCKING invariants enforceable** — invariants S1 (retained
    non-regression), S2 (no NaN/Inf), S3 (hierarchy valid), and I1
    (episodic conservation) are implemented as runtime checks on S

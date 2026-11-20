@@ -13,7 +13,6 @@ Guidance for AI coding agents (Claude Code, Aider, Cursor, etc.) working in this
 - Test: `pytest` — 914 tests, coverage 89% (Linux gate 30%, macOS nightly gate 90% via `r1-nightly.yml`)
 - Build: `hatchling`; packages `harness/`, `kiki_oniric/`
 - Backend: **MLX on Apple Silicon** (`mlx>=0.31,<0.32`, pin paired with `mlx-lm`); CPU NumPy fallback
-- CLI: `dream-harness` → `harness.cli.dream_harness:cli`
 - Extras: `[fmri]` (nilearn/nibabel), `[teacher]` (llama-cpp-python)
 
 ## Commands
@@ -22,7 +21,8 @@ Guidance for AI coding agents (Claude Code, Aider, Cursor, etc.) working in this
 uv sync
 uv run pytest                                 # full
 uv run pytest tests/axioms/ -v                # axiom-conformance subset
-uv run dream-harness --help
+uv run pytest tests/conformance/ --no-cov     # conformance suite
+uv run python scripts/conformance_matrix.py   # C1-C3 matrix
 ```
 
 ## Conventions

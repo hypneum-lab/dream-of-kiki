@@ -35,7 +35,9 @@ def check_test_count() -> None:
     status = status_path.read_text()
     m = re.search(r"(\d{2,5})\s+tests?\s+collected", status)
     if not m:
-        report("test_count", False, "no 'N tests collected' claim found in STATUS.md")
+        # Bare test-count was intentionally removed from STATUS.md (#66):
+        # counts are maintained by CI/Actions rather than prose. Skip.
+        report("test_count", True, "no 'N tests collected' claim in STATUS.md (skip)")
         return
     claimed = int(m.group(1))
 
@@ -205,6 +207,40 @@ def check_r1_hashes_status() -> None:
                f"narrative-truth aligned ({len(pending)} pending, {len(promoted)} promoted)")
 
 
+def check_project_scripts_importable() -> None:
+    """Every entry in [project.scripts] must resolve to an importable module.
+
+    Catches the failure mode where pyproject.toml declares a CLI entry
+    point but the backing module does not exist (issue #65).
+    """
+    if sys.version_info >= (3, 11):
+        import tomllib
+    else:
+        import tomli as tomllib  # type: ignore
+    pyproject = tomllib.loads((REPO_ROOT / "pyproject.toml").read_text())
+    scripts = pyproject.get("project", {}).get("scripts", {})
+    if not scripts:
+        report("scripts_importable", True, "no [project.scripts] entries (skip)")
+        return
+
+    import importlib
+    failed_entries = []
+    for name, entry in scripts.items():
+        # entry is "module.path:attr"
+        module_path = entry.split(":")[0]
+        try:
+            importlib.import_module(module_path)
+        except ImportError as exc:
+            failed_entries.append(f"{name}={entry} ({exc})")
+
+    if failed_entries:
+        report("scripts_importable", False,
+               f"unimportable entries: {', '.join(failed_entries)}")
+    else:
+        report("scripts_importable", True,
+               f"{len(scripts)} entry/entries importable")
+
+
 def main() -> int:
     print("=" * 60)
     print(f"check_status_truth.py -- {REPO_ROOT.name}")
@@ -214,6 +250,7 @@ def main() -> int:
     check_citation_version()
     check_version_py_consistency()
     check_r1_hashes_status()
+    check_project_scripts_importable()
     print("=" * 60)
     failed = [n for n, p, _ in results if not p]
     if failed:

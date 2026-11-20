@@ -54,16 +54,16 @@ preparation** (G10 cycle-3 Gate D folded into Paper 2 backlog).
 
 ## Test suite
 
-```
-708 tests collected (audited 2026-05-10)
-693 passing, 12 xfailed (DR-2 falsified perms, expected)
-0 failing (the 3 prior FMNIST data-missing failures now skip
-gracefully via H3 fix shipped 2026-05-10 ; 3 skipped reported
-when experiments/g4_split_fmnist/data is absent on a fresh clone)
-coverage 91.31% line / pyproject gate set to 40 (gate has 51pp
-headroom ; coverage stable post-H3 since skipped tests don't
-contribute lines either way)
-```
+See the [Actions tab](../../actions) for the live count and
+coverage. Last audited snapshot (2026-05-10, macOS Apple Silicon,
+commit `0a8ec29`): 708 total, 693 passing, 12 xfailed (DR-2
+falsified perms), 0 failing; coverage 91.31% line. The macOS
+nightly gate (`r1-nightly.yml`) enforces 90% coverage; the Linux
+CI gate is relaxed to 30% (MLX tests excluded on Linux).
+
+Note: bare test counts in prose (e.g. "914 tests") are intentionally
+removed from STATUS.md to avoid stale doc-truth drift (#66); see
+Actions for the current number.
 
 R1 output-hash API landed (`register_output_hash` /
 `get_output_hash` on `RunRegistry` ; sibling table

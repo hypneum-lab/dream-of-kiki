@@ -32,7 +32,7 @@ No edits to `harness/storage/run_registry.py`, `harness/benchmarks/__init__.py`,
 - Header matches required format: yes (line 1 `# … Implementation Plan`, line 3 `> **For agentic workers:** REQUIRED SUB-SKILL: …`).
 - Goal / Architecture / Tech Stack sections present: yes.
 - All file paths are absolute or repo-root-relative: yes.
-- All `pytest` / `git` invocations are exact and copy-pasteable: yes (verified against `pyproject.toml:42` `dream-harness` script entry and `pyproject.toml:65` pytest config).
+- All `pytest` / `git` invocations are exact and copy-pasteable: yes (verified against `pyproject.toml:65` pytest config).
 - No placeholders (TBD / TODO / "later" / "to be defined"): verified by Self-Review task at the end.
 - Type signatures: `Literal["P_min", "P_equ", "P_max"]` matches the three-profile vocabulary already used in `harness/storage/run_registry.py:113` and `tests/unit/test_run_registry.py:21`. `stratum: str | None` uses PEP 604 syntax (Python 3.12+ OK).
 - Numbers are exactly transcribed from `docs/papers/paper1/references.bib` (verified Hu lines 598-609, Javadi lines 655-664).
