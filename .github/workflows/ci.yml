@@ -39,5 +39,5 @@ jobs:
         continue-on-error: true
         run: uv run python scripts/check_status_truth.py
 
-      - name: Invariant smoke tests (placeholder)
-        run: 'echo "S5+: conformance/invariant tests will run here"'
+      - name: Invariant smoke tests (S2/S3/S4/K2)
+        run: uv run pytest tests/conformance/invariants -q --no-cov
