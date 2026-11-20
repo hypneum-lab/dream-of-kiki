@@ -1,0 +1,31 @@
+name: R1 Nightly keep-alive
+
+# GitHub automatically disables scheduled workflows after 60 days of
+# repository inactivity (no push or PR on the default branch).
+# This monthly workflow re-enables r1-nightly.yml before the 60-day
+# window closes, keeping the R1 bit-exact gate active on repos that
+# may go a few months without contributor activity.
+#
+# History of r1-nightly.yml runs is the authoritative record of the
+# macOS nightly gate status (README and CLAUDE.md now point here
+# instead of making a bare "nightly gate 90%" promise).
+
+on:
+  schedule:
+    # 02:00 UTC on the 1st of every month — well before the 60-day cliff.
+    - cron: "0 2 1 * *"
+  workflow_dispatch:
+
+jobs:
+  keepalive:
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+    steps:
+      - name: Re-enable R1 Nightly workflow
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh workflow enable r1-nightly.yml \
+            --repo "${{ github.repository }}"
+          echo "r1-nightly.yml re-enabled on $(date -u '+%Y-%m-%dT%H:%M:%SZ')"
