@@ -35,7 +35,9 @@ def check_test_count() -> None:
     status = status_path.read_text()
     m = re.search(r"(\d{2,5})\s+tests?\s+collected", status)
     if not m:
-        report("test_count", False, "no 'N tests collected' claim found in STATUS.md")
+        # Bare test-count was intentionally removed from STATUS.md (#66):
+        # counts are maintained by CI/Actions rather than prose. Skip.
+        report("test_count", True, "no 'N tests collected' claim in STATUS.md (skip)")
         return
     claimed = int(m.group(1))
 
